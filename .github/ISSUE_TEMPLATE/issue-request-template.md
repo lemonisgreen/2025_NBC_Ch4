@@ -3,7 +3,7 @@ name: Issue request Template
 about: Suggest an idea for this project
 title: ''
 labels: ''
-assignees: lemonisgreen
+assignees: ''
 
 ---
 
