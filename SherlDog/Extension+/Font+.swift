@@ -88,7 +88,7 @@ extension UIFont {
     }
     
     static var cardTitle: UIFont {
-        return UIFont(name: "EF_jejudoldam(OTF)", size: 20) ?? UIFont.systemFont(ofSize: 20, weight: .bold)
+        return UIFont(name: "EF_jejudoldam", size: 20) ?? UIFont.systemFont(ofSize: 20, weight: .bold)
     }
     
     /* 사용 예시:
