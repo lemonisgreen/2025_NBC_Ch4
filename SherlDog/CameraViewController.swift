@@ -17,6 +17,8 @@ class CameraViewController: UIViewController {
     private let viewModel = CameraViewModel()
     private let disposeBag = DisposeBag()
     
+    private var presentVC: UIViewController
+    
     private let captureSession = AVCaptureSession()
     private let captureDevice = AVCaptureDevice.default(for: .video)
     private let photoOutput = AVCapturePhotoOutput()
@@ -25,6 +27,34 @@ class CameraViewController: UIViewController {
     private let cameraView = UIView()
     private let pinchGesture = UIPinchGestureRecognizer()
     private let shutterButton = UIButton()
+    
+    // MARK: - Initialize
+    init(to destination: CameraDestination) {
+        self.presentVC = {
+            UIViewController() // 이 부분 지우고 아래 스위치문 꺼내 쓰면 됨
+            
+            /*
+             임의로 설정한 이름입니다 나중에 수정해서 쓰시면 됩니다.
+            switch destination {
+                
+            case .clueLeave:
+                self.presentVC = ClueLeaveViewController(viewModel: viewModel)
+            case .petProfile:
+                self.presentVC = PetProfileViewController(viewModel: viewModel)
+            case .assistantProfile:
+                self.presentVC = AssistantProfileViewController(viewModel: viewModel)
+            case .communityShare:
+                self.presentVC = CommunityShareViewController(viewModel: viewModel)
+            }
+             */
+        }()
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
 }
 
@@ -174,16 +204,11 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
         }
         
         DispatchQueue.main.async {
-            /*
-             
-            사진을 찍으면 넘어갈 뷰 컨트롤러를 지정
-            해당 뷰 컨트롤러는 init에서 CameraViewModel타입을 전달받을 수 있도록 해야하며
-            전달받은 뷰모델의 output.capturedImage를 구독해 이미지를 전달받을 수 있음
-             
-            let imageVC = ViewController(viewModel: self.viewModel)
-            self.navigationController?.pushViewController(imageVC, animated: true)
-             
-             */
+            self.navigationController?.pushViewController(self.presentVC, animated: true)
         }
     }
+}
+
+enum CameraDestination {
+    case clueLeave, petProfile, assistantProfile, communityShare
 }
