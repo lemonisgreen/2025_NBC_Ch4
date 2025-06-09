@@ -25,17 +25,29 @@
 		39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				BreedSearchViewController.swift,
 				Info.plist,
 			);
 			target = 39BA2DAB2DF03A030008A54D /* SherlDog */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		395E4FEC2DF1A73300354780 /* Exceptions for "SherlDog" folder in "Copy Bundle Resources" phase from "SherlDog" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 39BA2DAA2DF03A030008A54D /* Resources */;
+			membershipExceptions = (
+				BreedSearchViewController.swift,
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		39BA2DAE2DF03A030008A54D /* SherlDog */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */,
+				395E4FEC2DF1A73300354780 /* Exceptions for "SherlDog" folder in "Copy Bundle Resources" phase from "SherlDog" target */,
 			);
 			path = SherlDog;
 			sourceTree = "<group>";
