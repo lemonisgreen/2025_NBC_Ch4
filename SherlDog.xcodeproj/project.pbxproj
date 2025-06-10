@@ -15,6 +15,8 @@
 		39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E522DF0455C0008A54D /* FirebaseAuth */; };
 		39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E542DF0455C0008A54D /* FirebaseFirestore */; };
 		39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E562DF0455C0008A54D /* FirebaseStorage */; };
+		3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BECE2DF7FAF700397F6C /* Differentiator */; };
+		3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BED02DF7FAF700397F6C /* RxDataSources */; };
 		F1CC70CA2DF718270038A80C /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1CC70C92DF718270038A80C /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
@@ -53,7 +55,9 @@
 				39BA2DCD2DF03B660008A54D /* SnapKit in Frameworks */,
 				39BA2E192DF03ECB0008A54D /* NMapsMap in Frameworks */,
 				39BA2DC82DF03B3C0008A54D /* RxRelay in Frameworks */,
+				3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */,
 				39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */,
+				3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */,
 				39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */,
 				F1CC70CA2DF718270038A80C /* FirebaseCore in Frameworks */,
 				39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */,
@@ -116,6 +120,8 @@
 				39BA2E542DF0455C0008A54D /* FirebaseFirestore */,
 				39BA2E562DF0455C0008A54D /* FirebaseStorage */,
 				F1CC70C92DF718270038A80C /* FirebaseCore */,
+				3B40BECE2DF7FAF700397F6C /* Differentiator */,
+				3B40BED02DF7FAF700397F6C /* RxDataSources */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -150,6 +156,7 @@
 				39BA2DCB2DF03B660008A54D /* XCRemoteSwiftPackageReference "SnapKit" */,
 				39BA2E172DF03ECB0008A54D /* XCRemoteSwiftPackageReference "SPM-NMapsMap" */,
 				39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -419,6 +426,14 @@
 				minimumVersion = 11.14.0;
 			};
 		};
+		3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.2;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -461,6 +476,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		3B40BECE2DF7FAF700397F6C /* Differentiator */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */;
+			productName = Differentiator;
+		};
+		3B40BED02DF7FAF700397F6C /* RxDataSources */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */;
+			productName = RxDataSources;
 		};
 		F1CC70C92DF718270038A80C /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;
