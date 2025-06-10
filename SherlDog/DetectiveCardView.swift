@@ -36,9 +36,12 @@ class DetectiveCardView: UIView {
     }
     
     private func setupUI() {
+
+        detectiveHeaderBackgroundView.addSubviews([detectiveCardLabel,
+                                                   detectiveNumberLabel,
+                                                   detectiveNumber])
         
         detectiveIntroduceBackgroundView.addSubview(detectiveIntroduce)
-        detectiveHeaderBackgroundView.addSubviews([detectiveCardLabel, detectiveNumberLabel, detectiveNumber])
 
         self.addSubviews([
             detectiveHeaderBackgroundView,
@@ -55,9 +58,9 @@ class DetectiveCardView: UIView {
             
         self.layer.cornerRadius = 16
         self.layer.masksToBounds = true
-        self.backgroundColor = UIColor.gray200
+        self.backgroundColor = .keycolorSecondary1
         
-        detectiveHeaderBackgroundView.backgroundColor = .textsSecondary
+        detectiveHeaderBackgroundView.backgroundColor = .textSecondary
         
         detectiveCardLabel.text = "멍탐정 프로필 카드"
         detectiveCardLabel.font = UIFont.cardTitle
@@ -79,7 +82,7 @@ class DetectiveCardView: UIView {
         detectiveNameLabel.textColor = .textInverse
         
         detectiveName.text = "찡찡이" // 예시값
-        detectiveName.font = UIFont.body1
+        detectiveName.font = UIFont.body4
         detectiveName.textColor = .textPrimary
         
         detectiveBreedLabel.text = "견종"
@@ -88,7 +91,7 @@ class DetectiveCardView: UIView {
         detectiveBreedLabel.textColor = .textInverse
 
         detectiveBreed.text = "말티즈"
-        detectiveBreed.font = UIFont.body1
+        detectiveBreed.font = UIFont.body4
         detectiveBreed.textColor = .textPrimary
 
         detectiveAgeLabel.text = "나이"
@@ -97,7 +100,7 @@ class DetectiveCardView: UIView {
         detectiveAgeLabel.textColor = .textInverse
 
         detectiveAge.text = "3세" // 예시값
-        detectiveAge.font = UIFont.body1
+        detectiveAge.font = UIFont.body4
         detectiveAge.textColor = .textPrimary
 
         detectiveIntroduceLabel.text = "성격 및 특성"
@@ -105,12 +108,12 @@ class DetectiveCardView: UIView {
         detectiveIntroduceLabel.font = UIFont.alert1
         detectiveIntroduceLabel.textColor = .textInverse
         
-        detectiveIntroduceBackgroundView.layer.cornerRadius = 16
+        detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2 //피그마에서는 cornerRadius값이 높이의 절반을 넘어서도 높이의 절반까지만 적용되지만 swift에서는 아님.
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
         detectiveIntroduceBackgroundView.backgroundColor = .gray100
 
         detectiveIntroduce.text = "# 우리애기는완전쫄보"
-        detectiveIntroduce.font = UIFont.title4
+        detectiveIntroduce.font = UIFont.title5
     }
     
     private func configurationUI() {
