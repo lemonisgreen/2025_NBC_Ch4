@@ -17,6 +17,7 @@
 		39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E562DF0455C0008A54D /* FirebaseStorage */; };
 		93615BB72DF1A45F004BA4C5 /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 93615BB62DF1A45F004BA4C5 /* Differentiator */; };
 		93615BB92DF1A45F004BA4C5 /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 93615BB82DF1A45F004BA4C5 /* RxDataSources */; };
+		F1CC70CA2DF718270038A80C /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1CC70C92DF718270038A80C /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +59,7 @@
 				39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */,
 				39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */,
 				93615BB72DF1A45F004BA4C5 /* Differentiator in Frameworks */,
+				F1CC70CA2DF718270038A80C /* FirebaseCore in Frameworks */,
 				39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -69,6 +71,7 @@
 			isa = PBXGroup;
 			children = (
 				39BA2DAE2DF03A030008A54D /* SherlDog */,
+				F1CC70C82DF718270038A80C /* Frameworks */,
 				39BA2DAD2DF03A030008A54D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -79,6 +82,13 @@
 				39BA2DAC2DF03A030008A54D /* SherlDog.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F1CC70C82DF718270038A80C /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -111,6 +121,7 @@
 				39BA2E562DF0455C0008A54D /* FirebaseStorage */,
 				93615BB62DF1A45F004BA4C5 /* Differentiator */,
 				93615BB82DF1A45F004BA4C5 /* RxDataSources */,
+				F1CC70C92DF718270038A80C /* FirebaseCore */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -193,6 +204,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -221,6 +233,7 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -473,6 +486,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 93615BB52DF1A45F004BA4C5 /* XCRemoteSwiftPackageReference "RxDataSources" */;
 			productName = RxDataSources;
+		F1CC70C92DF718270038A80C /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
