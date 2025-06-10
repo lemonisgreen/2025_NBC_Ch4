@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NMFClientId</key>
-	<string>$(CLIENT_ID)</string>
+	<string></string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>사용자의 위치를 받습니다.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
@@ -11,7 +11,7 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>위치정보 권한이 필요합니다.</string>
 	<key>NMFNcpKeyId</key>
-	<string>$(APIKey)</string>
+	<string>$(CLIENT_ID)</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Pretendard-Medium.otf</string>

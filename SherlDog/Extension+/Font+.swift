@@ -38,6 +38,9 @@ extension UIFont {
     static var highlight4: UIFont {
         pretendard(ofSize: 18, weight: .bold)
     }
+    static var highlight5: UIFont {
+        pretendard(ofSize: 16, weight: .bold)
+    }
     
     // MARK: Title -
     static var title1: UIFont {
@@ -47,9 +50,15 @@ extension UIFont {
         pretendard(ofSize: 20, weight: .regular)
     }
     static var title3: UIFont {
-        pretendard(ofSize: 18, weight: .regular)
+        pretendard(ofSize: 18, weight: .medium)
     }
     static var title4: UIFont {
+        pretendard(ofSize: 18, weight: .regular)
+    }
+    static var title5: UIFont {
+        pretendard(ofSize: 12, weight: .medium)
+    }
+    static var title6: UIFont {
         pretendard(ofSize: 12, weight: .regular)
     }
     
@@ -88,7 +97,16 @@ extension UIFont {
     }
     
     static var cardTitle: UIFont {
-        return UIFont(name: "EF_jejudoldam(OTF)", size: 20) ?? UIFont.systemFont(ofSize: 20, weight: .bold)
+        return UIFont(name: "EF_jejudoldam", size: 14) ?? UIFont.systemFont(ofSize: 14, weight: .bold)
+    }
+    static var cardTitle2: UIFont {
+        return UIFont(name: "EF_jejudoldam", size: 18) ?? UIFont.systemFont(ofSize: 18, weight: .bold)
+    }
+    static var loginScreent: UIFont {
+        return UIFont(name: "EF_jejudoldam", size: 24) ?? UIFont.systemFont(ofSize: 24, weight: .bold)
+    }
+    static var splashScreen: UIFont {
+        return UIFont(name: "EF_jejudoldam", size: 40) ?? UIFont.systemFont(ofSize: 40, weight: .bold)
     }
     
     /* 사용 예시:
