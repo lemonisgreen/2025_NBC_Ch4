@@ -37,10 +37,22 @@ class PictureUploadRequestViewCell: UICollectionViewCell {
         [label, imageView].forEach {
             contentView.addSubview($0)
         }
+        
+        let cornerRadius: CGFloat = 12
+        
+        let selectedCell = UIView()
+        selectedCell.layer.cornerRadius = cornerRadius
+        selectedCell.backgroundColor = .gray100
+        
+        self.selectedBackgroundView = selectedCell
 
-        contentView.layer.cornerRadius = 12
+        contentView.layer.cornerRadius = cornerRadius
         contentView.layer.borderColor = UIColor.gray200.cgColor
         contentView.layer.borderWidth = 1
+        
+        if self.isSelected {
+            contentView.layer.borderColor = UIColor.textPrimary.cgColor
+        }
 
         label.font = .title2
         label.textColor = .textPrimary

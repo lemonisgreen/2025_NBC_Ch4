@@ -39,7 +39,7 @@ class PictureUploadRequestView: UIViewController {
 
     init(viewModel: PictureUploadRequestViewModel?) {
         self.viewModel = viewModel
-        self.viewModel?.input.accept(.sender(.pictureRequest)) // test
+        self.viewModel?.input.accept(.sender(.sherlDogRequest)) // test
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -57,7 +57,8 @@ extension PictureUploadRequestView {
 
         setupUI()
         configureUI()
-        bind()
+        outputBind()
+        inputBind()
     }
 
 }
@@ -65,9 +66,29 @@ extension PictureUploadRequestView {
 // MARK: - Method
 extension PictureUploadRequestView {
 
-    private func bind() {
+    private func outputBind() {
         self.viewModel?.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+        
+        self.viewModel?.output.sender
+            .subscribe(onNext: { sender in
+                guard let sender else { return }
+                switch sender {
+                    
+                case .pictureRequest, .pictureRequestWithIcon:
+                    self.collectionView.allowsMultipleSelection = false
+                    self.setButton.isEnabled = false
+                    
+                case .sherlDogRequest:
+                    self.collectionView.allowsMultipleSelection = true
+                    self.setButton.isEnabled = false
+                    
+                case .sherlDogResult:
+                    self.collectionView.allowsSelection = false
+                    self.setButton.isEnabled = true
+                }
+            })
             .disposed(by: disposeBag)
         
         self.viewModel?.output.buttonName
@@ -75,30 +96,22 @@ extension PictureUploadRequestView {
                 guard let self else { return }
                 
                 self.setButton.setTitle(name, for: .normal)
+                self.setButton.backgroundColor = .keycolorPrimary3
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func inputBind() {
+        self.collectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                self.fetchButtonEnable()
             })
             .disposed(by: disposeBag)
         
-        self.collectionView.rx.itemSelected
-            .subscribe(onNext: { [weak self] indexPath in
-                guard let self, let sender = self.viewModel?.output.sender.value else { return }
-                
-                switch sender {
-                case .pictureRequest, .pictureRequestWithIcon:
-                    
-                    self.collectionView.visibleCells.enumerated().forEach { index, item in
-                        if index == indexPath.row {
-                            item.isSelected.toggle()
-                        } else {
-                            item.isSelected = false
-                        }
-                    }
-                    
-                case .sherlDogRequest:
-                    self.collectionView.visibleCells[indexPath.row].isSelected.toggle()
-                    
-                case .sherlDogResult: return    // .sherlDogResult is read only
-                }
-                
+        self.collectionView.rx.itemDeselected
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
                 self.fetchButtonEnable()
             })
             .disposed(by: disposeBag)
@@ -129,10 +142,11 @@ extension PictureUploadRequestView {
             return
         }
         
-        if self.collectionView.indexPathsForSelectedItems == nil {
-            self.setButton.isEnabled = false
-        } else {
+        guard let count = self.collectionView.indexPathsForSelectedItems?.count else { return }
+        if count > 0 {
             self.setButton.isEnabled = true
+        } else {
+            self.setButton.isEnabled = false
         }
     }
 
@@ -140,6 +154,9 @@ extension PictureUploadRequestView {
         view.backgroundColor = .white
         view.addSubview(collectionView)
         view.addSubview(setButton)
+        
+        setButton.layer.cornerRadius = 6
+        setButton.layer.masksToBounds = true
 
         collectionView.register(PictureUploadRequestViewCell.self,
                                 forCellWithReuseIdentifier: PictureUploadRequestViewCell.identifier)
@@ -149,8 +166,15 @@ extension PictureUploadRequestView {
     }
 
     private func configureUI() {
-        collectionView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(20)
+        collectionView.snp.makeConstraints {
+            $0.edges.equalToSuperview().inset(20)
+        }
+        
+        setButton.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(21.5)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
+            $0.height.equalTo(52)
         }
     }
 
