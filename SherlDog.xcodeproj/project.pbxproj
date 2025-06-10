@@ -15,7 +15,6 @@
 		39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E522DF0455C0008A54D /* FirebaseAuth */; };
 		39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E542DF0455C0008A54D /* FirebaseFirestore */; };
 		39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E562DF0455C0008A54D /* FirebaseStorage */; };
-		F1CC70CA2DF718270038A80C /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1CC70C92DF718270038A80C /* FirebaseCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,29 +25,17 @@
 		39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				BreedSearchViewController.swift,
 				Info.plist,
 			);
 			target = 39BA2DAB2DF03A030008A54D /* SherlDog */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
-/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-		395E4FEC2DF1A73300354780 /* Exceptions for "SherlDog" folder in "Copy Bundle Resources" phase from "SherlDog" target */ = {
-			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
-			buildPhase = 39BA2DAA2DF03A030008A54D /* Resources */;
-			membershipExceptions = (
-				BreedSearchViewController.swift,
-			);
-		};
-/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		39BA2DAE2DF03A030008A54D /* SherlDog */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */,
-				395E4FEC2DF1A73300354780 /* Exceptions for "SherlDog" folder in "Copy Bundle Resources" phase from "SherlDog" target */,
 			);
 			path = SherlDog;
 			sourceTree = "<group>";
@@ -67,7 +54,6 @@
 				39BA2DC82DF03B3C0008A54D /* RxRelay in Frameworks */,
 				39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */,
 				39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */,
-				F1CC70CA2DF718270038A80C /* FirebaseCore in Frameworks */,
 				39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -79,7 +65,6 @@
 			isa = PBXGroup;
 			children = (
 				39BA2DAE2DF03A030008A54D /* SherlDog */,
-				F1CC70C82DF718270038A80C /* Frameworks */,
 				39BA2DAD2DF03A030008A54D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,13 +75,6 @@
 				39BA2DAC2DF03A030008A54D /* SherlDog.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		F1CC70C82DF718270038A80C /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -127,7 +105,6 @@
 				39BA2E522DF0455C0008A54D /* FirebaseAuth */,
 				39BA2E542DF0455C0008A54D /* FirebaseFirestore */,
 				39BA2E562DF0455C0008A54D /* FirebaseStorage */,
-				F1CC70C92DF718270038A80C /* FirebaseCore */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -209,7 +186,6 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -238,7 +214,6 @@
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -473,11 +448,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
-		};
-		F1CC70C92DF718270038A80C /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

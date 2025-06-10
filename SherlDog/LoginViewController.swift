@@ -14,6 +14,9 @@ class LoginViewController: UIViewController {
     private struct Constants {
         static let splashDuration: TimeInterval = 2.0
         static let animationDuration: TimeInterval = 0.5
+        static let helloLabelSize: CGFloat = 24
+        static let helloLabel2Size: CGFloat = 18
+        static let orLabelSize: CGFloat = 12
         static let logoHeight: CGFloat = 200
         static let buttonHeight: CGFloat = 54
         static let socialButtonSize: CGFloat = 50
@@ -22,7 +25,7 @@ class LoginViewController: UIViewController {
         static let imageWidthMultiplier: CGFloat = 0.8
     }
     
-    // MARK: - Properties
+    // MARK: - 컴포넌트
     let splashView = SplashView()
     
     private let logo: UIImageView = {
@@ -35,7 +38,7 @@ class LoginViewController: UIViewController {
     private let helloLabel: UILabel = {
         let label = UILabel()
         label.text = "반가워요!"
-        label.font = UIFont(name: "EF_jejudoldam", size: 24)
+        label.font = UIFont(name: "EF_jejudoldam", size: Constants.helloLabelSize)
         label.textAlignment = .center
         return label
     }()
@@ -43,7 +46,7 @@ class LoginViewController: UIViewController {
     private let helloLabel2: UILabel = {
         let label = UILabel()
         label.text = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
-        label.font = UIFont(name: "EF_jejudoldam", size: 18)
+        label.font = UIFont(name: "EF_jejudoldam", size: Constants.helloLabel2Size)
         label.textAlignment = .center
         return label
     }()
@@ -72,7 +75,7 @@ class LoginViewController: UIViewController {
     private let orLabel: UILabel = {
         let label = UILabel()
         label.text = "또는"
-        label.font = UIFont(name: "Pretendard", size: 12)
+        label.font = UIFont(name: "Pretendard", size: Constants.orLabelSize)
         label.textAlignment = .center
         return label
     }()
@@ -104,11 +107,12 @@ class LoginViewController: UIViewController {
         setupUI()
         setupConstraints()
         setupSplashView()
+        navigationItem.backButtonTitle = ""
     }
     
     // MARK: - Setup
     private func setupUI() {
-        view.backgroundColor = .white
+        view.backgroundColor = UIColor(hex: "F0EFE9")
         
         [logo, helloLabel, helloLabel2, joinImage, orLabel,
          naverButton, kakaoButton, googleButton, appleButton, facebookButton]
@@ -174,8 +178,10 @@ class LoginViewController: UIViewController {
     private func setupSocialButtonsStack() {
         let socialStack = UIStackView(arrangedSubviews: [googleButton, appleButton, facebookButton])
         socialStack.axis = .horizontal
+        // 최소 간격
         socialStack.spacing = 20
         socialStack.alignment = .center
+        // 남는 간격
         socialStack.distribution = .equalSpacing
         view.addSubview(socialStack)
         
@@ -195,14 +201,17 @@ class LoginViewController: UIViewController {
     // MARK: - Actions
     @objc private func kakaoLoginTapped() {
         print("Kakao login tapped")
+        navigationController?.pushViewController(PetProfileViewController(), animated: true)
     }
     
     @objc private func naverLoginTapped() {
         print("Naver login tapped")
+        navigationController?.pushViewController(PetProfileViewController(), animated: true)
     }
     
     @objc private func googleLoginTapped() {
         print("Google login tapped")
+        navigationController?.pushViewController(PetProfileViewController(), animated: true)
     }
     
     @objc private func appleLoginTapped() {

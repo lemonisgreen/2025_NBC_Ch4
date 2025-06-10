@@ -19,7 +19,7 @@ class SplashView: UIView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        self.backgroundColor = .white
+        self.backgroundColor = UIColor(hex: "F0EFE9")
         setUpUI()
     }
 
