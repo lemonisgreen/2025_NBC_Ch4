@@ -112,8 +112,8 @@ class PictureUploadRequestViewModel {
                         default: return
                         }
                         
-                    case .sherlDogRequest:  // 산책갈 강아지 선택
-                        print("선택한 강아지: \(index)")
+                    case .sherlDogRequest:  // 수사할 탐정 선택
+                        print("함께 수사할 탐정: \(index)")
                         
                     case .sherlDogResult: return    // .sherlDogResult is read only
                     }

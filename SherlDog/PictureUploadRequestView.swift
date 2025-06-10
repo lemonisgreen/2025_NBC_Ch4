@@ -99,24 +99,41 @@ extension PictureUploadRequestView {
                 case .sherlDogResult: return    // .sherlDogResult is read only
                 }
                 
+                self.fetchButtonEnable()
             })
             .disposed(by: disposeBag)
         
         self.setButton.rx.tap
             .subscribe { [weak self] _ in
                 guard let self else { return }
+                // 함께 수사한 탐정 모달이면 창 닫고 끝냄
+                guard self.viewModel?.output.sender.value != .sherlDogResult else {
+                    self.dismiss(animated: true)
+                    return
+                }
                 
                 var selectedIndex: [Int] = []
                 
-                self.collectionView.visibleCells.enumerated().forEach { index, item in
-                    if item.isSelected {
-                        selectedIndex.append(index)
-                    }
+                collectionView.indexPathsForSelectedItems?.forEach {
+                    selectedIndex.append($0.row)
                 }
                 
                 self.viewModel?.input.accept(.setButtonTapped(selectedIndex))
             }
             .disposed(by: disposeBag)
+    }
+    
+    private func fetchButtonEnable() {
+        guard self.viewModel?.output.sender.value != .sherlDogResult else {
+            self.setButton.isEnabled = true
+            return
+        }
+        
+        if self.collectionView.indexPathsForSelectedItems == nil {
+            self.setButton.isEnabled = false
+        } else {
+            self.setButton.isEnabled = true
+        }
     }
 
     private func setupUI() {
