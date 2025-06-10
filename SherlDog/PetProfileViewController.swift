@@ -32,7 +32,6 @@ class PetProfileViewController: UIViewController {
         let imageView = UIImageView()
         imageView.image = UIImage(named: "sherlDog") // 자산에 등록 필요
         imageView.contentMode = .scaleAspectFit
-        imageView.alpha = 0.5
         return imageView
     }()
     
