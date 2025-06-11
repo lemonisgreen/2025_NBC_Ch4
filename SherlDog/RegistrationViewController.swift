@@ -10,41 +10,66 @@ import SnapKit
 
 class RegistrationViewController: UIViewController {
     
-    let background = EmptyFieldView()
     let registrationLabel = UILabel()
     let registImage = UIButton()
     let registNameLabel = UILabel()
     let registNameCountLabel = UILabel()
     let registNameAlertLabel = UILabel()
-    let registName = UITextField()
+    let registName = RegistrationTextField(text: "이름을 입력하세요")
     let registBreedLabel = UILabel()
-    let registBreed = UIButton()
+    let registBreed = RegistrationSearchButton(title: " ")
     let registSizeLabel = UILabel()
-    let registSizeSmallButton = RegistrationSelectButton()
-    let registSizeMediumButton = RegistrationSelectButton()
-    let registSizeLargeButton = RegistrationSelectButton()
+    let registSizeStackView = UIStackView()
+    let registSizeSmallButton = RegistrationSelectButton(title: "소형견")
+    let registSizeMediumButton = RegistrationSelectButton(title: "중형견")
+    let registSizeLargeButton = RegistrationSelectButton(title: "대형견")
     let registAgeLabel = UILabel()
-    let registAgeButton = UIButton()
+    let registAgeButton = RegistrationSearchButton(title: "YYYY-MM-DD (n세)")
     let registGenderLabel = UILabel()
-    let registGenderFemale = RegistrationSelectButton()
-    let registGenderMale = RegistrationSelectButton()
+    let registGenderStackView = UIStackView()
+    let registGenderFemale = RegistrationSelectButton(title: "여아")
+    let registGenderMale = RegistrationSelectButton(title: "남아")
     let registNeuteredLabel = UILabel()
-    let registNeuteredTrue = RegistrationSelectButton()
-    let registNeuteredFalse = RegistrationSelectButton()
+    let registNeuteredStackView = UIStackView()
+    let registNeuteredTrue = RegistrationSelectButton(title: "중성화 했어요")
+    let registNeuteredFalse = RegistrationSelectButton(title: "중성화 안 했어요")
     let registIntroduceLabel = UILabel()
-    let registIntroduce = UITextField()
+    let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         setupUI()
         configureUI()
     }
     
     private func setupUI() {
-    
+        
         [
-            background,
+            registSizeSmallButton,
+            registSizeMediumButton,
+            registSizeLargeButton
+        ]
+            .forEach {
+                registSizeStackView.addArrangedSubview($0)
+            }
+        [
+            registGenderFemale,
+            registGenderMale,
+        ]
+            .forEach {
+                registGenderStackView.addArrangedSubview($0)
+            }
+        [
+            registNeuteredTrue,
+            registNeuteredFalse,
+        ]
+            .forEach {
+                registNeuteredStackView.addArrangedSubview($0)
+            }
+        
+        [
             registrationLabel,
             registImage,
             registNameLabel,
@@ -54,17 +79,13 @@ class RegistrationViewController: UIViewController {
             registBreedLabel,
             registBreed,
             registSizeLabel,
-            registSizeSmallButton,
-            registSizeMediumButton,
-            registSizeLargeButton,
+            registSizeStackView,
             registAgeLabel,
             registAgeButton,
             registGenderLabel,
-            registGenderFemale,
-            registGenderMale,
+            registGenderStackView,
             registNeuteredLabel,
-            registNeuteredTrue,
-            registNeuteredFalse,
+            registNeuteredStackView,
             registIntroduceLabel,
             registIntroduce,
         ].forEach {
@@ -78,6 +99,9 @@ class RegistrationViewController: UIViewController {
         registrationLabel.textColor = .textPrimary
         registrationLabel.font = .highlight3
         
+        //MARK: 사진 --
+
+        
         //MARK: 이름 --
         registNameLabel.text = "이름"
         registNameLabel.textColor = .textPrimary
@@ -87,8 +111,6 @@ class RegistrationViewController: UIViewController {
         registNameCountLabel.textColor = .gray400
         registNameCountLabel.font = .alert2
         
-        //registName
-        
         registNameAlertLabel.text = "공백 없이 입력해 주세요"
         registNameAlertLabel.textColor = .textAlert
         registNameAlertLabel.font = .alert2
@@ -97,51 +119,47 @@ class RegistrationViewController: UIViewController {
         registBreedLabel.text = "견종"
         registBreedLabel.textColor = .textPrimary
         registBreedLabel.font = .body1
-        
-        //registBreed
-        
+                
         //MARK: 크기 --
         registSizeLabel.text = "크기"
         registSizeLabel.textColor = .textPrimary
         registSizeLabel.font = .body1
         
-//        registSizeSmallButton
-//        
-//        registSizeMediumButton
-//        
-//        registSizeLargeButton
-//
+        registSizeStackView.axis = .horizontal
+        registSizeStackView.spacing = 12
+        registSizeStackView.alignment = .fill
+        registSizeStackView.distribution = .fillEqually
+   
         //MARK: 나이 --
         registAgeLabel.text = "나이"
         registAgeLabel.textColor = .textPrimary
         registAgeLabel.font = .body1
-        
-        //registAgeButton
-        
+                
         //MARK: 성별 --
         registGenderLabel.text = "성별"
         registGenderLabel.textColor = .textPrimary
         registGenderLabel.font = .body1
         
-        //registGenderFemale
-        
-        //registGenderMale
+        registGenderStackView.axis = .horizontal
+        registGenderStackView.spacing = 12
+        registGenderStackView.alignment = .fill
+        registGenderStackView.distribution = .fillEqually
         
         //MARK: 중성화 --
         registNeuteredLabel.text = "중성화"
         registNeuteredLabel.textColor = .textPrimary
         registNeuteredLabel.font = .body1
         
-        //registNeuteredTrue
-        
-        //registNeuteredFalse
+        registNeuteredStackView.axis = .horizontal
+        registNeuteredStackView.spacing = 12
+        registNeuteredStackView.alignment = .fill
+        registNeuteredStackView.distribution = .fillEqually
         
         //MARK: 성격 및 특성 --
         registIntroduceLabel.text = "성격 및 특성"
         registNeuteredLabel.textColor = .textPrimary
         registNeuteredLabel.font = .body1
         
-        //registIntroduce
     }
     
     private func configureUI() {
@@ -167,7 +185,7 @@ class RegistrationViewController: UIViewController {
         registName.snp.makeConstraints {
             $0.top.equalTo(registNameLabel.snp.bottom).offset(8)
             $0.leading.equalTo(registImage.snp.trailing)
-            $0.height.equalTo(44)
+            $0.trailing.equalToSuperview().inset(16)
         }
         
         registNameCountLabel.snp.makeConstraints {
@@ -191,7 +209,7 @@ class RegistrationViewController: UIViewController {
         registBreed.snp.makeConstraints {
             $0.top.equalTo(registBreedLabel.snp.bottom).offset(8)
             $0.leading.equalTo(registImage.snp.trailing)
-            $0.height.equalTo(44)
+            $0.trailing.equalToSuperview().inset(16)
         }
         
         registSizeLabel.snp.makeConstraints {
@@ -200,23 +218,9 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(22)
         }
         
-        registSizeSmallButton.snp.makeConstraints {
+        registSizeStackView.snp.makeConstraints {
             $0.top.equalTo(registSizeLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
-        }
-        
-        registSizeMediumButton.snp.makeConstraints {
-            $0.top.equalTo(registSizeLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(registSizeSmallButton.snp.trailing).inset(12)
-            $0.height.equalTo(48)
-        }
-        
-        registSizeLargeButton.snp.makeConstraints {
-            $0.top.equalTo(registSizeLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(registSizeSmallButton.snp.trailing).inset(12)
-            $0.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
         registAgeLabel.snp.makeConstraints {
@@ -227,8 +231,7 @@ class RegistrationViewController: UIViewController {
         
         registAgeButton.snp.makeConstraints {
             $0.top.equalTo(registAgeLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().inset(16)
-            $0.height.equalTo(22)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
         registGenderLabel.snp.makeConstraints {
@@ -237,36 +240,20 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(22)
         }
         
-        registGenderFemale.snp.makeConstraints {
+        registGenderStackView.snp.makeConstraints {
             $0.top.equalTo(registGenderLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
-        registGenderMale.snp.makeConstraints {
-            $0.top.equalTo(registGenderLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(registGenderFemale.snp.trailing).inset(12)
-            $0.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
-        }
-       
         registNeuteredLabel.snp.makeConstraints {
             $0.top.equalTo(registGenderFemale.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
         
-        registNeuteredTrue.snp.makeConstraints {
+        registNeuteredStackView.snp.makeConstraints {
             $0.top.equalTo(registNeuteredLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
-        }
-        
-        registNeuteredFalse.snp.makeConstraints {
-            $0.top.equalTo(registNeuteredLabel.snp.bottom).offset(8)
-            $0.leading.equalTo(registNeuteredTrue.snp.trailing).inset(12)
-            $0.trailing.equalToSuperview().inset(-16)
-            $0.height.equalTo(48)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
         registIntroduceLabel.snp.makeConstraints {
@@ -277,8 +264,7 @@ class RegistrationViewController: UIViewController {
         
         registIntroduce.snp.makeConstraints {
             $0.top.equalTo(registIntroduceLabel.snp.bottom).offset(8)
-            $0.leading.equalToSuperview().inset(16)
-            $0.height.equalTo(48)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
     }
 }
