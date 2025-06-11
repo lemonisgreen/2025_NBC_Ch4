@@ -20,6 +20,7 @@ class PictureUploadRequestView: UIViewController {
     private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestSection>(
         configureCell: { dataSource, collectionView, indexPath, section in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PictureUploadRequestViewCell.identifier, for: indexPath) as? PictureUploadRequestViewCell else { return UICollectionViewCell() }
+            
             cell.settingCell(text: section.title, imageName: section.image)
 
             return cell
@@ -39,7 +40,7 @@ class PictureUploadRequestView: UIViewController {
 
     init(viewModel: PictureUploadRequestViewModel?) {
         self.viewModel = viewModel
-        self.viewModel?.input.accept(.sender(.sherlDogRequest)) // test
+        self.viewModel?.input.accept(.sender(.pictureRequestWithIcon)) // test
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -59,6 +60,11 @@ extension PictureUploadRequestView {
         configureUI()
         outputBind()
         inputBind()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.navigationBar.isHidden = true
     }
 
 }
@@ -97,6 +103,17 @@ extension PictureUploadRequestView {
                 
                 self.setButton.setTitle(name, for: .normal)
                 self.setButton.backgroundColor = .keycolorPrimary3
+            })
+            .disposed(by: disposeBag)
+        
+        self.viewModel?.output.moveToView
+            .subscribe(onNext: { list in
+                switch list {
+                case .camera: print("camera")
+                case .album: print("album")
+                case .avatar:
+                    self.navigationController?.pushViewController(SelectDefaultAvatarViewController(), animated: true)
+                }
             })
             .disposed(by: disposeBag)
     }
@@ -195,7 +212,7 @@ extension PictureUploadRequestView {
                                                                  elementKind: UICollectionView.elementKindSectionHeader,
                                                                  alignment: .top)
         section.boundarySupplementaryItems = [header]
-
+        
         return UICollectionViewCompositionalLayout(section: section)
     }
 }

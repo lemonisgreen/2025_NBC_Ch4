@@ -38,7 +38,7 @@ class PictureUploadRequestViewHeader: UICollectionReusableView {
 
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(20)
+            $0.leading.equalToSuperview().inset(16)
             $0.centerY.equalToSuperview()
         }
     }

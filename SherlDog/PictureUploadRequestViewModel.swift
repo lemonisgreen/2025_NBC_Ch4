@@ -19,6 +19,12 @@ class PictureUploadRequestViewModel {
         case sherlDogResult
     }
     
+    enum MoveToView {
+        case camera
+        case album
+        case avatar
+    }
+    
     struct CellList {
         let title: String
         let image: String
@@ -33,6 +39,7 @@ class PictureUploadRequestViewModel {
         let sender = BehaviorRelay<RequestSender?>(value: nil)
         let buttonName = BehaviorRelay<String>(value: "")
         let cellData = BehaviorRelay(value: [RequestSection]())
+        let moveToView = PublishRelay<MoveToView>()
     }
     
     typealias RequestSection = SectionModel<String, CellList>
@@ -99,16 +106,16 @@ class PictureUploadRequestViewModel {
                     switch sender {
                     case .pictureRequest:
                         switch index.first {
-                        case 0: print("선택한 버튼: 사진 찍기")
-                        case 1: print("선택한 버튼: 사진 보관함")
+                        case 0: self.output.moveToView.accept(.camera); print("선택한 버튼: 사진 찍기")
+                        case 1: self.output.moveToView.accept(.album); print("선택한 버튼: 사진 보관함")
                         default: return
                         }
                         
                     case .pictureRequestWithIcon:
                         switch index.first {
-                        case 0: print("선택한 버튼: 기본 이미지 설정")
-                        case 1: print("선택한 버튼: 사진 찍기")
-                        case 2: print("선택한 버튼: 사진 보관함")
+                        case 0: self.output.moveToView.accept(.avatar); print("선택한 버튼: 기본 이미지 설정")
+                        case 1: self.output.moveToView.accept(.camera); print("선택한 버튼: 사진 찍기")
+                        case 2: self.output.moveToView.accept(.album); print("선택한 버튼: 사진 보관함")
                         default: return
                         }
                         
