@@ -9,7 +9,6 @@ import UIKit
 import SnapKit
 
 class ButtonManager: UIButton {
-    
 
     init(title: String, backgroundColor: UIColor = UIColor(named: "keycolorPrimary1") ?? .systemBlue, titleColor: UIColor = .white, width: CGFloat = 52) {
         super.init(frame: .zero)
@@ -20,7 +19,6 @@ class ButtonManager: UIButton {
         fatalError("init(coder:) has not been implemented")
     }
 
-    
     private func configureUI(title: String, backgroundColor: UIColor, titleColor: UIColor, width: CGFloat){
           
          setTitle(title, for: .normal)
