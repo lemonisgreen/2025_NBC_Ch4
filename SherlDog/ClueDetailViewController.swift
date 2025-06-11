@@ -44,7 +44,7 @@ final class ClueDetailViewController: UIViewController {
 
         clueTextView.backgroundColor = .clear
         clueTextView.textColor = .black
-        clueTextView.font = UIFont(name: "Pretendard-Regular", size: 14)
+        clueTextView.font = .body6
         clueTextView.isEditable = false
         
         [polaroidBackgroundImageView, clipNoteBackgroundImageView, clueTextView].forEach { view.addSubview($0) }
