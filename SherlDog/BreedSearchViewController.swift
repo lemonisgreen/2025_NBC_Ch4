@@ -17,7 +17,19 @@ class BreedSearchViewController: UIViewController {
         static let closeButtonSize: CGFloat = 24
         static let imageSize: CGFloat = 80
         static let padding: CGFloat = 20
+        static let cellHeight: CGFloat = 60
     }
+    
+    // MARK: - Properties
+    private var allBreeds: [String] = [
+        "골든 리트리버", "래브라도 리트리버", "저먼 셰퍼드", "불독", "비글",
+        "푸들", "로트와일러", "요크셔 테리어", "닥스훈트", "시베리안 허스키",
+        "보더 콜리", "복서", "그레이트 데인", "시츄", "보스턴 테리어",
+        "폼피츠", "치와와", "말티즈", "코기", "진돗개"
+    ]
+    
+    private var filteredBreeds: [String] = []
+    private var isSearching: Bool = false
     
     // MARK: - UI Components
     private let titleLabel: UILabel = {
@@ -40,7 +52,7 @@ class BreedSearchViewController: UIViewController {
         tf.placeholder = "검색"
         tf.backgroundColor = .white
         tf.layer.borderWidth = 1
-        tf.layer.borderColor = UIColor(hex: "C7C7CC").cgColor
+        tf.layer.borderColor = UIColor.gray200.cgColor
         tf.layer.cornerRadius = 8
         tf.font = .systemFont(ofSize: 16)
         return tf
@@ -59,9 +71,68 @@ class BreedSearchViewController: UIViewController {
         let label = UILabel()
         label.text = "어떤 견종을 찾으시나요?"
         label.textColor = .systemGray
-        label.font = .systemFont(ofSize: 14)
+        label.font = .systemFont(ofSize: 14, weight: .medium)
         label.textAlignment = .center
         return label
+    }()
+    
+    // MARK: - No Results Components
+    private let noResultsImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.image = UIImage(named: "noResultDog") // 검색 결과 없음 이미지
+        iv.contentMode = .scaleAspectFit
+        iv.tintColor = .systemGray3
+        iv.isHidden = true
+        return iv
+    }()
+    
+    private let noResultsLabel: UILabel = {
+        let label = UILabel()
+        label.text = "검색 결과가 없습니다"
+        label.textColor = .systemGray
+        label.font = .systemFont(ofSize: 16, weight: .medium)
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
+    }()
+    
+    private let noResultsDescriptionLabel: UILabel = {
+        let label = UILabel()
+        label.text = "원하시는 견종이 검색결과에 없다면\n직접 견종을 추가해보세요"
+        label.textColor = .systemGray2
+        label.font = .systemFont(ofSize: 14)
+        label.textAlignment = .center
+        label.numberOfLines = 2
+        label.isHidden = true
+        return label
+    }()
+    
+    private let addBreedButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("견종 직접 추가", for: .normal)
+        button.setTitleColor(.keycolorPrimary1, for: .normal)
+        button.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
+        button.backgroundColor = .clear
+        button.layer.borderWidth = 1
+        button.layer.borderColor = UIColor.keycolorPrimary1.cgColor
+        button.layer.cornerRadius = 8
+        button.isHidden = true
+        return button
+    }()
+    
+    private lazy var tableView: UITableView = {
+        let tv = UITableView()
+        tv.delegate = self
+        tv.dataSource = self
+        tv.backgroundColor = .clear
+        // 구분선
+        tv.separatorStyle = .singleLine
+        tv.separatorColor = UIColor.gray200
+        tv.register(BreedTableViewCell.self, forCellReuseIdentifier: "BreedCell")
+        tv.isHidden = true
+        //테이블뷰를 스크롤할때 키보드가 자동으로 내려감.
+        tv.keyboardDismissMode = .onDrag
+        return tv
     }()
     
     // MARK: - Lifecycle
@@ -70,17 +141,20 @@ class BreedSearchViewController: UIViewController {
         view.backgroundColor = .white
         setupUI()
         setupConstraints()
+        setupSearchTextField()
     }
     
     // MARK: - Setup
     private func setupUI() {
         searchTextField.setLeftPaddingIcon(systemName: "magnifyingglass")
         
-        [titleLabel, closeButton, searchTextField, emptyImageView, emptyLabel].forEach {
+        [titleLabel, closeButton, searchTextField, emptyImageView, emptyLabel,
+         noResultsImageView, noResultsLabel, noResultsDescriptionLabel, addBreedButton, tableView].forEach {
             view.addSubview($0)
         }
         
         closeButton.addTarget(self, action: #selector(closeButtonTapped), for: .touchUpInside)
+        addBreedButton.addTarget(self, action: #selector(addBreedButtonTapped), for: .touchUpInside)
     }
     
     private func setupConstraints() {
@@ -103,7 +177,7 @@ class BreedSearchViewController: UIViewController {
         
         emptyImageView.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.top.equalTo(searchTextField.snp.bottom).offset(80)
+            $0.top.equalTo(searchTextField.snp.bottom).offset(150)
             $0.size.equalTo(Constants.imageSize)
         }
         
@@ -111,11 +185,184 @@ class BreedSearchViewController: UIViewController {
             $0.top.equalTo(emptyImageView.snp.bottom).offset(12)
             $0.centerX.equalToSuperview()
         }
+        
+        tableView.snp.makeConstraints {
+            $0.top.equalTo(searchTextField.snp.bottom).offset(8)
+            $0.leading.trailing.bottom.equalToSuperview()
+        }
+        
+        // No Results Components Constraints
+        noResultsImageView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.top.equalTo(searchTextField.snp.bottom).offset(120)
+            $0.size.equalTo(Constants.imageSize)
+        }
+        
+        noResultsLabel.snp.makeConstraints {
+            $0.top.equalTo(noResultsImageView.snp.bottom).offset(16)
+            $0.centerX.equalToSuperview()
+        }
+        
+        noResultsDescriptionLabel.snp.makeConstraints {
+            $0.top.equalTo(noResultsLabel.snp.bottom).offset(8)
+            $0.centerX.equalToSuperview()
+            $0.leading.trailing.equalToSuperview().inset(40)
+        }
+        
+        addBreedButton.snp.makeConstraints {
+            $0.top.equalTo(noResultsDescriptionLabel.snp.bottom).offset(24)
+            $0.centerX.equalToSuperview()
+            $0.width.equalTo(140)
+            $0.height.equalTo(40)
+        }
+    }
+    
+    private func setupSearchTextField() {
+        searchTextField.addTarget(self, action: #selector(searchTextChanged), for: .editingChanged)
+        searchTextField.delegate = self
     }
     
     // MARK: - Actions
     @objc private func closeButtonTapped() {
         dismiss(animated: true)
+    }
+    
+    @objc private func addBreedButtonTapped() {
+        guard let searchText = searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !searchText.isEmpty else { return }
+        
+        // 견종을 allBreeds 배열에 추가
+        allBreeds.append(searchText)
+        
+        // 선택된 견종 처리 (여기서 delegate나 completion handler 호출 가능)
+        print("직접 추가된 견종: \(searchText)")
+        
+        // 화면 닫기
+        dismiss(animated: true)
+    }
+    
+    @objc private func searchTextChanged() {
+        guard let searchText = searchTextField.text else { return }
+        
+        if searchText.isEmpty {
+            showEmptyState()
+        } else {
+            showSearchResults(for: searchText)
+        }
+    }
+    
+    // MARK: - Private Methods
+    private func showEmptyState() {
+        isSearching = false
+        
+        // 모든 상태 초기화
+        hideAllStates()
+        
+        // 빈 상태 표시
+        emptyImageView.isHidden = false
+        emptyLabel.isHidden = false
+        
+        UIView.animate(withDuration: 0.3) {
+            self.emptyImageView.alpha = 1
+            self.emptyLabel.alpha = 1
+        }
+    }
+    
+    private func showSearchResults(for searchText: String) {
+        isSearching = true
+        
+        // 필터링 로직
+        filteredBreeds = allBreeds.filter { breed in
+            breed.localizedCaseInsensitiveContains(searchText)
+        }
+        
+        // UI 업데이트
+        hideAllStates()
+        
+        if filteredBreeds.isEmpty {
+            // 검색 결과 없음 상태
+            showNoResultsState()
+        } else {
+            // 검색 결과 있음 상태
+            tableView.isHidden = false
+            tableView.reloadData()
+        }
+    }
+    
+    // 검색 결과 없음 상태
+    private func showNoResultsState() {
+        noResultsImageView.isHidden = false
+        noResultsLabel.isHidden = false
+        noResultsDescriptionLabel.isHidden = false
+        addBreedButton.isHidden = false
+        
+        UIView.animate(withDuration: 0.3) {
+            self.noResultsImageView.alpha = 1
+            self.noResultsLabel.alpha = 1
+            self.noResultsDescriptionLabel.alpha = 1
+            self.addBreedButton.alpha = 1
+        }
+    }
+    
+    private func hideAllStates() {
+        // 빈 상태 숨김
+        emptyImageView.isHidden = true
+        emptyLabel.isHidden = true
+        emptyImageView.alpha = 0
+        emptyLabel.alpha = 0
+        
+        // 검색 결과 없음 상태 숨김
+        noResultsImageView.isHidden = true
+        noResultsLabel.isHidden = true
+        noResultsDescriptionLabel.isHidden = true
+        addBreedButton.isHidden = true
+        noResultsImageView.alpha = 0
+        noResultsLabel.alpha = 0
+        noResultsDescriptionLabel.alpha = 0
+        addBreedButton.alpha = 0
+        
+        // 테이블뷰 숨김
+        tableView.isHidden = true
+    }
+}
+
+// MARK: - UITableViewDataSource
+extension BreedSearchViewController: UITableViewDataSource {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        // isSearching이 true 일때 : false 일때
+        return isSearching ? filteredBreeds.count : 0
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "BreedCell", for: indexPath) as! BreedTableViewCell
+        let breed = filteredBreeds[indexPath.row]
+        cell.configure(with: breed)
+        return cell
+    }
+}
+
+// MARK: - UITableViewDelegate
+extension BreedSearchViewController: UITableViewDelegate {
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return Constants.cellHeight
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
+        
+        let selectedBreed = filteredBreeds[indexPath.row]
+        // 선택된 견종 처리
+        print("선택된 견종: \(selectedBreed)")
+        dismiss(animated: true)
+    }
+}
+
+// MARK: - UITextFieldDelegate
+extension BreedSearchViewController: UITextFieldDelegate {
+    // 키보드 리턴키를 입력했을때 키보드 창 내려감.
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
     }
 }
 
@@ -132,5 +379,32 @@ extension UITextField {
         
         self.leftView = container
         self.leftViewMode = .always
+    }
+}
+
+// MARK: - UIColor Extension
+extension UIColor {
+    convenience init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+
+        self.init(
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            alpha: Double(a) / 255
+        )
     }
 }

@@ -21,10 +21,10 @@ class PetProfileViewController: UIViewController {
     // MARK: - 컴포넌트
     private let profileAddButton: UIButton = {
         let button = UIButton()
-        button.backgroundColor = UIColor(hex: "F2F2F7")
+        button.backgroundColor = UIColor.gray100
         button.layer.cornerRadius = 16
         button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor(hex: "8E8E93").cgColor
+        button.layer.borderColor = UIColor.textTertiary.cgColor
         return button
     }()
     
@@ -38,7 +38,7 @@ class PetProfileViewController: UIViewController {
     private let infoLabel: UILabel = {
         let label = UILabel()
         label.text = "멍탐정을 등록해주세요!"
-        label.textColor = UIColor(hex: "#C7C7CC")
+        label.textColor = UIColor.textDisabled
         label.font = .systemFont(ofSize: 16)
         label.textAlignment = .center
         return label
@@ -48,7 +48,7 @@ class PetProfileViewController: UIViewController {
         let button = UIButton()
         button.setTitle("다음", for: .normal)
         button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = UIColor(hex: "C7C7CC")
+        button.backgroundColor = UIColor.textDisabled
         button.layer.cornerRadius = 10
         button.isEnabled = false
         return button
@@ -70,7 +70,7 @@ class PetProfileViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor(hex: "#F0EFE9")
+        view.backgroundColor = UIColor.keycolorBackground
         
         // 프로필 추가 버튼 안에 스택뷰 구성
         let buttonStack = makeProfileButtonStack()
@@ -113,10 +113,10 @@ class PetProfileViewController: UIViewController {
         let circleView = UIView()
         circleView.layer.cornerRadius = 30
         circleView.layer.borderWidth = 2
-        circleView.layer.borderColor = UIColor(hex: "8E8E93").cgColor
+        circleView.layer.borderColor = UIColor.textTertiary.cgColor
         
         let plusImage = UIImageView(image: UIImage(systemName: "plus"))
-        plusImage.tintColor = UIColor(hex: "8E8E93")
+        plusImage.tintColor = UIColor.textTertiary
         plusImage.contentMode = .scaleAspectFit
         circleView.addSubview(plusImage)
         plusImage.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(24) }
@@ -125,7 +125,7 @@ class PetProfileViewController: UIViewController {
         let titleLabel = UILabel()
         titleLabel.text = "프로필 추가하기"
         titleLabel.font = .systemFont(ofSize: 16)
-        titleLabel.textColor = UIColor(hex: "8E8E93")
+        titleLabel.textColor = UIColor.textTertiary
         
         let stack = UIStackView(arrangedSubviews: [circleView, titleLabel])
         stack.axis = .vertical
