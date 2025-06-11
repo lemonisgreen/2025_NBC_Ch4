@@ -6,12 +6,33 @@
 //
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 class AlertManager: UIViewController {
 
     private let backgroundImageView = UIImageView()
     private let messageLabel = UILabel()
-    private let closeButton = UIButton()
+    private let buttonStackView = UIStackView()
+
+    private let message: String
+    private let buttonTitles: [String]
+    private let buttonActions: [(() -> Void)?]
+
+    private let disposeBag = DisposeBag()
+
+    init(message: String, buttonTitles: [String], buttonActions: [(() -> Void)?]) {
+        self.message = message
+        self.buttonTitles = buttonTitles
+        self.buttonActions = buttonActions
+        super.init(nibName: nil, bundle: nil)
+        modalPresentationStyle = .overFullScreen
+        modalTransitionStyle = .crossDissolve
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,45 +42,64 @@ class AlertManager: UIViewController {
     private func setupUI() {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
 
-        backgroundImageView.image = UIImage(named: "alert_background")
+        if buttonTitles.count == 1 {
+            backgroundImageView.image = UIImage(named: "alert_background_single")
+        } else {
+            backgroundImageView.image = UIImage(named: "alert_background_double")
+        }
         backgroundImageView.contentMode = .scaleAspectFill
         backgroundImageView.clipsToBounds = true
         backgroundImageView.layer.cornerRadius = 6
 
-        messageLabel.text = "등록되었습니다."
+        messageLabel.text = message
         messageLabel.textAlignment = .center
         messageLabel.font = UIFont(name: "Pretendard-Medium", size: 18)
         messageLabel.textColor = .black
 
-        closeButton.setTitle("닫기", for: .normal)
-        closeButton.backgroundColor = .white
-        closeButton.setTitleColor(UIColor.black, for: .normal)
-        closeButton.titleLabel?.font = UIFont(name: "Pretendard-Medium", size: 18)
-        closeButton.layer.cornerRadius = 6
-        closeButton.addTarget(self, action: #selector(dismissSelf), for: .touchUpInside)
+        buttonStackView.axis = .horizontal
+        buttonStackView.spacing = 12
+        buttonStackView.distribution = .fillEqually
 
-        [backgroundImageView, messageLabel, closeButton].forEach { view.addSubview($0) }
+        for (index, title) in buttonTitles.enumerated() {
+            let button = UIButton()
+            button.setTitle(title, for: .normal)
+            button.backgroundColor = .white
+            button.setTitleColor(.black, for: .normal)
+            button.titleLabel?.font = UIFont(name: "Pretendard-Medium", size: 18)
+            button.layer.cornerRadius = 6
+            button.tag = index
+
+            button.rx.tap
+                .bind { [weak self] in
+                    guard let self else { return }
+                    self.dismiss(animated: true) {
+                        let action = self.buttonActions[button.tag]
+                        action?()
+                    }
+                }
+                .disposed(by: disposeBag)
+
+            buttonStackView.addArrangedSubview(button)
+        }
+
+        [backgroundImageView, messageLabel, buttonStackView].forEach { view.addSubview($0) }
 
         backgroundImageView.snp.makeConstraints {
             $0.center.equalToSuperview()
             $0.width.equalTo(276)
-            $0.height.equalTo(124)
+            $0.height.equalTo(160)
         }
-        
+
         messageLabel.snp.makeConstraints {
             $0.centerX.equalTo(backgroundImageView)
-            $0.top.equalTo(backgroundImageView.snp.top).offset(30)
+            $0.centerY.equalTo(backgroundImageView.snp.centerY).offset(-25)
         }
 
-        closeButton.snp.makeConstraints {
+        buttonStackView.snp.makeConstraints {
             $0.centerX.equalTo(backgroundImageView)
-            $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(20)
+            $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(15)
             $0.width.equalTo(244)
-            $0.height.equalTo(18)
+            $0.height.equalTo(40)
         }
-    }
-
-    @objc private func dismissSelf() {
-        dismiss(animated: true, completion: nil)
     }
 }
