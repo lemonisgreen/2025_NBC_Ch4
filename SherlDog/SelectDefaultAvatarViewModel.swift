@@ -13,13 +13,12 @@ import Differentiator
 class SelectDefaultAvatarViewModel {
     
     enum Input {
-        case goBack
-        case goNext
+        case goNext(Int)
     }
     
     struct Output {
         let cellData = BehaviorRelay(value: [DataSource]())
-        let buttonOutput = PublishRelay<Input>()
+        let moveToNextPage = PublishRelay<Int>()
     }
     
     typealias DataSource = SectionModel<String, String>
@@ -37,10 +36,8 @@ class SelectDefaultAvatarViewModel {
     private func transform() {
         self.input.bind { input in
             switch input {
-            case .goBack:
-                self.output.buttonOutput.accept(.goBack)
-            case .goNext:
-                self.output.buttonOutput.accept(.goNext)
+            case .goNext(let index):
+                self.output.moveToNextPage.accept(index)
             }
         }
         .disposed(by: disposeBag)

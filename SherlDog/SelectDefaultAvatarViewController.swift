@@ -49,6 +49,13 @@ extension SelectDefaultAvatarViewController {
         setupUI()
         configureUI()
         bind()
+        inputBind()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        choiceButton.isEnabled = false
     }
     
 }
@@ -60,10 +67,26 @@ extension SelectDefaultAvatarViewController {
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
-        
+    }
+    
+    private func inputBind() {
+        self.collectionView.rx.itemSelected
+            .take(1)
+            .subscribe(onNext: { [weak self] _ in
+                self?.choiceButton.isEnabled = true
+            })
+            .disposed(by: disposeBag)
+
         self.backButton.rx.tap
             .subscribe { [weak self] _ in
                 self?.navigationController?.popViewController(animated: true)
+            }
+            .disposed(by: disposeBag)
+        
+        self.choiceButton.rx.tap
+            .subscribe { [weak self] _ in
+                guard let index = self?.collectionView.indexPathsForSelectedItems?.first?.row else { return }
+                self?.viewModel.input.accept(.goNext(index))
             }
             .disposed(by: disposeBag)
     }
