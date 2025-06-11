@@ -37,15 +37,14 @@ class ClueInputViewController: UIViewController {
         
         textView.text = ""
         textView.textColor = .textPrimary
-        textView.font = UIFont(name: "Pretendard-Medium", size: 16)
+        textView.font = .body5
         textView.layer.borderColor = UIColor(named: "gray300")?.cgColor
         textView.layer.borderWidth = 1
         textView.layer.cornerRadius = 6
 
-        // Add placeholder label to textView
         let placeholderLabel = UILabel()
         placeholderLabel.text = "오늘의 수사일지를 간단히 적어주세요."
-        placeholderLabel.font = UIFont(name: "Pretendard-Medium", size: 14)
+        placeholderLabel.font = .body3
         placeholderLabel.textColor = .lightGray
         placeholderLabel.textColor = UIColor.lightGray.withAlphaComponent(0.6)
         placeholderLabel.numberOfLines = 0
