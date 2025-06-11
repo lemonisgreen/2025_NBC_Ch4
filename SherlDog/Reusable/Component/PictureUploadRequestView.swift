@@ -17,7 +17,7 @@ class PictureUploadRequestView: UIViewController {
 
     private let viewModel: PictureUploadRequestViewModel?
     private let disposeBag = DisposeBag()
-    private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestSection>(
+    private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource>(
         configureCell: { dataSource, collectionView, indexPath, section in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PictureUploadRequestViewCell.identifier, for: indexPath) as? PictureUploadRequestViewCell else { return UICollectionViewCell() }
             

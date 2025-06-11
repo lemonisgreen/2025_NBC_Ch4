@@ -38,11 +38,11 @@ class PictureUploadRequestViewModel {
     struct Output {
         let sender = BehaviorRelay<RequestSender?>(value: nil)
         let buttonName = BehaviorRelay<String>(value: "")
-        let cellData = BehaviorRelay(value: [RequestSection]())
+        let cellData = BehaviorRelay(value: [RequestDataSource]())
         let moveToView = PublishRelay<MoveToView>()
     }
     
-    typealias RequestSection = SectionModel<String, CellList>
+    typealias RequestDataSource = SectionModel<String, CellList>
     
     private let disposeBag = DisposeBag()
     
@@ -67,7 +67,7 @@ class PictureUploadRequestViewModel {
                         self.output.sender.accept(.pictureRequest)
                         self.output.buttonName.accept("선택 완료")
                         self.output.cellData.accept([
-                            RequestSection(model: "수사일지 사진 업로드",
+                            RequestDataSource(model: "수사일지 사진 업로드",
                                            items: [
                                             CellList(title: "사진 찍기", image: "imageName"),
                                             CellList(title: "사진 보관함", image: "imageName")
@@ -77,7 +77,7 @@ class PictureUploadRequestViewModel {
                         self.output.sender.accept(.pictureRequestWithIcon)
                         self.output.buttonName.accept("선택 완료")
                         self.output.cellData.accept([
-                            RequestSection(model: "프로필 사진 설정",
+                            RequestDataSource(model: "프로필 사진 설정",
                                            items: [
                                             CellList(title: "기본 아바타 설정", image: "imageName"),
                                             CellList(title: "사진 찍기", image: "imageName"),
@@ -88,14 +88,14 @@ class PictureUploadRequestViewModel {
                         self.output.sender.accept(.sherlDogRequest)
                         self.output.buttonName.accept("선택 완료")
                         self.output.cellData.accept([
-                            RequestSection(model: "어떤 탐정님과 수사를 하실 건가요?",
+                            RequestDataSource(model: "어떤 탐정님과 수사를 하실 건가요?",
                                            items: self.fetchSherlDogList())
                         ])
                     case .sherlDogResult:
                         self.output.sender.accept(.sherlDogResult)
                         self.output.buttonName.accept("닫기")
                         self.output.cellData.accept([
-                            RequestSection(model: "오늘 수사에 함께한 탐정들",
+                            RequestDataSource(model: "오늘 수사에 함께한 탐정들",
                                            items: self.fetchSherlDogList())
                         ])
                     }
