@@ -1,0 +1,12 @@
+//
+//  Config.xcconfig
+//  SherlDog
+//
+//  Created by JIN LEE on 6/5/25.
+//
+
+// Configuration settings file format documentation can be found at:
+// https://help.apple.com/xcode/#/dev745c5c974
+
+APIKey = jusliw8sl3
+CLIENT_ID = jusliw8sl3
