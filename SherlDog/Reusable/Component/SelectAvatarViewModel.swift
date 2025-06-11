@@ -10,18 +10,19 @@ import RxRelay
 import RxDataSources
 import Differentiator
 
-class SelectDefaultAvatarViewModel {
+class SelectAvatarViewModel {
     
     enum Input {
         case goNext(Int)
     }
     
     struct Output {
-        let cellData = BehaviorRelay(value: [DataSource]())
-        let moveToNextPage = PublishRelay<Int>()
+        let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
+        let moveToDetailView = PublishRelay<Void>()
+        let selectedAvatar = BehaviorRelay<Int>(value: 0)
     }
     
-    typealias DataSource = SectionModel<String, String>
+    typealias SelectAvatarDataSource = SectionModel<String, String>
     
     let input = PublishRelay<Input>()
     let output = Output()
@@ -37,7 +38,8 @@ class SelectDefaultAvatarViewModel {
         self.input.bind { input in
             switch input {
             case .goNext(let index):
-                self.output.moveToNextPage.accept(index)
+                self.output.moveToDetailView.accept(())
+                self.output.selectedAvatar.accept(index)
             }
         }
         .disposed(by: disposeBag)
@@ -45,7 +47,7 @@ class SelectDefaultAvatarViewModel {
     
     private func fetchCellData() {
         self.output.cellData.accept([ // smiley
-            DataSource(model: "탐정님과 함께할 조수를 선택해주세요!", items: [
+            SelectAvatarDataSource(model: "탐정님과 함께할 조수를 선택해주세요!", items: [
                 "face.smiling",
                 "face.smiling",
                 "face.smiling",

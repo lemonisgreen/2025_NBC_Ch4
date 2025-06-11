@@ -13,11 +13,11 @@ import Differentiator
 import SnapKit
 
 // MARK: - SelectDefaultAvatarViewController
-class SelectDefaultAvatarViewController: UIViewController {
+class SelectAvatarViewController: UIViewController {
     
-    private let viewModel = SelectDefaultAvatarViewModel()
+    private let viewModel = SelectAvatarViewModel()
     private let disposeBag = DisposeBag()
-    private let dataSource = RxCollectionViewSectionedReloadDataSource<SelectDefaultAvatarViewModel.DataSource>(
+    private let dataSource = RxCollectionViewSectionedReloadDataSource<SelectAvatarViewModel.SelectAvatarDataSource>(
         configureCell: { dataSource, collectionView, IndexPath, section in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SelectAvatarCell.identifier, for: IndexPath) as? SelectAvatarCell else { return .init() }
             
@@ -41,7 +41,7 @@ class SelectDefaultAvatarViewController: UIViewController {
 }
 
 // MARK: - Lifecycle
-extension SelectDefaultAvatarViewController {
+extension SelectAvatarViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,11 +61,20 @@ extension SelectDefaultAvatarViewController {
 }
 
 // MARK: - Method
-extension SelectDefaultAvatarViewController {
+extension SelectAvatarViewController {
     
     private func bind() {
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+        
+        self.viewModel.output.moveToDetailView
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                
+                let detailView = UINavigationController(rootViewController: DetailAvatarViewController(viewModel: self.viewModel))
+                self.present(detailView, animated: true)
+            })
             .disposed(by: disposeBag)
     }
     

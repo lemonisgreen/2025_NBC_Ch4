@@ -112,7 +112,7 @@ extension PictureUploadRequestView {
                 case .camera: print("camera")
                 case .album: print("album")
                 case .avatar:
-                    self.navigationController?.pushViewController(SelectDefaultAvatarViewController(), animated: true)
+                    self.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
                 }
             })
             .disposed(by: disposeBag)
