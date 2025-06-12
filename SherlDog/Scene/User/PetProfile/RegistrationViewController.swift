@@ -7,23 +7,37 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 class RegistrationViewController: UIViewController {
+    
+    let disposeBag = DisposeBag()
     
     let registrationLabel = UILabel()
     let registImage = UIButton()
     let registNameLabel = UILabel()
     let registNameCountLabel = UILabel()
+    let registNameAlertStackView = UIStackView()
     let registNameAlertImage = UIImageView()
     let registNameAlertLabel = UILabel()
     let registName = RegistrationTextField(text: "이름을 입력하세요")
     let registBreedLabel = UILabel()
     let registBreed = RegistrationSearchButton(title: " ")
     let registSizeLabel = UILabel()
-    let registSizeStackView = UIStackView()
-    let registSizeSmallButton = RegistrationSelectButton(title: "소형견")
-    let registSizeMediumButton = RegistrationSelectButton(title: "중형견")
-    let registSizeLargeButton = RegistrationSelectButton(title: "대형견")
+    let registSizeSmallIcon = UIImageView()
+    let registSizeSmallLabel = UILabel()
+    let registSizeSmallStackView = UIStackView()
+    let registSizeSmallButton = RegistrationSelectButton(title: nil)
+    let registSizeMediumIcon = UIImageView()
+    let registSizeMediumLabel = UILabel()
+    let registSizeMediumStackView = UIStackView()
+    let registSizeMediumButton = RegistrationSelectButton(title: nil)
+    let registSizeLargeIcon = UIImageView()
+    let registSizeLargeLabel = UILabel()
+    let registSizeLargeStackView = UIStackView()
+    let registSizeLargeButton = RegistrationSelectButton(title: nil)
+    let registSizeStackButtonView = UIStackView()
     let registAgeLabel = UILabel()
     let registAgeButton = RegistrationSearchButton(title: "YYYY-MM-DD (n세)")
     let registGenderLabel = UILabel()
@@ -44,34 +58,73 @@ class RegistrationViewController: UIViewController {
         
         setupUI()
         configureUI()
+        bind()
     }
     
-    
+    func bind() {
+        self.registName.rx.text
+            .subscribe(onNext: { [weak self]  _ in
+                guard let self,
+                      let text = self.registName.text else { return }
+                
+                // 글자 공백 용납하지 않기
+                let containsWhitespace = text.rangeOfCharacter(from: .whitespaces) != nil
+                self.registNameAlertStackView.isHidden = !containsWhitespace
+                
+                self.registNameCountLabel.text = "\(text.count) / 10 자"
+                
+                if text.count > 10 {
+                    let overText = text.count - 10
+                    self.registName.text?.removeLast(overText)
+                    self.registNameCountLabel.text = "10 / 10 자"
+                }
+            })
+            .disposed(by: disposeBag)
+        
+    }
     
     private func setupUI() {
+        [
+            registNameAlertImage,
+            registNameAlertLabel
+        ].forEach { registNameAlertStackView.addArrangedSubview($0) }
+        
+        [
+            registSizeSmallIcon,
+            registSizeSmallLabel
+        ].forEach { registSizeSmallStackView.addArrangedSubview($0) }
+        
+        [
+            registSizeMediumIcon,
+            registSizeMediumLabel
+        ].forEach { registSizeMediumStackView.addArrangedSubview($0) }
+        
+        [
+            registSizeLargeIcon,
+            registSizeLargeLabel
+        ].forEach { registSizeLargeStackView.addArrangedSubview($0) }
+        
+        registSizeSmallButton.addSubview(registSizeSmallStackView)
+        
+        registSizeMediumButton.addSubview(registSizeMediumStackView)
+        
+        registSizeLargeButton.addSubview(registSizeLargeStackView)
         
         [
             registSizeSmallButton,
             registSizeMediumButton,
             registSizeLargeButton
-        ]
-            .forEach {
-                registSizeStackView.addArrangedSubview($0)
-            }
+        ].forEach { registSizeStackButtonView.addArrangedSubview($0) }
+        
         [
             registGenderFemale,
             registGenderMale,
-        ]
-            .forEach {
-                registGenderStackView.addArrangedSubview($0)
-            }
+        ].forEach { registGenderStackView.addArrangedSubview($0) }
+        
         [
             registNeuteredTrue,
             registNeuteredFalse,
-        ]
-            .forEach {
-                registNeuteredStackView.addArrangedSubview($0)
-            }
+        ].forEach { registNeuteredStackView.addArrangedSubview($0) }
         
         [
             registrationLabel,
@@ -79,12 +132,11 @@ class RegistrationViewController: UIViewController {
             registNameLabel,
             registName,
             registNameCountLabel,
-            registNameAlertImage,
-            registNameAlertLabel,
+            registNameAlertStackView,
+            registSizeStackButtonView,
             registBreedLabel,
             registBreed,
             registSizeLabel,
-            registSizeStackView,
             registAgeLabel,
             registAgeButton,
             registGenderLabel,
@@ -94,9 +146,7 @@ class RegistrationViewController: UIViewController {
             registIntroduceLabel,
             registIntroduce,
             registCompletButton,
-        ].forEach {
-            view.addSubview($0)
-        }
+        ].forEach { view.addSubview($0) }
         
         //MARK: 배경 --
         view.backgroundColor = .keycolorBackground
@@ -106,7 +156,7 @@ class RegistrationViewController: UIViewController {
         registrationLabel.font = .highlight3
         
         //MARK: 사진 --
-
+        
         registImage.setImage(UIImage(named: "smallPolaroid"), for: .normal)
         
         //MARK: 이름 --
@@ -117,6 +167,10 @@ class RegistrationViewController: UIViewController {
         registNameCountLabel.text = "0 / 10 자"
         registNameCountLabel.textColor = .gray400
         registNameCountLabel.font = .alert2
+        
+        registNameAlertStackView.axis = .horizontal
+        registNameAlertStackView.spacing = 4
+        registNameAlertStackView.alignment = .leading
         
         registNameAlertImage.image = UIImage(named: "alertMark")
         registNameAlertImage.contentMode = .scaleAspectFit
@@ -129,22 +183,54 @@ class RegistrationViewController: UIViewController {
         registBreedLabel.text = "견종"
         registBreedLabel.textColor = .textPrimary
         registBreedLabel.font = .body1
-                
+        
         //MARK: 크기 --
         registSizeLabel.text = "크기"
         registSizeLabel.textColor = .textPrimary
         registSizeLabel.font = .body1
         
-        registSizeStackView.axis = .horizontal
-        registSizeStackView.spacing = 12
-        registSizeStackView.alignment = .fill
-        registSizeStackView.distribution = .fillEqually
-   
+        registSizeSmallIcon.image = UIImage(named: "smallDog")
+        registSizeSmallIcon.isUserInteractionEnabled = false
+        registSizeSmallLabel.text = "소형견"
+        registSizeSmallLabel.textColor = .textTertiary
+        registSizeSmallLabel.font = .title3
+        registSizeSmallLabel.isUserInteractionEnabled = false
+
+        registSizeSmallStackView.axis = .horizontal
+        registSizeSmallStackView.spacing = 8
+        registSizeSmallStackView.alignment = .center
+                
+        registSizeMediumIcon.image = UIImage(named: "mediumDog")
+        registSizeMediumIcon.isUserInteractionEnabled = false
+        registSizeMediumLabel.text = "중형견"
+        registSizeMediumLabel.textColor = .textTertiary
+        registSizeMediumLabel.font = .title3
+        registSizeMediumLabel.isUserInteractionEnabled = false
+
+        registSizeMediumStackView.axis = .horizontal
+        registSizeMediumStackView.spacing = 8
+        registSizeMediumStackView.alignment = .center
+        
+        registSizeLargeIcon.image = UIImage(named: "largeDog")
+        registSizeLargeIcon.isUserInteractionEnabled = false
+        registSizeLargeLabel.text = "대형견"
+        registSizeLargeLabel.textColor = .textTertiary
+        registSizeLargeLabel.font = .title3
+        registSizeLargeLabel.isUserInteractionEnabled = false
+
+        registSizeLargeStackView.axis = .horizontal
+        registSizeLargeStackView.spacing = 8
+        registSizeLargeStackView.alignment = .center
+        
+        registSizeStackButtonView.axis = .horizontal
+        registSizeStackButtonView.spacing = 12
+        registSizeStackButtonView.distribution = .fillEqually
+        
         //MARK: 나이 --
         registAgeLabel.text = "나이"
         registAgeLabel.textColor = .textPrimary
         registAgeLabel.font = .body1
-                
+        
         //MARK: 성별 --
         registGenderLabel.text = "성별"
         registGenderLabel.textColor = .textPrimary
@@ -169,7 +255,6 @@ class RegistrationViewController: UIViewController {
         registIntroduceLabel.text = "성격 및 특성"
         registIntroduceLabel.textColor = .textPrimary
         registIntroduceLabel.font = .body1
-        
     }
     
     private func configureUI() {
@@ -198,22 +283,21 @@ class RegistrationViewController: UIViewController {
             $0.trailing.equalToSuperview().inset(16)
         }
         
+        registNameAlertImage.snp.makeConstraints {
+            $0.height.equalTo(17)
+        }
+        
         registNameCountLabel.snp.makeConstraints {
             $0.top.equalTo(registrationLabel.snp.bottom).offset(16)
             $0.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(22)
+            $0.height.equalTo(24)
         }
         
-        registNameAlertImage.snp.makeConstraints {
+        registNameAlertStackView.snp.makeConstraints {
             $0.top.equalTo(registName.snp.bottom).offset(4)
             $0.leading.equalTo(registImage.snp.trailing)
-            $0.height.equalTo(14)
-        }
-        
-        registNameAlertLabel.snp.makeConstraints {
-            $0.top.equalTo(registName.snp.bottom).offset(4)
-            $0.leading.equalTo(registNameAlertImage.snp.trailing).inset(4)
             $0.height.equalTo(17)
+            $0.width.equalTo(132)
         }
         
         registBreedLabel.snp.makeConstraints {
@@ -234,7 +318,31 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(22)
         }
         
-        registSizeStackView.snp.makeConstraints {
+        registSizeSmallIcon.snp.makeConstraints {
+            $0.height.width.equalTo(20)
+        }
+        
+        registSizeSmallStackView.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
+        
+        registSizeMediumIcon.snp.makeConstraints {
+            $0.height.width.equalTo(20)
+        }
+        
+        registSizeMediumStackView.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
+        
+        registSizeLargeIcon.snp.makeConstraints {
+            $0.height.width.equalTo(20)
+        }
+        
+        registSizeLargeStackView.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
+        
+        registSizeStackButtonView.snp.makeConstraints {
             $0.top.equalTo(registSizeLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
         }

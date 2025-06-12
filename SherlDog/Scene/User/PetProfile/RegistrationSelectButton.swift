@@ -9,12 +9,12 @@ import UIKit
 import SnapKit
 
 class RegistrationSelectButton: UIButton {
-    
+        
     override init(frame: CGRect) {
         super.init(frame: frame)
     }
     
-    init(title: String) {
+    init(title: String? = nil) {
         super.init(frame: .zero)
         self.setTitle(title, for: .normal)
         setConfig()
