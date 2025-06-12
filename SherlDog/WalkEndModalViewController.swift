@@ -9,6 +9,7 @@ import UIKit
 
 class WalkEndModalViewController : UIViewController {
     
+    let backgroundImageView = UIImageView()
     let todayLabel = UILabel()
     let distanceLabel = UILabel()
     let timeLabel = UILabel()
@@ -19,6 +20,7 @@ class WalkEndModalViewController : UIViewController {
     let dogImage = UIImageView()
     let walkEndLabel = UILabel()
     let walkShareButton = UIButton()
+    let mapImageView = UIImageView()
     
     let infoStack = UIStackView()
     let timeStack = UIStackView()
@@ -28,8 +30,6 @@ class WalkEndModalViewController : UIViewController {
     let topSeperatorLine = UIView()
     let middleSeperatorLine = UIView()
     let bottomSeperatorLine = UIView()
-    
-    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -42,6 +42,7 @@ class WalkEndModalViewController : UIViewController {
     private func setupUI() {
         
         [
+            backgroundImageView,
             todayLabel,
             distanceLabel,
             timeLabel,
@@ -57,48 +58,58 @@ class WalkEndModalViewController : UIViewController {
             distanceStack,
             stepCountStack,
             topSeperatorLine,
+            mapImageView,
             middleSeperatorLine,
             bottomSeperatorLine
         ].forEach {
             view.addSubview($0)
         }
         
+        backgroundImageView.image = UIImage(named: "endInvestigation")
+        backgroundImageView.contentMode = .scaleAspectFit
+        view.insertSubview(backgroundImageView, at: 0)
+        
         todayLabel.text = "2025.06.05"
-        todayLabel.textColor = .black
-        todayLabel.font = UIFont.systemFont(ofSize: 20)
+        todayLabel.textColor = UIColor(named: "keycolorPrimary2")
+        todayLabel.font = UIFont.title3
         todayLabel.textAlignment = .left
         
-        distanceLabel.text = "거리(km)"
-        distanceLabel.textColor = .black
-        distanceLabel.font = UIFont.systemFont(ofSize: 14)
+        distanceLabel.text = "거리"
+        distanceLabel.textColor = UIColor(named: "textTertiary")
+        distanceLabel.font = UIFont.body6
         
         timeLabel.text = "시간"
-        timeLabel.textColor = .black
-        timeLabel.font = UIFont.systemFont(ofSize: 14)
+        timeLabel.textColor = UIColor(named: "textTertiary")
+        timeLabel.font = UIFont.body6
         
         stepCountLabel.text = "걸음수"
-        stepCountLabel.textColor = .black
-        stepCountLabel.font = UIFont.systemFont(ofSize: 14)
+        stepCountLabel.textColor = UIColor(named: "textTertiary")
+        stepCountLabel.font = UIFont.body6
         
-        distanceContentLabel.text = "11.23"
-        distanceContentLabel.textColor = .black
-        distanceContentLabel.font = UIFont.systemFont(ofSize: 24)
+        distanceContentLabel.text = "11.23km"
+        distanceContentLabel.textColor = UIColor(named: "textSecondary")
+        distanceContentLabel.font = UIFont.highlight3
         
         timeContentLabel.text = "10:11:12"
-        timeContentLabel.textColor = .black
-        timeContentLabel.font = UIFont.systemFont(ofSize: 24)
+        timeContentLabel.textColor = UIColor(named: "textSecondary")
+        timeContentLabel.font = UIFont.highlight3
         
         stepCountContentLabel.text = "12345"
-        stepCountContentLabel.textColor = .black
-        stepCountContentLabel.font = UIFont.systemFont(ofSize: 24)
+        stepCountContentLabel.textColor = UIColor(named: "textSecondary")
+        stepCountContentLabel.font = UIFont.highlight3
         
         dogImage.image = UIImage(systemName: "pawprint.fill")
         
         walkEndLabel.text = "멍탐정들과 함께 수사 완료!"
-        walkEndLabel.textColor = .black
+        walkEndLabel.textColor = UIColor(named: "textSecondary")
+        walkEndLabel.font = UIFont.title1
+        
+        mapImageView.image = UIImage(named: "mapPolaroid")
         
         walkShareButton.setTitle("수사 일지 공유하기", for: .normal)
-        walkShareButton.backgroundColor = UIColor(red: 82/255.0, green: 173/255.0, blue: 80/255.0, alpha: 1.0)
+        walkShareButton.titleLabel?.font = UIFont.highlight4
+        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
+        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
         walkShareButton.layer.cornerRadius = 6
         
         distanceStack.axis = .vertical
@@ -124,20 +135,20 @@ class WalkEndModalViewController : UIViewController {
         infoStack.addArrangedSubview(stepCountStack)
         
         topSeperatorLine.backgroundColor = .lightGray
-        
         middleSeperatorLine.backgroundColor = .lightGray
-        
         bottomSeperatorLine.backgroundColor = .lightGray
-        
         
     }
     
     private func configureUI() {
         
+        backgroundImageView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        
         todayLabel.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(16)
             $0.leading.equalToSuperview().inset(16)
-
         }
         
         infoStack.snp.makeConstraints {
@@ -162,7 +173,6 @@ class WalkEndModalViewController : UIViewController {
             $0.centerX.equalToSuperview()
             $0.height.equalTo(1)
             $0.width.equalTo(332)
-            
         }
         
         middleSeperatorLine.snp.makeConstraints {
@@ -170,7 +180,6 @@ class WalkEndModalViewController : UIViewController {
             $0.centerX.equalToSuperview()
             $0.height.equalTo(1)
             $0.width.equalTo(332)
-            
         }
         
         bottomSeperatorLine.snp.makeConstraints {
@@ -180,6 +189,5 @@ class WalkEndModalViewController : UIViewController {
             $0.width.equalTo(332)
             
         }
-
     }
 }

@@ -30,8 +30,9 @@ class WalkMainViewController : UIViewController {
         }
         
         walkStartButton.setTitle("수사 시작하기", for: .normal)
-        walkStartButton.setTitleColor(.white, for: .normal)
-        walkStartButton.backgroundColor = UIColor(red: 82/255.0, green: 173/255.0, blue: 80/255.0, alpha: 1.0)
+        walkStartButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
+        walkStartButton.titleLabel?.font = UIFont.highlight4
+        walkStartButton.backgroundColor = UIColor(named: "keycolorPrimary3")
         walkStartButton.layer.cornerRadius = 6
     }
     
@@ -41,13 +42,13 @@ class WalkMainViewController : UIViewController {
             $0.centerX.centerY.equalToSuperview()
             $0.height.equalTo(52)
             $0.width.equalTo(343)
-            }
         }
+    }
     
     @objc private func walkStartButtonTapped() {
         let modalVC = WalkEndModalViewController()
         present(modalVC, animated: true)
     }
     
-    }
+}
 
