@@ -59,11 +59,11 @@ class WalkEndModalViewController : UIViewController {
             view.addSubview($0)
         }
         
-        backgroundImageView.image = UIImage(named: "endLnvestigaionAddLine")
+        backgroundImageView.image = UIImage(named: "endInvestigaionAddLine")
         backgroundImageView.contentMode = .scaleAspectFit
         view.insertSubview(backgroundImageView, at: 0)
         
-        todayLabel.text = "2025.06.05"
+        todayLabel.text = "2025/06/05"
         todayLabel.textColor = UIColor(named: "keycolorPrimary2")
         todayLabel.font = UIFont.title3
         todayLabel.textAlignment = .left
@@ -153,6 +153,7 @@ class WalkEndModalViewController : UIViewController {
     private func configureUI() {
         backgroundImageView.snp.makeConstraints {
             $0.top.bottom.equalTo(view)
+            $0.centerX.equalToSuperview()
         }
         
         todayLabel.snp.makeConstraints {
