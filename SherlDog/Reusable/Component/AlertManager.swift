@@ -43,9 +43,9 @@ class AlertManager: UIViewController {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
 
         if buttonTitles.count == 1 {
-            backgroundImageView.image = UIImage(named: "alert_background_single")
+            backgroundImageView.image = UIImage(named: "alertBackgroundSingleSmall")
         } else {
-            backgroundImageView.image = UIImage(named: "alert_background_double")
+            backgroundImageView.image = UIImage(named: "alertBackgroundDouble")
         }
         backgroundImageView.contentMode = .scaleAspectFill
         backgroundImageView.clipsToBounds = true
