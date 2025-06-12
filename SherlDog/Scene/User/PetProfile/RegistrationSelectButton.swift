@@ -17,14 +17,13 @@ class RegistrationSelectButton: UIButton {
     init(title: String) {
         super.init(frame: .zero)
         self.setTitle(title, for: .normal)
-        setConfig() //init시 setConfig 메서드 호출
+        setConfig()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    // 인스턴스가 생성될때 초기 설정 값 설정 메서드
     func setConfig() {
         self.isSelected = false
         self.setTitleColor(.textTertiary, for: .normal)

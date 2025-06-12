@@ -108,7 +108,7 @@ class DetectiveCardView: UIView {
         detectiveIntroduceLabel.font = UIFont.alert1
         detectiveIntroduceLabel.textColor = .textInverse
         
-        detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2 //피그마에서는 cornerRadius값이 높이의 절반을 넘어서도 높이의 절반까지만 적용되지만 swift에서는 아님.
+        detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
         detectiveIntroduceBackgroundView.backgroundColor = .gray100
 
