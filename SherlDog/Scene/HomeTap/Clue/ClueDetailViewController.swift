@@ -30,8 +30,6 @@ final class ClueDetailViewController: UIViewController {
         polaroidBackgroundImageView.contentMode = .scaleAspectFit
 //        polaroidBackgroundImageView.layer.borderWidth = 1
 //        polaroidBackgroundImageView.layer.borderColor = UIColor.black.cgColor // 영역 확인용
-
-        clueImageView.image = UIImage(named: "")
         clueImageView.contentMode = .scaleAspectFill
         clueImageView.clipsToBounds = true
 //        clueImageView.layer.borderWidth = 1
@@ -50,29 +48,30 @@ final class ClueDetailViewController: UIViewController {
         [polaroidBackgroundImageView, clipNoteBackgroundImageView, clueTextView].forEach { view.addSubview($0) }
 
         polaroidBackgroundImageView.addSubview(clueImageView)
-
     }
 
     private func setupConstraints() {
         polaroidBackgroundImageView.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(70)
-            $0.leading.trailing.equalToSuperview().inset(1)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(52)
+            $0.leading.trailing.equalToSuperview().inset(28)
         }
 
         clueImageView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(60)
-            $0.top.equalToSuperview().offset(70)
-            $0.bottom.equalToSuperview().inset(90)
+            $0.leading.trailing.equalToSuperview().inset(40)
+            $0.top.equalToSuperview().offset(50)
+            $0.bottom.equalToSuperview().inset(50)
         }
 
         clipNoteBackgroundImageView.snp.makeConstraints {
-            $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(16)
+            $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(60)
             $0.centerX.equalToSuperview()
-            $0.bottom.equalToSuperview().inset(33)
+            $0.bottom.equalToSuperview().inset(80)
         }
 
         clueTextView.snp.makeConstraints {
-            $0.edges.equalTo(clipNoteBackgroundImageView).inset(26)
+            $0.leading.trailing.equalToSuperview().inset(38)
+            $0.top.equalTo(clipNoteBackgroundImageView).inset(42)
+            $0.bottom.equalTo(clipNoteBackgroundImageView).inset(20)
         }
     }
 }

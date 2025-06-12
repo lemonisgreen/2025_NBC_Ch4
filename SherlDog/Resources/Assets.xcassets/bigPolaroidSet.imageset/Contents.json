@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "clip set.png",
+      "filename" : "bigPolaroidSet.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "clip set@2x.png",
+      "filename" : "bigPolaroidSet@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "clip set@3x.png",
+      "filename" : "bigPolaroidSet@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
