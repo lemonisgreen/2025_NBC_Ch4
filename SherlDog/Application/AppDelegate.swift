@@ -17,6 +17,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // Firebase 초기화
         FirebaseApp.configure()
+        print("Firebase 초기화")
         
         // 카카오 SDK 초기화
         setupKakaoSDK()
@@ -37,8 +38,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - URL Handling for Kakao Login
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-        
-        print("🔗 URL 처리: \(url)")
         
         // 카카오 로그인 URL 처리
         if (AuthApi.isKakaoTalkLoginUrl(url)) {

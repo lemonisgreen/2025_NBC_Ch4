@@ -153,10 +153,10 @@ class LoginViewController: UIViewController {
             KakaoLoginManager.shared.validateToken { [weak self] isValid in
                 DispatchQueue.main.async {
                     if isValid {
-                        print("✅ 자동 로그인: 유효한 토큰 확인됨")
+                        print("자동 로그인: 유효한 토큰 확인됨")
                         self?.navigateToNextScreen()
                     } else {
-                        print("⚠️ 자동 로그인: 토큰이 만료되었습니다")
+                        print("자동 로그인: 토큰이 만료되었습니다")
                         // 토큰이 만료된 경우 로그아웃 처리
                         KakaoLoginManager.shared.logout()
                     }
@@ -283,11 +283,11 @@ class LoginViewController: UIViewController {
     // MARK: - Actions
     @objc private func kakaoLoginTapped() {
         guard !isLoggingIn else {
-            print("⚠️ 이미 로그인 진행 중입니다")
+            print("이미 로그인 진행 중입니다")
             return
         }
         
-        print("🔐 카카오 로그인 시도")
+        print("카카오 로그인 시도")
         setLoading(true)
         
         KakaoLoginManager.shared.login { [weak self] result in
@@ -296,7 +296,7 @@ class LoginViewController: UIViewController {
                 
                 switch result {
                 case .success(let user):
-                    print("✅ 카카오 로그인 성공")
+                    print("카카오 로그인 성공")
                     let userInfo = KakaoUserInfo(from: user)
                     
                     // 사용자 정보 저장
@@ -307,11 +307,11 @@ class LoginViewController: UIViewController {
                     self?.navigateToNextScreen()
                     
                 case .failure(let error):
-                    print("❌ 카카오 로그인 실패: \(error.localizedDescription)")
+                    print("카카오 로그인 실패: \(error.localizedDescription)")
                     
                     // 사용자 취소가 아닌 경우에만 에러 표시
                     if case .userCancelled = error {
-                        print("ℹ️ 사용자가 로그인을 취소했습니다")
+                        print("사용자가 로그인을 취소했습니다")
                         return
                     }
                     
@@ -346,7 +346,7 @@ class LoginViewController: UIViewController {
 extension LoginViewController: KakaoLoginManagerDelegate {
     
     func kakaoLoginDidSucceed(user: User) {
-        print("✅ 카카오 로그인 성공 (Delegate)")
+        print("카카오 로그인 성공 (Delegate)")
         
         // 사용자 정보 처리
         let userInfo = KakaoUserInfo(from: user)
@@ -359,7 +359,7 @@ extension LoginViewController: KakaoLoginManagerDelegate {
     }
     
     func kakaoLoginDidFail(error: KakaoLoginError) {
-        print("❌ 카카오 로그인 실패 (Delegate): \(error.localizedDescription)")
+        print("카카오 로그인 실패 (Delegate): \(error.localizedDescription)")
         
         // 에러 처리는 completion handler에서 처리되므로 여기서는 생략
     }

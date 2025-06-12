@@ -165,7 +165,7 @@ class KakaoLoginManager {
         let email = UserDefaults.standard.string(forKey: "userEmail")
         
         // 간단한 사용자 정보 복원 (실제로는 서버에서 가져오는 것이 좋음)
-        print("💾 저장된 사용자 정보 복원")
+        print("저장된 사용자 정보 복원")
         print("닉네임: \(nickname ?? "없음")")
         print("이메일: \(email ?? "없음")")
     }
