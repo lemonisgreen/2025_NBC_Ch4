@@ -24,6 +24,7 @@ class RegistrationViewController: UIViewController {
     let registName = RegistrationTextField(text: "이름을 입력하세요")
     let registBreedLabel = UILabel()
     let registBreed = RegistrationSearchButton(title: " ")
+    let underLine = UIView()
     let registSizeLabel = UILabel()
     let registSizeSmallIcon = UIImageView()
     let registSizeSmallLabel = UILabel()
@@ -52,7 +53,6 @@ class RegistrationViewController: UIViewController {
     let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
     let registCompletButton = ButtonManager(title: "다음")
     
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -62,6 +62,7 @@ class RegistrationViewController: UIViewController {
     }
     
     func bind() {
+        
         self.registName.rx.text
             .subscribe(onNext: { [weak self]  _ in
                 guard let self,
@@ -81,6 +82,57 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        self.registSizeSmallButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registSizeSmallButton.isSelected = true
+                self?.registSizeMediumButton.isSelected = false
+                self?.registSizeLargeButton.isSelected = false
+            })
+            .disposed(by: disposeBag)
+        
+        self.registSizeMediumButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registSizeSmallButton.isSelected = false
+                self?.registSizeMediumButton.isSelected = true
+                self?.registSizeLargeButton.isSelected = false
+            })
+            .disposed(by: disposeBag)
+        
+        self.registSizeLargeButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registSizeSmallButton.isSelected = false
+                self?.registSizeMediumButton.isSelected = false
+                self?.registSizeLargeButton.isSelected = true
+            })
+            .disposed(by: disposeBag)
+        
+        self.registGenderFemale.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registGenderFemale.isSelected = true
+                self?.registGenderMale.isSelected = false
+            })
+            .disposed(by: disposeBag)
+        
+        self.registGenderMale.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registGenderMale.isSelected = true
+                self?.registGenderFemale.isSelected = false
+            })
+            .disposed(by: disposeBag)
+        
+        self.registNeuteredTrue.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registNeuteredTrue.isSelected = true
+                self?.registNeuteredFalse.isSelected = false
+            })
+            .disposed(by: disposeBag)
+        
+        self.registNeuteredFalse.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.registNeuteredFalse.isSelected = true
+                self?.registNeuteredTrue.isSelected = false
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
@@ -133,10 +185,11 @@ class RegistrationViewController: UIViewController {
             registName,
             registNameCountLabel,
             registNameAlertStackView,
-            registSizeStackButtonView,
             registBreedLabel,
             registBreed,
+            underLine,
             registSizeLabel,
+            registSizeStackButtonView,
             registAgeLabel,
             registAgeButton,
             registGenderLabel,
@@ -184,6 +237,8 @@ class RegistrationViewController: UIViewController {
         registBreedLabel.textColor = .textPrimary
         registBreedLabel.font = .body1
         
+        underLine.backgroundColor = .gray200
+        
         //MARK: 크기 --
         registSizeLabel.text = "크기"
         registSizeLabel.textColor = .textPrimary
@@ -195,21 +250,26 @@ class RegistrationViewController: UIViewController {
         registSizeSmallLabel.textColor = .textTertiary
         registSizeSmallLabel.font = .title3
         registSizeSmallLabel.isUserInteractionEnabled = false
-
+        
+        registSizeSmallStackView.backgroundColor = .clear
         registSizeSmallStackView.axis = .horizontal
         registSizeSmallStackView.spacing = 8
         registSizeSmallStackView.alignment = .center
-                
+        registSizeSmallStackView.isUserInteractionEnabled = false
+        
+        
         registSizeMediumIcon.image = UIImage(named: "mediumDog")
         registSizeMediumIcon.isUserInteractionEnabled = false
         registSizeMediumLabel.text = "중형견"
         registSizeMediumLabel.textColor = .textTertiary
         registSizeMediumLabel.font = .title3
         registSizeMediumLabel.isUserInteractionEnabled = false
-
+        
+        registSizeMediumStackView.backgroundColor = .clear
         registSizeMediumStackView.axis = .horizontal
         registSizeMediumStackView.spacing = 8
         registSizeMediumStackView.alignment = .center
+        registSizeMediumStackView.isUserInteractionEnabled = false
         
         registSizeLargeIcon.image = UIImage(named: "largeDog")
         registSizeLargeIcon.isUserInteractionEnabled = false
@@ -217,10 +277,12 @@ class RegistrationViewController: UIViewController {
         registSizeLargeLabel.textColor = .textTertiary
         registSizeLargeLabel.font = .title3
         registSizeLargeLabel.isUserInteractionEnabled = false
-
+        
+        registSizeLargeStackView.backgroundColor = .clear
         registSizeLargeStackView.axis = .horizontal
         registSizeLargeStackView.spacing = 8
         registSizeLargeStackView.alignment = .center
+        registSizeLargeStackView.isUserInteractionEnabled = false
         
         registSizeStackButtonView.axis = .horizontal
         registSizeStackButtonView.spacing = 12
@@ -310,6 +372,12 @@ class RegistrationViewController: UIViewController {
             $0.top.equalTo(registBreedLabel.snp.bottom).offset(8)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.trailing.equalToSuperview().inset(16)
+        }
+        
+        underLine.snp.makeConstraints {
+            $0.top.equalTo(registBreed.snp.bottom).offset(24 + 4)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(1)
         }
         
         registSizeLabel.snp.makeConstraints {
