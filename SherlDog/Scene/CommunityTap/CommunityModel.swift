@@ -15,7 +15,7 @@ struct CommunityModel {
     let postDate: String
     let contentImage: UIImage?
     let content: String
-    var isExpanded: Bool
+    var isExpanded: Bool = false
 }
 
 // test
@@ -26,21 +26,18 @@ extension CommunityModel {
                        info: "3세 여아 / 말티즈",
                        postDate: "1시간",
                        contentImage: .kakao,
-                       content: "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest",
-                       isExpanded: false),
+                       content: "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest"),
         CommunityModel(profileImage: UIImage(named: "apple"),
                        name: "강아지명",
                        info: "3세 여아 / 말티즈",
                        postDate: "1시간",
                        contentImage: .naver,
-                       content: "testtesttesttestteststtesttesttest",
-                       isExpanded: false),
+                       content: "testtesttesttestteststtesttesttest"),
         CommunityModel(profileImage: UIImage(named: "avatar"),
                        name: "강아지명",
                        info: "3세 여아 / 말티즈",
                        postDate: "1시간",
                        contentImage: .logo,
-                       content: "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest",
-                       isExpanded: false)
+                       content: "testtesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttesttest")
     ]
 }
