@@ -8,6 +8,15 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
+			<string>GOOGLE</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.66969339194-m3mhc8skhvradm1fqgicuvevg1sp7f7j</string>
+				<string>com.rak.SherlDog</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
 			<string>KAKAO</string>
 			<key>CFBundleURLSchemes</key>
 			<array>

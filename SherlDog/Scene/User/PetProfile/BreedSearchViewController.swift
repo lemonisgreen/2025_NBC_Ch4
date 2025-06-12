@@ -11,6 +11,7 @@ import SnapKit
 class BreedSearchViewController: UIViewController {
     
     // MARK: - Constants
+    // UI에서 사용할 고정값들 정의
     private struct Constants {
         static let titleFontSize: CGFloat = 20
         static let searchFieldHeight: CGFloat = 40
@@ -28,29 +29,31 @@ class BreedSearchViewController: UIViewController {
         "폼피츠", "치와와", "말티즈", "코기", "진돗개"
     ]
     
+    // 검색 결과 필터링된 견종 리스트
     private var filteredBreeds: [String] = []
+    // 검색 중인지 여부
     private var isSearching: Bool = false
     
     // MARK: - UI Components
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.text = "견종 선택하기"
-        label.font = UIFont.boldSystemFont(ofSize: Constants.titleFontSize)
-        label.textColor = .black
+        label.font = .highlight3
+        label.textColor = .textPrimary
         return label
     }()
     
     private let closeButton: UIButton = {
         let button = UIButton()
         button.setImage(UIImage(systemName: "xmark"), for: .normal)
-        button.tintColor = .black
+        button.tintColor = .textPrimary
         return button
     }()
     
     private let searchTextField: UITextField = {
         let tf = UITextField()
         tf.placeholder = "검색"
-        tf.backgroundColor = .white
+        tf.backgroundColor = .gray100
         tf.layer.borderWidth = 1
         tf.layer.borderColor = UIColor.gray200.cgColor
         tf.layer.cornerRadius = 8
@@ -58,6 +61,7 @@ class BreedSearchViewController: UIViewController {
         return tf
     }()
     
+    // 결과 없을 때 이미지
     private let emptyImageView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(named: "sherlDog")
@@ -67,6 +71,7 @@ class BreedSearchViewController: UIViewController {
         return iv
     }()
     
+    // 결과 없을 때 문구
     private let emptyLabel: UILabel = {
         let label = UILabel()
         label.text = "어떤 견종을 찾으시나요?"
@@ -77,6 +82,8 @@ class BreedSearchViewController: UIViewController {
     }()
     
     // MARK: - No Results Components
+    
+    // 검색 결과 없음 관련 뷰들 ( 숨김 기본 )
     private let noResultsImageView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(named: "noResultDog") // 검색 결과 없음 이미지
@@ -217,6 +224,8 @@ class BreedSearchViewController: UIViewController {
         }
     }
     
+    /// 검색창에 텍스트 변화 감지 및 델리게이트 설정
+
     private func setupSearchTextField() {
         searchTextField.addTarget(self, action: #selector(searchTextChanged), for: .editingChanged)
         searchTextField.delegate = self
@@ -228,6 +237,8 @@ class BreedSearchViewController: UIViewController {
     }
     
     @objc private func addBreedButtonTapped() {
+        // 검색창에 입력된 문자열을 앞 뒤 공백 제거 후 가져옴
+        // 공백만 입력했거나 아무것도 입력하지 않으면 함수 종료.
         guard let searchText = searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
               !searchText.isEmpty else { return }
         
@@ -242,8 +253,10 @@ class BreedSearchViewController: UIViewController {
     }
     
     @objc private func searchTextChanged() {
+        // 입력된 텍스트가 있는지 확인
         guard let searchText = searchTextField.text else { return }
         
+        // 빈 문자열이면 빈 상태 보여주고, 아니면 검색 결과 보여줌
         if searchText.isEmpty {
             showEmptyState()
         } else {
@@ -253,6 +266,7 @@ class BreedSearchViewController: UIViewController {
     
     // MARK: - Private Methods
     private func showEmptyState() {
+        // 검색 중이 아님.
         isSearching = false
         
         // 모든 상태 초기화
@@ -262,6 +276,7 @@ class BreedSearchViewController: UIViewController {
         emptyImageView.isHidden = false
         emptyLabel.isHidden = false
         
+        // 부드러운 애니메이션 (사라짐)
         UIView.animate(withDuration: 0.3) {
             self.emptyImageView.alpha = 1
             self.emptyLabel.alpha = 1
@@ -271,7 +286,7 @@ class BreedSearchViewController: UIViewController {
     private func showSearchResults(for searchText: String) {
         isSearching = true
         
-        // 필터링 로직
+        // 필터링 로직 입력된 문자열을 포함하는 견종만 필터링
         filteredBreeds = allBreeds.filter { breed in
             breed.localizedCaseInsensitiveContains(searchText)
         }
@@ -296,6 +311,7 @@ class BreedSearchViewController: UIViewController {
         noResultsDescriptionLabel.isHidden = false
         addBreedButton.isHidden = false
         
+        // 부드러운 애니메이션 효과 ㅋㅋ
         UIView.animate(withDuration: 0.3) {
             self.noResultsImageView.alpha = 1
             self.noResultsLabel.alpha = 1

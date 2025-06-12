@@ -94,8 +94,6 @@ class KakaoLoginManager {
                 UserDefaults.standard.removeObject(forKey: "isKakaoLoggedIn")
                 UserDefaults.standard.removeObject(forKey: "userNickname")
                 UserDefaults.standard.removeObject(forKey: "userEmail")
-            } else {
-                print("카카오 로그아웃 실패")
             }
             completion?(success)
         }
@@ -111,9 +109,6 @@ class KakaoLoginManager {
                 UserDefaults.standard.removeObject(forKey: "isKakaoLoggedIn")
                 UserDefaults.standard.removeObject(forKey: "userNickname")
                 UserDefaults.standard.removeObject(forKey: "userEmail")
-                print("카카오 연결 해제 성공")
-            } else {
-                print("카카오 연결 해제 실패")
             }
             completion?(success)
         }
@@ -132,20 +127,17 @@ class KakaoLoginManager {
     /// 토큰 유효성 검사
     func validateToken(completion: @escaping (Bool) -> Void) {
         guard AuthApi.hasToken() else {
-            print("토큰이 존재하지 않습니다")
             completion(false)
             return
         }
         
         UserApi.shared.accessTokenInfo { [weak self] tokenInfo, error in
             if let error = error {
-                print("토큰 검증 실패: \(error.localizedDescription)")
                 // 토큰이 유효하지 않은 경우 정리
                 self?.currentUserInfo = nil
                 UserDefaults.standard.removeObject(forKey: "isKakaoLoggedIn")
                 completion(false)
             } else {
-                print("토큰 유효함")
                 if let expiresIn = tokenInfo?.expiresIn {
                     print("토큰 만료까지 남은 시간: \(expiresIn)초")
                 }
@@ -163,11 +155,6 @@ class KakaoLoginManager {
         
         let nickname = UserDefaults.standard.string(forKey: "userNickname")
         let email = UserDefaults.standard.string(forKey: "userEmail")
-        
-        // 간단한 사용자 정보 복원 (실제로는 서버에서 가져오는 것이 좋음)
-        print("저장된 사용자 정보 복원")
-        print("닉네임: \(nickname ?? "없음")")
-        print("이메일: \(email ?? "없음")")
     }
 }
 
@@ -176,7 +163,6 @@ private extension KakaoLoginManager {
     
     /// 카카오톡 앱으로 로그인
     func loginWithKakaoTalk(completion: ((KakaoLoginResult) -> Void)?) {
-        print("카카오톡 앱으로 로그인 시도")
         UserApi.shared.loginWithKakaoTalk { [weak self] (oauthToken, error) in
             self?.handleLoginResponse(oauthToken: oauthToken, error: error, completion: completion)
         }
@@ -184,7 +170,6 @@ private extension KakaoLoginManager {
     
     /// 웹 브라우저로 로그인
     func loginWithWeb(completion: ((KakaoLoginResult) -> Void)?) {
-        print("웹 브라우저로 로그인 시도")
         UserApi.shared.loginWithKakaoAccount { [weak self] (oauthToken, error) in
             self?.handleLoginResponse(oauthToken: oauthToken, error: error, completion: completion)
         }
@@ -194,8 +179,6 @@ private extension KakaoLoginManager {
     func handleLoginResponse(oauthToken: OAuthToken?, error: Error?, completion: ((KakaoLoginResult) -> Void)?) {
         if let error = error {
             let kakaoError = processError(error)
-            print("카카오 로그인 실패: \(kakaoError.localizedDescription)")
-            
             DispatchQueue.main.async { [weak self] in
                 self?.delegate?.kakaoLoginDidFail(error: kakaoError)
                 completion?(.failure(error: kakaoError))
@@ -205,30 +188,20 @@ private extension KakaoLoginManager {
         
         guard let token = oauthToken else {
             let error = KakaoLoginError.invalidToken
-            print("유효하지 않은 토큰")
-            
             DispatchQueue.main.async { [weak self] in
                 self?.delegate?.kakaoLoginDidFail(error: error)
                 completion?(.failure(error: error))
             }
             return
         }
-        
-        print("카카오 로그인 성공 - 토큰 발급됨")
-        print("액세스 토큰: \(token.accessToken.prefix(20))...")
-        
         fetchUserInfo(completion: completion)
     }
     
     /// 사용자 정보 가져오기
     func fetchUserInfo(completion: ((KakaoLoginResult) -> Void)?) {
-        print("사용자 정보 요청 중...")
-        
         UserApi.shared.me { [weak self] (user, error) in
             if let error = error {
                 let kakaoError = self?.processError(error) ?? .unknownError(error.localizedDescription)
-                print("사용자 정보 가져오기 실패: \(kakaoError.localizedDescription)")
-                
                 DispatchQueue.main.async {
                     self?.delegate?.kakaoLoginDidFail(error: kakaoError)
                     completion?(.failure(error: kakaoError))
@@ -250,9 +223,6 @@ private extension KakaoLoginManager {
             let userInfo = KakaoUserInfo(from: user)
             self?.currentUserInfo = userInfo
             
-            print("사용자 정보 가져오기 성공")
-            self?.printUserInfo(userInfo)
-            
             DispatchQueue.main.async {
                 self?.delegate?.kakaoLoginDidSucceed(user: user)
                 completion?(.success(user: user))
@@ -262,7 +232,6 @@ private extension KakaoLoginManager {
     
     /// 에러 처리 (간소화된 버전)
     func processError(_ error: Error) -> KakaoLoginError {
-        print("에러 분석 중: \(error)")
         
         let errorMessage = error.localizedDescription.lowercased()
         
@@ -276,16 +245,5 @@ private extension KakaoLoginManager {
         } else {
             return .unknownError(error.localizedDescription)
         }
-    }
-    
-    /// 사용자 정보 출력 (디버깅용)
-    func printUserInfo(_ userInfo: KakaoUserInfo) {
-        print("=== 카카오 사용자 정보 ===")
-        print("ID: \(userInfo.id)")
-        print("닉네임: \(userInfo.nickname ?? "없음")")
-        print("이메일: \(userInfo.email ?? "없음")")
-        print("프로필 이미지: \(userInfo.profileImageUrl ?? "없음")")
-        print("썸네일 이미지: \(userInfo.thumbnailImageUrl ?? "없음")")
-        print("========================")
     }
 }

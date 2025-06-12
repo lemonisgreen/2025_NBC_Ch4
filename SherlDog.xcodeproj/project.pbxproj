@@ -20,6 +20,7 @@
 		39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E522DF0455C0008A54D /* FirebaseAuth */; };
 		39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E542DF0455C0008A54D /* FirebaseFirestore */; };
 		39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E562DF0455C0008A54D /* FirebaseStorage */; };
+		39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 39EF106F2DFAD67200646675 /* GoogleSignIn */; };
 		3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BECE2DF7FAF700397F6C /* Differentiator */; };
 		3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BED02DF7FAF700397F6C /* RxDataSources */; };
 /* End PBXBuildFile section */
@@ -29,7 +30,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
+		39EF10742DFAE08800646675 /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Resources/Info.plist,
@@ -42,7 +43,7 @@
 		39BA2DAE2DF03A030008A54D /* SherlDog */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */,
+				39EF10742DFAE08800646675 /* Exceptions for "SherlDog" folder in "SherlDog" target */,
 			);
 			path = SherlDog;
 			sourceTree = "<group>";
@@ -55,6 +56,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				390947672DF94C8800D8B28E /* KakaoSDKAuth in Frameworks */,
+				39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */,
 				390947272DF8FF6700D8B28E /* FirebaseCore in Frameworks */,
 				39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */,
 				39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */,
@@ -126,6 +128,7 @@
 				390947662DF94C8800D8B28E /* KakaoSDKAuth */,
 				390947682DF94C8800D8B28E /* KakaoSDKCommon */,
 				3909476A2DF94C8800D8B28E /* KakaoSDKUser */,
+				39EF106F2DFAD67200646675 /* GoogleSignIn */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -162,6 +165,7 @@
 				39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */,
 				390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
+				39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -437,6 +441,14 @@
 				minimumVersion = 11.14.0;
 			};
 		};
+		39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 		3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources.git";
@@ -507,6 +519,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		39EF106F2DFAD67200646675 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
 		};
 		3B40BECE2DF7FAF700397F6C /* Differentiator */ = {
 			isa = XCSwiftPackageProductDependency;
