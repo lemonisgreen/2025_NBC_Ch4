@@ -8,10 +8,13 @@
 
 import UIKit
 import SnapKit
+import NMapsMap
 
 class WalkMainViewController : UIViewController {
     
     private let walkStartButton = UIButton()
+    
+    private let mapView = NMFMapView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -23,10 +26,12 @@ class WalkMainViewController : UIViewController {
     
     private func setupUI() {
         [
+            mapView,
             walkStartButton
         ].forEach {
             view.addSubview($0)
         }
+        mapView.positionMode = .normal
         
         walkStartButton.setTitle("수사 시작하기", for: .normal)
         walkStartButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
@@ -36,8 +41,13 @@ class WalkMainViewController : UIViewController {
     }
     
     private func configureUI() {
+        mapView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        
         walkStartButton.snp.makeConstraints {
-            $0.centerX.centerY.equalToSuperview()
+            $0.centerX.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(100)
             $0.height.equalTo(52)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
