@@ -222,12 +222,12 @@ private extension KakaoLoginManager {
     
     /// 사용자 정보 가져오기
     func fetchUserInfo(completion: ((KakaoLoginResult) -> Void)?) {
-        print("👤 사용자 정보 요청 중...")
+        print("사용자 정보 요청 중...")
         
         UserApi.shared.me { [weak self] (user, error) in
             if let error = error {
                 let kakaoError = self?.processError(error) ?? .unknownError(error.localizedDescription)
-                print("❌ 사용자 정보 가져오기 실패: \(kakaoError.localizedDescription)")
+                print("사용자 정보 가져오기 실패: \(kakaoError.localizedDescription)")
                 
                 DispatchQueue.main.async {
                     self?.delegate?.kakaoLoginDidFail(error: kakaoError)
