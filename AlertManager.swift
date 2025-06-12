@@ -53,7 +53,7 @@ class AlertManager: UIViewController {
 
         messageLabel.text = message
         messageLabel.textAlignment = .center
-        messageLabel.font = UIFont(name: "Pretendard-Medium", size: 18)
+        messageLabel.font = UIFont.title3
         messageLabel.textColor = .black
 
         buttonStackView.axis = .horizontal
@@ -65,7 +65,7 @@ class AlertManager: UIViewController {
             button.setTitle(title, for: .normal)
             button.backgroundColor = .white
             button.setTitleColor(.black, for: .normal)
-            button.titleLabel?.font = UIFont(name: "Pretendard-Medium", size: 18)
+            button.titleLabel?.font = UIFont.title3
             button.layer.cornerRadius = 6
             button.tag = index
 

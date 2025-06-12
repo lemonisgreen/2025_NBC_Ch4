@@ -24,7 +24,7 @@ class ButtonManager: UIButton {
          setTitle(title, for: .normal)
          setTitleColor(titleColor, for: .normal)
          self.backgroundColor = backgroundColor
-         titleLabel?.font = UIFont(name: "Pretendard-Bold", size: 18)
+         titleLabel?.font = UIFont.highlight4
          layer.cornerRadius = 6
          clipsToBounds = true
         
