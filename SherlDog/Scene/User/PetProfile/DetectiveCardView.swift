@@ -28,7 +28,7 @@ class DetectiveCardView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
-        configurationUI()
+        configureUI()
     }
     
     required init?(coder: NSCoder) {
@@ -116,7 +116,7 @@ class DetectiveCardView: UIView {
         detectiveIntroduce.font = UIFont.title5
     }
     
-    private func configurationUI() {
+    private func configureUI() {
         
         self.snp.makeConstraints {
             $0.height.equalTo(208)

@@ -14,6 +14,7 @@ class RegistrationViewController: UIViewController {
     let registImage = UIButton()
     let registNameLabel = UILabel()
     let registNameCountLabel = UILabel()
+    let registNameAlertImage = UIImageView()
     let registNameAlertLabel = UILabel()
     let registName = RegistrationTextField(text: "이름을 입력하세요")
     let registBreedLabel = UILabel()
@@ -43,6 +44,8 @@ class RegistrationViewController: UIViewController {
         setupUI()
         configureUI()
     }
+    
+    
     
     private func setupUI() {
         
@@ -75,6 +78,7 @@ class RegistrationViewController: UIViewController {
             registNameLabel,
             registName,
             registNameCountLabel,
+            registNameAlertImage,
             registNameAlertLabel,
             registBreedLabel,
             registBreed,
@@ -101,15 +105,19 @@ class RegistrationViewController: UIViewController {
         
         //MARK: 사진 --
 
+        registImage.setImage(UIImage(named: "smallPolaroid"), for: .normal)
         
         //MARK: 이름 --
         registNameLabel.text = "이름"
         registNameLabel.textColor = .textPrimary
         registNameLabel.font = .body1
         
-        registNameCountLabel.text = "0/10"
+        registNameCountLabel.text = "0 / 10 자"
         registNameCountLabel.textColor = .gray400
         registNameCountLabel.font = .alert2
+        
+        registNameAlertImage.image = UIImage(named: "alertMark")
+        registNameAlertImage.contentMode = .scaleAspectFit
         
         registNameAlertLabel.text = "공백 없이 입력해 주세요"
         registNameAlertLabel.textColor = .textAlert
@@ -157,8 +165,8 @@ class RegistrationViewController: UIViewController {
         
         //MARK: 성격 및 특성 --
         registIntroduceLabel.text = "성격 및 특성"
-        registNeuteredLabel.textColor = .textPrimary
-        registNeuteredLabel.font = .body1
+        registIntroduceLabel.textColor = .textPrimary
+        registIntroduceLabel.font = .body1
         
     }
     
@@ -194,9 +202,15 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(22)
         }
         
-        registNameAlertLabel.snp.makeConstraints {
+        registNameAlertImage.snp.makeConstraints {
             $0.top.equalTo(registName.snp.bottom).offset(4)
             $0.leading.equalTo(registImage.snp.trailing)
+            $0.height.equalTo(14)
+        }
+        
+        registNameAlertLabel.snp.makeConstraints {
+            $0.top.equalTo(registName.snp.bottom).offset(4)
+            $0.leading.equalTo(registNameAlertImage.snp.trailing).inset(4)
             $0.height.equalTo(17)
         }
         
