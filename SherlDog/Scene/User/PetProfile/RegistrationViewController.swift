@@ -93,7 +93,7 @@ class RegistrationViewController: UIViewController {
         }
         
         //MARK: 배경 --
-        view.backgroundColor = .gray200
+        view.backgroundColor = .keycolorBackground
         
         registrationLabel.text = "멍탐정 프로필 입력하기"
         registrationLabel.textColor = .textPrimary
