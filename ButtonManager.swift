@@ -10,7 +10,7 @@ import SnapKit
 
 class ButtonManager: UIButton {
 
-    init(title: String, backgroundColor: UIColor = UIColor(named: "keycolorPrimary1") ?? .systemBlue, titleColor: UIColor = .white, width: CGFloat = 52) {
+    init(title: String, backgroundColor: UIColor = UIColor(named: "keycolorPrimary3") ?? .systemBlue, titleColor: UIColor = UIColor(named: "keycolorInverse") ?? .systemBlue, width: CGFloat = 52) {
         super.init(frame: .zero)
         configureUI(title: title, backgroundColor: backgroundColor, titleColor: titleColor, width: width)
     }

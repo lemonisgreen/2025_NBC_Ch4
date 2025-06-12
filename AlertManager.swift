@@ -54,7 +54,7 @@ class AlertManager: UIViewController {
         messageLabel.text = message
         messageLabel.textAlignment = .center
         messageLabel.font = UIFont.title3
-        messageLabel.textColor = .black
+        messageLabel.textColor = UIColor(named: "textPrimary")
 
         buttonStackView.axis = .horizontal
         buttonStackView.spacing = 12
@@ -63,8 +63,8 @@ class AlertManager: UIViewController {
         for (index, title) in buttonTitles.enumerated() {
             let button = UIButton()
             button.setTitle(title, for: .normal)
-            button.backgroundColor = .white
-            button.setTitleColor(.black, for: .normal)
+            button.backgroundColor = UIColor(named: "textInverse")
+            button.setTitleColor(UIColor(named: "textPrimary"), for: .normal)
             button.titleLabel?.font = UIFont.title3
             button.layer.cornerRadius = 6
             button.tag = index
