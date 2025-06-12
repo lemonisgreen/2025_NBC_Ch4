@@ -36,6 +36,7 @@ class RegistrationViewController: UIViewController {
     let registNeuteredFalse = RegistrationSelectButton(title: "중성화 안 했어요")
     let registIntroduceLabel = UILabel()
     let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
+    let registCompletButton = ButtonManager(title: "다음")
     
     
     override func viewDidLoad() {
@@ -92,6 +93,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredStackView,
             registIntroduceLabel,
             registIntroduce,
+            registCompletButton,
         ].forEach {
             view.addSubview($0)
         }
@@ -278,6 +280,11 @@ class RegistrationViewController: UIViewController {
         
         registIntroduce.snp.makeConstraints {
             $0.top.equalTo(registIntroduceLabel.snp.bottom).offset(8)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        
+        registCompletButton.snp.makeConstraints {
+            $0.top.equalTo(registIntroduce.snp.bottom).offset(12 + 16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
     }

@@ -13,7 +13,7 @@ class BirthSelectView: UIView {
     let birthSelectLabel = UILabel()
     let underLine = UIView()
     let datePicker = UIDatePicker()
-    let complateButton = ButtonManager(title: "선택 완료")
+    let completeButton = ButtonManager(title: "선택 완료")
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -29,7 +29,7 @@ class BirthSelectView: UIView {
         self.addSubviews([birthSelectLabel,
                           underLine,
                           datePicker,
-                          complateButton
+                          completeButton
                          ])
         
         self.backgroundColor = .white
@@ -62,7 +62,7 @@ class BirthSelectView: UIView {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
-        complateButton.snp.makeConstraints {
+        completeButton.snp.makeConstraints {
             $0.top.equalTo(datePicker.snp.bottom).offset(12 + 16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
