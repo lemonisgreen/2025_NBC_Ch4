@@ -14,15 +14,17 @@ class SelectAvatarViewModel {
     
     enum Input {
         case goNext(Int)
+        case completeSelect
     }
     
     struct Output {
         let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
         let moveToDetailView = PublishRelay<Void>()
-        let selectedAvatar = BehaviorRelay<Int>(value: 0)
+        let selectedAvatar = BehaviorRelay<AvatarModel?>(value: nil)
     }
     
     typealias SelectAvatarDataSource = SectionModel<String, String>
+    private let data = AvatarModel.sample
     
     let input = PublishRelay<Input>()
     let output = Output()
@@ -39,7 +41,9 @@ class SelectAvatarViewModel {
             switch input {
             case .goNext(let index):
                 self.output.moveToDetailView.accept(())
-                self.output.selectedAvatar.accept(index)
+                self.output.selectedAvatar.accept(self.data[index])
+            case .completeSelect:
+                self.output
             }
         }
         .disposed(by: disposeBag)
@@ -47,14 +51,8 @@ class SelectAvatarViewModel {
     
     private func fetchCellData() {
         self.output.cellData.accept([ // smiley
-            SelectAvatarDataSource(model: "탐정님과 함께할 조수를 선택해주세요!", items: [
-                "face.smiling",
-                "face.smiling",
-                "face.smiling",
-                "face.smiling",
-                "face.smiling",
-                "face.smiling"
-            ])
+            SelectAvatarDataSource(model: "탐정님과 함께할 조수를 선택해주세요!",
+                                   items: self.data.map { $0.icon })
         ])
     }
 }
