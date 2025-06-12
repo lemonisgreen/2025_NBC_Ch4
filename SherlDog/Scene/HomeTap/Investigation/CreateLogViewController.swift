@@ -112,10 +112,12 @@ extension CreateLogViewController {
         titleLabel.font = .highlight3
         titleLabel.textColor = .textPrimary
         
+        photoImageView.image = UIImage(named: "naver")   // test
         photoImageView.contentMode = .scaleAspectFill
-        photoImageView.backgroundColor = .black
+        photoImageView.clipsToBounds = true
         photoImageView.layer.cornerRadius = 6
         
+        dateLabel.text = "2025년 6월 1일"  // test
         dateLabel.font = .title1
         dateLabel.textColor = .textInverse
         
@@ -140,7 +142,7 @@ extension CreateLogViewController {
             .forEach {
                 $0.font = .body1
                 $0.textColor = .textInverse
-                $0.text = "12332"
+                $0.text = "12332"   // test
             }
         
         textView.font = .body5
@@ -227,6 +229,11 @@ extension CreateLogViewController {
         clueLabel.snp.makeConstraints {
             $0.leading.equalTo(clueTitleLabel.snp.trailing).offset(12)
             $0.centerY.equalTo(clueTitleLabel)
+        }
+        
+        dateLabel.snp.makeConstraints {
+            $0.bottom.equalTo(distanceTitleLabel.snp.top).offset(-6)
+            $0.leading.equalTo(distanceTitleLabel)
         }
         
         textView.snp.makeConstraints {
