@@ -52,6 +52,11 @@ class CreateLogViewController: UIViewController {
         configureUI()
         bind()
     }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        cameraViewModel.input.accept(.viewDismissed)
+    }
 }
 
 // MARK: - Method

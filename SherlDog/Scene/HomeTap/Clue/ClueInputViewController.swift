@@ -42,6 +42,11 @@ class ClueInputViewController: UIViewController {
         bind()
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        cameraViewModel.input.accept(.viewDismissed)
+    }
+    
     private func bind() {
         cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
