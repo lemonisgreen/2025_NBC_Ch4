@@ -95,8 +95,11 @@ extension CreateLogViewController {
                                          buttonActions: [
                                             nil,
                                             { [weak self] in
-                                                self?.dismiss(animated: true)
-                                                self?.presentingViewController?.dismiss(animated: true)
+                                                guard let self,
+                                                      let cameraView = self.presentingViewController,
+                                                      let requestView = cameraView.presentingViewController,
+                                                      let walkEndView = requestView.presentingViewController else { return }
+                                                walkEndView.dismiss(animated: true)
                                             }])
                 self?.present(alert, animated: true)
             })
@@ -104,14 +107,22 @@ extension CreateLogViewController {
         
         self.shareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                guard let self,
-                      let cameraView = self.presentingViewController,
-                      let requestView = cameraView.presentingViewController,
-                      let walkEndView = requestView.presentingViewController,
-                      let mainView = walkEndView.presentingViewController as? BottomTabBarController else { return }
+                
                 // todo: 공유 기능 구현
-                mainView.dismiss(animated: true)
-                mainView.selectedIndex = 1
+                
+                let alert = AlertManager(message: "등록되었습니다.",
+                                         buttonTitles: ["확인"],
+                                         buttonActions: [{ [weak self] in
+                    guard let self,
+                          let cameraView = self.presentingViewController,
+                          let requestView = cameraView.presentingViewController,
+                          let walkEndView = requestView.presentingViewController,
+                          let mainView = walkEndView.presentingViewController as? BottomTabBarController else { return }
+                    mainView.dismiss(animated: true)
+                    mainView.selectedIndex = 1
+                }])
+                
+                self?.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
     }

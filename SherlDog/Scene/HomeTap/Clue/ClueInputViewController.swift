@@ -134,9 +134,11 @@ class ClueInputViewController: UIViewController {
     private func bindRegisterAction() {
         registerButton.rx.tap
             .bind { [weak self] in
+                guard let self,
+                      let cameraView = self.presentingViewController,
+                      let mainView = cameraView.presentingViewController else { return }
                 print("단서 등록 로직 실행됨")
-                self?.dismiss(animated: true, completion: nil)
-                self?.presentingViewController?.dismiss(animated: true)
+                mainView.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
     }
@@ -144,8 +146,10 @@ class ClueInputViewController: UIViewController {
     private func bindCloseAction() {
         closeButton.rx.tap
             .bind { [weak self] in
-                print("dismiss")
-                self?.dismiss(animated: true, completion: nil)
+                guard let self,
+                      let cameraView = self.presentingViewController,
+                      let mainView = cameraView.presentingViewController else { return }
+                mainView.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
     }
