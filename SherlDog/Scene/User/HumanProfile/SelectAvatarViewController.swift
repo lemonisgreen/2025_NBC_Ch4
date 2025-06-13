@@ -55,6 +55,7 @@ extension SelectAvatarViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         
+        self.navigationController?.navigationBar.isHidden = true
         choiceButton.isEnabled = false
     }
     
@@ -73,6 +74,13 @@ extension SelectAvatarViewController {
                 guard let self else { return }
                 
                 let detailView = UINavigationController(rootViewController: DetailAvatarViewController(viewModel: self.viewModel))
+                detailView.modalPresentationStyle = .pageSheet
+                if let sheet = detailView.sheetPresentationController {
+                    sheet.detents = [.large()]
+                    sheet.selectedDetentIdentifier = .large
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 32
+                }
                 self.present(detailView, animated: true)
             })
             .disposed(by: disposeBag)

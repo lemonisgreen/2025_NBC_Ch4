@@ -40,7 +40,6 @@ class PictureUploadRequestView: UIViewController {
 
     init(viewModel: PictureUploadRequestViewModel?) {
         self.viewModel = viewModel
-        self.viewModel?.input.accept(.sender(.pictureRequestWithIcon)) // test
 
         super.init(nibName: nil, bundle: nil)
     }
