@@ -17,7 +17,7 @@ class CameraViewController: UIViewController {
     private let viewModel = CameraViewModel()
     private let disposeBag = DisposeBag()
     
-    private var presentVC: UIViewController
+    private var viewControllerForPicture: UIViewController
     
     private let captureSession = AVCaptureSession()
     private let captureDevice = AVCaptureDevice.default(for: .video)
@@ -30,24 +30,17 @@ class CameraViewController: UIViewController {
     
     // MARK: - Initialize
     init(to destination: CameraDestination) {
-        self.presentVC = {
-            UIViewController() // 이 부분 지우고 아래 스위치문 꺼내 쓰면 됨
+        switch destination {
             
-            /*
-             임의로 설정한 이름입니다 나중에 수정해서 쓰시면 됩니다.
-            switch destination {
-                
-            case .clueLeave:
-                self.presentVC = ClueLeaveViewController(viewModel: viewModel)
-            case .petProfile:
-                self.presentVC = PetProfileViewController(viewModel: viewModel)
-            case .assistantProfile:
-                self.presentVC = AssistantProfileViewController(viewModel: viewModel)
-            case .communityShare:
-                self.presentVC = CommunityShareViewController(viewModel: viewModel)
-            }
-             */
-        }()
+        case .clueLeave:
+            self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
+        case .petProfile:
+            self.viewControllerForPicture = UINavigationController(rootViewController: PetProfileViewController()) // todo: 뷰모델 주입
+        case .assistantProfile:
+            self.viewControllerForPicture = UINavigationController(rootViewController: CreateAssistantProfileViewController()) // todo: 뷰모델 주입
+        case .communityShare:
+            self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
+        }
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -132,6 +125,14 @@ extension CameraViewController {
                 captureDevice.unlockForConfiguration()
             })
             .disposed(by: disposeBag)
+        
+        self.viewModel.output.viewDismissed
+            .subscribe(onNext: { [weak self] _ in
+                DispatchQueue.global().async {
+                    self?.captureSession.startRunning()
+                }
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupCamera() {
@@ -204,7 +205,7 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
         }
         
         DispatchQueue.main.async {
-            self.navigationController?.pushViewController(self.presentVC, animated: true)
+            self.present(self.viewControllerForPicture, animated: true)
         }
     }
 }
