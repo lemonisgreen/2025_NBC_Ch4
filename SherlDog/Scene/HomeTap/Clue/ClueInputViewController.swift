@@ -18,8 +18,20 @@ class ClueInputViewController: UIViewController {
     private let countLabel = UILabel()
     private let placeholderLabel = UILabel()
 
+    private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
-
+    
+  
+    init(viewModel: CameraViewModel) {
+        self.cameraViewModel = viewModel
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -27,6 +39,20 @@ class ClueInputViewController: UIViewController {
         bindRegisterAction()
         bindCloseAction()
         bindTextView()
+        bind()
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        cameraViewModel.input.accept(.viewDismissed)
+    }
+    
+    private func bind() {
+        cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                self?.imageView.image = image
+            })
+            .disposed(by: disposeBag)
     }
 
     private func setupUI() {
@@ -108,8 +134,11 @@ class ClueInputViewController: UIViewController {
     private func bindRegisterAction() {
         registerButton.rx.tap
             .bind { [weak self] in
+                guard let self,
+                      let cameraView = self.presentingViewController,
+                      let mainView = cameraView.presentingViewController else { return }
                 print("단서 등록 로직 실행됨")
-                self?.dismiss(animated: true, completion: nil)
+                mainView.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
     }
@@ -117,8 +146,10 @@ class ClueInputViewController: UIViewController {
     private func bindCloseAction() {
         closeButton.rx.tap
             .bind { [weak self] in
-                print("dismiss")
-                self?.dismiss(animated: true, completion: nil)
+                guard let self,
+                      let cameraView = self.presentingViewController,
+                      let mainView = cameraView.presentingViewController else { return }
+                mainView.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
     }
