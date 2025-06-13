@@ -7,32 +7,42 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
-class BirthSelectView: UIView {
+class BirthSelectViewController: UIViewController {
+    
+    let disposeBag = DisposeBag()
     
     let birthSelectLabel = UILabel()
     let underLine = UIView()
     let datePicker = UIDatePicker()
     let completeButton = ButtonManager(title: "선택 완료")
     
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    override func viewDidLoad() {
+        super.viewDidLoad()
         setupUI()
         configureUI()
+        bind()
+        
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    func bind() {
+        self.completeButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
-        self.addSubviews([birthSelectLabel,
+        view.addSubviews([birthSelectLabel,
                           underLine,
                           datePicker,
                           completeButton
                          ])
         
-        self.backgroundColor = .white
+        view.backgroundColor = .white
         
         birthSelectLabel.text = "생년월일을 알려주세요"
         birthSelectLabel.font = .title1

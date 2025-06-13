@@ -63,6 +63,24 @@ class RegistrationViewController: UIViewController {
     
     func bind() {
         
+        self.registImage.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                let pictureViewModel = PictureUploadRequestViewModel()
+                pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel))
+                requestView.modalPresentationStyle = .pageSheet
+                
+                if let sheet = requestView.sheetPresentationController {
+                    sheet.detents = [.medium()]
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 32
+                }
+                self.present(requestView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         self.registName.rx.text
             .subscribe(onNext: { [weak self]  _ in
                 guard let self,
@@ -78,6 +96,19 @@ class RegistrationViewController: UIViewController {
                     let overText = text.count - 10
                     self.registName.text?.removeLast(overText)
                     self.registNameCountLabel.text = "10 / 10 자"
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        self.registBreed.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let breedSearchVC = BreedSearchViewController()
+                if let sheet = breedSearchVC.sheetPresentationController {
+                    sheet.detents = [.large()]
+                    sheet.selectedDetentIdentifier = .large
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 32
+                    self?.present(breedSearchVC, animated: true)
                 }
             })
             .disposed(by: disposeBag)
@@ -106,6 +137,19 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        self.registAgeButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let birthSelectVC = BirthSelectViewController()
+                if let sheet = birthSelectVC.sheetPresentationController {
+                    sheet.detents = [.medium()]
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 32
+                    self?.present(birthSelectVC, animated: true)
+                }
+            })
+            .disposed(by: disposeBag)
+        
         self.registGenderFemale.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.registGenderFemale.isSelected = true
@@ -131,6 +175,12 @@ class RegistrationViewController: UIViewController {
             .subscribe(onNext: { [weak self] _ in
                 self?.registNeuteredFalse.isSelected = true
                 self?.registNeuteredTrue.isSelected = false
+            })
+            .disposed(by: disposeBag)
+        
+        self.registCompletButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                self?.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -321,7 +371,7 @@ class RegistrationViewController: UIViewController {
     private func configureUI() {
         
         registrationLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(34 + 16)
+            $0.top.equalToSuperview().inset(16)
             $0.leading.equalToSuperview().inset(20)
         }
         

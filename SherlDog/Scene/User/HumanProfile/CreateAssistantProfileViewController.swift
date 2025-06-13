@@ -95,6 +95,13 @@ extension CreateAssistantProfileViewController {
                 self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        self.nextButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let mainVC = MainViewController()
+                self?.navigationController?.pushViewController(mainVC, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
