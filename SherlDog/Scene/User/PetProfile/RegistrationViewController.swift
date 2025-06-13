@@ -87,6 +87,9 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = true
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = false
+
+                self?.registSizeSmallLabel.textColor = .textPrimary
+
             })
             .disposed(by: disposeBag)
         
@@ -95,6 +98,9 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = false
                 self?.registSizeMediumButton.isSelected = true
                 self?.registSizeLargeButton.isSelected = false
+                
+                self?.registSizeMediumLabel.textColor = .textTertiary
+
             })
             .disposed(by: disposeBag)
         
@@ -103,6 +109,9 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = false
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = true
+                
+                self?.registSizeLargeLabel.textColor = .textTertiary
+
             })
             .disposed(by: disposeBag)
         
@@ -257,7 +266,6 @@ class RegistrationViewController: UIViewController {
         registSizeSmallStackView.alignment = .center
         registSizeSmallStackView.isUserInteractionEnabled = false
         
-        
         registSizeMediumIcon.image = UIImage(named: "mediumDog")
         registSizeMediumIcon.isUserInteractionEnabled = false
         registSizeMediumLabel.text = "중형견"
@@ -270,7 +278,7 @@ class RegistrationViewController: UIViewController {
         registSizeMediumStackView.spacing = 8
         registSizeMediumStackView.alignment = .center
         registSizeMediumStackView.isUserInteractionEnabled = false
-        
+    
         registSizeLargeIcon.image = UIImage(named: "largeDog")
         registSizeLargeIcon.isUserInteractionEnabled = false
         registSizeLargeLabel.text = "대형견"

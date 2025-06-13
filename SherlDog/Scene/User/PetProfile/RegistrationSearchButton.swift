@@ -27,9 +27,10 @@ class RegistrationSearchButton: UIButton {
     func setConfig() {
         self.backgroundColor = .gray50
         self.setTitleColor(.textDisabled, for: .normal)
-        self.titleLabel?.textAlignment = .left
+        self.contentHorizontalAlignment = .leading
         self.titleLabel?.font = .body3
         self.layer.cornerRadius = 6
+        self.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
         self.snp.makeConstraints {
             $0.height.equalTo(44)
         }
