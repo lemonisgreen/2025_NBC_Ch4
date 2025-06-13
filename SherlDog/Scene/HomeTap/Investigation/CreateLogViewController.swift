@@ -13,6 +13,7 @@ import SnapKit
 // MARK: - CreateLogViewController
 class CreateLogViewController: UIViewController {
     
+    private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     
     private let titleLabel = UILabel()
@@ -34,6 +35,16 @@ class CreateLogViewController: UIViewController {
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
+    init(viewModel: CameraViewModel) {
+        self.cameraViewModel = viewModel
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -47,6 +58,12 @@ class CreateLogViewController: UIViewController {
 extension CreateLogViewController {
     
     private func bind() {
+        cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                self?.photoImageView.image = image
+            })
+            .disposed(by: disposeBag)
+        
         textView.rx.text
             .subscribe(onNext: { [weak self] text in
                 guard let self, let text else { return }
@@ -68,14 +85,24 @@ extension CreateLogViewController {
         
         self.cancelButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                // todo: 알럿 출력
-                self?.dismiss(animated: true)
+                let alert = AlertManager(message: "작성을 취소하시겠습니까?",
+                                         buttonTitles: ["취소", "확인"],
+                                         buttonActions: [
+                                            nil,
+                                            { [weak self] in
+                                                self?.dismiss(animated: true)
+                                                self?.presentingViewController?.dismiss(animated: true)
+                                            }])
+                self?.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
         
         self.shareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                // todo: 알럿 출력
+                // todo: 공유 기능 구현
+                self?.dismiss(animated: true)
+                self?.presentingViewController?.dismiss(animated: true)
+                self?.presentingViewController?.tabBarController?.selectedIndex = 1
             })
             .disposed(by: disposeBag)
     }

@@ -47,6 +47,30 @@ class MainViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
+        bind()
+        inputBind()
+    }
+    
+    private func bind() {
+        
+    }
+    
+    private func inputBind() {
+        self.clueButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .clueLeave))
+                cameraView.modalPresentationStyle = .fullScreen
+                self?.present(cameraView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        self.endButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .communityShare))
+                cameraView.modalPresentationStyle = .fullScreen
+                self?.present(cameraView, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {

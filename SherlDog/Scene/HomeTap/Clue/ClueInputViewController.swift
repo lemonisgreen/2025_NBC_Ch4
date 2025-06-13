@@ -18,8 +18,20 @@ class ClueInputViewController: UIViewController {
     private let countLabel = UILabel()
     private let placeholderLabel = UILabel()
 
+    private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
-
+    
+  
+    init(viewModel: CameraViewModel) {
+        self.cameraViewModel = viewModel
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -27,6 +39,15 @@ class ClueInputViewController: UIViewController {
         bindRegisterAction()
         bindCloseAction()
         bindTextView()
+        bind()
+    }
+    
+    private func bind() {
+        cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                self?.imageView.image = image
+            })
+            .disposed(by: disposeBag)
     }
 
     private func setupUI() {
@@ -110,6 +131,7 @@ class ClueInputViewController: UIViewController {
             .bind { [weak self] in
                 print("단서 등록 로직 실행됨")
                 self?.dismiss(animated: true, completion: nil)
+                self?.presentingViewController?.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
     }
