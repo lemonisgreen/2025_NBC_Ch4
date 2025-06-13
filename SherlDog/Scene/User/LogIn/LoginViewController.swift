@@ -11,147 +11,163 @@ import KakaoSDKUser
 import FirebaseCore
 import GoogleSignIn
 import FirebaseAuth
+import RxSwift
+import RxCocoa
 
 class LoginViewController: UIViewController {
-    
-    // MARK: - Constants
-    private struct Constants {
-        static let splashDuration: TimeInterval = 2.0
-        static let animationDuration: TimeInterval = 0.5
-        static let helloLabelSize: CGFloat = 24
-        static let helloLabel2Size: CGFloat = 18
-        static let orLabelSize: CGFloat = 12
-        static let logoHeight: CGFloat = 200
-        static let buttonHeight: CGFloat = 54
-        static let socialButtonSize: CGFloat = 50
-        static let joinImageHeight: CGFloat = 96
-        static let buttonWidthMultiplier: CGFloat = 0.85
-        static let imageWidthMultiplier: CGFloat = 0.8
-    }
-    
-    // MARK: - Properties
+
     private var isLoggingIn = false
-    
-    // MARK: - 컴포넌트
-    let splashView = SplashView()
-    
-    private let logo: UIImageView = {
-        let image = UIImageView()
-        image.image = UIImage(named: "bigLogo")
-        image.contentMode = .scaleAspectFit
-        return image
-    }()
-    
-    private let helloLabel: UILabel = {
-        let label = UILabel()
-        label.text = "반가워요!"
-        label.font = UIFont(name: "EF_jejudoldam", size: Constants.helloLabelSize)
-        label.textAlignment = .center
-        return label
-    }()
-    
-    private let helloLabel2: UILabel = {
-        let label = UILabel()
-        label.text = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
-        label.font = UIFont(name: "EF_jejudoldam", size: Constants.helloLabel2Size)
-        label.textAlignment = .center
-        return label
-    }()
-    
-    private let joinImage: UIImageView = {
-        let image = UIImageView()
-        image.image = UIImage(named: "join")
-        image.contentMode = .scaleAspectFit
-        return image
-    }()
-    
-    private lazy var kakaoButton: UIButton = {
-        let button = UIButton()
-        button.setImage(.kakao, for: .normal)
-        button.addTarget(self, action: #selector(kakaoLoginTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var naverButton: UIButton = {
-        let button = UIButton()
-        button.setImage(.naver, for: .normal)
-        button.addTarget(self, action: #selector(naverLoginTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private let orLabel: UILabel = {
-        let label = UILabel()
-        label.text = "또는"
-        label.font = UIFont(name: "Pretendard", size: Constants.orLabelSize)
-        label.textAlignment = .center
-        return label
-    }()
-    
-    private lazy var googleButton: UIButton = {
-        let button = UIButton()
-        button.setImage(.google, for: .normal)
-        button.addTarget(self, action: #selector(googleLoginTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var appleButton: UIButton = {
-        let button = UIButton()
-        button.setImage(.apple, for: .normal)
-        button.addTarget(self, action: #selector(appleLoginTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    private lazy var facebookButton: UIButton = {
-        let button = UIButton()
-        button.setImage(.facebook, for: .normal)
-        button.addTarget(self, action: #selector(facebookLoginTapped), for: .touchUpInside)
-        return button
-    }()
-    
-    // MARK: - Loading Indicator
-    private lazy var loadingIndicator: UIActivityIndicatorView = {
-        let indicator = UIActivityIndicatorView(style: .large)
-        indicator.color = .systemBlue
-        indicator.hidesWhenStopped = true
-        return indicator
-    }()
-    
-    // MARK: - Lifecycle
+    private let disposeBag = DisposeBag()
+
+    private let splashView = SplashView()
+    private let logo = UIImageView()
+    private let helloLabel = UILabel()
+    private let helloLabel2 = UILabel()
+    private let joinImage = UIImageView()
+    private let kakaoButton = UIButton()
+    private let naverButton = UIButton()
+    private let googleButton = UIButton()
+    private let appleButton = UIButton()
+    private let facebookButton = UIButton()
+    private let orLabel = UILabel()
+    private let loadingIndicator = UIActivityIndicatorView(style: .large)
+
     override func viewDidLoad() {
         super.viewDidLoad()
+        configureUI()
         setupUI()
         setupConstraints()
         setupSplashView()
         setupKakaoLogin()
         checkAutoLogin()
+        bindUI()
         navigationItem.backButtonTitle = ""
     }
-    
-    // MARK: - Setup
+
+    private func configureUI() {
+        view.backgroundColor = .keycolorBackground
+
+        logo.image = UIImage(named: "bigLogo")
+        logo.contentMode = .scaleAspectFit
+
+        helloLabel.text = "반가워요!"
+        helloLabel.font = UIFont(name: "EF_jejudoldam", size: 24)
+        helloLabel.textAlignment = .center
+
+        helloLabel2.text = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
+        helloLabel2.font = UIFont(name: "EF_jejudoldam", size: 18)
+        helloLabel2.textAlignment = .center
+
+        joinImage.image = UIImage(named: "join")
+        joinImage.contentMode = .scaleAspectFit
+
+        orLabel.text = "또는"
+        orLabel.font = UIFont(name: "Pretendard", size: 12)
+        orLabel.textAlignment = .center
+
+        kakaoButton.setImage(.kakao, for: .normal)
+        naverButton.setImage(.naver, for: .normal)
+        googleButton.setImage(.google, for: .normal)
+        appleButton.setImage(.apple, for: .normal)
+        facebookButton.setImage(.facebook, for: .normal)
+
+        loadingIndicator.color = .systemBlue
+        loadingIndicator.hidesWhenStopped = true
+    }
+
     private func setupUI() {
-        view.backgroundColor = UIColor.keycolorBackground
-        
         [logo, helloLabel, helloLabel2, joinImage, orLabel,
-         naverButton, kakaoButton, googleButton, appleButton, facebookButton, loadingIndicator]
+         kakaoButton, naverButton, googleButton, appleButton, facebookButton, loadingIndicator]
             .forEach { view.addSubview($0) }
     }
-    
+
+    private func setupConstraints() {
+        logo.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(24)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(140)
+        }
+
+        helloLabel.snp.makeConstraints {
+            $0.top.equalTo(logo.snp.bottom).offset(12)
+            $0.centerX.equalToSuperview()
+        }
+
+        helloLabel2.snp.makeConstraints {
+            $0.top.equalTo(helloLabel.snp.bottom).offset(6)
+            $0.centerX.equalToSuperview()
+        }
+
+        joinImage.snp.makeConstraints {
+            $0.top.equalTo(helloLabel2.snp.bottom).offset(12)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(80)
+            $0.width.equalToSuperview().multipliedBy(0.75)
+        }
+
+        naverButton.snp.makeConstraints {
+            $0.top.equalTo(joinImage.snp.bottom).offset(10)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(54)
+            $0.width.equalToSuperview().multipliedBy(0.85)
+        }
+
+        kakaoButton.snp.makeConstraints {
+            $0.top.equalTo(naverButton.snp.bottom).offset(10)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(54)
+            $0.width.equalToSuperview().multipliedBy(0.85)
+        }
+
+        orLabel.snp.makeConstraints {
+            $0.top.equalTo(kakaoButton.snp.bottom).offset(24)
+            $0.centerX.equalToSuperview()
+        }
+
+        loadingIndicator.snp.makeConstraints {
+            $0.center.equalToSuperview()
+        }
+
+        setupSocialButtonsStack()
+    }
+
+    private func setupSocialButtonsStack() {
+        let stack = UIStackView(arrangedSubviews: [googleButton, appleButton, facebookButton])
+        stack.axis = .horizontal
+        stack.spacing = 20
+        stack.alignment = .center
+        stack.distribution = .equalSpacing
+
+        view.addSubview(stack)
+
+        stack.snp.makeConstraints {
+            $0.top.equalTo(orLabel.snp.bottom).offset(28)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(56)
+        }
+
+        [googleButton, appleButton, facebookButton].forEach {
+            $0.snp.makeConstraints {
+                $0.size.equalTo(48)
+            }
+        }
+    }
+
     private func setupSplashView() {
         view.addSubview(splashView)
-        view.bringSubviewToFront(splashView)
         splashView.frame = view.bounds
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + Constants.splashDuration) {
+        view.bringSubviewToFront(splashView)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             self.dismissSplashView()
         }
     }
-    
+
     private func setupKakaoLogin() {
         KakaoLoginManager.shared.delegate = self
     }
-    
+
     private func checkAutoLogin() {
-        // 이미 로그인된 상태인지 확인
         if KakaoLoginManager.shared.isLoggedIn() {
             KakaoLoginManager.shared.validateToken { [weak self] isValid in
                 DispatchQueue.main.async {
@@ -164,174 +180,92 @@ class LoginViewController: UIViewController {
             }
         }
     }
-    
-    private func setupConstraints() {
-        logo.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(40)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(Constants.logoHeight)
-        }
-        
-        helloLabel.snp.makeConstraints {
-            $0.top.equalTo(logo.snp.bottom).offset(16)
-            $0.centerX.equalToSuperview()
-        }
-        
-        helloLabel2.snp.makeConstraints {
-            $0.top.equalTo(helloLabel.snp.bottom).offset(8)
-            $0.centerX.equalToSuperview()
-        }
-        
-        joinImage.snp.makeConstraints {
-            $0.top.equalTo(helloLabel2.snp.bottom).offset(20)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(Constants.joinImageHeight)
-            $0.width.equalToSuperview().multipliedBy(Constants.imageWidthMultiplier)
-        }
-        
-        naverButton.snp.makeConstraints {
-            $0.top.equalTo(joinImage.snp.bottom).offset(10)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(Constants.buttonHeight)
-            $0.width.equalToSuperview().multipliedBy(Constants.buttonWidthMultiplier)
-        }
-        
-        kakaoButton.snp.makeConstraints {
-            $0.top.equalTo(naverButton.snp.bottom).offset(12)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(Constants.buttonHeight)
-            $0.width.equalToSuperview().multipliedBy(Constants.buttonWidthMultiplier)
-        }
-        
-        orLabel.snp.makeConstraints {
-            $0.top.equalTo(kakaoButton.snp.bottom).offset(24)
-            $0.centerX.equalToSuperview()
-        }
-        
-        loadingIndicator.snp.makeConstraints {
-            $0.center.equalToSuperview()
-        }
-        
-        setupSocialButtonsStack()
-    }
-    
-    private func setupSocialButtonsStack() {
-        let socialStack = UIStackView(arrangedSubviews: [googleButton, appleButton, facebookButton])
-        socialStack.axis = .horizontal
-        // 최소 간격
-        socialStack.spacing = 20
-        socialStack.alignment = .center
-        // 남는 간격
-        socialStack.distribution = .equalSpacing
-        view.addSubview(socialStack)
-        
-        socialStack.snp.makeConstraints {
-            $0.top.equalTo(orLabel.snp.bottom).offset(16)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(Constants.socialButtonSize)
-        }
-        
-        [googleButton, appleButton, facebookButton].forEach {
-            $0.snp.makeConstraints {
-                $0.size.equalTo(Constants.socialButtonSize)
-            }
-        }
-    }
-    
-    // MARK: - Loading State Management
+
     private func setLoading(_ loading: Bool) {
         isLoggingIn = loading
-        
-        if loading {
-            loadingIndicator.startAnimating()
-            view.isUserInteractionEnabled = false
-        } else {
-            loadingIndicator.stopAnimating()
-            view.isUserInteractionEnabled = true
-        }
+        loading ? loadingIndicator.startAnimating() : loadingIndicator.stopAnimating()
+        view.isUserInteractionEnabled = !loading
     }
-    
-    // MARK: - Navigation
+
     private func navigateToNextScreen() {
-        let petProfileVC = PetProfileViewController()
-        navigationController?.pushViewController(petProfileVC, animated: true)
+        navigationController?.pushViewController(PetProfileViewController(), animated: true)
     }
-    
-    // MARK: - Error Handling
+
     private func showLoginError(message: String) {
         let alert = UIAlertController(
             title: "로그인 실패",
             message: "다시 로그인 해주세요.",
             preferredStyle: .alert
         )
-        
         alert.addAction(UIAlertAction(title: "확인", style: .default))
         present(alert, animated: true)
     }
-    
+
     private func showComingSoonAlert(for provider: String) {
         let alert = UIAlertController(
             title: "준비 중입니다",
             message: "\(provider) 로그인은 곧 지원될 예정입니다.",
             preferredStyle: .alert
         )
-        
         alert.addAction(UIAlertAction(title: "확인", style: .default))
         present(alert, animated: true)
     }
-    
-    // MARK: - Actions
-    @objc private func kakaoLoginTapped() {
-        guard !isLoggingIn else {
-            return
-        }
 
+    private func bindUI() {
+        kakaoButton.rx.tap
+            .bind { [weak self] in self?.performKakaoLogin() }
+            .disposed(by: disposeBag)
+
+        naverButton.rx.tap
+            .bind { [weak self] in self?.showComingSoonAlert(for: "네이버") }
+            .disposed(by: disposeBag)
+
+        googleButton.rx.tap
+            .bind { [weak self] in self?.performGoogleLogin() }
+            .disposed(by: disposeBag)
+
+        appleButton.rx.tap
+            .bind { [weak self] in self?.showComingSoonAlert(for: "애플") }
+            .disposed(by: disposeBag)
+
+        facebookButton.rx.tap
+            .bind { [weak self] in self?.showComingSoonAlert(for: "페이스북") }
+            .disposed(by: disposeBag)
+    }
+
+    private func performKakaoLogin() {
+        guard !isLoggingIn else { return }
         setLoading(true)
-        
+
         KakaoLoginManager.shared.login { [weak self] result in
             DispatchQueue.main.async {
                 self?.setLoading(false)
-                
+
                 switch result {
                 case .success(let user):
                     let userInfo = KakaoUserInfo(from: user)
-                    
-                    // 사용자 정보 저장
                     UserDefaults.standard.set(true, forKey: "isKakaoLoggedIn")
                     UserDefaults.standard.set(userInfo.nickname, forKey: "userNickname")
                     UserDefaults.standard.set(userInfo.email, forKey: "userEmail")
-                    
                     self?.navigateToNextScreen()
-                    
                 case .failure(let error):
-                    if case .userCancelled = error {
-                        return
-                    }
+                    if case .userCancelled = error { return }
                     self?.showLoginError(message: error.localizedDescription)
                 }
             }
         }
     }
-    
-    @objc private func naverLoginTapped() {
-        print("Naver login tapped")
-        showComingSoonAlert(for: "네이버")
-    }
-    
-    @objc private func googleLoginTapped() {
-        guard !isLoggingIn else {
-            return
-        }
-        
+
+    private func performGoogleLogin() {
+        guard !isLoggingIn else { return }
         setLoading(true)
-        
+
         guard let rootVC = self.view.window?.rootViewController else {
             setLoading(false)
             showLoginError(message: "화면 전환 컨트롤러를 찾을 수 없습니다.")
             return
         }
-        
-        // Google 로그인 수행
+
         GIDSignIn.sharedInstance.signIn(
             withPresenting: rootVC,
             hint: nil,
@@ -339,12 +273,12 @@ class LoginViewController: UIViewController {
         ) { [weak self] signInResult, error in
             guard let self = self else { return }
             self.setLoading(false)
-            
+
             if let error = error {
                 self.showLoginError(message: error.localizedDescription)
                 return
             }
-            
+
             guard
                 let user = signInResult?.user,
                 let idToken = user.idToken?.tokenString
@@ -352,14 +286,14 @@ class LoginViewController: UIViewController {
                 self.showLoginError(message: "인증 토큰을 가져오지 못했습니다")
                 return
             }
-            
+
             let accessToken = user.accessToken.tokenString
-            
+
             let credential = GoogleAuthProvider.credential(
                 withIDToken: idToken,
                 accessToken: accessToken
             )
-            
+
             Auth.auth().signIn(with: credential) { authResult, error in
                 if let error = error {
                     self.showLoginError(message: error.localizedDescription)
@@ -369,33 +303,21 @@ class LoginViewController: UIViewController {
             }
         }
     }
-    @objc private func appleLoginTapped() {
-        print("Apple login tapped")
-        showComingSoonAlert(for: "애플")
-    }
-    
-    @objc private func facebookLoginTapped() {
-        print("Facebook login tapped")
-        showComingSoonAlert(for: "페이스북")
-    }
 }
 
-// MARK: - KakaoLoginManagerDelegate
 extension LoginViewController: KakaoLoginManagerDelegate {
-    
     func kakaoLoginDidSucceed(user: KakaoSDKUser.User) {
-        let userInfo = KakaoUserInfo(from: user)
+        let _ = KakaoUserInfo(from: user)
     }
-    
+
     func kakaoLoginDidFail(error: KakaoLoginError) {
         print("카카오 로그인 실패 (Delegate): \(error.localizedDescription)")
     }
 }
 
-// MARK: - Extensions
 extension LoginViewController {
     private func dismissSplashView() {
-        UIView.animate(withDuration: Constants.animationDuration, animations: {
+        UIView.animate(withDuration: 0.5, animations: {
             self.splashView.alpha = 0
         }) { _ in
             self.splashView.removeFromSuperview()

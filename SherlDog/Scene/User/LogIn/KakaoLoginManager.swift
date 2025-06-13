@@ -63,17 +63,12 @@ struct KakaoUserInfo {
 // MARK: - KakaoLoginManager
 class KakaoLoginManager {
     
-    // MARK: - Singleton
     static let shared = KakaoLoginManager()
     
     // MARK: - Properties
     weak var delegate: KakaoLoginManagerDelegate?
     private var currentUserInfo: KakaoUserInfo?
-    
-    // MARK: - Initialization
     private init() {}
-    
-    // MARK: - Public Methods
     
     /// 카카오 로그인 시작
     func login(completion: ((KakaoLoginResult) -> Void)? = nil) {
@@ -230,9 +225,9 @@ private extension KakaoLoginManager {
         }
     }
     
-    /// 에러 처리 (간소화된 버전)
+    /// 에러 처리
     func processError(_ error: Error) -> KakaoLoginError {
-        
+    
         let errorMessage = error.localizedDescription.lowercased()
         
         // 에러 메시지 기반으로 분류

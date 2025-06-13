@@ -19,7 +19,7 @@ class BreedTableViewCell: UITableViewCell {
     private let arrowImageView: UIImageView = {
         let iv = UIImageView()
         iv.image = UIImage(systemName: "chevron.right")
-        iv.tintColor = .systemGray3
+        iv.tintColor = .textPrimary
         iv.contentMode = .scaleAspectFit
         return iv
     }()
