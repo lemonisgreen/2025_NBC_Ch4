@@ -10,8 +10,8 @@ import UIKit
 class BottomTabBarController: UITabBarController {
     
     let VC1 = WalkMainViewController()
-    let VC2 = ViewController()
-    let VC3 = ViewController()
+    let VC2 = WalkMainViewController()
+    let VC3 = WalkMainViewController()
     
     
     override func viewDidLoad() {
