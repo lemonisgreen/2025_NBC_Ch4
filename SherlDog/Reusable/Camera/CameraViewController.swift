@@ -33,13 +33,13 @@ class CameraViewController: UIViewController {
         switch destination {
             
         case .clueLeave:
-            self.viewControllerForPicture = ClueInputViewController(viewModel: viewModel)
+            self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
         case .petProfile:
-            self.viewControllerForPicture = PetProfileViewController() // todo: 뷰모델 주입
+            self.viewControllerForPicture = UINavigationController(rootViewController: PetProfileViewController()) // todo: 뷰모델 주입
         case .assistantProfile:
-            self.viewControllerForPicture = CreateAssistantProfileViewController() // todo: 뷰모델 주입
+            self.viewControllerForPicture = UINavigationController(rootViewController: CreateAssistantProfileViewController()) // todo: 뷰모델 주입
         case .communityShare:
-            self.viewControllerForPicture = CreateLogViewController(viewModel: viewModel)
+            self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
         }
         
         super.init(nibName: nil, bundle: nil)

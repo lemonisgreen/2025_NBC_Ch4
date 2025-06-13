@@ -66,9 +66,9 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .communityShare))
-                cameraView.modalPresentationStyle = .fullScreen
-                self?.present(cameraView, animated: true)
+                let endView = UINavigationController(rootViewController: WalkEndModalViewController())
+                endView.modalPresentationStyle = .overFullScreen
+                self?.present(endView, animated: true)
             })
             .disposed(by: disposeBag)
     }

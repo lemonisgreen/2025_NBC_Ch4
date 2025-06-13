@@ -104,10 +104,14 @@ extension CreateLogViewController {
         
         self.shareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
+                guard let self,
+                      let cameraView = self.presentingViewController,
+                      let requestView = cameraView.presentingViewController,
+                      let walkEndView = requestView.presentingViewController,
+                      let mainView = walkEndView.presentingViewController as? BottomTabBarController else { return }
                 // todo: 공유 기능 구현
-                self?.dismiss(animated: true)
-                self?.presentingViewController?.dismiss(animated: true)
-                self?.presentingViewController?.tabBarController?.selectedIndex = 1
+                mainView.dismiss(animated: true)
+                mainView.selectedIndex = 1
             })
             .disposed(by: disposeBag)
     }

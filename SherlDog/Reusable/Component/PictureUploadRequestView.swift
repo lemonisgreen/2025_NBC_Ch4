@@ -106,12 +106,18 @@ extension PictureUploadRequestView {
             .disposed(by: disposeBag)
         
         self.viewModel?.output.moveToView
-            .subscribe(onNext: { list in
+            .subscribe(onNext: { [weak self] list in
                 switch list {
-                case .camera: print("camera")
-                case .album: print("album")
+                case .camera:
+                    let cameraView = UINavigationController(rootViewController: CameraViewController(to: .communityShare))
+                    cameraView.modalPresentationStyle = .fullScreen
+                    self?.present(cameraView, animated: true)
+                    
+                case .album:
+                    print("album")
+                    
                 case .avatar:
-                    self.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
+                    self?.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
                 }
             })
             .disposed(by: disposeBag)
