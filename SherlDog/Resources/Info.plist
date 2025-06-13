@@ -2,6 +2,34 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>KAKAO_NATIVE_APP_KEY</key>
+	<string>88917bd32cd5a4e5e50b193984545800</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>GOOGLE</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.66969339194-m3mhc8skhvradm1fqgicuvevg1sp7f7j</string>
+				<string>com.rak.SherlDog</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>KAKAO</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kakao{88917bd32cd5a4e5e50b193984545800}</string>
+			</array>
+		</dict>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>kakaolink</string>
+		<string>storykompassauth</string>
+		<string>kakaokompassauth</string>
+	</array>
 	<key>NMFClientId</key>
 	<string></string>
 	<key>NSLocationAlwaysUsageDescription</key>
