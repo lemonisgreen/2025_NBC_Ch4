@@ -17,11 +17,16 @@ class WalkEndModalViewController : UIViewController {
     let distanceContentLabel = UILabel()
     let timeContentLabel = UILabel()
     let stepCountContentLabel = UILabel()
-    let dogImage = UIImageView()
+    let dogImages: [UIImage] = [
+        UIImage(named: "walkEndDog")!,
+        UIImage(named: "walkEndDog")!,
+        UIImage(named: "walkEndDog")!
+    ]
     let walkEndLabel = UILabel()
     let walkShareButton = UIButton()
     let mapImageView = UIImageView()
     
+    let dogImagesStack = UIStackView()
     let walkEndStack = UIStackView()
     let infoStack = UIStackView()
     let timeStack = UIStackView()
@@ -31,7 +36,7 @@ class WalkEndModalViewController : UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .clear
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         setupUI()
         configureUI()
     }
@@ -46,7 +51,6 @@ class WalkEndModalViewController : UIViewController {
             distanceContentLabel,
             timeContentLabel,
             stepCountContentLabel,
-            dogImage,
             walkEndLabel,
             walkShareButton,
             infoStack,
@@ -71,16 +75,19 @@ class WalkEndModalViewController : UIViewController {
         
         distanceLabel.text = "거리"
         distanceLabel.textColor = UIColor(named: "textTertiary")
+        distanceLabel.textAlignment = .left
         distanceLabel.font = UIFont.body6
         distanceLabel.backgroundColor = .clear
         
         timeLabel.text = "시간"
         timeLabel.textColor = UIColor(named: "textTertiary")
+        timeLabel.textAlignment = .left
         timeLabel.font = UIFont.body6
         timeLabel.backgroundColor = .clear
         
         stepCountLabel.text = "걸음수"
         stepCountLabel.textColor = UIColor(named: "textTertiary")
+        stepCountLabel.textAlignment = .left
         stepCountLabel.font = UIFont.body6
         stepCountLabel.backgroundColor = .clear
         
@@ -99,12 +106,41 @@ class WalkEndModalViewController : UIViewController {
         stepCountContentLabel.font = UIFont.highlight3
         stepCountContentLabel.backgroundColor = .clear
         
-        dogImage.image = UIImage(named: "walkEndDog")
-        
-        walkEndLabel.text = "멍탐정들과 함께 수사 완료!"
+        walkEndStack.arrangedSubviews.forEach {
+            walkEndStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+
         walkEndLabel.textColor = UIColor(named: "textSecondary")
         walkEndLabel.font = UIFont.title1
         walkEndLabel.backgroundColor = .clear
+        walkEndStack.axis = .horizontal
+        walkEndStack.alignment = .center
+        walkEndStack.backgroundColor = .clear
+        walkEndStack.spacing = 4
+        walkEndStack.addArrangedSubview(dogImagesStack)
+        walkEndStack.addArrangedSubview(walkEndLabel)
+        
+        for dogImage in dogImages {
+            let imageView = UIImageView(image: dogImage)
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            imageView.snp.makeConstraints {
+                $0.width.height.equalTo(32)
+            }
+            dogImagesStack.addArrangedSubview(imageView)
+        }
+        
+        if dogImages.count == 1 {
+            walkEndLabel.text = "멍탐정과 함께 수사 완료!"
+        } else {
+            walkEndLabel.text = "멍탐정들과 함께 수사 완료!"
+        }
+        
+        dogImagesStack.axis = .horizontal
+        dogImagesStack.spacing = -20
+        dogImagesStack.alignment = .center
+        dogImagesStack.backgroundColor = .clear
         
         mapImageView.image = UIImage(named: "mapPolaroid")
         mapImageView.contentMode = .scaleAspectFit
@@ -117,26 +153,22 @@ class WalkEndModalViewController : UIViewController {
         walkShareButton.layer.cornerRadius = 6
         
         distanceStack.axis = .vertical
-        distanceStack.alignment = .center
+        distanceStack.spacing = 4
+        distanceStack.alignment = .leading
         distanceStack.addArrangedSubview(distanceLabel)
         distanceStack.addArrangedSubview(distanceContentLabel)
         distanceStack.backgroundColor = .clear
         
         timeStack.axis = .vertical
-        timeStack.alignment = .center
+        timeStack.spacing = 4
+        timeStack.alignment = .leading
         timeStack.addArrangedSubview(timeLabel)
         timeStack.addArrangedSubview(timeContentLabel)
         timeStack.backgroundColor = .clear
         
-        walkEndStack.axis = .horizontal
-        walkEndStack.alignment = .center
-        walkEndStack.addArrangedSubview(dogImage)
-        walkEndStack.addArrangedSubview(walkEndLabel)
-        walkEndStack.backgroundColor = .clear
-        walkEndStack.spacing = 10
-        
         stepCountStack.axis = .vertical
-        stepCountStack.alignment = .center
+        stepCountStack.spacing = 4
+        stepCountStack.alignment = .leading
         stepCountStack.addArrangedSubview(stepCountLabel)
         stepCountStack.addArrangedSubview(stepCountContentLabel)
         stepCountStack.backgroundColor = .clear
@@ -157,8 +189,8 @@ class WalkEndModalViewController : UIViewController {
         }
         
         todayLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(16)
-            $0.leading.equalToSuperview().inset(35)
+            $0.top.equalTo(backgroundImageView.snp.top).offset(65)
+            $0.leading.equalTo(backgroundImageView.snp.leading).inset(60)
         }
         
         infoStack.snp.makeConstraints {
@@ -170,19 +202,20 @@ class WalkEndModalViewController : UIViewController {
             $0.top.equalTo(infoStack.snp.bottom).offset(40)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(50)
+            $0.leading.equalToSuperview().inset(48)
         }
         
         mapImageView.snp.makeConstraints {
-            $0.top.equalTo(walkEndStack.snp.bottom).offset(20)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(250)
+            $0.top.equalTo(walkEndStack.snp.bottom).offset(16)
+            $0.leading.trailing.equalToSuperview().inset(10)
+            $0.height.equalTo(260)
         }
         
         walkShareButton.snp.makeConstraints {
-            $0.top.equalTo(mapImageView.snp.bottom).offset(20)
+            $0.top.equalTo(mapImageView.snp.bottom).offset(32)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(52)
-            $0.leading.trailing.equalToSuperview().inset(35)
+            $0.leading.trailing.equalToSuperview().inset(28)
         }
     }
     
