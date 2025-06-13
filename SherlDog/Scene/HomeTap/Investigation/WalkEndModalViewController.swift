@@ -6,8 +6,12 @@
 //
 
 import UIKit
+import RxSwift
+import RxCocoa
 
 class WalkEndModalViewController : UIViewController {
+    
+    private let disposeBag = DisposeBag()
     
     let backgroundImageView = UIImageView()
     let todayLabel = UILabel()
@@ -18,9 +22,9 @@ class WalkEndModalViewController : UIViewController {
     let timeContentLabel = UILabel()
     let stepCountContentLabel = UILabel()
     let dogImages: [UIImage] = [
-        UIImage(named: "walkEndDog")!,
-        UIImage(named: "walkEndDog")!,
-        UIImage(named: "walkEndDog")!
+        .smallDog,
+        .smallDog,
+        .smallDog
     ]
     let walkEndLabel = UILabel()
     let walkShareButton = UIButton()
@@ -39,6 +43,27 @@ class WalkEndModalViewController : UIViewController {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         setupUI()
         configureUI()
+        bind()
+    }
+    
+    private func bind() {
+        self.walkShareButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let requestViewModel = PictureUploadRequestViewModel()
+                requestViewModel.input.accept(.sender(.pictureRequest))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                requestView.modalPresentationStyle = .pageSheet
+                
+                if let sheet = requestView.sheetPresentationController {
+                    sheet.detents = [.medium()]
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 32
+                }
+                
+                self?.present(requestView, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
@@ -63,7 +88,7 @@ class WalkEndModalViewController : UIViewController {
             view.addSubview($0)
         }
         
-        backgroundImageView.image = UIImage(named: "endInvestigaionAddLine")
+        backgroundImageView.image = .endInvestigation
         backgroundImageView.contentMode = .scaleAspectFit
         view.insertSubview(backgroundImageView, at: 0)
         
