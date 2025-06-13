@@ -87,9 +87,6 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = true
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = false
-
-                self?.registSizeSmallLabel.textColor = .textPrimary
-
             })
             .disposed(by: disposeBag)
         
@@ -98,9 +95,6 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = false
                 self?.registSizeMediumButton.isSelected = true
                 self?.registSizeLargeButton.isSelected = false
-                
-                self?.registSizeMediumLabel.textColor = .textTertiary
-
             })
             .disposed(by: disposeBag)
         
@@ -109,9 +103,6 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = false
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = true
-                
-                self?.registSizeLargeLabel.textColor = .textTertiary
-
             })
             .disposed(by: disposeBag)
         
