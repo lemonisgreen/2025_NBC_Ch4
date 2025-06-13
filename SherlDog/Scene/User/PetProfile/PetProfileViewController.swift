@@ -7,54 +7,30 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
-class PetProfileViewController: UIViewController {
+final class PetProfileViewController: UIViewController {
 
-    // MARK: - 컴포넌트
-    private let profileAddButton: UIButton = {
-        let button = UIButton()
-        button.backgroundColor = UIColor.gray100
-        button.layer.cornerRadius = 16
-        button.layer.borderWidth = 1
-        button.layer.borderColor = UIColor.textTertiary.cgColor
-        return button
-    }()
+    // MARK: - Properties
+    private let disposeBag = DisposeBag()
 
-    private let dogImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "sherlDog") // 자산에 등록 필요
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let infoLabel: UILabel = {
-        let label = UILabel()
-        label.text = "멍탐정을 등록해주세요!"
-        label.textColor = UIColor.textDisabled
-        label.font = .systemFont(ofSize: 16)
-        label.textAlignment = .center
-        return label
-    }()
-
-    private let nextButton: UIButton = {
-        let button = UIButton()
-        button.setTitle("다음", for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = UIColor.textDisabled
-        button.layer.cornerRadius = 10
-        button.isEnabled = false
-        return button
-    }()
+    // MARK: - UI Components
+    private let profileAddButton = UIButton()
+    private let dogImageView = UIImageView()
+    private let infoLabel = UILabel()
+    private let nextButton = UIButton()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
         setupUI()
-        setupConstraints()
+        configureUI()
+        bindUI()
     }
 
-    // MARK: - Setup
+    // MARK: - UI Setup
     private func setupNavigationBar() {
         navigationItem.title = "멍탐정 프로필 입력하기"
         navigationController?.navigationBar.prefersLargeTitles = false
@@ -63,17 +39,35 @@ class PetProfileViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = UIColor.keycolorBackground
 
+        profileAddButton.backgroundColor = UIColor.gray100
+        profileAddButton.layer.cornerRadius = 16
+        profileAddButton.layer.borderWidth = 1
+        profileAddButton.layer.borderColor = UIColor.textTertiary.cgColor
+
+        dogImageView.image = UIImage(named: "sherlDog")
+        dogImageView.contentMode = .scaleAspectFit
+
+        infoLabel.text = "멍탐정을 등록해주세요!"
+        infoLabel.textColor = UIColor.textDisabled
+        infoLabel.font = .systemFont(ofSize: 16)
+        infoLabel.textAlignment = .center
+
+        nextButton.setTitle("다음", for: .normal)
+        nextButton.setTitleColor(.white, for: .normal)
+        nextButton.backgroundColor = UIColor.textDisabled
+        nextButton.layer.cornerRadius = 10
+        nextButton.isEnabled = false
+
         let buttonStack = makeProfileButtonStack()
         profileAddButton.addSubview(buttonStack)
         buttonStack.snp.makeConstraints { $0.center.equalToSuperview() }
-        profileAddButton.addTarget(self, action: #selector(profileAddButtonTapped), for: .touchUpInside)
 
         [profileAddButton, dogImageView, infoLabel, nextButton].forEach {
             view.addSubview($0)
         }
     }
 
-    private func setupConstraints() {
+    private func configureUI() {
         profileAddButton.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
@@ -96,6 +90,12 @@ class PetProfileViewController: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(20)
             $0.height.equalTo(54)
         }
+    }
+
+    private func bindUI() {
+        profileAddButton.rx.tap
+            .bind { [weak self] in self?.presentBreedSearch() }
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Factory
@@ -125,28 +125,11 @@ class PetProfileViewController: UIViewController {
         return stack
     }
 
-    // MARK: - Actions
-    @objc private func profileAddButtonTapped() {
+    // MARK: - Navigation
+    private func presentBreedSearch() {
         let breedSearchVC = BreedSearchViewController()
         let nav = UINavigationController(rootViewController: breedSearchVC)
         nav.modalPresentationStyle = .automatic
         present(nav, animated: true)
-    }
-}
-
-// MARK: - UIColor Extension
-extension UIColor {
-    convenience init(hex: String, alpha: CGFloat = 1.0) {
-        var hexSanitized = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        hexSanitized = hexSanitized.replacingOccurrences(of: "#", with: "")
-
-        var rgb: UInt64 = 0
-        Scanner(string: hexSanitized).scanHexInt64(&rgb)
-
-        let r = CGFloat((rgb & 0xFF0000) >> 16) / 255.0
-        let g = CGFloat((rgb & 0x00FF00) >> 8) / 255.0
-        let b = CGFloat(rgb & 0x0000FF) / 255.0
-
-        self.init(red: r, green: g, blue: b, alpha: alpha)
     }
 }
