@@ -26,7 +26,7 @@ class SelectAvatarCell: UICollectionViewCell {
     }
     
     func settingCell(imageName: String) {
-        self.imageView.image = UIImage(systemName: imageName)
+        self.imageView.image = UIImage(named: imageName)
     }
     
     private func setupUI() {
