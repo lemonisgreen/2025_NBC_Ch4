@@ -28,7 +28,7 @@ class DetectiveCardView: UIView {
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
-        configurationUI()
+        configureUI()
     }
     
     required init?(coder: NSCoder) {
@@ -58,65 +58,66 @@ class DetectiveCardView: UIView {
             
         self.layer.cornerRadius = 16
         self.layer.masksToBounds = true
-        self.backgroundColor = .keycolorSecondary1
+        self.backgroundColor = .keycolorSecondary4
         
-        detectiveHeaderBackgroundView.backgroundColor = .textSecondary
+        detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary1
         
         detectiveCardLabel.text = "멍탐정 프로필 카드"
         detectiveCardLabel.font = UIFont.cardTitle
-        detectiveCardLabel.textColor = .textInverse
+        detectiveCardLabel.textColor = .textPrimary
         
         detectiveNumberLabel.text = "탐정 번호"
         detectiveNumberLabel.font = UIFont.alert2
-        detectiveNumberLabel.textColor = .textInverse
+        detectiveNumberLabel.textColor = .textPrimary
         
-        detectiveNumber.text = "250607" // 예시값
+        detectiveNumber.text = "250613" // 예시값
         detectiveNumber.font = UIFont.cardTitle
-        detectiveNumber.textColor = .textInverse
+        detectiveNumber.textColor = .textPrimary
         
-        detectivePhotoImageView.backgroundColor = .gray300
+        detectivePhotoImageView.backgroundColor = .gray400
         
         detectiveNameLabel.text = "탐정명"
         detectiveNameLabel.verticalAlignment = .top
         detectiveNameLabel.font = UIFont.alert1
-        detectiveNameLabel.textColor = .textInverse
+        detectiveNameLabel.textColor = .textSecondary
         
-        detectiveName.text = "찡찡이" // 예시값
+        detectiveName.text = "멍멍멍멍멍멍멍멍멍멍" // 예시값
         detectiveName.font = UIFont.body4
         detectiveName.textColor = .textPrimary
         
         detectiveBreedLabel.text = "견종"
         detectiveBreedLabel.verticalAlignment = .top
         detectiveBreedLabel.font = UIFont.alert1
-        detectiveBreedLabel.textColor = .textInverse
+        detectiveBreedLabel.textColor = .textSecondary
 
-        detectiveBreed.text = "말티즈"
+        detectiveBreed.text = "아이리쉬 소프트 코티드 휘튼 테리어" // 예시값
         detectiveBreed.font = UIFont.body4
         detectiveBreed.textColor = .textPrimary
 
         detectiveAgeLabel.text = "나이"
         detectiveAgeLabel.verticalAlignment = .top
         detectiveAgeLabel.font = UIFont.alert1
-        detectiveAgeLabel.textColor = .textInverse
+        detectiveAgeLabel.textColor = .textSecondary
 
-        detectiveAge.text = "3세" // 예시값
+        detectiveAge.text = "12세" // 예시값
         detectiveAge.font = UIFont.body4
         detectiveAge.textColor = .textPrimary
 
         detectiveIntroduceLabel.text = "성격 및 특성"
         detectiveIntroduceLabel.verticalAlignment = .top
         detectiveIntroduceLabel.font = UIFont.alert1
-        detectiveIntroduceLabel.textColor = .textInverse
+        detectiveIntroduceLabel.textColor = .textSecondary
         
-        detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2 //피그마에서는 cornerRadius값이 높이의 절반을 넘어서도 높이의 절반까지만 적용되지만 swift에서는 아님.
+        detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
-        detectiveIntroduceBackgroundView.backgroundColor = .gray100
+        detectiveIntroduceBackgroundView.backgroundColor = .gray50
 
-        detectiveIntroduce.text = "# 우리애기는완전쫄보"
+        detectiveIntroduce.text = "# 우리애기는완전쫄보" // 예시값
         detectiveIntroduce.font = UIFont.title5
+        detectiveIntroduce.textColor = .textSecondary
     }
     
-    private func configurationUI() {
+    private func configureUI() {
         
         self.snp.makeConstraints {
             $0.height.equalTo(208)
@@ -208,11 +209,5 @@ class DetectiveCardView: UIView {
             $0.verticalEdges.equalToSuperview().inset(4)
             $0.height.equalTo(16)
         }
-    }
-}
-
-extension UIView {
-    func addSubviews(_ views: [UIView]) {
-        views.forEach { self.addSubview($0) }
     }
 }
