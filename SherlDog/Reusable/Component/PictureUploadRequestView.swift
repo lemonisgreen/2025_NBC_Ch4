@@ -15,7 +15,8 @@ import Differentiator
 // MARK: - PictureUploadView
 class PictureUploadRequestView: UIViewController {
 
-    private let viewModel: PictureUploadRequestViewModel?
+    private let viewModel: PictureUploadRequestViewModel
+    private let cameraViewModel: CameraViewModel?
     private let disposeBag = DisposeBag()
     private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource>(
         configureCell: { dataSource, collectionView, indexPath, section in
@@ -37,9 +38,11 @@ class PictureUploadRequestView: UIViewController {
 
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let setButton = UIButton()
-
-    init(viewModel: PictureUploadRequestViewModel?) {
+    
+    // MARK: - Lifecycle
+    init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel? = nil) {
         self.viewModel = viewModel
+        self.cameraViewModel = cameraViewModel
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -47,11 +50,7 @@ class PictureUploadRequestView: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-}
-
-// MARK: - Lifecycle
-extension PictureUploadRequestView {
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -65,18 +64,17 @@ extension PictureUploadRequestView {
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.isHidden = true
     }
-
 }
 
 // MARK: - Method
 extension PictureUploadRequestView {
 
     private func outputBind() {
-        self.viewModel?.output.cellData
+        self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
         
-        self.viewModel?.output.sender
+        self.viewModel.output.sender
             .subscribe(onNext: { sender in
                 guard let sender else { return }
                 switch sender {
@@ -96,7 +94,7 @@ extension PictureUploadRequestView {
             })
             .disposed(by: disposeBag)
         
-        self.viewModel?.output.buttonName
+        self.viewModel.output.buttonName
             .subscribe(onNext: { [weak self] name in
                 guard let self else { return }
                 
@@ -105,19 +103,33 @@ extension PictureUploadRequestView {
             })
             .disposed(by: disposeBag)
         
-        self.viewModel?.output.moveToView
+        self.viewModel.output.moveToView
             .subscribe(onNext: { [weak self] list in
+                guard let self,
+                      let cameraViewModel,
+                      let sender = self.viewModel.output.sender.value else { return }
+                
+                switch sender {
+                case .pictureRequest:
+                    cameraViewModel.input.accept(.sender(.communityShare))
+                    
+                case .pictureRequestWithIcon:
+                    cameraViewModel.input.accept(.sender(.profile))
+                    
+                case .sherlDogRequest, .sherlDogResult: break
+                }
+                
                 switch list {
                 case .camera:
-                    let cameraView = UINavigationController(rootViewController: CameraViewController(to: .communityShare))
+                    let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
                     cameraView.modalPresentationStyle = .fullScreen
-                    self?.present(cameraView, animated: true)
+                    self.present(cameraView, animated: true)
                     
                 case .album:
                     print("album")
                     
                 case .avatar:
-                    self?.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
+                    self.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
                 }
             })
             .disposed(by: disposeBag)
@@ -142,7 +154,7 @@ extension PictureUploadRequestView {
             .subscribe { [weak self] _ in
                 guard let self else { return }
                 // 함께 수사한 탐정 모달이면 창 닫고 끝냄
-                guard self.viewModel?.output.sender.value != .sherlDogResult else {
+                guard self.viewModel.output.sender.value != .sherlDogResult else {
                     self.dismiss(animated: true)
                     return
                 }
@@ -153,13 +165,13 @@ extension PictureUploadRequestView {
                     selectedIndex.append($0.row)
                 }
                 
-                self.viewModel?.input.accept(.setButtonTapped(selectedIndex))
+                self.viewModel.input.accept(.setButtonTapped(selectedIndex))
             }
             .disposed(by: disposeBag)
     }
     
     private func fetchButtonEnable() {
-        guard self.viewModel?.output.sender.value != .sherlDogResult else {
+        guard self.viewModel.output.sender.value != .sherlDogResult else {
             self.setButton.isEnabled = true
             return
         }

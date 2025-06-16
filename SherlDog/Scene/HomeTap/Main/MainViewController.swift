@@ -58,7 +58,10 @@ class MainViewController: UIViewController {
     private func inputBind() {
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .clueLeave))
+                let cameraViewModel = CameraViewModel()
+                cameraViewModel.input.accept(.sender(.clueLeave))
+                
+                let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
                 cameraView.modalPresentationStyle = .fullScreen
                 self?.present(cameraView, animated: true)
             })
