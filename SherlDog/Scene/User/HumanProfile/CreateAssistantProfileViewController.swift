@@ -13,6 +13,7 @@ import SnapKit
 // MARK: - AssistantProfileViewController
 class CreateAssistantProfileViewController: UIViewController {
     
+    private let cameraViewModel = CameraViewModel()
     private let disposeBag = DisposeBag()
     
     private let navigationBackButton = UIButton()
@@ -26,7 +27,7 @@ class CreateAssistantProfileViewController: UIViewController {
     private let introduceLabel = UILabel()
     private let introduceTextView = UITextView()
     private let introduceConstraintsLabel = UILabel()
-    private let nextButton = UIButton()
+    private let nextButton = ButtonManager(title: "다음")
     private let textViewPlaceholder = UILabel()
     
     // MARK: - Lifecycle
@@ -43,6 +44,13 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        self.cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                guard let self, let image else { return }
+                self.profileImageView.image = image
+            })
+            .disposed(by: disposeBag)
+        
         self.nicknameTextField.rx.text
             .subscribe(onNext: { [weak self] text in
                 guard let self, let text else { return }
@@ -82,7 +90,8 @@ extension CreateAssistantProfileViewController {
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
                 pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel))
+                
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
@@ -91,6 +100,7 @@ extension CreateAssistantProfileViewController {
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
                 }
+                
                 self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
@@ -126,14 +136,16 @@ extension CreateAssistantProfileViewController {
         navigationTitleLabel.text = "조수 프로필 입력하기"
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
+        navigationTitleLabel.textColor = .textPrimary
         navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
         self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
-        
-        profileImageView.image = UIImage(systemName: "person.crop.circle.fill")
+      
+        profileImageView.image = .petProfile
         profileImageView.contentMode = .scaleAspectFit
+        profileImageView.clipsToBounds = true
         profileImageView.tintColor = .gray300
         
         profileCameraButtonImageView.image = UIImage(systemName: "camera.circle.fill")
@@ -170,33 +182,28 @@ extension CreateAssistantProfileViewController {
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
         introduceConstraintsLabel.textColor = .gray400
-        
-        nextButton.setTitle("다음", for: .normal)
-        nextButton.backgroundColor = .keycolorPrimary3
-        nextButton.titleLabel?.font = .highlight4
-        nextButton.titleLabel?.textColor = .textInverse
-        nextButton.layer.cornerRadius = 6
-        nextButton.clipsToBounds = true
     }
     
     private func configureUI() {
-        let profileButtonLeadingInset: CGFloat = 117.5
+        let profileButtonSize: CGFloat = 140
+        let profileImageInset: CGFloat = 8
+        let profileCameraButtonSize: CGFloat = 44
+        
+        profileImageView.layer.cornerRadius = (profileButtonSize - profileImageInset) / 2
         
         profileimageSetbutton.snp.makeConstraints {
+            $0.height.width.equalTo(profileButtonSize)
             $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-            $0.leading.trailing.equalToSuperview().inset(profileButtonLeadingInset)
-            // 다른 기기 대응을 위해 계산한 값입니다.
-            $0.height.equalTo(UIScreen.main.bounds.width - (profileButtonLeadingInset * 2))
+            $0.centerX.equalToSuperview()
         }
         
         profileImageView.snp.makeConstraints {
             $0.top.leading.equalToSuperview()
-            $0.trailing.bottom.equalToSuperview().inset(8)
+            $0.trailing.bottom.equalToSuperview().inset(profileImageInset)
         }
         
         profileCameraButtonImageView.snp.makeConstraints {
-            // 다른 기기 대응을 위해 mulptipliedBy로 크기 잡았습니다. 와이어프레임에서 계산해봤을 때 3.1818... 나오길래 3.18로 잘랐습니다.
-            $0.height.width.equalTo(profileimageSetbutton.snp.height).multipliedBy(1.0 / 3.18)
+            $0.height.width.equalTo(profileCameraButtonSize)
             $0.trailing.bottom.equalToSuperview().inset(4)
         }
         
@@ -236,7 +243,6 @@ extension CreateAssistantProfileViewController {
         }
         
         nextButton.snp.makeConstraints {
-            $0.height.equalTo(52)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }

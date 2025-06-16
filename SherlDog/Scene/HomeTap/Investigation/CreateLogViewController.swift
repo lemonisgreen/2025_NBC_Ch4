@@ -31,8 +31,8 @@ class CreateLogViewController: UIViewController {
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
-    private let cancelButton = UIButton()
-    private let shareButton = UIButton()
+    private let cancelButton = ButtonManager(title: "취소", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let shareButton = ButtonManager(title: "공유하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -221,21 +221,8 @@ extension CreateLogViewController {
         textViewConstraintsLabel.font = .alert2
         textViewConstraintsLabel.textColor = .gray400
         
-        cancelButton.setTitle("취소", for: .normal)
-        cancelButton.titleLabel?.font = .highlight4
-        cancelButton.setTitleColor(.keycolorPrimary3, for: .normal)
-        cancelButton.backgroundColor = .textInverse
-        cancelButton.clipsToBounds = true
-        cancelButton.layer.cornerRadius = 6
         cancelButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
         cancelButton.layer.borderWidth = 1
-        
-        shareButton.setTitle("공유하기", for: .normal)
-        shareButton.titleLabel?.font = .highlight4
-        shareButton.setTitleColor(.textInverse, for: .normal)
-        shareButton.backgroundColor = .keycolorPrimary3
-        shareButton.clipsToBounds = true
-        shareButton.layer.cornerRadius = 6
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
