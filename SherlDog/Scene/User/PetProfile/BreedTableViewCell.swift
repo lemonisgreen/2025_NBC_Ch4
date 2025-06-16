@@ -12,7 +12,7 @@ class BreedTableViewCell: UITableViewCell {
     private let breedLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .medium)
-        label.textColor = .black
+        label.textColor = .textPrimary
         return label
     }()
     // 꺽쇠

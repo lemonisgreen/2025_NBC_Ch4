@@ -16,9 +16,10 @@ import RxCocoa
 
 class LoginViewController: UIViewController {
 
-    private var isLoggingIn = false
     private let disposeBag = DisposeBag()
+    private let viewModel = LoginViewModel()
 
+    // MARK: - UI Components
     private let splashView = SplashView()
     private let logo = UIImageView()
     private let helloLabel = UILabel()
@@ -32,18 +33,18 @@ class LoginViewController: UIViewController {
     private let orLabel = UILabel()
     private let loadingIndicator = UIActivityIndicatorView(style: .large)
 
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
         setupUI()
         setupConstraints()
         setupSplashView()
-        setupKakaoLogin()
-        checkAutoLogin()
-        bindUI()
+        bindViewModel()
         navigationItem.backButtonTitle = ""
     }
 
+    // MARK: - UI Setup
     private func configureUI() {
         view.backgroundColor = .keycolorBackground
 
@@ -128,10 +129,6 @@ class LoginViewController: UIViewController {
             $0.center.equalToSuperview()
         }
 
-        setupSocialButtonsStack()
-    }
-
-    private func setupSocialButtonsStack() {
         let stack = UIStackView(arrangedSubviews: [googleButton, appleButton, facebookButton])
         stack.axis = .horizontal
         stack.spacing = 20
@@ -139,7 +136,6 @@ class LoginViewController: UIViewController {
         stack.distribution = .equalSpacing
 
         view.addSubview(stack)
-
         stack.snp.makeConstraints {
             $0.top.equalTo(orLabel.snp.bottom).offset(28)
             $0.centerX.equalToSuperview()
@@ -163,164 +159,86 @@ class LoginViewController: UIViewController {
         }
     }
 
-    private func setupKakaoLogin() {
-        KakaoLoginManager.shared.delegate = self
-    }
-
-    private func checkAutoLogin() {
-        if KakaoLoginManager.shared.isLoggedIn() {
-            KakaoLoginManager.shared.validateToken { [weak self] isValid in
-                DispatchQueue.main.async {
-                    if isValid {
-                        self?.navigateToNextScreen()
-                    } else {
-                        KakaoLoginManager.shared.logout()
-                    }
-                }
-            }
-        }
-    }
-
-    private func setLoading(_ loading: Bool) {
-        isLoggingIn = loading
-        loading ? loadingIndicator.startAnimating() : loadingIndicator.stopAnimating()
-        view.isUserInteractionEnabled = !loading
-    }
-
-    private func navigateToNextScreen() {
-        navigationController?.pushViewController(PetProfileViewController(), animated: true)
-    }
-
-    private func showLoginError(message: String) {
-        let alert = UIAlertController(
-            title: "로그인 실패",
-            message: "다시 로그인 해주세요.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
-        present(alert, animated: true)
-    }
-
-    private func showComingSoonAlert(for provider: String) {
-        let alert = UIAlertController(
-            title: "준비 중입니다",
-            message: "\(provider) 로그인은 곧 지원될 예정입니다.",
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
-        present(alert, animated: true)
-    }
-
-    private func bindUI() {
-        kakaoButton.rx.tap
-            .bind { [weak self] in self?.performKakaoLogin() }
-            .disposed(by: disposeBag)
-
-        naverButton.rx.tap
-            .bind { [weak self] in self?.showComingSoonAlert(for: "네이버") }
-            .disposed(by: disposeBag)
-
-        googleButton.rx.tap
-            .bind { [weak self] in self?.performGoogleLogin() }
-            .disposed(by: disposeBag)
-
-        appleButton.rx.tap
-            .bind { [weak self] in self?.showComingSoonAlert(for: "애플") }
-            .disposed(by: disposeBag)
-
-        facebookButton.rx.tap
-            .bind { [weak self] in self?.showComingSoonAlert(for: "페이스북") }
-            .disposed(by: disposeBag)
-    }
-
-    private func performKakaoLogin() {
-        guard !isLoggingIn else { return }
-        setLoading(true)
-
-        KakaoLoginManager.shared.login { [weak self] result in
-            DispatchQueue.main.async {
-                self?.setLoading(false)
-
-                switch result {
-                case .success(let user):
-                    let userInfo = KakaoUserInfo(from: user)
-                    UserDefaults.standard.set(true, forKey: "isKakaoLoggedIn")
-                    UserDefaults.standard.set(userInfo.nickname, forKey: "userNickname")
-                    UserDefaults.standard.set(userInfo.email, forKey: "userEmail")
-                    self?.navigateToNextScreen()
-                case .failure(let error):
-                    if case .userCancelled = error { return }
-                    self?.showLoginError(message: error.localizedDescription)
-                }
-            }
-        }
-    }
-
-    private func performGoogleLogin() {
-        guard !isLoggingIn else { return }
-        setLoading(true)
-
-        guard let rootVC = self.view.window?.rootViewController else {
-            setLoading(false)
-            showLoginError(message: "화면 전환 컨트롤러를 찾을 수 없습니다.")
-            return
-        }
-
-        GIDSignIn.sharedInstance.signIn(
-            withPresenting: rootVC,
-            hint: nil,
-            additionalScopes: []
-        ) { [weak self] signInResult, error in
-            guard let self = self else { return }
-            self.setLoading(false)
-
-            if let error = error {
-                self.showLoginError(message: error.localizedDescription)
-                return
-            }
-
-            guard
-                let user = signInResult?.user,
-                let idToken = user.idToken?.tokenString
-            else {
-                self.showLoginError(message: "인증 토큰을 가져오지 못했습니다")
-                return
-            }
-
-            let accessToken = user.accessToken.tokenString
-
-            let credential = GoogleAuthProvider.credential(
-                withIDToken: idToken,
-                accessToken: accessToken
-            )
-
-            Auth.auth().signIn(with: credential) { authResult, error in
-                if let error = error {
-                    self.showLoginError(message: error.localizedDescription)
-                    return
-                }
-                self.navigateToNextScreen()
-            }
-        }
-    }
-}
-
-extension LoginViewController: KakaoLoginManagerDelegate {
-    func kakaoLoginDidSucceed(user: KakaoSDKUser.User) {
-        let _ = KakaoUserInfo(from: user)
-    }
-
-    func kakaoLoginDidFail(error: KakaoLoginError) {
-        print("카카오 로그인 실패 (Delegate): \(error.localizedDescription)")
-    }
-}
-
-extension LoginViewController {
     private func dismissSplashView() {
         UIView.animate(withDuration: 0.5, animations: {
             self.splashView.alpha = 0
         }) { _ in
             self.splashView.removeFromSuperview()
         }
+    }
+
+    // MARK: - Bindings
+    private func bindViewModel() {
+        // Input - 버튼 탭을 ViewModel에 전달
+        kakaoButton.rx.tap
+            .bind(to: viewModel.input.kakaoTap)
+            .disposed(by: disposeBag)
+
+        naverButton.rx.tap
+            .bind(to: viewModel.input.naverTap)
+            .disposed(by: disposeBag)
+
+        googleButton.rx.tap
+            .bind(to: viewModel.input.googleTap)
+            .disposed(by: disposeBag)
+
+        appleButton.rx.tap
+            .bind(to: viewModel.input.appleTap)
+            .disposed(by: disposeBag)
+
+        facebookButton.rx.tap
+            .bind(to: viewModel.input.facebookTap)
+            .disposed(by: disposeBag)
+
+        // Output - ViewModel의 상태를 UI에 반영
+        // Driver 사용 (메인 스레드 보장, 에러 없음, 공유됨)
+        viewModel.output.isLoading
+            .drive(loadingIndicator.rx.isAnimating)
+            .disposed(by: disposeBag)
+
+        // Signal 사용 (이벤트성, 메인 스레드 보장)
+        viewModel.output.navigate
+            .emit(onNext: { [weak self] in
+                self?.navigateToNextScreen()
+            })
+            .disposed(by: disposeBag)
+
+        viewModel.output.showError
+            .emit(onNext: { [weak self] message in
+                self?.showErrorAlert(message: message)
+            })
+            .disposed(by: disposeBag)
+
+        viewModel.output.showAlert
+            .emit(onNext: { [weak self] message in
+                self?.showInfoAlert(message: message)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    // MARK: - Navigation & Alert Methods
+    private func navigateToNextScreen() {
+        let petProfileVC = PetProfileViewController()
+        navigationController?.pushViewController(petProfileVC, animated: true)
+    }
+    
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(
+            title: "로그인 실패",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+    }
+    
+    private func showInfoAlert(message: String) {
+        let alert = UIAlertController(
+            title: "준비 중입니다",
+            message: message,
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
 }
