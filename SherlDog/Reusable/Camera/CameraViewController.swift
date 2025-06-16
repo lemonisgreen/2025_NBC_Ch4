@@ -14,10 +14,10 @@ import AVFoundation
 // MARK: - CameraViewController
 class CameraViewController: UIViewController {
     
-    private let viewModel = CameraViewModel()
+    private let viewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     
-    private var viewControllerForPicture: UIViewController
+    private var viewControllerForPicture: UIViewController?
     
     private let captureSession = AVCaptureSession()
     private let captureDevice = AVCaptureDevice.default(for: .video)
@@ -29,18 +29,8 @@ class CameraViewController: UIViewController {
     private let shutterButton = UIButton()
     
     // MARK: - Initialize
-    init(to destination: CameraDestination) {
-        switch destination {
-            
-        case .clueLeave:
-            self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
-        case .petProfile:
-            self.viewControllerForPicture = UINavigationController(rootViewController: PetProfileViewController()) // todo: 뷰모델 주입
-        case .assistantProfile:
-            self.viewControllerForPicture = UINavigationController(rootViewController: CreateAssistantProfileViewController()) // todo: 뷰모델 주입
-        case .communityShare:
-            self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
-        }
+    init(viewModel: CameraViewModel) {
+        self.viewModel = viewModel
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -48,7 +38,6 @@ class CameraViewController: UIViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
 }
 
 // MARK: - Lifecycle
@@ -110,6 +99,22 @@ extension CameraViewController {
     }
     
     private func bind() {
+        self.viewModel.output.sender
+            .subscribe(onNext: { [weak self] sender in
+                guard let self else { return }
+                
+                switch sender {
+                case .clueLeave:
+                    self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
+                    
+                case .communityShare:
+                    self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
+                    
+                case .profile: return
+                }
+            })
+            .disposed(by: disposeBag)
+        
         self.viewModel.output.getCapture
             .subscribe { [weak self] _ in
                 guard let self else { return }
@@ -196,20 +201,26 @@ extension CameraViewController {
 extension CameraViewController: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: (any Error)?) {
         guard let imageData = photo.fileDataRepresentation(),
-        let image = UIImage(data: imageData) else { return }
+              let image = UIImage(data: imageData) else { return }
         
         self.viewModel.input.accept(.captureImage(image))
         
         DispatchQueue.global().async {
             self.captureSession.stopRunning()
         }
+        guard let viewControllerForPicture else { return }
         
-        DispatchQueue.main.async {
-            self.present(self.viewControllerForPicture, animated: true)
+        switch self.viewModel.output.sender.value {
+        case .profile:
+            DispatchQueue.main.async {
+                self.presentingViewController?.presentingViewController?.dismiss(animated: true)
+            }
+            
+        case .clueLeave, .communityShare:
+            DispatchQueue.main.async {
+                self.present(viewControllerForPicture, animated: true)
+            }
+            
         }
     }
-}
-
-enum CameraDestination {
-    case clueLeave, petProfile, assistantProfile, communityShare
 }
