@@ -22,8 +22,8 @@ class DetailAvatarViewController: UIViewController {
     private let detailView = UIImageView()
     private let detailTitleLabel = UILabel()
     private let detailLabel = UILabel()
-    private let backButton = UIButton()
-    private let choiceButton = UIButton()
+    private let backButton = ButtonManager(title: "이전", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let choiceButton = ButtonManager(title: "선택하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Initialize
@@ -120,8 +120,7 @@ extension DetailAvatarViewController {
         
         avatarImageView.contentMode = .scaleAspectFit
         
-//        detailView.image = UIImage(named: "")
-        detailView.backgroundColor = .cyan  // test
+        detailView.backgroundColor = .cyan  // todo: 노트모양 이미지 넣기
         detailView.contentMode = .scaleToFill
         
         detailTitleLabel.font = .highlight4
@@ -131,19 +130,8 @@ extension DetailAvatarViewController {
         detailLabel.textColor = .textSecondary
         detailLabel.numberOfLines = 0
         
-        backButton.setTitle("이전", for: .normal)
-        backButton.setTitleColor(.keycolorPrimary3, for: .normal)
-        backButton.backgroundColor = .white
         backButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
         backButton.layer.borderWidth = 1
-        backButton.layer.cornerRadius = 6
-        backButton.clipsToBounds = true
-        
-        choiceButton.setTitle("선택하기", for: .normal)
-        choiceButton.setTitleColor(.textInverse, for: .normal)
-        choiceButton.backgroundColor = .keycolorPrimary3
-        choiceButton.layer.cornerRadius = 6
-        choiceButton.clipsToBounds = true
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16

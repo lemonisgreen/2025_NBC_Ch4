@@ -36,7 +36,7 @@ class PictureUploadRequestView: UIViewController {
     )
 
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
-    private let setButton = UIButton()
+    private let setButton = ButtonManager(title: "")
 
     init(viewModel: PictureUploadRequestViewModel?) {
         self.viewModel = viewModel
@@ -101,7 +101,6 @@ extension PictureUploadRequestView {
                 guard let self else { return }
                 
                 self.setButton.setTitle(name, for: .normal)
-                self.setButton.backgroundColor = .keycolorPrimary3
             })
             .disposed(by: disposeBag)
         
@@ -176,9 +175,6 @@ extension PictureUploadRequestView {
         view.backgroundColor = .white
         view.addSubview(collectionView)
         view.addSubview(setButton)
-        
-        setButton.layer.cornerRadius = 6
-        setButton.layer.masksToBounds = true
 
         collectionView.register(PictureUploadRequestViewCell.self,
                                 forCellWithReuseIdentifier: PictureUploadRequestViewCell.identifier)
@@ -196,7 +192,6 @@ extension PictureUploadRequestView {
             $0.centerX.equalToSuperview()
             $0.leading.trailing.equalToSuperview().inset(21.5)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
-            $0.height.equalTo(52)
         }
     }
 

@@ -26,7 +26,7 @@ class CreateAssistantProfileViewController: UIViewController {
     private let introduceLabel = UILabel()
     private let introduceTextView = UITextView()
     private let introduceConstraintsLabel = UILabel()
-    private let nextButton = UIButton()
+    private let nextButton = ButtonManager(title: "다음")
     private let textViewPlaceholder = UILabel()
     
     // MARK: - Lifecycle
@@ -127,15 +127,15 @@ extension CreateAssistantProfileViewController {
         navigationTitleLabel.text = "조수 프로필 입력하기"
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
+        navigationTitleLabel.textColor = .textPrimary
         navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
         self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
         
-        profileImageView.image = UIImage(systemName: "person.crop.circle.fill")
+        profileImageView.image = .petProfile
         profileImageView.contentMode = .scaleAspectFit
-        profileImageView.tintColor = .gray300
         
         profileCameraButtonImageView.image = UIImage(systemName: "camera.circle.fill")
         profileCameraButtonImageView.contentMode = .scaleAspectFit
@@ -171,13 +171,6 @@ extension CreateAssistantProfileViewController {
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
         introduceConstraintsLabel.textColor = .gray400
-        
-        nextButton.setTitle("다음", for: .normal)
-        nextButton.backgroundColor = .keycolorPrimary3
-        nextButton.titleLabel?.font = .highlight4
-        nextButton.titleLabel?.textColor = .textInverse
-        nextButton.layer.cornerRadius = 6
-        nextButton.clipsToBounds = true
     }
     
     private func configureUI() {
@@ -237,7 +230,6 @@ extension CreateAssistantProfileViewController {
         }
         
         nextButton.snp.makeConstraints {
-            $0.height.equalTo(52)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
