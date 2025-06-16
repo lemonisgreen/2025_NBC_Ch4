@@ -13,6 +13,7 @@ import RxCocoa
 class RegistrationViewController: UIViewController {
     
     let disposeBag = DisposeBag()
+    let viewModel = RegistrationViewModel()
     
     let registrationLabel = UILabel()
     let registImage = UIButton()
@@ -23,7 +24,7 @@ class RegistrationViewController: UIViewController {
     let registNameAlertLabel = UILabel()
     let registName = RegistrationTextField(text: "이름을 입력하세요")
     let registBreedLabel = UILabel()
-    let registBreed = RegistrationSearchButton(title: " ")
+    let registBreed = registBreedButton()
     let underLine = UIView()
     let registSizeLabel = UILabel()
     let registSizeSmallIcon = UIImageView()
@@ -40,7 +41,8 @@ class RegistrationViewController: UIViewController {
     let registSizeLargeButton = RegistrationSelectButton(title: nil)
     let registSizeStackButtonView = UIStackView()
     let registAgeLabel = UILabel()
-    let registAgeButton = RegistrationSearchButton(title: "YYYY-MM-DD (n세)")
+    let registAgeButton = registBirthdayButton(title: "YYYY-MM-DD (n세)")
+    let registedAgeLabel = UILabel()
     let registGenderLabel = UILabel()
     let registGenderStackView = UIStackView()
     let registGenderFemale = RegistrationSelectButton(title: "여아")
@@ -62,7 +64,6 @@ class RegistrationViewController: UIViewController {
     }
     
     func bind() {
-        
         self.registImage.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
@@ -100,6 +101,10 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        registName.rx.text.orEmpty
+            .bind(to: viewModel.name)
+            .disposed(by: disposeBag)
+        
         self.registBreed.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 let breedSearchVC = BreedSearchViewController()
@@ -112,6 +117,15 @@ class RegistrationViewController: UIViewController {
                 }
             })
             .disposed(by: disposeBag)
+        
+        // 크기 선택 바인딩
+        Observable.merge(
+            registSizeSmallButton.rx.tap.map { "small" },
+            registSizeMediumButton.rx.tap.map { "medium" },
+            registSizeLargeButton.rx.tap.map { "large" }
+        )
+        .bind(to: viewModel.selectedSize)
+        .disposed(by: disposeBag)
         
         self.registSizeSmallButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -138,17 +152,46 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         self.registAgeButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
                 let birthSelectVC = BirthSelectViewController()
+                
+                birthSelectVC.selectedDate
+                    .map { date in
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy-MM-dd"
+                        let age = Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
+                        return "\(formatter.string(from: date)) (\(age)세)"
+                    }
+                    .bind(to: owner.registAgeButton.dateText)
+                    .disposed(by: birthSelectVC.disposeBag)
+                
                 if let sheet = birthSelectVC.sheetPresentationController {
                     sheet.detents = [.medium()]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
-                    self?.present(birthSelectVC, animated: true)
                 }
+                owner.present(birthSelectVC, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        viewModel.selectedAge
+                    .map { date in
+                        let formatter = DateFormatter()
+                        formatter.dateFormat = "yyyy년 MM월 dd일"
+                        return formatter.string(from: date)
+                    }
+                    .bind(to: registedAgeLabel.rx.text)
+                    .disposed(by: disposeBag)
+        
+        // 성별 선택 바인딩
+        Observable.merge(
+            registGenderFemale.rx.tap.map { "female" },
+            registGenderMale.rx.tap.map { "male" }
+        )
+        .bind(to: viewModel.selectedGender)
+        .disposed(by: disposeBag)
         
         self.registGenderFemale.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -164,6 +207,14 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        // 중성화 여부 바인딩
+        Observable.merge(
+            registNeuteredTrue.rx.tap.map { true },
+            registNeuteredFalse.rx.tap.map { false }
+        )
+        .bind(to: viewModel.isNeutered)
+        .disposed(by: disposeBag)
+        
         self.registNeuteredTrue.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.registNeuteredTrue.isSelected = true
@@ -178,9 +229,17 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        registIntroduce.rx.text.orEmpty
+            .bind(to: viewModel.introduce)
+            .disposed(by: disposeBag)
+        
         self.registCompletButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.dismiss(animated: true)
+                
+                guard let self = self else { return }
+                viewModel.savePetProfile()
+                
+                self.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -319,7 +378,7 @@ class RegistrationViewController: UIViewController {
         registSizeMediumStackView.spacing = 8
         registSizeMediumStackView.alignment = .center
         registSizeMediumStackView.isUserInteractionEnabled = false
-    
+        
         registSizeLargeIcon.image = UIImage(named: "largeDog")
         registSizeLargeIcon.isUserInteractionEnabled = false
         registSizeLargeLabel.text = "대형견"
@@ -341,6 +400,9 @@ class RegistrationViewController: UIViewController {
         registAgeLabel.text = "나이"
         registAgeLabel.textColor = .textPrimary
         registAgeLabel.font = .body1
+        
+        registedAgeLabel.textColor = .textPrimary
+        registedAgeLabel.font = .body3
         
         //MARK: 성별 --
         registGenderLabel.text = "성별"
