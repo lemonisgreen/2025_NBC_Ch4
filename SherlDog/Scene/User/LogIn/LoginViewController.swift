@@ -26,11 +26,8 @@ class LoginViewController: UIViewController {
     private let helloLabel2 = UILabel()
     private let joinImage = UIImageView()
     private let kakaoButton = UIButton()
-    private let naverButton = UIButton()
     private let googleButton = UIButton()
     private let appleButton = UIButton()
-    private let facebookButton = UIButton()
-    private let orLabel = UILabel()
     private let loadingIndicator = UIActivityIndicatorView(style: .large)
 
     // MARK: - Lifecycle
@@ -62,23 +59,17 @@ class LoginViewController: UIViewController {
         joinImage.image = UIImage(named: "join")
         joinImage.contentMode = .scaleAspectFit
 
-        orLabel.text = "또는"
-        orLabel.font = UIFont(name: "Pretendard", size: 12)
-        orLabel.textAlignment = .center
-
         kakaoButton.setImage(.kakao, for: .normal)
-        naverButton.setImage(.naver, for: .normal)
         googleButton.setImage(.google, for: .normal)
         appleButton.setImage(.apple, for: .normal)
-        facebookButton.setImage(.facebook, for: .normal)
 
         loadingIndicator.color = .systemBlue
         loadingIndicator.hidesWhenStopped = true
     }
 
     private func setupUI() {
-        [logo, helloLabel, helloLabel2, joinImage, orLabel,
-         kakaoButton, naverButton, googleButton, appleButton, facebookButton, loadingIndicator]
+        [logo, helloLabel, helloLabel2, joinImage,
+         kakaoButton,  googleButton, appleButton, loadingIndicator]
             .forEach { view.addSubview($0) }
     }
 
@@ -105,47 +96,28 @@ class LoginViewController: UIViewController {
             $0.height.equalTo(80)
             $0.width.equalToSuperview().multipliedBy(0.75)
         }
-
-        naverButton.snp.makeConstraints {
-            $0.top.equalTo(joinImage.snp.bottom).offset(10)
+        
+        appleButton.snp.makeConstraints {
+            $0.top.equalTo(joinImage.snp.bottom).offset(16)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.85)
         }
-
         kakaoButton.snp.makeConstraints {
-            $0.top.equalTo(naverButton.snp.bottom).offset(10)
+            $0.top.equalTo(appleButton.snp.bottom).offset(12)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.85)
         }
-
-        orLabel.snp.makeConstraints {
-            $0.top.equalTo(kakaoButton.snp.bottom).offset(24)
+        googleButton.snp.makeConstraints {
+            $0.top.equalTo(kakaoButton.snp.bottom).offset(12)
             $0.centerX.equalToSuperview()
+            $0.height.equalTo(54)
+            $0.width.equalToSuperview().multipliedBy(0.85)
         }
-
+        
         loadingIndicator.snp.makeConstraints {
             $0.center.equalToSuperview()
-        }
-
-        let stack = UIStackView(arrangedSubviews: [googleButton, appleButton, facebookButton])
-        stack.axis = .horizontal
-        stack.spacing = 20
-        stack.alignment = .center
-        stack.distribution = .equalSpacing
-
-        view.addSubview(stack)
-        stack.snp.makeConstraints {
-            $0.top.equalTo(orLabel.snp.bottom).offset(28)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(56)
-        }
-
-        [googleButton, appleButton, facebookButton].forEach {
-            $0.snp.makeConstraints {
-                $0.size.equalTo(48)
-            }
         }
     }
 
@@ -174,10 +146,6 @@ class LoginViewController: UIViewController {
             .bind(to: viewModel.input.kakaoTap)
             .disposed(by: disposeBag)
 
-        naverButton.rx.tap
-            .bind(to: viewModel.input.naverTap)
-            .disposed(by: disposeBag)
-
         googleButton.rx.tap
             .bind(to: viewModel.input.googleTap)
             .disposed(by: disposeBag)
@@ -186,17 +154,11 @@ class LoginViewController: UIViewController {
             .bind(to: viewModel.input.appleTap)
             .disposed(by: disposeBag)
 
-        facebookButton.rx.tap
-            .bind(to: viewModel.input.facebookTap)
-            .disposed(by: disposeBag)
-
         // Output - ViewModel의 상태를 UI에 반영
-        // Driver 사용 (메인 스레드 보장, 에러 없음, 공유됨)
         viewModel.output.isLoading
             .drive(loadingIndicator.rx.isAnimating)
             .disposed(by: disposeBag)
 
-        // Signal 사용 (이벤트성, 메인 스레드 보장)
         viewModel.output.navigate
             .emit(onNext: { [weak self] in
                 self?.navigateToNextScreen()
@@ -216,7 +178,7 @@ class LoginViewController: UIViewController {
             .disposed(by: disposeBag)
     }
     
-    // MARK: - Navigation & Alert Methods
+    // MARK: - Navigation, Alert
     private func navigateToNextScreen() {
         let petProfileVC = PetProfileViewController()
         navigationController?.pushViewController(petProfileVC, animated: true)
