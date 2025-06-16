@@ -38,6 +38,12 @@
 	</array>
 	<key>NMFClientId</key>
 	<string></string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>사용자의 위치를 받습니다.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>위치정보 권한이 필요합니다.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>위치정보 권한이 필요합니다.</string>
 	<key>NMFNcpKeyId</key>
 	<string>$(CLIENT_ID)</string>
 	<key>UIAppFonts</key>
