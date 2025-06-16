@@ -26,7 +26,7 @@ class CreateAssistantProfileViewController: UIViewController {
     private let introduceLabel = UILabel()
     private let introduceTextView = UITextView()
     private let introduceConstraintsLabel = UILabel()
-    private let nextButton = UIButton()
+    private let nextButton = ButtonManager(title: "다음")
     private let textViewPlaceholder = UILabel()
     
     // MARK: - Lifecycle
@@ -171,13 +171,6 @@ extension CreateAssistantProfileViewController {
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
         introduceConstraintsLabel.textColor = .gray400
-        
-        nextButton.setTitle("다음", for: .normal)
-        nextButton.backgroundColor = .keycolorPrimary3
-        nextButton.titleLabel?.font = .highlight4
-        nextButton.titleLabel?.textColor = .textInverse
-        nextButton.layer.cornerRadius = 6
-        nextButton.clipsToBounds = true
     }
     
     private func configureUI() {
@@ -237,7 +230,6 @@ extension CreateAssistantProfileViewController {
         }
         
         nextButton.snp.makeConstraints {
-            $0.height.equalTo(52)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
