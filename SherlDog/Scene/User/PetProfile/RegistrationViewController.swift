@@ -12,6 +12,7 @@ import RxCocoa
 
 class RegistrationViewController: UIViewController {
     
+    private let cameraViewModel = CameraViewModel()
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
     
@@ -64,12 +65,21 @@ class RegistrationViewController: UIViewController {
     }
     
     func bind() {
+        
+        cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                guard let self, let image else { return }
+                // todo: 사진 삽입
+                self.registImage.setImage(image, for: .normal) // test
+            })
+            .disposed(by: disposeBag)
+        
         self.registImage.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
                 pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {

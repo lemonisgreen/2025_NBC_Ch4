@@ -42,6 +42,8 @@ class MainViewController: UIViewController {
     // 버튼
     private let endButton = UIButton()
     private let clueButton = UIButton()
+    private let walkStartButton = UIButton()
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -49,6 +51,7 @@ class MainViewController: UIViewController {
         setupConstraints()
         bind()
         inputBind()
+        configureInitialVisibility()
     }
     
     private func bind() {
@@ -58,7 +61,10 @@ class MainViewController: UIViewController {
     private func inputBind() {
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .clueLeave))
+                let cameraViewModel = CameraViewModel()
+                cameraViewModel.input.accept(.sender(.clueLeave))
+                
+                let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
                 cameraView.modalPresentationStyle = .fullScreen
                 self?.present(cameraView, animated: true)
             })
@@ -71,6 +77,26 @@ class MainViewController: UIViewController {
                 self?.present(endView, animated: true)
             })
             .disposed(by: disposeBag)
+
+        self.walkStartButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.startInvestigation()
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func configureInitialVisibility() {
+        // 시작 시 상태 뷰 및 버튼 숨김
+        statusView.isHidden = true
+        clueButton.isHidden = true
+        endButton.isHidden = true
+    }
+
+    private func startInvestigation() {
+        statusView.isHidden = false
+        clueButton.isHidden = false
+        endButton.isHidden = false
+        walkStartButton.isHidden = true
     }
     
     private func setupUI() {
@@ -150,9 +176,15 @@ class MainViewController: UIViewController {
         
         endButton.setTitle("수사 종료하기", for: .normal)
         endButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
-        endButton.backgroundColor = .keycolorPrimary2
+        endButton.backgroundColor = .keycolorPrimary3
         endButton.titleLabel?.font = .highlight4
         endButton.layer.cornerRadius = 6
+        
+        walkStartButton.setTitle("수사 시작하기", for: .normal)
+        walkStartButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
+        walkStartButton.titleLabel?.font = UIFont.highlight4
+        walkStartButton.backgroundColor = UIColor(named: "keycolorPrimary3")
+        walkStartButton.layer.cornerRadius = 6
         
         [distance, time, steps].forEach { valueStack.addArrangedSubview($0) }
         
@@ -164,7 +196,7 @@ class MainViewController: UIViewController {
         [titleStack, valueStack, statusStack].forEach { statusView.addSubview($0) }
 
         
-        [mapView, statusView, endButton, clueButton].forEach {
+        [mapView, statusView, endButton, clueButton, walkStartButton].forEach {
             view.addSubview($0)
         }
     }
@@ -198,7 +230,7 @@ class MainViewController: UIViewController {
 
         clueButton.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(80)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.trailing.equalTo(view.snp.centerX).offset(-8)
             $0.height.equalTo(52)
         }
@@ -208,6 +240,13 @@ class MainViewController: UIViewController {
             $0.bottom.equalTo(clueButton)
             $0.leading.equalTo(view.snp.centerX).offset(8)
             $0.height.equalTo(52)
+        }
+        
+        walkStartButton.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(16)
+            $0.height.equalTo(52)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
     }
 }
