@@ -208,9 +208,7 @@
 				CODE_SIGN_ENTITLEMENTS = SherlDog/SherlDog.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-
 				DEVELOPMENT_TEAM = YM7ARGY64W;
-        
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SherlDog/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -240,9 +238,7 @@
 				CODE_SIGN_ENTITLEMENTS = SherlDog/SherlDog.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-
 				DEVELOPMENT_TEAM = YM7ARGY64W;
-
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SherlDog/Resources/Info.plist;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

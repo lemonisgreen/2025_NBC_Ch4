@@ -14,20 +14,37 @@ final class PetProfileViewController: UIViewController {
 
     // MARK: - Properties
     private let disposeBag = DisposeBag()
+    private var petProfiles: [PetProfile] = []
 
     // MARK: - UI Components
-    private let profileAddButton = UIButton()
+    private let collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .vertical
+        layout.minimumLineSpacing = 16
+        layout.sectionInset = UIEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+        
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .clear
+        collectionView.showsVerticalScrollIndicator = false
+        return collectionView
+    }()
+    
     private let dogImageView = UIImageView()
     private let infoLabel = UILabel()
-    private let nextButton = UIButton()
+    private let nextButton: ButtonManager = {
+        let button = ButtonManager(title: "다음", width: UIScreen.main.bounds.width - 40)
+        return button
+    }()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
+        setupCollectionView()
         setupUI()
         configureUI()
         bindUI()
+        loadSampleData()
     }
 
     // MARK: - UI Setup
@@ -35,14 +52,18 @@ final class PetProfileViewController: UIViewController {
         navigationItem.title = "멍탐정 프로필 입력하기"
         navigationController?.navigationBar.prefersLargeTitles = false
     }
+    
+    private func setupCollectionView() {
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        collectionView.register(DetectiveCardCollectionViewCell.self,
+                               forCellWithReuseIdentifier: DetectiveCardCollectionViewCell.identifier)
+        collectionView.register(ProfileAddCollectionViewCell.self,
+                               forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
+    }
 
     private func setupUI() {
         view.backgroundColor = UIColor.keycolorBackground
-
-        profileAddButton.backgroundColor = UIColor.gray100
-        profileAddButton.layer.cornerRadius = 16
-        profileAddButton.layer.borderWidth = 1
-        profileAddButton.layer.borderColor = UIColor.textTertiary.cgColor
 
         dogImageView.image = UIImage(named: "sherlDog")
         dogImageView.contentMode = .scaleAspectFit
@@ -52,27 +73,16 @@ final class PetProfileViewController: UIViewController {
         infoLabel.font = .systemFont(ofSize: 16)
         infoLabel.textAlignment = .center
 
-        nextButton.setTitle("다음", for: .normal)
-        nextButton.setTitleColor(.white, for: .normal)
-        nextButton.backgroundColor = UIColor.textDisabled
-        nextButton.layer.cornerRadius = 10
         nextButton.isEnabled = false
+        nextButton.alpha = 0.5
 
-        let buttonStack = makeProfileButtonStack()
-        profileAddButton.addSubview(buttonStack)
-        buttonStack.snp.makeConstraints { $0.center.equalToSuperview() }
-
-        [profileAddButton, dogImageView, infoLabel, nextButton].forEach {
+        [collectionView, dogImageView, infoLabel, nextButton].forEach {
             view.addSubview($0)
         }
     }
 
     private func configureUI() {
-        profileAddButton.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
-            $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(208)
-        }
+        updateCollectionViewConstraints()
 
         dogImageView.snp.makeConstraints {
             $0.centerX.equalToSuperview()
@@ -88,48 +98,119 @@ final class PetProfileViewController: UIViewController {
         nextButton.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.height.equalTo(54)
+        }
+    }
+    
+    private func updateCollectionViewConstraints() {
+        collectionView.snp.remakeConstraints {
+            if petProfiles.isEmpty {
+                // 프로필이 없을 때: 상단부터 제한된 높이까지만
+                $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
+                $0.leading.trailing.equalToSuperview()
+                $0.height.equalTo(250) // 고정 높이로 설정
+            } else {
+                // 프로필이 있을 때: nextButton 위까지 전체 영역 사용
+                $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
+                $0.leading.trailing.equalToSuperview()
+                $0.bottom.equalTo(nextButton.snp.top).offset(-20)
+            }
         }
     }
 
     private func bindUI() {
-        profileAddButton.rx.tap
-            .bind { [weak self] in self?.presentBreedSearch() }
-            .disposed(by: disposeBag)
+        // 프로필이 추가될 때마다 다음 버튼 활성화 상태 업데이트
+        updateNextButtonState()
+    }
+    
+    private func updateNextButtonState() {
+        let hasProfiles = !petProfiles.isEmpty
+        nextButton.isEnabled = hasProfiles
+        nextButton.alpha = hasProfiles ? 1.0 : 0.5
+        
+        // 프로필 유무에 따라 dogImageView와 infoLabel 표시/숨김
+        UIView.animate(withDuration: 0.3) {
+            self.dogImageView.alpha = hasProfiles ? 0 : 1
+            self.infoLabel.alpha = hasProfiles ? 0 : 1
+        }
+        
+        // 컬렉션뷰 제약 조건 업데이트
+        updateCollectionViewConstraints()
+        UIView.animate(withDuration: 0.3) {
+            self.view.layoutIfNeeded()
+        }
     }
 
-    // MARK: - Factory
-    private func makeProfileButtonStack() -> UIStackView {
-        let circleView = UIView()
-        circleView.layer.cornerRadius = 30
-        circleView.layer.borderWidth = 2
-        circleView.layer.borderColor = UIColor.textTertiary.cgColor
-
-        let plusImage = UIImageView(image: UIImage(systemName: "plus"))
-        plusImage.tintColor = UIColor.textTertiary
-        plusImage.contentMode = .scaleAspectFit
-        circleView.addSubview(plusImage)
-        plusImage.snp.makeConstraints { $0.center.equalToSuperview(); $0.size.equalTo(24) }
-        circleView.snp.makeConstraints { $0.size.equalTo(60) }
-
-        let titleLabel = UILabel()
-        titleLabel.text = "프로필 추가하기"
-        titleLabel.font = .systemFont(ofSize: 16)
-        titleLabel.textColor = UIColor.textTertiary
-
-        let stack = UIStackView(arrangedSubviews: [circleView, titleLabel])
-        stack.axis = .vertical
-        stack.spacing = 12
-        stack.alignment = .center
-        stack.isUserInteractionEnabled = false
-        return stack
+    // MARK: - Data
+    private func loadSampleData() {
+        // 초기에는 빈 배열로 시작 (프로필 추가 버튼만 보이도록)
+        petProfiles = []
+        collectionView.reloadData()
+        updateNextButtonState()
+    }
+    
+    private func addNewProfile() {
+        // 새로운 프로필 추가 (하드코딩)
+        let newProfile = PetProfile(
+            uid: "22061",
+            userId: "user1",
+            name: "새로운 멍멍이",
+            age: Int.random(in: 1...15),
+            size: ["소형", "중형", "대형"].randomElement()!,
+            image: "bigLogo",
+            gender: ["수컷", "암컷"].randomElement()!,
+            neutered: Bool.random(),
+            breed: ["골든 리트리버", "시바견", "푸들", "말티즈"].randomElement()!,
+            introduce: ["활발하고 사교적인 성격", "조용하고 차분함", "장난기 많음", "순하고 착함"].randomElement()!
+        )
+        
+        petProfiles.append(newProfile)
+        
+        // 애니메이션과 함께 새 셀 추가
+        let indexPath = IndexPath(item: petProfiles.count - 1, section: 0)
+        collectionView.insertItems(at: [indexPath])
+        updateNextButtonState()
     }
 
     // MARK: - Navigation
     private func presentBreedSearch() {
-        let breedSearchVC = BreedSearchViewController()
-        let nav = UINavigationController(rootViewController: breedSearchVC)
-        nav.modalPresentationStyle = .automatic
-        present(nav, animated: true)
+        addNewProfile()
+    }
+}
+
+// MARK: - UICollectionViewDataSource
+extension PetProfileViewController: UICollectionViewDataSource {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return petProfiles.count + 1 // 프로필 개수 + 추가 버튼
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        if indexPath.item < petProfiles.count {
+            // 기존 프로필 카드
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DetectiveCardCollectionViewCell.identifier, for: indexPath) as! DetectiveCardCollectionViewCell
+            cell.configure(with: petProfiles[indexPath.item])
+            return cell
+        } else {
+            // 프로필 추가 버튼
+            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProfileAddCollectionViewCell.identifier, for: indexPath) as! ProfileAddCollectionViewCell
+            return cell
+        }
+    }
+}
+
+// MARK: - UICollectionViewDelegate
+extension PetProfileViewController: UICollectionViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        if indexPath.item >= petProfiles.count {
+            // 프로필 추가 버튼 탭
+            presentBreedSearch()
+        }
+    }
+}
+
+// MARK: - UICollectionViewDelegateFlowLayout
+extension PetProfileViewController: UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let width = collectionView.frame.width - 40 // 좌우 여백 20씩
+        return CGSize(width: width, height: 208)
     }
 }

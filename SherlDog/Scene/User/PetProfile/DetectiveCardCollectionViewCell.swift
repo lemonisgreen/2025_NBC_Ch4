@@ -1,9 +1,13 @@
 //
-//  Untitled.swift
+//  DetectiveCardCollectionViewCell.swift
 //  SherlDog
 //
 //  Created by 최영락 on 6/16/25.
 //
+import SnapKit
+import UIKit
+import RxSwift
+import RxCocoa
 
 class DetectiveCardCollectionViewCell: UICollectionViewCell {
     
