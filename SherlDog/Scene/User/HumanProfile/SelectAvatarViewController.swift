@@ -33,8 +33,8 @@ class SelectAvatarViewController: UIViewController {
             return header
         })
     
-    private let backButton = UIButton()
-    private let choiceButton = UIButton()
+    private let backButton = ButtonManager(title: "이전", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let choiceButton = ButtonManager(title: "선택하기")
     private let horizontalStackView = UIStackView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     
@@ -122,19 +122,8 @@ extension SelectAvatarViewController {
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: PictureUploadRequestViewHeader.identifier)
         
-        backButton.setTitle("이전", for: .normal)
-        backButton.setTitleColor(.keycolorPrimary3, for: .normal)
-        backButton.backgroundColor = .white
         backButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
         backButton.layer.borderWidth = 1
-        backButton.layer.cornerRadius = 6
-        backButton.clipsToBounds = true
-        
-        choiceButton.setTitle("선택하기", for: .normal)
-        choiceButton.setTitleColor(.textInverse, for: .normal)
-        choiceButton.backgroundColor = .keycolorPrimary3
-        choiceButton.layer.cornerRadius = 6
-        choiceButton.clipsToBounds = true
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
