@@ -10,10 +10,12 @@ import SnapKit
 import NMapsMap
 import RxCocoa
 import RxSwift
+import RxCoreLocation
 
 class MainViewController: UIViewController {
     
     private let disposeBag = DisposeBag()
+    private let viewModel = MainViewModel()
     
     // 지도 배경
     private let mapView = NMFMapView()
@@ -47,30 +49,9 @@ class MainViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
+        viewModel.startTracking.accept(())
         bind()
         inputBind()
-    }
-    
-    private func bind() {
-        
-    }
-    
-    private func inputBind() {
-        self.clueButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .clueLeave))
-                cameraView.modalPresentationStyle = .fullScreen
-                self?.present(cameraView, animated: true)
-            })
-            .disposed(by: disposeBag)
-        
-        self.endButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                let endView = UINavigationController(rootViewController: WalkEndModalViewController())
-                endView.modalPresentationStyle = .overFullScreen
-                self?.present(endView, animated: true)
-            })
-            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
@@ -210,4 +191,43 @@ class MainViewController: UIViewController {
             $0.height.equalTo(52)
         }
     }
+    
+    private func bind() {
+        viewModel.coordinates
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
+                guard let self = self else { return }
+                // 좌표가 최소 2개 이상일 때만 경로 생성
+                guard coords.count >= 2 else { return }
+                
+                let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject}
+                let path = NMGLineString(points: nmfCoords)
+                
+                let pathOverlay = NMFPath()
+                pathOverlay.path = path
+                pathOverlay.color = .systemBlue
+                pathOverlay.width = 4
+                pathOverlay.mapView = self.mapView
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func inputBind() {
+        self.clueButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let cameraView = UINavigationController(rootViewController: CameraViewController(to: .clueLeave))
+                cameraView.modalPresentationStyle = .fullScreen
+                self?.present(cameraView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        self.endButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                let endView = UINavigationController(rootViewController: WalkEndModalViewController())
+                endView.modalPresentationStyle = .overFullScreen
+                self?.present(endView, animated: true)
+            })
+            .disposed(by: disposeBag)
+    }
+    
 }
