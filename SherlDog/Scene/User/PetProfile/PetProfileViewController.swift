@@ -26,6 +26,8 @@ final class PetProfileViewController: UIViewController {
         let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
         collectionView.backgroundColor = .clear
         collectionView.showsVerticalScrollIndicator = false
+        collectionView.bounces = false
+        collectionView.alwaysBounceVertical = false
         return collectionView
     }()
     
@@ -70,7 +72,7 @@ final class PetProfileViewController: UIViewController {
 
         infoLabel.text = "멍탐정을 등록해주세요!"
         infoLabel.textColor = UIColor.textDisabled
-        infoLabel.font = .systemFont(ofSize: 16)
+        infoLabel.font = .body3
         infoLabel.textAlignment = .center
 
         nextButton.isEnabled = false
@@ -115,6 +117,8 @@ final class PetProfileViewController: UIViewController {
                 $0.bottom.equalTo(nextButton.snp.top).offset(-20)
             }
         }
+        
+        collectionView.isScrollEnabled = !petProfiles.isEmpty
     }
 
     private func bindUI() {
@@ -203,6 +207,12 @@ extension PetProfileViewController: UICollectionViewDelegate {
         if indexPath.item >= petProfiles.count {
             // 프로필 추가 버튼 탭
             presentBreedSearch()
+        }
+    }
+    
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if petProfiles.isEmpty {
+            scrollView.contentOffset = CGPoint.zero
         }
     }
 }
