@@ -17,6 +17,7 @@ class CreateLogViewController: UIViewController {
     private let disposeBag = DisposeBag()
     
     private let titleLabel = UILabel()
+    private let gradientLayer = CAGradientLayer()
     private let photoImageView = UIImageView()
     private let dateLabel = UILabel()
     private let distanceTitleLabel = UILabel()
@@ -30,8 +31,8 @@ class CreateLogViewController: UIViewController {
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
-    private let cancelButton = UIButton()
-    private let shareButton = UIButton()
+    private let cancelButton = ButtonManager(title: "취소", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let shareButton = ButtonManager(title: "공유하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -53,9 +54,19 @@ class CreateLogViewController: UIViewController {
         bind()
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        gradientLayer.frame = photoImageView.bounds
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         cameraViewModel.input.accept(.viewDismissed)
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.navigationBar.isHidden = true
     }
 }
 
@@ -73,12 +84,12 @@ extension CreateLogViewController {
             .subscribe(onNext: { [weak self] text in
                 guard let self, let text else { return }
                 
-                if text.count > 150 {
-                    let diff = text.count - 150
+                if text.count > 120 {
+                    let diff = text.count - 120
                     self.textView.text.removeLast(diff)
                 }
                 
-                self.textViewConstraintsLabel.text = "\(text.count) / 150자"
+                self.textViewConstraintsLabel.text = "\(text.count) / 120자"
                 
                 if text.count > 0 {
                     self.textViewPlaceholderLabel.isHidden = true
@@ -135,6 +146,7 @@ extension CreateLogViewController {
         [cancelButton, shareButton]
             .forEach { horizontalStackView.addArrangedSubview($0) }
         
+        photoImageView.layer.addSublayer(gradientLayer)
         photoImageView.addSubviews([
             dateLabel,
             distanceTitleLabel,
@@ -159,7 +171,11 @@ extension CreateLogViewController {
         titleLabel.font = .highlight3
         titleLabel.textColor = .textPrimary
         
-        photoImageView.image = UIImage(named: "naver")   // test
+        gradientLayer.colors = [UIColor.white.withAlphaComponent(0).cgColor,
+                                UIColor.black.withAlphaComponent(0.7).cgColor]
+        gradientLayer.startPoint = .init(x: 0.5, y: 0.05)
+        gradientLayer.endPoint = .init(x: 0.5, y: 1.0)
+        
         photoImageView.contentMode = .scaleAspectFill
         photoImageView.clipsToBounds = true
         photoImageView.layer.cornerRadius = 6
@@ -201,25 +217,12 @@ extension CreateLogViewController {
         textViewPlaceholderLabel.font = .body5
         textViewPlaceholderLabel.textColor = .textDisabled
         
-        textViewConstraintsLabel.text = "0 / 150자"
+        textViewConstraintsLabel.text = "0 / 120자"
         textViewConstraintsLabel.font = .alert2
         textViewConstraintsLabel.textColor = .gray400
         
-        cancelButton.setTitle("취소", for: .normal)
-        cancelButton.titleLabel?.font = .highlight4
-        cancelButton.setTitleColor(.keycolorPrimary3, for: .normal)
-        cancelButton.backgroundColor = .textInverse
-        cancelButton.clipsToBounds = true
-        cancelButton.layer.cornerRadius = 6
         cancelButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
         cancelButton.layer.borderWidth = 1
-        
-        shareButton.setTitle("공유하기", for: .normal)
-        shareButton.titleLabel?.font = .highlight4
-        shareButton.setTitleColor(.textInverse, for: .normal)
-        shareButton.backgroundColor = .keycolorPrimary3
-        shareButton.clipsToBounds = true
-        shareButton.layer.cornerRadius = 6
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
@@ -233,9 +236,9 @@ extension CreateLogViewController {
         }
         
         photoImageView.snp.makeConstraints {
-            $0.height.equalTo(400)
             $0.top.equalTo(titleLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(textView.snp.top).offset(-16)
         }
         
         stepsTitleLabel.snp.makeConstraints {
@@ -284,8 +287,9 @@ extension CreateLogViewController {
         }
         
         textView.snp.makeConstraints {
-            $0.height.equalTo(180)
+            $0.height.equalTo(155)
             $0.top.equalTo(photoImageView.snp.bottom).offset(16)
+            $0.bottom.equalTo(horizontalStackView.snp.top).offset(-32)
             $0.leading.trailing.equalTo(photoImageView)
         }
         
