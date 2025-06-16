@@ -13,6 +13,7 @@ import SnapKit
 // MARK: - AssistantProfileViewController
 class CreateAssistantProfileViewController: UIViewController {
     
+    private let cameraViewModel = CameraViewModel()
     private let disposeBag = DisposeBag()
     
     private let navigationBackButton = UIButton()
@@ -43,6 +44,13 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        self.cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                guard let self, let image else { return }
+                self.profileImageView.image = image
+            })
+            .disposed(by: disposeBag)
+        
         self.nicknameTextField.rx.text
             .subscribe(onNext: { [weak self] _ in
                 guard let self,
@@ -83,7 +91,8 @@ extension CreateAssistantProfileViewController {
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
                 pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel))
+                
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
@@ -92,6 +101,7 @@ extension CreateAssistantProfileViewController {
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
                 }
+                
                 self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
@@ -133,9 +143,11 @@ extension CreateAssistantProfileViewController {
         self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
-        
+      
         profileImageView.image = .petProfile
         profileImageView.contentMode = .scaleAspectFit
+        profileImageView.clipsToBounds = true
+        profileImageView.tintColor = .gray300
         
         profileCameraButtonImageView.image = UIImage(systemName: "camera.circle.fill")
         profileCameraButtonImageView.contentMode = .scaleAspectFit
@@ -174,23 +186,25 @@ extension CreateAssistantProfileViewController {
     }
     
     private func configureUI() {
-        let profileButtonLeadingInset: CGFloat = 117.5
+        let profileButtonSize: CGFloat = 140
+        let profileImageInset: CGFloat = 8
+        let profileCameraButtonSize: CGFloat = 44
+        
+        profileImageView.layer.cornerRadius = (profileButtonSize - profileImageInset) / 2
         
         profileimageSetbutton.snp.makeConstraints {
+            $0.height.width.equalTo(profileButtonSize)
             $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-            $0.leading.trailing.equalToSuperview().inset(profileButtonLeadingInset)
-            // 다른 기기 대응을 위해 계산한 값입니다.
-            $0.height.equalTo(UIScreen.main.bounds.width - (profileButtonLeadingInset * 2))
+            $0.centerX.equalToSuperview()
         }
         
         profileImageView.snp.makeConstraints {
             $0.top.leading.equalToSuperview()
-            $0.trailing.bottom.equalToSuperview().inset(8)
+            $0.trailing.bottom.equalToSuperview().inset(profileImageInset)
         }
         
         profileCameraButtonImageView.snp.makeConstraints {
-            // 다른 기기 대응을 위해 mulptipliedBy로 크기 잡았습니다. 와이어프레임에서 계산해봤을 때 3.1818... 나오길래 3.18로 잘랐습니다.
-            $0.height.width.equalTo(profileimageSetbutton.snp.height).multipliedBy(1.0 / 3.18)
+            $0.height.width.equalTo(profileCameraButtonSize)
             $0.trailing.bottom.equalToSuperview().inset(4)
         }
         

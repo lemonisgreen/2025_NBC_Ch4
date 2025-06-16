@@ -11,7 +11,12 @@ import UIKit
 
 class CameraViewModel {
     
+    enum CameraDestination {
+        case profile, clueLeave, communityShare
+    }
+    
     enum Input {
+        case sender(CameraDestination)
         case shutterButtonTap
         case captureImage(UIImage)
         case pinchGestureBegan(CGFloat)
@@ -20,6 +25,7 @@ class CameraViewModel {
     }
     
     struct Output {
+        let sender = BehaviorRelay<CameraDestination>(value: .profile)
         let getCapture = PublishRelay<Void>()
         let capturedImage = BehaviorRelay<UIImage?>(value: nil)
         let pinchUpdate = PublishRelay<CGFloat>()
@@ -42,6 +48,9 @@ class CameraViewModel {
         
         input.bind { input in
             switch input {
+            case .sender(let sender):
+                self.output.sender.accept(sender)
+                
             case .shutterButtonTap:
                 self.output.getCapture.accept(())
                 
