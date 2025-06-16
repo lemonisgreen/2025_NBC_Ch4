@@ -70,7 +70,7 @@ class KakaoLoginManager {
     private var currentUserInfo: KakaoUserInfo?
     private init() {}
     
-    /// 카카오 로그인 시작
+    // 카카오 로그인 시작
     func login(completion: ((KakaoLoginResult) -> Void)? = nil) {
         if UserApi.isKakaoTalkLoginAvailable() {
             loginWithKakaoTalk(completion: completion)
@@ -79,7 +79,7 @@ class KakaoLoginManager {
         }
     }
     
-    /// 로그아웃
+    // 로그아웃
     func logout(completion: ((Bool) -> Void)? = nil) {
         UserApi.shared.logout { [weak self] error in
             let success = error == nil
@@ -94,7 +94,7 @@ class KakaoLoginManager {
         }
     }
     
-    /// 연결 해제 (회원탈퇴)
+    // 연결 해제 (회원탈퇴)
     func unlink(completion: ((Bool) -> Void)? = nil) {
         UserApi.shared.unlink { [weak self] error in
             let success = error == nil
@@ -109,17 +109,17 @@ class KakaoLoginManager {
         }
     }
     
-    /// 현재 로그인 상태 확인
+    // 현재 로그인 상태 확인
     func isLoggedIn() -> Bool {
         return AuthApi.hasToken()
     }
     
-    /// 현재 사용자 정보 반환
+    // 현재 사용자 정보 반환
     func getCurrentUserInfo() -> KakaoUserInfo? {
         return currentUserInfo
     }
     
-    /// 토큰 유효성 검사
+    // 토큰 유효성 검사
     func validateToken(completion: @escaping (Bool) -> Void) {
         guard AuthApi.hasToken() else {
             completion(false)
@@ -141,7 +141,7 @@ class KakaoLoginManager {
         }
     }
     
-    /// 저장된 사용자 정보로 현재 사용자 정보 복원
+    // 저장된 사용자 정보로 현재 사용자 정보 복원
     func restoreUserInfo() {
         guard isLoggedIn(),
               UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") else {
@@ -156,21 +156,21 @@ class KakaoLoginManager {
 // MARK: - Private Methods
 private extension KakaoLoginManager {
     
-    /// 카카오톡 앱으로 로그인
+    // 카카오톡 앱으로 로그인
     func loginWithKakaoTalk(completion: ((KakaoLoginResult) -> Void)?) {
         UserApi.shared.loginWithKakaoTalk { [weak self] (oauthToken, error) in
             self?.handleLoginResponse(oauthToken: oauthToken, error: error, completion: completion)
         }
     }
     
-    /// 웹 브라우저로 로그인
+    // 웹 브라우저로 로그인
     func loginWithWeb(completion: ((KakaoLoginResult) -> Void)?) {
         UserApi.shared.loginWithKakaoAccount { [weak self] (oauthToken, error) in
             self?.handleLoginResponse(oauthToken: oauthToken, error: error, completion: completion)
         }
     }
     
-    /// 로그인 응답 처리
+    // 로그인 응답 처리
     func handleLoginResponse(oauthToken: OAuthToken?, error: Error?, completion: ((KakaoLoginResult) -> Void)?) {
         if let error = error {
             let kakaoError = processError(error)
@@ -192,7 +192,7 @@ private extension KakaoLoginManager {
         fetchUserInfo(completion: completion)
     }
     
-    /// 사용자 정보 가져오기
+    // 사용자 정보 가져오기
     func fetchUserInfo(completion: ((KakaoLoginResult) -> Void)?) {
         UserApi.shared.me { [weak self] (user, error) in
             if let error = error {
@@ -225,7 +225,7 @@ private extension KakaoLoginManager {
         }
     }
     
-    /// 에러 처리
+    // 에러 처리
     func processError(_ error: Error) -> KakaoLoginError {
     
         let errorMessage = error.localizedDescription.lowercased()
