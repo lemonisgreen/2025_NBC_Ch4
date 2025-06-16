@@ -44,33 +44,32 @@ extension CreateAssistantProfileViewController {
     
     private func bind() {
         self.nicknameTextField.rx.text
-            .subscribe(onNext: { [weak self] _ in
-                guard let self,
-                let text = self.nicknameTextField.text else { return }
-                
-                self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
+            .subscribe(onNext: { [weak self] text in
+                guard let self, let text else { return }
                 
                 if text.count > 12 {
                     let diff = text.count - 12
                     self.nicknameTextField.text?.removeLast(diff)
                     self.nickNameConstraintsLabel.text = "12 / 12자"
                 }
+                
+                self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
+                
             })
             .disposed(by: disposeBag)
         
-        self.introduceTextView.rx.didChange
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
+        self.introduceTextView.rx.text
+            .subscribe(onNext: { [weak self] text in
+                guard let self, let text else { return }
                 
-                self.introduceConstraintsLabel.text = "\(self.introduceTextView.text.count) / 150자"
-                
-                if self.introduceTextView.text.count > 150 {
-                    let diff = self.introduceTextView.text.count - 150
+                if text.count > 150 {
+                    let diff = text.count - 150
                     self.introduceTextView.text.removeLast(diff)
-                    self.introduceConstraintsLabel.text = "150 / 150자"
                 }
                 
-                if self.introduceTextView.text.count > 0 {
+                self.introduceConstraintsLabel.text = "\(text.count) / 150자"
+                
+                if text.count > 0 {
                     self.textViewPlaceholder.isHidden = true
                 } else {
                     self.textViewPlaceholder.isHidden = false
