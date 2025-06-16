@@ -127,15 +127,15 @@ extension CreateAssistantProfileViewController {
         navigationTitleLabel.text = "조수 프로필 입력하기"
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
+        navigationTitleLabel.textColor = .textPrimary
         navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
         self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
         
-        profileImageView.image = UIImage(systemName: "person.crop.circle.fill")
+        profileImageView.image = .petProfile
         profileImageView.contentMode = .scaleAspectFit
-        profileImageView.tintColor = .gray300
         
         profileCameraButtonImageView.image = UIImage(systemName: "camera.circle.fill")
         profileCameraButtonImageView.contentMode = .scaleAspectFit
