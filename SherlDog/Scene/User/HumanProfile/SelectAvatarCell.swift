@@ -35,8 +35,7 @@ class SelectAvatarCell: UICollectionViewCell {
         
         imageView.contentMode = .scaleAspectFit
         selectedImageView.contentMode = .scaleAspectFit
-        selectedImageView.image = UIImage(systemName: "checkmark.square.fill") // todo: 셀 선택 효과 이미지
-        selectedImageView.tintColor = .gray400  // todo: 이미지 대입 후 삭제
+        selectedImageView.image = .avatarSelect
     }
     
     private func configureUI() {

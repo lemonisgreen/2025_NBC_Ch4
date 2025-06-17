@@ -83,7 +83,7 @@ extension DetailAvatarViewController {
         self.choiceButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
-                // todo: 조수 프로필 뷰로 데이터 보내기
+                self.viewModel.input.accept(.completeSelect)
                 self.dismiss(animated: true)
                 self.presentingViewController?.dismiss(animated: true)
             })
@@ -115,12 +115,11 @@ extension DetailAvatarViewController {
         titleLabel.textColor = .textPrimary
         
         avatarBackground.contentMode = .scaleAspectFit
-        avatarBackground.image = UIImage(systemName: "timelapse")   // test
-        avatarBackground.tintColor = .keycolorOrange   // test
+        avatarBackground.image = .avatarSelect
         
         avatarImageView.contentMode = .scaleAspectFit
         
-        detailView.backgroundColor = .cyan  // todo: 노트모양 이미지 넣기
+        detailView.image = .avatarDetail
         detailView.contentMode = .scaleToFill
         
         detailTitleLabel.font = .highlight4

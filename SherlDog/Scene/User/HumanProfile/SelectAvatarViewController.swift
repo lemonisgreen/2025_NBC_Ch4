@@ -15,7 +15,7 @@ import SnapKit
 // MARK: - SelectDefaultAvatarViewController
 class SelectAvatarViewController: UIViewController {
     
-    private let viewModel = SelectAvatarViewModel()
+    private let viewModel: SelectAvatarViewModel
     private let disposeBag = DisposeBag()
     private let dataSource = RxCollectionViewSectionedReloadDataSource<SelectAvatarViewModel.SelectAvatarDataSource>(
         configureCell: { dataSource, collectionView, IndexPath, section in
@@ -38,10 +38,16 @@ class SelectAvatarViewController: UIViewController {
     private let horizontalStackView = UIStackView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     
-}
-
-// MARK: - Lifecycle
-extension SelectAvatarViewController {
+    // MARK: - Lifecycle
+    init(viewModel: SelectAvatarViewModel) {
+        self.viewModel = viewModel
+        
+        super.init()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -58,7 +64,6 @@ extension SelectAvatarViewController {
         self.navigationController?.navigationBar.isHidden = true
         choiceButton.isEnabled = false
     }
-    
 }
 
 // MARK: - Method

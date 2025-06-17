@@ -11,8 +11,9 @@ import RxCocoa
 import SnapKit
 
 // MARK: - AssistantProfileViewController
-class CreateAssistantProfileViewController: UIViewController {
+class CreateAssistantProfileViewController: UIViewController { // todo: Merge 받고 PictureRequestView 호출 시 뷰모델 주입
     
+    private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
     private let disposeBag = DisposeBag()
     
@@ -44,6 +45,13 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        self.avatarViewModel.output.completeSelect
+            .subscribe(onNext: { [weak self] imageName in
+                guard let self else { return }
+                self.profileImageView.image = UIImage(named: imageName)
+            })
+            .disposed(by: disposeBag)
+        
         self.cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
