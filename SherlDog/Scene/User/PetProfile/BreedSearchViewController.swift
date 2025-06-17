@@ -13,10 +13,12 @@ import RxCocoa
 class BreedSearchViewController: UIViewController {
 
     // MARK: - Properties
-    private let disposeBag = DisposeBag()
+    let disposeBag = DisposeBag()
     private lazy var allBreeds: [String] = loadBreeds()
     private var filteredBreeds: [String] = []
     private var isSearching = false
+    
+    let selectedBreed = PublishSubject<String>()
 
     // MARK: - UI Components
     private let titleLabel = UILabel()
@@ -317,8 +319,9 @@ extension BreedSearchViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let selectedBreed = filteredBreeds[indexPath.row]
-        // 선택된 견종 처리
-        print("선택된 견종: \(selectedBreed)")
+        
+        self.selectedBreed.onNext(selectedBreed)
+
         dismiss(animated: true)
     }
 }

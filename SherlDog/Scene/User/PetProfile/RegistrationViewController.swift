@@ -117,16 +117,27 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         self.registBreed.rx.tap
-            .subscribe(onNext: { [weak self] _ in
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
                 let breedSearchVC = BreedSearchViewController()
+                breedSearchVC.selectedBreed
+                    .subscribe(onNext: { [weak owner] breed in
+                        owner?.viewModel.breed.accept(breed)
+                    })
+                    .disposed(by: breedSearchVC.disposeBag)
+    
                 if let sheet = breedSearchVC.sheetPresentationController {
                     sheet.detents = [.large()]
                     sheet.selectedDetentIdentifier = .large
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
-                    self?.present(breedSearchVC, animated: true)
+                    self.present(breedSearchVC, animated: true)
                 }
             })
+            .disposed(by: disposeBag)
+        
+        viewModel.breed
+            .bind(to: registBreed.breedText)
             .disposed(by: disposeBag)
         
         // 크기 선택 바인딩
@@ -166,15 +177,10 @@ class RegistrationViewController: UIViewController {
             .withUnretained(self)
             .subscribe(onNext: { owner, _ in
                 let birthSelectVC = BirthSelectViewController()
-                
                 birthSelectVC.selectedDate
-                    .map { date in
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy-MM-dd"
-                        let age = Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
-                        return "\(formatter.string(from: date)) (\(age)세)"
-                    }
-                    .bind(to: owner.registAgeButton.dateText)
+                    .subscribe(onNext: { [weak owner] date in
+                        owner?.viewModel.selectedAge.accept(date)
+                    })
                     .disposed(by: birthSelectVC.disposeBag)
                 
                 if let sheet = birthSelectVC.sheetPresentationController {
@@ -188,13 +194,15 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         viewModel.selectedAge
-                    .map { date in
-                        let formatter = DateFormatter()
-                        formatter.dateFormat = "yyyy년 MM월 dd일"
-                        return formatter.string(from: date)
-                    }
-                    .bind(to: registedAgeLabel.rx.text)
-                    .disposed(by: disposeBag)
+            .map { dateOpt in
+                guard let date = dateOpt else { return "YYYY-MM-DD (n세)" }
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                let age = Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
+                return "\(formatter.string(from: date)) (\(age)세)"
+            }
+            .bind(to: registAgeButton.dateText)
+            .disposed(by: disposeBag)
         
         // 성별 선택 바인딩
         Observable.merge(

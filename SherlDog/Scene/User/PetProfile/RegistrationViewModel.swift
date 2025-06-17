@@ -17,7 +17,7 @@ class RegistrationViewModel {
     let name = BehaviorRelay<String>(value: "")
     let breed = BehaviorRelay<String>(value: "")
     let selectedSize = BehaviorRelay<String>(value: "")
-    let selectedAge = BehaviorRelay<Date>(value: Date())
+    let selectedAge = BehaviorRelay<Date?>(value: nil)
     let selectedGender = BehaviorRelay<String>(value: "")
     let isNeutered = BehaviorRelay<Bool>(value: false)
     let introduce = BehaviorRelay<String>(value: "")
@@ -27,8 +27,8 @@ class RegistrationViewModel {
     //func savePetProfile(userID: String) {
     func savePetProfile() {
         let newDocument = db.collection("PetProfile").document()
-        let ageTimestamp = Timestamp(date: selectedAge.value)
-        
+        let ageTimestamp = Timestamp(date: selectedAge.value ?? Date())
+
         let documentData: [String: Any] = [
             //"userId": userID,
             "docID" : newDocument.documentID,
@@ -38,7 +38,7 @@ class RegistrationViewModel {
             //"image": imageURL.value,
             "gender": selectedGender.value,
             "neutered": isNeutered.value,
-            //"breed": breed.value,
+            "breed": breed.value,
             "introduce": introduce.value
         ]
         

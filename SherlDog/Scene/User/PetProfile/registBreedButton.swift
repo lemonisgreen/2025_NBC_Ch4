@@ -13,6 +13,7 @@ import RxRelay
 class registBreedButton: UIButton {
     
     private let magnifyingGlassIcon = UIImageView(image: UIImage(systemName: "magnifyingglass"))
+    
     let breedText = BehaviorRelay<String>(value: "")
     let disposeBag = DisposeBag()
     
@@ -39,6 +40,7 @@ class registBreedButton: UIButton {
             .map { !$0.isEmpty }
             .subscribe(onNext: { [weak self] isSelected in
                 self?.setTitleColor(isSelected ? .textPrimary : .textTertiary, for: .normal)
+                self?.magnifyingGlassIcon.isHidden = isSelected
             })
             .disposed(by: disposeBag)
     }
