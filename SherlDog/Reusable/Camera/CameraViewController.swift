@@ -199,6 +199,7 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
         case .clueLeave, .communityShare:
             guard let viewControllerForPicture else { return }
             viewControllerForPicture.presentationController?.delegate = self
+            viewControllerForPicture.sheetPresentationController?.prefersGrabberVisible = true
             
             DispatchQueue.main.async {
                 self.present(viewControllerForPicture, animated: true)

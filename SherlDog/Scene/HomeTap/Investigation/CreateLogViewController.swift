@@ -200,13 +200,14 @@ extension CreateLogViewController {
                 $0.text = "12332"   // test
             }
         
-        textView.font = .body5
+        textView.font = .body3
+        textView.textColor = .textPrimary
         textView.backgroundColor = .gray50
         textView.layer.cornerRadius = 6
         textView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
         
         textViewPlaceholderLabel.text = "오늘의 수사일지를 간단히 적어주세요."
-        textViewPlaceholderLabel.font = .body5
+        textViewPlaceholderLabel.font = .body3
         textViewPlaceholderLabel.textColor = .textDisabled
         
         textViewConstraintsLabel.text = "0 / 120자"
