@@ -76,10 +76,10 @@ extension SelectAvatarViewController {
                 let detailView = UINavigationController(rootViewController: DetailAvatarViewController(viewModel: self.viewModel))
                 detailView.modalPresentationStyle = .pageSheet
                 if let sheet = detailView.sheetPresentationController {
-                    sheet.detents = [.large()]
+                    sheet.detents = [.custom { _ in 620 }]
                     sheet.selectedDetentIdentifier = .large
                     sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 32
+                    sheet.preferredCornerRadius = 20
                 }
                 self.present(detailView, animated: true)
             })

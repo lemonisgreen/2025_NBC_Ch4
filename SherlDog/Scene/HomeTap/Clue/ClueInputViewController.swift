@@ -130,8 +130,7 @@ class ClueInputViewController: UIViewController {
         registerButton.rx.tap
             .bind { [weak self] in
                 guard let self,
-                      let cameraView = self.presentingViewController,
-                      let mainView = cameraView.presentingViewController else { return }
+                      let mainView = self.view.window?.rootViewController else { return }
                 print("단서 등록 로직 실행됨")
                 mainView.dismiss(animated: true)
             }
