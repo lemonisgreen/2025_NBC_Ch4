@@ -11,7 +11,7 @@ import RxCocoa
 import SnapKit
 
 // MARK: - AssistantProfileViewController
-class CreateAssistantProfileViewController: UIViewController { // todo: Merge 받고 PictureRequestView 호출 시 뷰모델 주입
+class CreateAssistantProfileViewController: UIViewController {
     
     private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
