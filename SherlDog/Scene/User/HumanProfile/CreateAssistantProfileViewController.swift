@@ -95,7 +95,7 @@ extension CreateAssistantProfileViewController {
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.medium()]
+                    sheet.detents = [.custom { _ in 390 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32

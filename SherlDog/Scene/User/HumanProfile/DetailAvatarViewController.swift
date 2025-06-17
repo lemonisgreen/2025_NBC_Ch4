@@ -84,8 +84,7 @@ extension DetailAvatarViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 // todo: 조수 프로필 뷰로 데이터 보내기
-                self.dismiss(animated: true)
-                self.presentingViewController?.dismiss(animated: true)
+                self.view.window?.rootViewController?.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -145,8 +144,8 @@ extension DetailAvatarViewController {
         }
         
         avatarImageView.snp.makeConstraints {
-            $0.height.equalTo(248)
-            $0.top.equalTo(titleLabel.snp.bottom).offset(96)
+            $0.height.equalTo(216)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(32)
             $0.leading.trailing.equalToSuperview()
         }
         
@@ -157,7 +156,7 @@ extension DetailAvatarViewController {
         
         detailView.snp.makeConstraints {
             $0.height.equalTo(141)
-            $0.top.equalTo(avatarImageView.snp.bottom).offset(92)
+            $0.top.equalTo(avatarImageView.snp.bottom).offset(56)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         

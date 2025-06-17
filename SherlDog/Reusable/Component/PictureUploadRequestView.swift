@@ -13,7 +13,7 @@ import RxDataSources
 import Differentiator
 
 // MARK: - PictureUploadView
-class PictureUploadRequestView: UIViewController {
+class PictureUploadRequestView: UIViewController { // 1: 230, 2: 310, 3: 390
 
     private let viewModel: PictureUploadRequestViewModel
     private let cameraViewModel: CameraViewModel?
@@ -212,7 +212,7 @@ extension PictureUploadRequestView {
                                                             heightDimension: .absolute(70)))
 
         let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                       heightDimension: .fractionalHeight(1/5)),
+                                                                       heightDimension: .absolute(500)),
                                                      subitems: [item])
 
         group.interItemSpacing = .fixed(12)
