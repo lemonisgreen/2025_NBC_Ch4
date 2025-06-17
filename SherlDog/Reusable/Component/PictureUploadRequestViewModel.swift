@@ -106,16 +106,16 @@ class PictureUploadRequestViewModel {
                     switch sender {
                     case .pictureRequest:
                         switch index.first {
-                        case 0: self.output.moveToView.accept(.camera); print("선택한 버튼: 사진 찍기")
-                        case 1: self.output.moveToView.accept(.album); print("선택한 버튼: 사진 보관함")
+                        case 0: self.output.moveToView.accept(.camera)
+                        case 1: self.output.moveToView.accept(.album)
                         default: return
                         }
                         
                     case .pictureRequestWithIcon:
                         switch index.first {
-                        case 0: self.output.moveToView.accept(.avatar); print("선택한 버튼: 기본 이미지 설정")
-                        case 1: self.output.moveToView.accept(.camera); print("선택한 버튼: 사진 찍기")
-                        case 2: self.output.moveToView.accept(.album); print("선택한 버튼: 사진 보관함")
+                        case 0: self.output.moveToView.accept(.avatar)
+                        case 1: self.output.moveToView.accept(.camera)
+                        case 2: self.output.moveToView.accept(.album)
                         default: return
                         }
                         

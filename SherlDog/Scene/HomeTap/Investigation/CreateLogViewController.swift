@@ -59,11 +59,6 @@ class CreateLogViewController: UIViewController {
         gradientLayer.frame = photoImageView.bounds
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        cameraViewModel.input.accept(.viewDismissed)
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.isHidden = true
