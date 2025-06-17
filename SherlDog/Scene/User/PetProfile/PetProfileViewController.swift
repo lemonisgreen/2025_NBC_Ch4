@@ -11,11 +11,12 @@ import RxSwift
 import RxCocoa
 
 final class PetProfileViewController: UIViewController {
-
+    
     // MARK: - Properties
     private let disposeBag = DisposeBag()
     private var petProfiles: [PetProfile] = []
-
+    private let maxProfileCount = 3 // 최대 프로필 개수 제한
+    
     // MARK: - UI Components
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
@@ -37,7 +38,7 @@ final class PetProfileViewController: UIViewController {
         let button = ButtonManager(title: "다음", width: UIScreen.main.bounds.width - 40)
         return button
     }()
-
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -48,7 +49,7 @@ final class PetProfileViewController: UIViewController {
         bindUI()
         loadSampleData()
     }
-
+    
     // MARK: - UI Setup
     private func setupNavigationBar() {
         navigationItem.title = "멍탐정 프로필 입력하기"
@@ -59,44 +60,44 @@ final class PetProfileViewController: UIViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
         collectionView.register(DetectiveCardCollectionViewCell.self,
-                               forCellWithReuseIdentifier: DetectiveCardCollectionViewCell.identifier)
+                                forCellWithReuseIdentifier: DetectiveCardCollectionViewCell.identifier)
         collectionView.register(ProfileAddCollectionViewCell.self,
-                               forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
+                                forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
     }
-
+    
     private func setupUI() {
         view.backgroundColor = UIColor.keycolorBackground
-
+        
         dogImageView.image = UIImage(named: "sherlDog")
         dogImageView.contentMode = .scaleAspectFit
-
+        
         infoLabel.text = "멍탐정을 등록해주세요!"
         infoLabel.textColor = UIColor.textDisabled
         infoLabel.font = .body3
         infoLabel.textAlignment = .center
-
+        
         nextButton.isEnabled = false
         nextButton.alpha = 0.5
-
+        
         [collectionView, dogImageView, infoLabel, nextButton].forEach {
             view.addSubview($0)
         }
     }
-
+    
     private func configureUI() {
         updateCollectionViewConstraints()
-
+        
         dogImageView.snp.makeConstraints {
             $0.centerX.equalToSuperview()
             $0.centerY.equalToSuperview().offset(20)
             $0.size.equalTo(80)
         }
-
+        
         infoLabel.snp.makeConstraints {
             $0.top.equalTo(dogImageView.snp.bottom).offset(12)
             $0.centerX.equalToSuperview()
         }
-
+        
         nextButton.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
             $0.leading.trailing.equalToSuperview().inset(20)
@@ -120,7 +121,7 @@ final class PetProfileViewController: UIViewController {
         
         collectionView.isScrollEnabled = !petProfiles.isEmpty
     }
-
+    
     private func bindUI() {
         // 프로필이 추가될 때마다 다음 버튼 활성화 상태 업데이트
         updateNextButtonState()
@@ -128,9 +129,14 @@ final class PetProfileViewController: UIViewController {
     
     private func updateNextButtonState() {
         let hasProfiles = !petProfiles.isEmpty
-        nextButton.isEnabled = hasProfiles
-        nextButton.alpha = hasProfiles ? 1.0 : 0.5
         
+        if hasProfiles {
+            nextButton.backgroundColor = UIColor.keycolorPrimary3
+            nextButton.alpha = 1.0
+        } else {
+            nextButton.backgroundColor = UIColor.textDisabled
+            nextButton.alpha = 1.0
+        }
         // 프로필 유무에 따라 dogImageView와 infoLabel 표시/숨김
         UIView.animate(withDuration: 0.3) {
             self.dogImageView.alpha = hasProfiles ? 0 : 1
@@ -143,7 +149,7 @@ final class PetProfileViewController: UIViewController {
             self.view.layoutIfNeeded()
         }
     }
-
+    
     // MARK: - Data
     private func loadSampleData() {
         // 초기에는 빈 배열로 시작 (프로필 추가 버튼만 보이도록)
@@ -153,11 +159,16 @@ final class PetProfileViewController: UIViewController {
     }
     
     private func addNewProfile() {
+        // 최대 개수 체크
+        guard petProfiles.count < maxProfileCount else {
+            return
+        }
+        
         // 새로운 프로필 추가 (하드코딩)
         let newProfile = PetProfile(
             uid: "22061",
             userId: "user1",
-            name: "새로운 멍멍이",
+            name: "새로운 멍멍이 \(petProfiles.count + 1)",
             age: Int.random(in: 1...15),
             size: ["소형", "중형", "대형"].randomElement()!,
             image: "bigLogo",
@@ -169,12 +180,13 @@ final class PetProfileViewController: UIViewController {
         
         petProfiles.append(newProfile)
         
-        // 애니메이션과 함께 새 셀 추가
-        let indexPath = IndexPath(item: petProfiles.count - 1, section: 0)
-        collectionView.insertItems(at: [indexPath])
-        updateNextButtonState()
+        // 안전하게 전체 리로드
+        DispatchQueue.main.async {
+            self.collectionView.reloadData()
+            self.updateNextButtonState()
+        }
     }
-
+    
     // MARK: - Navigation
     private func presentBreedSearch() {
         addNewProfile()
@@ -184,6 +196,10 @@ final class PetProfileViewController: UIViewController {
 // MARK: - UICollectionViewDataSource
 extension PetProfileViewController: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        // 최대 개수에 도달하면 추가 버튼을 숨김
+        if petProfiles.count >= maxProfileCount {
+            return petProfiles.count
+        }
         return petProfiles.count + 1 // 프로필 개수 + 추가 버튼
     }
     
@@ -194,7 +210,7 @@ extension PetProfileViewController: UICollectionViewDataSource {
             cell.configure(with: petProfiles[indexPath.item])
             return cell
         } else {
-            // 프로필 추가 버튼
+            // 프로필 추가 버튼 (최대 개수 미만일 때만)
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ProfileAddCollectionViewCell.identifier, for: indexPath) as! ProfileAddCollectionViewCell
             return cell
         }
