@@ -21,7 +21,6 @@ class CameraViewModel {
         case captureImage(UIImage)
         case pinchGestureBegan(CGFloat)
         case pinchGestureChanged(CGFloat)
-        case viewDismissed
     }
     
     struct Output {
@@ -29,7 +28,6 @@ class CameraViewModel {
         let getCapture = PublishRelay<Void>()
         let capturedImage = BehaviorRelay<UIImage?>(value: nil)
         let pinchUpdate = PublishRelay<CGFloat>()
-        let viewDismissed = PublishRelay<Void>()
     }
     
     private let disposeBag = DisposeBag()
@@ -62,8 +60,6 @@ class CameraViewModel {
                 
             case .pinchGestureChanged(let value):
                 self.output.pinchUpdate.accept(self.zoomFactorOperation(value))
-            case .viewDismissed:
-                self.output.viewDismissed.accept(())
             }
         }
         .disposed(by: disposeBag)
