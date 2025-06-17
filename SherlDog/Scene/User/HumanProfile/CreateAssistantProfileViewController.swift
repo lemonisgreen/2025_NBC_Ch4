@@ -52,6 +52,7 @@ extension CreateAssistantProfileViewController {
             .subscribe(onNext: { [weak self] imageName in
                 guard let self else { return }
                 self.profileImageView.image = UIImage(named: imageName)
+                self.profileImageView.contentMode = .scaleAspectFit
             })
             .disposed(by: disposeBag)
         
@@ -59,6 +60,7 @@ extension CreateAssistantProfileViewController {
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
                 self.profileImageView.image = image
+                self.profileImageView.contentMode = .scaleAspectFill
             })
             .disposed(by: disposeBag)
         
@@ -109,11 +111,11 @@ extension CreateAssistantProfileViewController {
                 let pictureViewModel = PictureUploadRequestViewModel()
                 pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
                 
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.medium()]
+                    sheet.detents = [.custom { _ in 390 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
@@ -165,9 +167,10 @@ extension CreateAssistantProfileViewController {
         self.navigationItem.titleView = navigationTitleLabel
       
         profileImageView.image = .petProfile
-        profileImageView.contentMode = .scaleAspectFit
+        profileImageView.contentMode = .scaleAspectFill
+        profileImageView.layer.borderColor = UIColor.gray100.cgColor
+        profileImageView.layer.borderWidth = 1
         profileImageView.clipsToBounds = true
-        profileImageView.tintColor = .gray300
         
         profileCameraButtonImageView.image = .profileCamera
         profileCameraButtonImageView.contentMode = .scaleAspectFit

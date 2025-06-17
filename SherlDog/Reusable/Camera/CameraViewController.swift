@@ -58,17 +58,6 @@ extension CameraViewController {
         
         self.previewLayer?.frame = self.cameraView.bounds
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        if !captureSession.isRunning {
-            DispatchQueue.global().async {
-                self.captureSession.startRunning()
-            }
-        }
-    }
-    
 }
 
 // MARK: - Method
@@ -128,14 +117,6 @@ extension CameraViewController {
                 try? captureDevice.lockForConfiguration()
                 captureDevice.videoZoomFactor = scale
                 captureDevice.unlockForConfiguration()
-            })
-            .disposed(by: disposeBag)
-        
-        self.viewModel.output.viewDismissed
-            .subscribe(onNext: { [weak self] _ in
-                DispatchQueue.global().async {
-                    self?.captureSession.startRunning()
-                }
             })
             .disposed(by: disposeBag)
     }
@@ -208,7 +189,6 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
         DispatchQueue.global().async {
             self.captureSession.stopRunning()
         }
-        guard let viewControllerForPicture else { return }
         
         switch self.viewModel.output.sender.value {
         case .profile:
@@ -217,10 +197,24 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
             }
             
         case .clueLeave, .communityShare:
+            guard let viewControllerForPicture else { return }
+            viewControllerForPicture.presentationController?.delegate = self
+            
             DispatchQueue.main.async {
                 self.present(viewControllerForPicture, animated: true)
             }
-            
+        }
+        
+    }
+}
+
+extension CameraViewController: UIAdaptivePresentationControllerDelegate {
+    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
+        
+        if !self.captureSession.isRunning {
+            DispatchQueue.global().async {
+                self.captureSession.startRunning()
+            }
         }
     }
 }
