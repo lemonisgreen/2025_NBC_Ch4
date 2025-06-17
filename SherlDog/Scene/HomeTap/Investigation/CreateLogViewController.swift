@@ -242,7 +242,7 @@ extension CreateLogViewController {
         }
         
         stepsTitleLabel.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(6)
+            $0.bottom.equalToSuperview().inset(16) // 6? 16?
             $0.leading.equalToSuperview().inset(16)
         }
         
