@@ -19,9 +19,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         
         // 로그인 상태 확인 후 초기 화면 결정
-        //let initialViewController = determineInitialViewController()
+        let initialViewController = determineInitialViewController()
         
-        window.rootViewController = PetProfileViewController()
+        window.rootViewController = initialViewController
         self.window = window
         window.makeKeyAndVisible()
     }
