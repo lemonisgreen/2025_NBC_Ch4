@@ -14,6 +14,7 @@ class RegistrationViewController: UIViewController {
     
     private let cameraViewModel = CameraViewModel()
     let disposeBag = DisposeBag()
+    let viewModel = RegistrationViewModel()
     
     let registrationLabel = UILabel()
     let registImage = UIButton()
@@ -24,7 +25,7 @@ class RegistrationViewController: UIViewController {
     let registNameAlertLabel = UILabel()
     let registName = RegistrationTextField(text: "이름을 입력하세요")
     let registBreedLabel = UILabel()
-    let registBreed = RegistrationSearchButton(title: " ")
+    let registBreed = registBreedButton()
     let underLine = UIView()
     let registSizeLabel = UILabel()
     let registSizeSmallIcon = UIImageView()
@@ -41,7 +42,8 @@ class RegistrationViewController: UIViewController {
     let registSizeLargeButton = RegistrationSelectButton(title: nil)
     let registSizeStackButtonView = UIStackView()
     let registAgeLabel = UILabel()
-    let registAgeButton = RegistrationSearchButton(title: "YYYY-MM-DD (n세)")
+    let registAgeButton = registBirthdayButton(title: "YYYY-MM-DD (n세)")
+    let registedAgeLabel = UILabel()
     let registGenderLabel = UILabel()
     let registGenderStackView = UIStackView()
     let registGenderFemale = RegistrationSelectButton(title: "여아")
@@ -52,6 +54,7 @@ class RegistrationViewController: UIViewController {
     let registNeuteredFalse = RegistrationSelectButton(title: "중성화 안 했어요")
     let registIntroduceLabel = UILabel()
     let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
+    let registIntroduceCountLabel = UILabel()
     let registCompletButton = ButtonManager(title: "다음")
     
     override func viewDidLoad() {
@@ -81,7 +84,7 @@ class RegistrationViewController: UIViewController {
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.medium()]
+                    sheet.detents = [.custom { _ in 390 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
@@ -109,18 +112,42 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        registName.rx.text.orEmpty
+            .bind(to: viewModel.name)
+            .disposed(by: disposeBag)
+        
         self.registBreed.rx.tap
-            .subscribe(onNext: { [weak self] _ in
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
                 let breedSearchVC = BreedSearchViewController()
+                breedSearchVC.selectedBreed
+                    .subscribe(onNext: { [weak owner] breed in
+                        owner?.viewModel.breed.accept(breed)
+                    })
+                    .disposed(by: breedSearchVC.disposeBag)
+    
                 if let sheet = breedSearchVC.sheetPresentationController {
                     sheet.detents = [.large()]
                     sheet.selectedDetentIdentifier = .large
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
-                    self?.present(breedSearchVC, animated: true)
+                    self.present(breedSearchVC, animated: true)
                 }
             })
             .disposed(by: disposeBag)
+        
+        viewModel.breed
+            .bind(to: registBreed.breedText)
+            .disposed(by: disposeBag)
+        
+        // 크기 선택 바인딩
+        Observable.merge(
+            registSizeSmallButton.rx.tap.map { "small" },
+            registSizeMediumButton.rx.tap.map { "medium" },
+            registSizeLargeButton.rx.tap.map { "large" }
+        )
+        .bind(to: viewModel.selectedSize)
+        .disposed(by: disposeBag)
         
         self.registSizeSmallButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -147,17 +174,43 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         self.registAgeButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
                 let birthSelectVC = BirthSelectViewController()
+                birthSelectVC.selectedDate
+                    .subscribe(onNext: { [weak owner] date in
+                        owner?.viewModel.selectedAge.accept(date)
+                    })
+                    .disposed(by: birthSelectVC.disposeBag)
+                
                 if let sheet = birthSelectVC.sheetPresentationController {
                     sheet.detents = [.medium()]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32
-                    self?.present(birthSelectVC, animated: true)
                 }
+                owner.present(birthSelectVC, animated: true)
             })
             .disposed(by: disposeBag)
+        
+        viewModel.selectedAge
+            .map { dateOpt in
+                guard let date = dateOpt else { return "YYYY-MM-DD (n세)" }
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                let age = Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
+                return "\(formatter.string(from: date)) (\(age)세)"
+            }
+            .bind(to: registAgeButton.dateText)
+            .disposed(by: disposeBag)
+        
+        // 성별 선택 바인딩
+        Observable.merge(
+            registGenderFemale.rx.tap.map { "female" },
+            registGenderMale.rx.tap.map { "male" }
+        )
+        .bind(to: viewModel.selectedGender)
+        .disposed(by: disposeBag)
         
         self.registGenderFemale.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -173,6 +226,14 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        // 중성화 여부 바인딩
+        Observable.merge(
+            registNeuteredTrue.rx.tap.map { true },
+            registNeuteredFalse.rx.tap.map { false }
+        )
+        .bind(to: viewModel.isNeutered)
+        .disposed(by: disposeBag)
+        
         self.registNeuteredTrue.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.registNeuteredTrue.isSelected = true
@@ -187,9 +248,32 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        self.registIntroduce.rx.text
+            .subscribe(onNext: { [weak self]  _ in
+                guard let self,
+                      let text = self.registIntroduce.text else { return }
+                
+                self.registIntroduceCountLabel.text = "\(text.count) / 28 자"
+                
+                if text.count > 28 {
+                    let overText = text.count - 28
+                    self.registIntroduce.text?.removeLast(overText)
+                    self.registIntroduceCountLabel.text = "28 / 28 자"
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        registIntroduce.rx.text.orEmpty
+            .bind(to: viewModel.introduce)
+            .disposed(by: disposeBag)
+        
         self.registCompletButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.dismiss(animated: true)
+                
+                guard let self = self else { return }
+                viewModel.savePetProfile()
+                
+                self.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -256,6 +340,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredLabel,
             registNeuteredStackView,
             registIntroduceLabel,
+            registIntroduceCountLabel,
             registIntroduce,
             registCompletButton,
         ].forEach { view.addSubview($0) }
@@ -328,7 +413,7 @@ class RegistrationViewController: UIViewController {
         registSizeMediumStackView.spacing = 8
         registSizeMediumStackView.alignment = .center
         registSizeMediumStackView.isUserInteractionEnabled = false
-    
+        
         registSizeLargeIcon.image = UIImage(named: "largeDog")
         registSizeLargeIcon.isUserInteractionEnabled = false
         registSizeLargeLabel.text = "대형견"
@@ -350,6 +435,9 @@ class RegistrationViewController: UIViewController {
         registAgeLabel.text = "나이"
         registAgeLabel.textColor = .textPrimary
         registAgeLabel.font = .body1
+        
+        registedAgeLabel.textColor = .textPrimary
+        registedAgeLabel.font = .body3
         
         //MARK: 성별 --
         registGenderLabel.text = "성별"
@@ -375,6 +463,10 @@ class RegistrationViewController: UIViewController {
         registIntroduceLabel.text = "성격 및 특성"
         registIntroduceLabel.textColor = .textPrimary
         registIntroduceLabel.font = .body1
+        
+        registIntroduceCountLabel.text = "0 / 28 자"
+        registIntroduceCountLabel.textColor = .gray400
+        registIntroduceCountLabel.font = .alert2
     }
     
     private func configureUI() {
@@ -414,9 +506,9 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameAlertStackView.snp.makeConstraints {
-            $0.top.equalTo(registName.snp.bottom).offset(4)
+            $0.top.equalTo(registName.snp.bottom)
             $0.leading.equalTo(registImage.snp.trailing)
-            $0.height.equalTo(17)
+            $0.height.equalTo(24)
             $0.width.equalTo(132)
         }
         
@@ -433,13 +525,13 @@ class RegistrationViewController: UIViewController {
         }
         
         underLine.snp.makeConstraints {
-            $0.top.equalTo(registBreed.snp.bottom).offset(24 + 4)
+            $0.top.equalTo(registBreed.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(1)
         }
         
         registSizeLabel.snp.makeConstraints {
-            $0.top.equalTo(registImage.snp.bottom).offset(13)
+            $0.top.equalTo(underLine.snp.bottom).offset(8)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
@@ -510,6 +602,12 @@ class RegistrationViewController: UIViewController {
             $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
+        }
+        
+        registIntroduceCountLabel.snp.makeConstraints {
+            $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(12)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(24)
         }
         
         registIntroduce.snp.makeConstraints {

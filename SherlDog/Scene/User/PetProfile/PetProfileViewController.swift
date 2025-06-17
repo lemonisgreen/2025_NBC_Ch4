@@ -125,6 +125,19 @@ final class PetProfileViewController: UIViewController {
     private func bindUI() {
         // 프로필이 추가될 때마다 다음 버튼 활성화 상태 업데이트
         updateNextButtonState()
+        
+//        profileAddButton.rx.tap
+//            .subscribe(onNext: { [weak self] _ in
+//                let registrationVC = RegistrationViewController()
+//                if let sheet = registrationVC.sheetPresentationController {
+//                    sheet.detents = [.large()]
+//                    sheet.selectedDetentIdentifier = .large
+//                    sheet.prefersGrabberVisible = true
+//                    sheet.preferredCornerRadius = 32
+//                    self?.present(registrationVC, animated: true)
+//                }
+//            })
+//            .disposed(by: disposeBag)
     }
     
     private func updateNextButtonState() {

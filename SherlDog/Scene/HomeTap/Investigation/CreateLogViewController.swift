@@ -59,11 +59,6 @@ class CreateLogViewController: UIViewController {
         gradientLayer.frame = photoImageView.bounds
     }
     
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        cameraViewModel.input.accept(.viewDismissed)
-    }
-    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.isHidden = true
@@ -125,10 +120,7 @@ extension CreateLogViewController {
                                          buttonTitles: ["확인"],
                                          buttonActions: [{ [weak self] in
                     guard let self,
-                          let cameraView = self.presentingViewController,
-                          let requestView = cameraView.presentingViewController,
-                          let walkEndView = requestView.presentingViewController,
-                          let mainView = walkEndView.presentingViewController as? BottomTabBarController else { return }
+                          let mainView = self.view.window?.rootViewController as? BottomTabBarController else { return }
                     mainView.dismiss(animated: true)
                     mainView.selectedIndex = 1
                 }])

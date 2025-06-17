@@ -7,8 +7,13 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxRelay
 
-class RegistrationSearchButton: UIButton {
+class registBirthdayButton: UIButton {
+    
+    let dateText = BehaviorRelay<String>(value: "YYYY-MM-DD (n세)")
+    let disposeBag = DisposeBag()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -18,10 +23,24 @@ class RegistrationSearchButton: UIButton {
         super.init(frame: .zero)
         self.setTitle(title, for: .normal)
         setConfig()
+        bind()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    private func bind() {
+        dateText
+            .bind(to: self.rx.title(for: .normal))
+            .disposed(by: disposeBag)
+        
+        dateText
+            .map { $0 != "YYYY-MM-DD (n세)" }
+            .subscribe(onNext: { [weak self] isSelected in
+                self?.setTitleColor(isSelected ? .textPrimary : .textTertiary, for: .normal)
+            })
+            .disposed(by: disposeBag)
     }
     
     func setConfig() {
