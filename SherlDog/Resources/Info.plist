@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMotionUsageDescription</key>
+	<string>산책 데이터를 기록하기 위해 움직임 데이터를 사용합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>앨범에 접근하려면 권한이 필요합니다.</string>
 	<key>NSCameraUsageDescription</key>
@@ -28,8 +30,6 @@
 			</array>
 		</dict>
 	</array>
-	<key>KAKAO_NATIVE_APP_KEY</key>
-	<string>88917bd32cd5a4e5e50b193984545800</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>kakaolink</string>

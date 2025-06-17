@@ -44,6 +44,8 @@ class MainViewController: UIViewController {
     private let clueButton = UIButton()
     private let walkStartButton = UIButton()
 
+    // 거리 측정 함수 뷰모델
+    private let DataTrackingVM = DataTrackingViewModel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -55,7 +57,34 @@ class MainViewController: UIViewController {
     }
     
     private func bind() {
-        
+        DataTrackingVM.numberOfSteps
+            .map { "\($0)" }
+            .bind(to: steps.rx.text)
+            .disposed(by: disposeBag)
+
+        DataTrackingVM.distance
+            .map { String(format: "%.2f", $0 / 1000.0) }
+            .bind(to: distance.rx.text)
+            .disposed(by: disposeBag)
+
+        DataTrackingVM.trackingActive
+            .filter { $0 }
+            .flatMapLatest { _ in
+                Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+                    .take(until: self.DataTrackingVM.trackingActive.filter { !$0 })
+                    .withLatestFrom(self.DataTrackingVM.startDate)
+                    .compactMap { $0 }
+                    .map { start in
+                        let interval = Int(Date().timeIntervalSince(start))
+                        let hours = interval / 3600
+                        let minutes = (interval % 3600) / 60
+                        let seconds = interval % 60
+                        let text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+                        return text
+                    }
+            }
+            .bind(to: time.rx.text)
+            .disposed(by: disposeBag)
     }
     
     private func inputBind() {
@@ -72,9 +101,13 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let endView = UINavigationController(rootViewController: WalkEndModalViewController())
-                endView.modalPresentationStyle = .overFullScreen
-                self?.present(endView, animated: true)
+                self?.DataTrackingVM.stopTracking()
+                
+                guard let viewModel = self?.DataTrackingVM else { return }
+                let endVC = WalkEndModalViewController(viewModel: viewModel)
+                let nav = UINavigationController(rootViewController: endVC)
+                nav.modalPresentationStyle = .overFullScreen
+                self?.present(nav, animated: true)
             })
             .disposed(by: disposeBag)
 
@@ -97,6 +130,8 @@ class MainViewController: UIViewController {
         clueButton.isHidden = false
         endButton.isHidden = false
         walkStartButton.isHidden = true
+        
+        DataTrackingVM.startTracking()
     }
     
     private func setupUI() {
@@ -130,7 +165,7 @@ class MainViewController: UIViewController {
         }
         
         distance.text = "0.45"
-        time.text = "00:12:23"
+        time.text = "00:00:00"
         steps.text = "1234"
         valueStack.axis = .horizontal
         valueStack.distribution = .fillEqually
