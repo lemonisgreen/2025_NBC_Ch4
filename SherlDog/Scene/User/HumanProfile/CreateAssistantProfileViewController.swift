@@ -22,9 +22,12 @@ class CreateAssistantProfileViewController: UIViewController { // todo: Merge �
     private let profileImageView = UIImageView()
     private let profileCameraButtonImageView = UIImageView()
     private let profileimageSetbutton = UIButton()
+    private let separatorView = UIView()
     private let nickNameLabel = UILabel()
     private let nicknameTextField = UITextField()
     private let nickNameConstraintsLabel = UILabel()
+    private let nickNameSeparatorAlertImage = UIImageView()
+    private let nickNameSeparatorAlert = UILabel()
     private let introduceLabel = UILabel()
     private let introduceTextView = UITextView()
     private let introduceConstraintsLabel = UILabel()
@@ -63,14 +66,21 @@ extension CreateAssistantProfileViewController {
             .subscribe(onNext: { [weak self] text in
                 guard let self, let text else { return }
                 
+                self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
+                
                 if text.count > 12 {
                     let diff = text.count - 12
                     self.nicknameTextField.text?.removeLast(diff)
                     self.nickNameConstraintsLabel.text = "12 / 12자"
                 }
                 
-                self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
-                
+                if text.contains(" ") {
+                    self.nickNameSeparatorAlert.isHidden = false
+                    self.nickNameSeparatorAlertImage.isHidden = false
+                } else {
+                    self.nickNameSeparatorAlert.isHidden = true
+                    self.nickNameSeparatorAlertImage.isHidden = true
+                }
             })
             .disposed(by: disposeBag)
         
@@ -130,8 +140,11 @@ extension CreateAssistantProfileViewController {
         
         view.addSubviews([
             profileimageSetbutton,
+            separatorView,
             nickNameLabel,
             nicknameTextField,
+            nickNameSeparatorAlertImage,
+            nickNameSeparatorAlert,
             introduceLabel,
             introduceTextView,
             introduceConstraintsLabel,
@@ -160,6 +173,8 @@ extension CreateAssistantProfileViewController {
         profileCameraButtonImageView.contentMode = .scaleAspectFit
         profileCameraButtonImageView.tintColor = .gray600
         
+        separatorView.backgroundColor = .gray200
+        
         nicknameTextField.placeholder = "탐정님이 부를 닉네임을 입력해주세요!"
         nicknameTextField.backgroundColor = .gray50
         nicknameTextField.layer.cornerRadius = 6
@@ -173,6 +188,13 @@ extension CreateAssistantProfileViewController {
         nickNameConstraintsLabel.text = "0 / 12자"
         nickNameConstraintsLabel.font = .alert2
         nickNameConstraintsLabel.textColor = .gray300
+        
+        nickNameSeparatorAlertImage.contentMode = .scaleAspectFit
+        nickNameSeparatorAlertImage.image = .alertMark
+        
+        nickNameSeparatorAlert.text = "공백 없이 입력해 주세요"
+        nickNameSeparatorAlert.font = .alert2
+        nickNameSeparatorAlert.textColor = .textAlert
         
         introduceLabel.text = "자기소개"
         introduceLabel.font = .body1
@@ -215,13 +237,19 @@ extension CreateAssistantProfileViewController {
             $0.trailing.bottom.equalToSuperview().inset(4)
         }
         
+        separatorView.snp.makeConstraints {
+            $0.top.equalTo(profileimageSetbutton.snp.bottom).offset(20)
+            $0.height.equalTo(1)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        
         nickNameLabel.snp.makeConstraints {
-            $0.top.equalTo(profileimageSetbutton.snp.bottom).offset(41)
+            $0.top.equalTo(separatorView.snp.bottom).offset(20)
             $0.leading.equalToSuperview().inset(16)
         }
         
         nicknameTextField.snp.makeConstraints {
-            $0.height.equalTo(32)
+            $0.height.equalTo(44)
             $0.top.equalTo(nickNameLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
@@ -231,8 +259,19 @@ extension CreateAssistantProfileViewController {
             $0.centerY.equalToSuperview()
         }
         
+        nickNameSeparatorAlertImage.snp.makeConstraints {
+            $0.height.width.equalTo(14)
+            $0.top.equalTo(nicknameTextField.snp.bottom).offset(8)
+            $0.leading.equalToSuperview().inset(16)
+        }
+        
+        nickNameSeparatorAlert.snp.makeConstraints {
+            $0.top.equalTo(nickNameSeparatorAlertImage)
+            $0.leading.equalTo(nickNameSeparatorAlertImage.snp.trailing).offset(8)
+        }
+        
         introduceLabel.snp.makeConstraints {
-            $0.top.equalTo(nicknameTextField.snp.bottom).offset(12)
+            $0.top.equalTo(nickNameSeparatorAlertImage.snp.bottom).offset(8)
             $0.leading.equalToSuperview().inset(16)
         }
         
