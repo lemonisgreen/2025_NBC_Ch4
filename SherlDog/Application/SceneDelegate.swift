@@ -65,7 +65,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     private func createMainViewController() -> UIViewController {
         // 여기서 메인 화면
-        let mainVC = MainViewController()
+        let mainVC = PetProfileViewController()
         let navigationController = UINavigationController(rootViewController: mainVC)
         return navigationController
     }
