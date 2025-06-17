@@ -54,6 +54,7 @@ class RegistrationViewController: UIViewController {
     let registNeuteredFalse = RegistrationSelectButton(title: "중성화 안 했어요")
     let registIntroduceLabel = UILabel()
     let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
+    let registIntroduceCountLabel = UILabel()
     let registCompletButton = ButtonManager(title: "다음")
     
     override func viewDidLoad() {
@@ -239,6 +240,21 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
+        self.registIntroduce.rx.text
+            .subscribe(onNext: { [weak self]  _ in
+                guard let self,
+                      let text = self.registIntroduce.text else { return }
+                
+                self.registIntroduceCountLabel.text = "\(text.count) / 28 자"
+                
+                if text.count > 28 {
+                    let overText = text.count - 28
+                    self.registIntroduce.text?.removeLast(overText)
+                    self.registIntroduceCountLabel.text = "28 / 28 자"
+                }
+            })
+            .disposed(by: disposeBag)
+        
         registIntroduce.rx.text.orEmpty
             .bind(to: viewModel.introduce)
             .disposed(by: disposeBag)
@@ -316,6 +332,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredLabel,
             registNeuteredStackView,
             registIntroduceLabel,
+            registIntroduceCountLabel,
             registIntroduce,
             registCompletButton,
         ].forEach { view.addSubview($0) }
@@ -438,6 +455,10 @@ class RegistrationViewController: UIViewController {
         registIntroduceLabel.text = "성격 및 특성"
         registIntroduceLabel.textColor = .textPrimary
         registIntroduceLabel.font = .body1
+        
+        registIntroduceCountLabel.text = "0 / 28 자"
+        registIntroduceCountLabel.textColor = .gray400
+        registIntroduceCountLabel.font = .alert2
     }
     
     private func configureUI() {
@@ -477,9 +498,9 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameAlertStackView.snp.makeConstraints {
-            $0.top.equalTo(registName.snp.bottom).offset(4)
+            $0.top.equalTo(registName.snp.bottom)
             $0.leading.equalTo(registImage.snp.trailing)
-            $0.height.equalTo(17)
+            $0.height.equalTo(24)
             $0.width.equalTo(132)
         }
         
@@ -496,13 +517,13 @@ class RegistrationViewController: UIViewController {
         }
         
         underLine.snp.makeConstraints {
-            $0.top.equalTo(registBreed.snp.bottom).offset(24 + 4)
+            $0.top.equalTo(registBreed.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(1)
         }
         
         registSizeLabel.snp.makeConstraints {
-            $0.top.equalTo(registImage.snp.bottom).offset(13)
+            $0.top.equalTo(underLine.snp.bottom).offset(8)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
@@ -573,6 +594,12 @@ class RegistrationViewController: UIViewController {
             $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(12)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
+        }
+        
+        registIntroduceCountLabel.snp.makeConstraints {
+            $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(12)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(24)
         }
         
         registIntroduce.snp.makeConstraints {

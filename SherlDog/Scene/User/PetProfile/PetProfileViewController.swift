@@ -94,7 +94,16 @@ final class PetProfileViewController: UIViewController {
 
     private func bindUI() {
         profileAddButton.rx.tap
-            .bind { [weak self] in self?.presentBreedSearch() }
+            .subscribe(onNext: { [weak self] _ in
+                let registrationVC = RegistrationViewController()
+                if let sheet = registrationVC.sheetPresentationController {
+                    sheet.detents = [.large()]
+                    sheet.selectedDetentIdentifier = .large
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 32
+                    self?.present(registrationVC, animated: true)
+                }
+            })
             .disposed(by: disposeBag)
     }
 
