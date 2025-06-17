@@ -231,7 +231,7 @@ extension CreateLogViewController {
     
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).inset(12)
+            $0.top.equalTo(view.safeAreaLayoutGuide).inset(24)
             $0.leading.equalTo(view.safeAreaLayoutGuide).inset(20)
         }
         
@@ -242,12 +242,12 @@ extension CreateLogViewController {
         }
         
         stepsTitleLabel.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(22)
-            $0.leading.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(6)
+            $0.leading.equalToSuperview().inset(16)
         }
         
         distanceTitleLabel.snp.makeConstraints {
-            $0.bottom.equalTo(stepsTitleLabel.snp.top).offset(-6)
+            $0.bottom.equalTo(stepsTitleLabel.snp.top).offset(-8)
             $0.leading.equalTo(stepsTitleLabel)
         }
         
