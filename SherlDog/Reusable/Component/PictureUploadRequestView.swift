@@ -120,13 +120,35 @@ extension PictureUploadRequestView {
                 
                 switch list {
                 case .camera:
-                    let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
-                    cameraView.modalPresentationStyle = .fullScreen
-                    self.present(cameraView, animated: true)
+                    PermissionManager.requestPermission(type: .camera) { [weak self] isAllowed in
+                        guard let self else { return }
+                        switch isAllowed {
+                        case true:
+                            let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: self.cameraViewModel))
+                            cameraView.modalPresentationStyle = .fullScreen
+                            self.present(cameraView, animated: true)
+                            
+                        case false:
+                            let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            
+                            self.present(alert, animated: true)
+                        }
+                    }
                     
                 case .album:
-                    let albumView = UINavigationController(rootViewController: AlbumViewController(viewModel: cameraViewModel))
-                    self.present(albumView, animated: true)
+                    PermissionManager.requestPermission(type: .album) { [weak self] isAllowed in
+                        guard let self else { return }
+                        switch isAllowed {
+                        case true:
+                            let albumView = UINavigationController(rootViewController: AlbumViewController(viewModel: cameraViewModel))
+                            self.present(albumView, animated: true)
+                            
+                        case false:
+                            let alert = AlertManager(message: "앨범 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            
+                            self.present(alert, animated: true)
+                        }
+                    }
                     
                 case .avatar:
                     self.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
