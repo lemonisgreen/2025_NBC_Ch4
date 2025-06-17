@@ -169,9 +169,8 @@ extension CreateAssistantProfileViewController {
         profileImageView.clipsToBounds = true
         profileImageView.tintColor = .gray300
         
-        profileCameraButtonImageView.image = UIImage(systemName: "camera.circle.fill")
+        profileCameraButtonImageView.image = .profileCamera
         profileCameraButtonImageView.contentMode = .scaleAspectFit
-        profileCameraButtonImageView.tintColor = .gray600
         
         separatorView.backgroundColor = .gray200
         
