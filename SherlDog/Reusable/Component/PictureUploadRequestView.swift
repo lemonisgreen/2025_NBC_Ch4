@@ -13,10 +13,11 @@ import RxDataSources
 import Differentiator
 
 // MARK: - PictureUploadView
-class PictureUploadRequestView: UIViewController {
-
+class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
+    
     private let viewModel: PictureUploadRequestViewModel
-    private let cameraViewModel: CameraViewModel?
+    private let avatarViewModel: SelectAvatarViewModel
+    private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource>(
         configureCell: { dataSource, collectionView, indexPath, section in
@@ -35,14 +36,16 @@ class PictureUploadRequestView: UIViewController {
             return header
         }
     )
-
+    
+    private let imagePickerController = UIImagePickerController()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let setButton = ButtonManager(title: "")
     
     // MARK: - Lifecycle
-    init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel? = nil) {
+    init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel = CameraViewModel(), avatarViewModel: SelectAvatarViewModel = SelectAvatarViewModel()) {
         self.viewModel = viewModel
         self.cameraViewModel = cameraViewModel
+        self.avatarViewModel = avatarViewModel
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -68,7 +71,7 @@ class PictureUploadRequestView: UIViewController {
 
 // MARK: - Method
 extension PictureUploadRequestView {
-
+    
     private func outputBind() {
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
@@ -105,7 +108,6 @@ extension PictureUploadRequestView {
         self.viewModel.output.moveToView
             .subscribe(onNext: { [weak self] list in
                 guard let self,
-                      let cameraViewModel,
                       let sender = self.viewModel.output.sender.value else { return }
                 
                 switch sender {
@@ -120,15 +122,38 @@ extension PictureUploadRequestView {
                 
                 switch list {
                 case .camera:
-                    let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
-                    cameraView.modalPresentationStyle = .fullScreen
-                    self.present(cameraView, animated: true)
+                    PermissionManager.requestPermission(type: .camera) { [weak self] isAllowed in
+                        guard let self else { return }
+                        switch isAllowed {
+                        case true:
+                            let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: self.cameraViewModel))
+                            cameraView.modalPresentationStyle = .fullScreen
+                            self.present(cameraView, animated: true)
+                            
+                        case false:
+                            let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            
+                            self.present(alert, animated: true)
+                        }
+                    }
                     
                 case .album:
-                    print("album")
+                    PermissionManager.requestPermission(type: .album) { [weak self] isAllowed in
+                        guard let self else { return }
+                        switch isAllowed {
+                        case true:
+                            let albumView = UINavigationController(rootViewController: AlbumViewController(viewModel: cameraViewModel))
+                            self.present(albumView, animated: true)
+                            
+                        case false:
+                            let alert = AlertManager(message: "앨범 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            
+                            self.present(alert, animated: true)
+                        }
+                    }
                     
                 case .avatar:
-                    self.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
+                    self.navigationController?.pushViewController(SelectAvatarViewController(viewModel: avatarViewModel), animated: true)
                 }
             })
             .disposed(by: disposeBag)
@@ -182,43 +207,42 @@ extension PictureUploadRequestView {
             self.setButton.isEnabled = false
         }
     }
-
+    
     private func setupUI() {
         view.backgroundColor = .white
         view.addSubview(collectionView)
         view.addSubview(setButton)
-
+        
         collectionView.register(PictureUploadRequestViewCell.self,
                                 forCellWithReuseIdentifier: PictureUploadRequestViewCell.identifier)
         collectionView.register(PictureUploadRequestViewHeader.self,
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: PictureUploadRequestViewHeader.identifier)
     }
-
+    
     private func configureUI() {
         collectionView.snp.makeConstraints {
             $0.edges.equalToSuperview().inset(20)
         }
         
         setButton.snp.makeConstraints {
-            $0.centerX.equalToSuperview()
             $0.leading.trailing.equalToSuperview().inset(21.5)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
         }
     }
-
+    
     private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
         let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
                                                             heightDimension: .absolute(70)))
-
+        
         let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                       heightDimension: .fractionalHeight(1/5)),
+                                                                       heightDimension: .absolute(500)),
                                                      subitems: [item])
-
+        
         group.interItemSpacing = .fixed(12)
-
+        
         let section = NSCollectionLayoutSection(group: group)
-
+        
         let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
                                                                                    heightDimension: .estimated(60)),
                                                                  elementKind: UICollectionView.elementKindSectionHeader,
@@ -228,4 +252,3 @@ extension PictureUploadRequestView {
         return UICollectionViewCompositionalLayout(section: section)
     }
 }
-

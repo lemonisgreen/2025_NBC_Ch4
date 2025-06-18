@@ -31,7 +31,7 @@ class CreateLogViewController: UIViewController {
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
-    private let cancelButton = ButtonManager(title: "취소", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let cancelButton = SubButtonManager(title: "취소")
     private let shareButton = ButtonManager(title: "공유하기")
     private let horizontalStackView = UIStackView()
     
@@ -57,11 +57,6 @@ class CreateLogViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         gradientLayer.frame = photoImageView.bounds
-    }
-    
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        cameraViewModel.input.accept(.viewDismissed)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -125,10 +120,7 @@ extension CreateLogViewController {
                                          buttonTitles: ["확인"],
                                          buttonActions: [{ [weak self] in
                     guard let self,
-                          let cameraView = self.presentingViewController,
-                          let requestView = cameraView.presentingViewController,
-                          let walkEndView = requestView.presentingViewController,
-                          let mainView = walkEndView.presentingViewController as? BottomTabBarController else { return }
+                          let mainView = self.view.window?.rootViewController as? BottomTabBarController else { return }
                     mainView.dismiss(animated: true)
                     mainView.selectedIndex = 1
                 }])
@@ -208,21 +200,19 @@ extension CreateLogViewController {
                 $0.text = "12332"   // test
             }
         
-        textView.font = .body5
+        textView.font = .body3
+        textView.textColor = .textPrimary
         textView.backgroundColor = .gray50
         textView.layer.cornerRadius = 6
         textView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
         
         textViewPlaceholderLabel.text = "오늘의 수사일지를 간단히 적어주세요."
-        textViewPlaceholderLabel.font = .body5
+        textViewPlaceholderLabel.font = .body3
         textViewPlaceholderLabel.textColor = .textDisabled
         
         textViewConstraintsLabel.text = "0 / 120자"
         textViewConstraintsLabel.font = .alert2
         textViewConstraintsLabel.textColor = .gray400
-        
-        cancelButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
-        cancelButton.layer.borderWidth = 1
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
@@ -231,7 +221,7 @@ extension CreateLogViewController {
     
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).inset(12)
+            $0.top.equalTo(view.safeAreaLayoutGuide).inset(26)
             $0.leading.equalTo(view.safeAreaLayoutGuide).inset(20)
         }
         
@@ -242,12 +232,12 @@ extension CreateLogViewController {
         }
         
         stepsTitleLabel.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(22)
-            $0.leading.equalToSuperview().inset(20)
+            $0.bottom.equalToSuperview().inset(16)
+            $0.leading.equalToSuperview().inset(16)
         }
         
         distanceTitleLabel.snp.makeConstraints {
-            $0.bottom.equalTo(stepsTitleLabel.snp.top).offset(-6)
+            $0.bottom.equalTo(stepsTitleLabel.snp.top).offset(-8)
             $0.leading.equalTo(stepsTitleLabel)
         }
         
