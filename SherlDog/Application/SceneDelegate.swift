@@ -65,9 +65,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     private func createMainViewController() -> UIViewController {
         // 여기서 메인 화면
-        let mainVC = MainViewController()
-        let navigationController = UINavigationController(rootViewController: mainVC)
-        return navigationController
+        return BottomTabBarController()
     }
     
     // MARK: - 만료된 로그인 정보 정리
