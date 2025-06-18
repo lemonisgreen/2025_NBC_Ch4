@@ -170,12 +170,6 @@ class LoginViewController: UIViewController {
                 self?.showErrorAlert(message: message)
             })
             .disposed(by: disposeBag)
-
-        viewModel.output.showAlert
-            .emit(onNext: { [weak self] message in
-                self?.showInfoAlert(message: message)
-            })
-            .disposed(by: disposeBag)
     }
     
     // MARK: - Navigation, Alert
@@ -187,17 +181,7 @@ class LoginViewController: UIViewController {
     private func showErrorAlert(message: String) {
         let alert = UIAlertController(
             title: "로그인 실패",
-            message: message,
-            preferredStyle: .alert
-        )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
-        present(alert, animated: true)
-    }
-    
-    private func showInfoAlert(message: String) {
-        let alert = UIAlertController(
-            title: "준비 중입니다",
-            message: message,
+            message: "다시 로그인 해주세요!",
             preferredStyle: .alert
         )
         alert.addAction(UIAlertAction(title: "확인", style: .default))
