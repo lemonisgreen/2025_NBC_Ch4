@@ -22,7 +22,7 @@ class DetailAvatarViewController: UIViewController {
     private let detailView = UIImageView()
     private let detailTitleLabel = UILabel()
     private let detailLabel = UILabel()
-    private let backButton = ButtonManager(title: "이전", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let backButton = SubButtonManager(title: "이전")
     private let choiceButton = ButtonManager(title: "선택하기")
     private let horizontalStackView = UIStackView()
     
@@ -130,9 +130,6 @@ extension DetailAvatarViewController {
         detailLabel.font = .alert2
         detailLabel.textColor = .textSecondary
         detailLabel.numberOfLines = 0
-        
-        backButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
-        backButton.layer.borderWidth = 1
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
