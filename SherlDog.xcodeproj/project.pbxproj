@@ -12,6 +12,7 @@
 		390947672DF94C8800D8B28E /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 390947662DF94C8800D8B28E /* KakaoSDKAuth */; };
 		390947692DF94C8800D8B28E /* KakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 390947682DF94C8800D8B28E /* KakaoSDKCommon */; };
 		3909476B2DF94C8800D8B28E /* KakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = 3909476A2DF94C8800D8B28E /* KakaoSDKUser */; };
+		3922432C2E02D32000B78049 /* RxCoreLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 3922432B2E02D32000B78049 /* RxCoreLocation */; };
 		39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2DC52DF03B3C0008A54D /* RxCocoa */; };
 		39BA2DC82DF03B3C0008A54D /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2DC72DF03B3C0008A54D /* RxRelay */; };
 		39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2DC92DF03B3C0008A54D /* RxSwift */; };
@@ -56,6 +57,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				390947672DF94C8800D8B28E /* KakaoSDKAuth in Frameworks */,
+				3922432C2E02D32000B78049 /* RxCoreLocation in Frameworks */,
 				39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */,
 				390947272DF8FF6700D8B28E /* FirebaseCore in Frameworks */,
 				39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */,
@@ -129,6 +131,7 @@
 				390947682DF94C8800D8B28E /* KakaoSDKCommon */,
 				3909476A2DF94C8800D8B28E /* KakaoSDKUser */,
 				39EF106F2DFAD67200646675 /* GoogleSignIn */,
+				3922432B2E02D32000B78049 /* RxCoreLocation */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -166,6 +169,7 @@
 				3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */,
 				390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				3922432A2E02D32000B78049 /* XCRemoteSwiftPackageReference "RxCoreLocation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -425,6 +429,14 @@
 				minimumVersion = 2.24.4;
 			};
 		};
+		3922432A2E02D32000B78049 /* XCRemoteSwiftPackageReference "RxCoreLocation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxCoreLocation.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.1;
+			};
+		};
 		39BA2DC42DF03B3C0008A54D /* XCRemoteSwiftPackageReference "RxSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
@@ -495,6 +507,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
 			productName = KakaoSDKUser;
+		};
+		3922432B2E02D32000B78049 /* RxCoreLocation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3922432A2E02D32000B78049 /* XCRemoteSwiftPackageReference "RxCoreLocation" */;
+			productName = RxCoreLocation;
 		};
 		39BA2DC52DF03B3C0008A54D /* RxCocoa */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -16,6 +16,7 @@ class RegistrationViewController: UIViewController {
     
     private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
+    private var selectedImage: UIImage?
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
     
@@ -73,22 +74,9 @@ class RegistrationViewController: UIViewController {
         cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
-
-                // 미리 docID 확보해서 Storage path에 쓸 petId 생성
-                let newDocRef = Firestore.firestore().collection("PetProfile").document()
-                let petId = newDocRef.documentID
-                self.viewModel.imageDocumentId = petId
-
+                
+                self.selectedImage = image // ✅ 저장해두기
                 self.registImage.setImage(image, for: .normal)
-
-                FirebaseImageManager.shared.uploadPetImage(image, petId: petId) { result in
-                    switch result {
-                    case .success(let downloadURL):
-                        self.viewModel.imageURL.accept(downloadURL)
-                    case .failure(let error):
-                        print("이미지 업로드 실패: \(error.localizedDescription)")
-                    }
-                }
             })
             .disposed(by: disposeBag)
         
@@ -142,7 +130,7 @@ class RegistrationViewController: UIViewController {
                         owner?.viewModel.breed.accept(breed)
                     })
                     .disposed(by: breedSearchVC.disposeBag)
-    
+                
                 if let sheet = breedSearchVC.sheetPresentationController {
                     sheet.detents = [.large()]
                     sheet.selectedDetentIdentifier = .large
@@ -285,12 +273,22 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         self.registCompletButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                
+            .subscribe(onNext: { [weak self] in
                 guard let self = self else { return }
-                viewModel.savePetProfile()
                 
-                self.dismiss(animated: true)
+                guard let image = self.selectedImage else { return }
+                
+                self.viewModel.uploadImageAndSaveProfile(image: image)
+                
+                self.viewModel.saveResult
+                    .take(1)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { result in
+                        if case .success = result {
+                            self.dismiss(animated: true)
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
             })
             .disposed(by: disposeBag)
     }
