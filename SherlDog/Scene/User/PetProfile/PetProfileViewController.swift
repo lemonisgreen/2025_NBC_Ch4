@@ -34,10 +34,7 @@ final class PetProfileViewController: UIViewController {
     
     private let dogImageView = UIImageView()
     private let infoLabel = UILabel()
-    private let nextButton: ButtonManager = {
-        let button = ButtonManager(title: "다음", width: UIScreen.main.bounds.width - 40)
-        return button
-    }()
+    private let nextButton = ButtonManager(title: "다음")
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
