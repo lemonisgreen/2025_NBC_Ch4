@@ -23,6 +23,7 @@
 		39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 39EF106F2DFAD67200646675 /* GoogleSignIn */; };
 		3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BECE2DF7FAF700397F6C /* Differentiator */; };
 		3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BED02DF7FAF700397F6C /* RxDataSources */; };
+		4CF9017A2E003CB8004E094A /* RxCoreLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF901792E003CB8004E094A /* RxCoreLocation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				390947672DF94C8800D8B28E /* KakaoSDKAuth in Frameworks */,
+				4CF9017A2E003CB8004E094A /* RxCoreLocation in Frameworks */,
 				39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */,
 				390947272DF8FF6700D8B28E /* FirebaseCore in Frameworks */,
 				39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */,
@@ -130,6 +132,7 @@
 				390947682DF94C8800D8B28E /* KakaoSDKCommon */,
 				3909476A2DF94C8800D8B28E /* KakaoSDKUser */,
 				39EF106F2DFAD67200646675 /* GoogleSignIn */,
+				4CF901792E003CB8004E094A /* RxCoreLocation */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -167,6 +170,7 @@
 				3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */,
 				390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				4CF901782E003CB8004E094A /* XCRemoteSwiftPackageReference "RxCoreLocation" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -474,6 +478,14 @@
 				minimumVersion = 5.0.2;
 			};
 		};
+		4CF901782E003CB8004E094A /* XCRemoteSwiftPackageReference "RxCoreLocation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxCoreLocation";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -551,6 +563,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */;
 			productName = RxDataSources;
+		};
+		4CF901792E003CB8004E094A /* RxCoreLocation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF901782E003CB8004E094A /* XCRemoteSwiftPackageReference "RxCoreLocation" */;
+			productName = RxCoreLocation;
 		};
 		F1CC70C92DF718270038A80C /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;

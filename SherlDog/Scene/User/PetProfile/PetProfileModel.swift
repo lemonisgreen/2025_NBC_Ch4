@@ -5,11 +5,14 @@
 //  Created by 최영락 on 6/16/25.
 //
 
-struct PetProfile {
-    let uid: String
+import Foundation
+import FirebaseFirestore
+
+struct PetProfile: Codable {
+    let petProfileId: String
     let userId: String
     let name: String
-    let age: Int
+    let age: String
     let size: String
     let image: String
     let gender: String

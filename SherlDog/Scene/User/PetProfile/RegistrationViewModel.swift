@@ -10,7 +10,6 @@ import FirebaseFirestore
 import RxRelay
 
 class RegistrationViewModel {
-    let db = Firestore.firestore()
     let disposeBag = DisposeBag()
     
     let imageURL = BehaviorRelay<String>(value: "")
@@ -26,28 +25,49 @@ class RegistrationViewModel {
     
     //func savePetProfile(userID: String) {
     func savePetProfile() {
-        let newDocument = db.collection("PetProfile").document()
-        let ageTimestamp = Timestamp(date: selectedAge.value ?? Date())
-
-        let documentData: [String: Any] = [
-            //"userId": userID,
-            "docID" : newDocument.documentID,
-            "name": name.value,
-            "age": ageTimestamp,
-            "size": selectedSize.value,
-            //"image": imageURL.value,
-            "gender": selectedGender.value,
-            "neutered": isNeutered.value,
-            "breed": breed.value,
-            "introduce": introduce.value
-        ]
         
-        newDocument.setData(documentData) { [weak self] error in
-            if let error = error {
-                self?.saveResult.onNext(.failure(error))
-            } else {
-                self?.saveResult.onNext(.success(()))
-            }
-        }
-    }
-}
+        let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
+        let petProfileID = newDocRef.documentID
+        
+        // selectedAge값 스트링으로 변경
+        let dateString: String
+           if let date = selectedAge.value {
+               let formatter = DateFormatter()
+               formatter.dateFormat = "yyyy-MM-dd"
+               dateString = formatter.string(from: date)
+           } else {
+               dateString = "" // 혹은 nil 허용, 기본값 등
+           }
+        
+        let newProfile = PetProfile(
+            petProfileId: petProfileID,
+            userId: "추후 입력",
+            name: name.value,
+            age: dateString,
+            size: selectedSize.value,
+            image: selectedGender.value,
+            gender: selectedGender.value,
+            neutered: isNeutered.value,
+            breed: breed.value,
+            introduce: introduce.value
+        )
+        
+        // FirestoreManager를 통한 저장
+               FirestoreManager.shared.createDocument(
+                   collection: "PetProfile",
+                   data: newProfile,
+                   documentId: petProfileID
+               )
+               .subscribe(
+                   onCompleted: { [weak self] in
+                       //petProfileID 유저 디폴트에 저장하기
+                       UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
+                       self?.saveResult.onNext(.success(()))
+                   },
+                   onError: { [weak self] error in
+                       self?.saveResult.onNext(.failure(error))
+                   }
+               )
+               .disposed(by: disposeBag)
+           }
+       }
