@@ -13,7 +13,7 @@ import RxDataSources
 import Differentiator
 
 // MARK: - PictureUploadView
-class PictureUploadRequestView: UIViewController { // 1: 230, 2: 310, 3: 390
+class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
     
     private let viewModel: PictureUploadRequestViewModel
     private let avatarViewModel: SelectAvatarViewModel

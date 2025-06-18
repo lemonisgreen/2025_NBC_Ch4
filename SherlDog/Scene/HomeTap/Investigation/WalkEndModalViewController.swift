@@ -55,7 +55,7 @@ class WalkEndModalViewController : UIViewController {
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 310 }]
+                    sheet.detents = [.custom { _ in 320 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32

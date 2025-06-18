@@ -62,7 +62,10 @@ class SelectAvatarViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
-        choiceButton.isEnabled = false
+        
+        self.sheetPresentationController?.animateChanges {
+            self.sheetPresentationController?.detents = [.custom { _ in 400 }]
+        }
     }
 }
 
@@ -78,15 +81,8 @@ extension SelectAvatarViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 
-                let detailView = UINavigationController(rootViewController: DetailAvatarViewController(viewModel: self.viewModel))
-                detailView.modalPresentationStyle = .pageSheet
-                if let sheet = detailView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 620 }]
-                    sheet.selectedDetentIdentifier = .large
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
-                self.present(detailView, animated: true)
+                let detailView = DetailAvatarViewController(viewModel: self.viewModel)
+                self.navigationController?.pushViewController(detailView, animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -130,6 +126,8 @@ extension SelectAvatarViewController {
         backButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
         backButton.layer.borderWidth = 1
         
+        choiceButton.isEnabled = false
+        
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
         horizontalStackView.distribution = .fill
@@ -141,7 +139,8 @@ extension SelectAvatarViewController {
         }
         
         horizontalStackView.snp.makeConstraints {
-            $0.bottom.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(52)
         }
         

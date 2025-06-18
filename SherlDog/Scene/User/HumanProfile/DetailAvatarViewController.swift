@@ -53,6 +53,9 @@ extension DetailAvatarViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.isHidden = true
+        self.sheetPresentationController?.animateChanges {
+            self.sheetPresentationController?.detents = [.custom { _ in 610 }]
+        }
     }
     
 }
@@ -76,7 +79,7 @@ extension DetailAvatarViewController {
         self.backButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
-                self.dismiss(animated: true)
+                self.navigationController?.popViewController(animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -143,8 +146,8 @@ extension DetailAvatarViewController {
         }
         
         avatarImageView.snp.makeConstraints {
-            $0.height.equalTo(216)
-            $0.top.equalTo(titleLabel.snp.bottom).offset(32)
+            $0.height.equalTo(248)
+            $0.top.equalTo(titleLabel.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview()
         }
         
@@ -154,9 +157,9 @@ extension DetailAvatarViewController {
         }
         
         detailView.snp.makeConstraints {
-            $0.height.equalTo(141)
-            $0.top.equalTo(avatarImageView.snp.bottom).offset(56)
+            $0.top.equalTo(avatarImageView.snp.bottom).offset(40)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(horizontalStackView.snp.top).offset(-25)
         }
         
         detailTitleLabel.snp.makeConstraints {
@@ -171,7 +174,7 @@ extension DetailAvatarViewController {
         }
         
         horizontalStackView.snp.makeConstraints {
-            $0.bottom.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.bottom.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(52)
         }
         

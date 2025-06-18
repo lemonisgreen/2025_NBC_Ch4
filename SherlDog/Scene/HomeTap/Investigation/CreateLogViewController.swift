@@ -224,7 +224,7 @@ extension CreateLogViewController {
     
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).inset(24)
+            $0.top.equalTo(view.safeAreaLayoutGuide).inset(26)
             $0.leading.equalTo(view.safeAreaLayoutGuide).inset(20)
         }
         
@@ -235,7 +235,7 @@ extension CreateLogViewController {
         }
         
         stepsTitleLabel.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(16) // 6? 16?
+            $0.bottom.equalToSuperview().inset(16)
             $0.leading.equalToSuperview().inset(16)
         }
         
