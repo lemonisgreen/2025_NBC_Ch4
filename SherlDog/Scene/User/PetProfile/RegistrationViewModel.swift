@@ -23,21 +23,19 @@ class RegistrationViewModel {
     
     let saveResult = PublishSubject<Result<Void, Error>>()
     
-    //func savePetProfile(userID: String) {
     func savePetProfile() {
-        
         let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
         let petProfileID = newDocRef.documentID
         
         // selectedAge값 스트링으로 변경
         let dateString: String
-           if let date = selectedAge.value {
-               let formatter = DateFormatter()
-               formatter.dateFormat = "yyyy-MM-dd"
-               dateString = formatter.string(from: date)
-           } else {
-               dateString = "" // 혹은 nil 허용, 기본값 등
-           }
+        if let date = selectedAge.value {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            dateString = formatter.string(from: date)
+        } else {
+            dateString = "" // 혹은 nil 허용, 기본값 등
+        }
         
         let newProfile = PetProfile(
             petProfileId: petProfileID,
@@ -53,21 +51,21 @@ class RegistrationViewModel {
         )
         
         // FirestoreManager를 통한 저장
-               FirestoreManager.shared.createDocument(
-                   collection: "PetProfile",
-                   data: newProfile,
-                   documentId: petProfileID
-               )
-               .subscribe(
-                   onCompleted: { [weak self] in
-                       //petProfileID 유저 디폴트에 저장하기
-                       UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
-                       self?.saveResult.onNext(.success(()))
-                   },
-                   onError: { [weak self] error in
-                       self?.saveResult.onNext(.failure(error))
-                   }
-               )
-               .disposed(by: disposeBag)
-           }
-       }
+        FirestoreManager.shared.createDocument(
+            collection: "PetProfile",
+            data: newProfile,
+            documentId: petProfileID
+        )
+        .subscribe(
+            onCompleted: { [weak self] in
+                //petProfileID 유저 디폴트에 저장하기
+                UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
+                self?.saveResult.onNext(.success(()))
+            },
+            onError: { [weak self] error in
+                self?.saveResult.onNext(.failure(error))
+            }
+        )
+        .disposed(by: disposeBag)
+    }
+}

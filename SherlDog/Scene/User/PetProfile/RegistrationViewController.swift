@@ -126,7 +126,7 @@ class RegistrationViewController: UIViewController {
                         owner?.viewModel.breed.accept(breed)
                     })
                     .disposed(by: breedSearchVC.disposeBag)
-    
+                
                 if let sheet = breedSearchVC.sheetPresentationController {
                     sheet.detents = [.large()]
                     sheet.selectedDetentIdentifier = .large
