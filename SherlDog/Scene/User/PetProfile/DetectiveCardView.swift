@@ -58,6 +58,8 @@ class DetectiveCardView: UIView {
             
         self.layer.cornerRadius = 16
         self.layer.masksToBounds = true
+        self.layer.borderWidth = 1
+        self.layer.borderColor = UIColor.textTertiary.cgColor
         self.backgroundColor = .keycolorSecondary4
         
         detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary1
