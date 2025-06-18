@@ -10,7 +10,6 @@ import Firebase
 import FirebaseStorage
 import FirebaseAuth
 
-// MARK: - Firebase Image Manager
 class FirebaseImageManager {
     static let shared = FirebaseImageManager()
     private let storage = Storage.storage()
@@ -20,7 +19,7 @@ class FirebaseImageManager {
         storageRef = storage.reference()
     }
     
-    // MARK: - Image Upload
+    // MARK: - 이미지 업로드
     func uploadPetImage(_ image: UIImage,
                        petId: String,
                        completion: @escaping (Result<String, Error>) -> Void) {
