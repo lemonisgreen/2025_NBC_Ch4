@@ -9,6 +9,8 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import Firebase
+import FirebaseStorage
 
 class RegistrationViewController: UIViewController {
     
@@ -71,8 +73,22 @@ class RegistrationViewController: UIViewController {
         cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
-                // todo: 사진 삽입
-                self.registImage.setImage(image, for: .normal) // test
+
+                // 미리 docID 확보해서 Storage path에 쓸 petId 생성
+                let newDocRef = Firestore.firestore().collection("PetProfile").document()
+                let petId = newDocRef.documentID
+                self.viewModel.imageDocumentId = petId
+
+                self.registImage.setImage(image, for: .normal)
+
+                FirebaseImageManager.shared.uploadPetImage(image, petId: petId) { result in
+                    switch result {
+                    case .success(let downloadURL):
+                        self.viewModel.imageURL.accept(downloadURL)
+                    case .failure(let error):
+                        print("이미지 업로드 실패: \(error.localizedDescription)")
+                    }
+                }
             })
             .disposed(by: disposeBag)
         
