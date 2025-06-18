@@ -1,5 +1,5 @@
 //
-//  SetBackgroundColor.swift
+//  SetBackgroundColor+.swift
 //  SherlDog
 //
 //  Created by 최규현 on 6/18/25.
