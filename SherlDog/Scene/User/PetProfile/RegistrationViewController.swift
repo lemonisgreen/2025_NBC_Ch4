@@ -12,6 +12,7 @@ import RxCocoa
 
 class RegistrationViewController: UIViewController {
     
+    private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
@@ -80,11 +81,11 @@ class RegistrationViewController: UIViewController {
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
                 pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 390 }]
+                    sheet.detents = [.custom { _ in 400 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 32

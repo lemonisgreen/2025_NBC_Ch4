@@ -13,10 +13,11 @@ import RxDataSources
 import Differentiator
 
 // MARK: - PictureUploadView
-class PictureUploadRequestView: UIViewController { // 1: 230, 2: 310, 3: 390
-
+class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
+    
     private let viewModel: PictureUploadRequestViewModel
-    private var cameraViewModel: CameraViewModel
+    private let avatarViewModel: SelectAvatarViewModel
+    private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource>(
         configureCell: { dataSource, collectionView, indexPath, section in
@@ -41,9 +42,10 @@ class PictureUploadRequestView: UIViewController { // 1: 230, 2: 310, 3: 390
     private let setButton = ButtonManager(title: "")
     
     // MARK: - Lifecycle
-    init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel = CameraViewModel()) {
+    init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel = CameraViewModel(), avatarViewModel: SelectAvatarViewModel = SelectAvatarViewModel()) {
         self.viewModel = viewModel
         self.cameraViewModel = cameraViewModel
+        self.avatarViewModel = avatarViewModel
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -129,7 +131,7 @@ extension PictureUploadRequestView {
                     self.present(albumView, animated: true)
                     
                 case .avatar:
-                    self.navigationController?.pushViewController(SelectAvatarViewController(), animated: true)
+                    self.navigationController?.pushViewController(SelectAvatarViewController(viewModel: avatarViewModel), animated: true)
                 }
             })
             .disposed(by: disposeBag)
