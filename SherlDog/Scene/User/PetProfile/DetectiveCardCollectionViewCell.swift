@@ -32,7 +32,7 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
     }
     
     func configure(with profile: PetProfile) {
-        detectiveCardView.detectiveNumber.text = profile.uid
+        detectiveCardView.detectiveNumber.text = profile.petProfileId
         detectiveCardView.detectiveName.text = profile.name
         detectiveCardView.detectiveBreed.text = profile.breed
         detectiveCardView.detectiveAge.text = "\(profile.age)세"
