@@ -26,7 +26,7 @@
 			<string>KAKAO</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>kakao{88917bd32cd5a4e5e50b193984545800}</string>
+				<string>kakao88917bd32cd5a4e5e50b193984545800</string>
 			</array>
 		</dict>
 	</array>

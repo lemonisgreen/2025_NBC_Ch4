@@ -34,10 +34,7 @@ final class PetProfileViewController: UIViewController {
     
     private let dogImageView = UIImageView()
     private let infoLabel = UILabel()
-    private let nextButton: ButtonManager = {
-        let button = ButtonManager(title: "다음", width: UIScreen.main.bounds.width - 40)
-        return button
-    }()
+    private let nextButton = ButtonManager(title: "다음")
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -159,26 +156,50 @@ final class PetProfileViewController: UIViewController {
     }
     
     private func addNewProfile() {
+      
         // 최대 개수 체크
         guard petProfiles.count < maxProfileCount else {
             return
         }
+        // UserDefaults에서 저장된 ID 읽기
+        guard let petProfileID = UserDefaults.standard.string(forKey: "newPetProfileId") else {
+            print("저장된 펫 프로필 ID가 없습니다.")
+            return
+        }
+        
+        // Firestore에서 해당 프로필 불러오기
+        FirestoreManager.shared.fetchDocument(
+            collection: "PetProfile",
+            documentId: petProfileID,
+            type: PetProfile.self
+        )
+        .subscribe(onSuccess: { [weak self] newProfile in
+            guard let self = self else { return }
+            self.petProfiles.append(newProfile)
+            DispatchQueue.main.async {
+                self.collectionView.reloadData()
+                self.updateNextButtonState()
+            }
+        }, onFailure: { error in
+            print("펫 프로필 불러오기 실패: \(error)")
+        })
+        .disposed(by: disposeBag)
         
         // 새로운 프로필 추가 (하드코딩)
-        let newProfile = PetProfile(
-            uid: "22061",
-            userId: "user1",
-            name: "새로운 멍멍이 \(petProfiles.count + 1)",
-            age: Int.random(in: 1...15),
-            size: ["소형", "중형", "대형"].randomElement()!,
-            image: "bigLogo",
-            gender: ["수컷", "암컷"].randomElement()!,
-            neutered: Bool.random(),
-            breed: ["골든 리트리버", "시바견", "푸들", "말티즈"].randomElement()!,
-            introduce: ["활발하고 사교적인 성격", "조용하고 차분함", "장난기 많음", "순하고 착함"].randomElement()!
-        )
+//        let newProfile = PetProfile(
+//            uid: "22061",
+//            userId: "user1",
+//            name: "새로운 멍멍이 \(petProfiles.count + 1)",
+//            age: Int.random(in: 1...15),
+//            size: ["소형", "중형", "대형"].randomElement()!,
+//            image: "bigLogo",
+//            gender: ["수컷", "암컷"].randomElement()!,
+//            neutered: Bool.random(),
+//            breed: ["골든 리트리버", "시바견", "푸들", "말티즈"].randomElement()!,
+//            introduce: ["활발하고 사교적인 성격", "조용하고 차분함", "장난기 많음", "순하고 착함"].randomElement()!
+//        )
         
-        petProfiles.append(newProfile)
+        //petProfiles.append(newProfile)
         
         // 안전하게 전체 리로드
         DispatchQueue.main.async {
@@ -189,6 +210,19 @@ final class PetProfileViewController: UIViewController {
     
     // MARK: - Navigation
     private func presentBreedSearch() {
+        
+        
+        let registrationVC = RegistrationViewController()
+        if let sheet = registrationVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.selectedDetentIdentifier = .large
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 32
+            self.present(registrationVC, animated: true)
+        }
+        
+        
+        
         addNewProfile()
     }
 }

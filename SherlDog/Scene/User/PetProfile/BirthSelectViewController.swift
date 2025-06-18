@@ -13,6 +13,7 @@ import RxCocoa
 class BirthSelectViewController: UIViewController {
     
     let disposeBag = DisposeBag()
+    let selectedDate = PublishSubject<Date>()
     
     let birthSelectLabel = UILabel()
     let underLine = UIView()
@@ -24,12 +25,13 @@ class BirthSelectViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
-        
     }
     
     func bind() {
         self.completeButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
+            .map { [weak self] in self?.datePicker.date ?? Date() }
+            .subscribe(onNext: { [weak self] date in
+                self?.selectedDate.onNext(date)
                 self?.dismiss(animated: true)
             })
             .disposed(by: disposeBag)

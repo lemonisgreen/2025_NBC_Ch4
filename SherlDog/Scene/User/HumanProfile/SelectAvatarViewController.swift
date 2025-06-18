@@ -15,7 +15,7 @@ import SnapKit
 // MARK: - SelectDefaultAvatarViewController
 class SelectAvatarViewController: UIViewController {
     
-    private let viewModel = SelectAvatarViewModel()
+    private let viewModel: SelectAvatarViewModel
     private let disposeBag = DisposeBag()
     private let dataSource = RxCollectionViewSectionedReloadDataSource<SelectAvatarViewModel.SelectAvatarDataSource>(
         configureCell: { dataSource, collectionView, IndexPath, section in
@@ -33,15 +33,21 @@ class SelectAvatarViewController: UIViewController {
             return header
         })
     
-    private let backButton = ButtonManager(title: "이전", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let backButton = SubButtonManager(title: "이전")
     private let choiceButton = ButtonManager(title: "선택하기")
     private let horizontalStackView = UIStackView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     
-}
-
-// MARK: - Lifecycle
-extension SelectAvatarViewController {
+    // MARK: - Lifecycle
+    init(viewModel: SelectAvatarViewModel) {
+        self.viewModel = viewModel
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -56,9 +62,11 @@ extension SelectAvatarViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
-        choiceButton.isEnabled = false
+        
+        self.sheetPresentationController?.animateChanges {
+            self.sheetPresentationController?.detents = [.custom { _ in 400 }]
+        }
     }
-    
 }
 
 // MARK: - Method
@@ -73,15 +81,8 @@ extension SelectAvatarViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 
-                let detailView = UINavigationController(rootViewController: DetailAvatarViewController(viewModel: self.viewModel))
-                detailView.modalPresentationStyle = .pageSheet
-                if let sheet = detailView.sheetPresentationController {
-                    sheet.detents = [.large()]
-                    sheet.selectedDetentIdentifier = .large
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 32
-                }
-                self.present(detailView, animated: true)
+                let detailView = DetailAvatarViewController(viewModel: self.viewModel)
+                self.navigationController?.pushViewController(detailView, animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -122,8 +123,7 @@ extension SelectAvatarViewController {
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: PictureUploadRequestViewHeader.identifier)
         
-        backButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
-        backButton.layer.borderWidth = 1
+        choiceButton.isEnabled = false
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
@@ -136,7 +136,8 @@ extension SelectAvatarViewController {
         }
         
         horizontalStackView.snp.makeConstraints {
-            $0.bottom.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(52)
         }
         

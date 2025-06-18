@@ -13,13 +13,12 @@ import RxCocoa
 class BreedSearchViewController: UIViewController {
 
     // MARK: - Properties
-    private let disposeBag = DisposeBag()
-    private var allBreeds: [String] = ["골든 리트리버", "래브라도 리트리버", "저먼 셰퍼드", "불독", "비글",
-                                       "푸들", "로트와일러", "요크셔 테리어", "닥스훈트", "시베리안 허스키",
-                                       "보더 콜리", "복서", "그레이트 데인", "시츄", "보스턴 테리어",
-                                       "폼피츠", "치와와", "말티즈", "코기", "진돗개"]
+    let disposeBag = DisposeBag()
+    private lazy var allBreeds: [String] = loadBreeds()
     private var filteredBreeds: [String] = []
     private var isSearching = false
+    
+    let selectedBreed = PublishSubject<String>()
 
     // MARK: - UI Components
     private let titleLabel = UILabel()
@@ -280,6 +279,20 @@ class BreedSearchViewController: UIViewController {
         // 테이블뷰 숨김
         tableView.isHidden = true
     }
+    // breeds.json으로 견종 데이터 불러오기
+    private func loadBreeds() -> [String] {
+        guard let path = Bundle.main.path(forResource: "breeds", ofType: "json") else {
+            return []
+        }
+        do {
+            let data = try Data(contentsOf: URL(fileURLWithPath: path))
+            let breeds = try JSONDecoder().decode([String].self, from: data)
+            return breeds
+        } catch {
+            print("Error loading breeds: \(error)")
+            return []
+        }
+    }
 }
 
 // MARK: - UITableViewDataSource
@@ -306,8 +319,9 @@ extension BreedSearchViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         let selectedBreed = filteredBreeds[indexPath.row]
-        // 선택된 견종 처리
-        print("선택된 견종: \(selectedBreed)")
+        
+        self.selectedBreed.onNext(selectedBreed)
+
         dismiss(animated: true)
     }
 }
