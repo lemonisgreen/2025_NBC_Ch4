@@ -12,8 +12,7 @@ class BottomTabBarController: UITabBarController {
     let VC1 = UINavigationController(rootViewController: MainViewController())
     let VC2 = UINavigationController(rootViewController: CommunityViewController())
     let VC3 = UINavigationController(rootViewController: MainViewController())
-    
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
