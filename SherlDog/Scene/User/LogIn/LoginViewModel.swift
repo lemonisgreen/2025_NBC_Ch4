@@ -331,7 +331,7 @@ final class LoginViewModel: NSObject {
     }
 }
 
-// MARK: - Apple Sign In Delegate
+// MARK: - Apple Sign Delegate
 extension LoginViewModel: ASAuthorizationControllerDelegate {
     
     func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {

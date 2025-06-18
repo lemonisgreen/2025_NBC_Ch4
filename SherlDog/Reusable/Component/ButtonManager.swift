@@ -9,29 +9,33 @@ import UIKit
 import SnapKit
 
 class ButtonManager: UIButton {
-
-    init(title: String, backgroundColor: UIColor = UIColor(named: "keycolorPrimary3") ?? .systemBlue, titleColor: UIColor = UIColor(named: "keycolorInverse") ?? .systemBlue, width: CGFloat = 52) {
+    
+    init(title: String) {
         super.init(frame: .zero)
-        configureUI(title: title, backgroundColor: backgroundColor, titleColor: titleColor, width: width)
+        configureUI(title: title)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    private func configureUI(title: String, backgroundColor: UIColor, titleColor: UIColor, width: CGFloat){
-          
-         setTitle(title, for: .normal)
-         setTitleColor(titleColor, for: .normal)
-         self.backgroundColor = backgroundColor
-         titleLabel?.font = UIFont.highlight4
-         layer.cornerRadius = 6
-         clipsToBounds = true
+    
+    private func configureUI(title: String) {
         
-         self.snp.makeConstraints {
+        setTitle(title, for: .normal)
+        titleLabel?.font = UIFont.highlight4
+        layer.cornerRadius = 6
+        clipsToBounds = true
+        
+        setTitleColor(.textInverse, for: .normal)
+        setTitleColor(.gray100, for: .highlighted)
+        
+        setBackgroundColor(.keycolorPrimary3, for: .normal)
+        setBackgroundColor(.keycolorPrimary1, for: .highlighted)
+        setBackgroundColor(.textDisabled, for: .disabled)
+        
+        self.snp.makeConstraints {
             $0.height.equalTo(52)
-            $0.width.equalTo(width)
         }
     }
-      
+    
 }

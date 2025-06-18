@@ -21,10 +21,11 @@ class SelectAvatarViewModel {
         let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
         let moveToDetailView = PublishRelay<Void>()
         let selectedAvatar = BehaviorRelay<AvatarModel?>(value: nil)
+        let completeSelect = PublishRelay<String>()
     }
     
     typealias SelectAvatarDataSource = SectionModel<String, String>
-    private let data = AvatarModel.sample
+    private let data = AvatarModel.avatarData
     
     let input = PublishRelay<Input>()
     let output = Output()
@@ -43,14 +44,15 @@ class SelectAvatarViewModel {
                 self.output.moveToDetailView.accept(())
                 self.output.selectedAvatar.accept(self.data[index])
             case .completeSelect:
-                self.output
+                guard let imageName = self.output.selectedAvatar.value?.icon else { return }
+                self.output.completeSelect.accept(imageName)
             }
         }
         .disposed(by: disposeBag)
     }
     
     private func fetchCellData() {
-        self.output.cellData.accept([ // smiley
+        self.output.cellData.accept([
             SelectAvatarDataSource(model: "탐정님과 함께할 조수를 선택해주세요!",
                                    items: self.data.map { $0.icon })
         ])
