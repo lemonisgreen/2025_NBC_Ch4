@@ -10,10 +10,15 @@ import SnapKit
 import NMapsMap
 import RxCocoa
 import RxSwift
+import RxCoreLocation
+import CoreLocation
 
-class MainViewController: UIViewController {
+class MainViewController: UIViewController, CLLocationManagerDelegate {
     
+    private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
+    private let viewModel = MainViewModel()
+    private var hasSetInitialCamera = false
     
     // 지도 배경
     private let mapView = NMFMapView()
@@ -43,21 +48,26 @@ class MainViewController: UIViewController {
     private let endButton = UIButton()
     private let clueButton = UIButton()
     private let walkStartButton = UIButton()
+    private let locationButton = UIButton()
 
-    
     override func viewDidLoad() {
         super.viewDidLoad()
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.delegate = self
+        locationManager.distanceFilter = 5
+        locationManager.startUpdatingLocation()
         setupUI()
         setupConstraints()
         bind()
         inputBind()
         configureInitialVisibility()
     }
-    
-    private func bind() {
-        
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
-    
+
     private func inputBind() {
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -72,6 +82,7 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
+                self?.viewModel.stopTracking.accept(())
                 let endView = UINavigationController(rootViewController: WalkEndModalViewController())
                 endView.modalPresentationStyle = .overFullScreen
                 self?.present(endView, animated: true)
@@ -81,6 +92,18 @@ class MainViewController: UIViewController {
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.startInvestigation()
+                self?.viewModel.startTracking.accept(())
+            })
+            .disposed(by: disposeBag)
+        
+        self.locationButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                guard let self = self, let currentLocation = self.locationManager.location else { return }
+                let coord = currentLocation.coordinate
+                let target = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
+                let cameraUpdate = NMFCameraUpdate(scrollTo: target)
+                cameraUpdate.animation = .easeIn
+                self.mapView.moveCamera(cameraUpdate)
             })
             .disposed(by: disposeBag)
     }
@@ -93,16 +116,16 @@ class MainViewController: UIViewController {
     }
 
     private func startInvestigation() {
+        hasSetInitialCamera = false
         statusView.isHidden = false
         clueButton.isHidden = false
         endButton.isHidden = false
         walkStartButton.isHidden = true
     }
-    
     private func setupUI() {
         // 지도 배경 설정
-        mapView.positionMode = .normal
-
+        mapView.positionMode = .direction
+        
         // statusView 설정
         statusView.backgroundColor = .gray50
         statusView.layer.cornerRadius = 16
@@ -186,6 +209,8 @@ class MainViewController: UIViewController {
         walkStartButton.backgroundColor = UIColor(named: "keycolorPrimary3")
         walkStartButton.layer.cornerRadius = 6
         
+        locationButton.setImage(UIImage(named: "locationButton"), for: .normal)
+        
         [distance, time, steps].forEach { valueStack.addArrangedSubview($0) }
         
         [distanceLabel, timeLabel, stepsLabel].forEach { titleStack.addArrangedSubview($0) }
@@ -196,7 +221,7 @@ class MainViewController: UIViewController {
         [titleStack, valueStack, statusStack].forEach { statusView.addSubview($0) }
 
         
-        [mapView, statusView, endButton, clueButton, walkStartButton].forEach {
+        [mapView, statusView, endButton, clueButton, walkStartButton, locationButton].forEach {
             view.addSubview($0)
         }
     }
@@ -247,6 +272,48 @@ class MainViewController: UIViewController {
             $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(16)
             $0.height.equalTo(52)
             $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        
+        locationButton.snp.makeConstraints {
+            $0.size.equalTo(48)
+            $0.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(walkStartButton.snp.top).offset(-16)
+        }
+    }
+    
+    private func bind() {
+        viewModel.coordinates
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
+                guard let self = self else { return }
+                guard coords.count >= 2 else { return }
+
+                let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
+                let path = NMGLineString(points: nmfCoords)
+
+                let pathOverlay = NMFPath()
+                pathOverlay.path = path
+                pathOverlay.color = .keycolorPrimary1
+                pathOverlay.width = 4
+                pathOverlay.mapView = self.mapView
+
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        guard let location = locations.last else { return }
+
+        // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
+        if !hasSetInitialCamera {
+            let coord = location.coordinate
+            let target = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
+            let cameraUpdate = NMFCameraUpdate(scrollTo: target)
+            cameraUpdate.animation = .none
+            mapView.moveCamera(cameraUpdate)
+            mapView.zoomLevel = 16.0
+
+            hasSetInitialCamera = true
         }
     }
 }
