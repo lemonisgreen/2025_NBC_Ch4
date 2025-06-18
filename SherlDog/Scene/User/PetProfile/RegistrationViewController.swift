@@ -19,7 +19,6 @@ class RegistrationViewController: UIViewController {
     private var selectedImage: UIImage?
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
-    
     let registrationLabel = UILabel()
     let registImage = UIButton()
     let registNameLabel = UILabel()
@@ -75,7 +74,7 @@ class RegistrationViewController: UIViewController {
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
                 
-                self.selectedImage = image // ✅ 저장해두기
+                self.selectedImage = image
                 self.registImage.setImage(image, for: .normal)
             })
             .disposed(by: disposeBag)
@@ -279,7 +278,6 @@ class RegistrationViewController: UIViewController {
                 guard let image = self.selectedImage else { return }
                 
                 self.viewModel.uploadImageAndSaveProfile(image: image)
-                
                 self.viewModel.saveResult
                     .take(1)
                     .observe(on: MainScheduler.instance)
