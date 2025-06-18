@@ -31,7 +31,7 @@ class CreateLogViewController: UIViewController {
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
-    private let cancelButton = ButtonManager(title: "취소", backgroundColor: .textInverse, titleColor: .keycolorPrimary3)
+    private let cancelButton = SubButtonManager(title: "취소")
     private let shareButton = ButtonManager(title: "공유하기")
     private let horizontalStackView = UIStackView()
     
@@ -213,9 +213,6 @@ extension CreateLogViewController {
         textViewConstraintsLabel.text = "0 / 120자"
         textViewConstraintsLabel.font = .alert2
         textViewConstraintsLabel.textColor = .gray400
-        
-        cancelButton.layer.borderColor = UIColor.keycolorPrimary3.cgColor
-        cancelButton.layer.borderWidth = 1
         
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
