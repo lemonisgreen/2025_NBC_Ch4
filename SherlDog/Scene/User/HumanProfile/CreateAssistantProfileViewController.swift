@@ -66,23 +66,33 @@ extension CreateAssistantProfileViewController {
         
         self.nicknameTextField.rx.text
             .subscribe(onNext: { [weak self] text in
-                guard let self, let text else { return }
-                
-                self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
+                guard let self, var text else { return }
                 
                 if text.count > 12 {
                     let diff = text.count - 12
-                    self.nicknameTextField.text?.removeLast(diff)
-                    self.nickNameConstraintsLabel.text = "12 / 12자"
+                    text.removeLast(diff)
+                    
+                    self.nicknameTextField.text = text
                 }
                 
-                if text.contains(" ") {
-                    self.nickNameSeparatorAlert.isHidden = false
-                    self.nickNameSeparatorAlertImage.isHidden = false
+                self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
+                
+                if text.count > 0 {
+                    if text.contains(" ") {
+                        self.nickNameSeparatorAlert.isHidden = false
+                        self.nickNameSeparatorAlertImage.isHidden = false
+                        self.nextButton.isEnabled = false
+                        
+                    } else {
+                        self.nickNameSeparatorAlert.isHidden = true
+                        self.nickNameSeparatorAlertImage.isHidden = true
+                        self.nextButton.isEnabled = true
+                    }
+                    
                 } else {
-                    self.nickNameSeparatorAlert.isHidden = true
-                    self.nickNameSeparatorAlertImage.isHidden = true
+                    self.nextButton.isEnabled = false
                 }
+                
             })
             .disposed(by: disposeBag)
         
@@ -127,8 +137,8 @@ extension CreateAssistantProfileViewController {
         
         self.nextButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let mainVC = MainViewController()
-                self?.navigationController?.pushViewController(mainVC, animated: true)
+                let mainView = BottomTabBarController()
+                self?.navigationController?.pushViewController(mainView, animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -193,10 +203,12 @@ extension CreateAssistantProfileViewController {
         
         nickNameSeparatorAlertImage.contentMode = .scaleAspectFit
         nickNameSeparatorAlertImage.image = .alertMark
+        nickNameSeparatorAlertImage.isHidden = true
         
         nickNameSeparatorAlert.text = "공백 없이 입력해 주세요"
         nickNameSeparatorAlert.font = .alert2
         nickNameSeparatorAlert.textColor = .textAlert
+        nickNameSeparatorAlert.isHidden = true
         
         introduceLabel.text = "자기소개"
         introduceLabel.font = .body1
@@ -214,6 +226,8 @@ extension CreateAssistantProfileViewController {
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
         introduceConstraintsLabel.textColor = .gray400
+        
+        self.nextButton.isEnabled = false
     }
     
     private func configureUI() {

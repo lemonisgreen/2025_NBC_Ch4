@@ -54,6 +54,12 @@ class MainViewController: UIViewController {
         configureInitialVisibility()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.navigationBar.isHidden = true
+    }
+    
     private func bind() {
         
     }
@@ -61,12 +67,23 @@ class MainViewController: UIViewController {
     private func inputBind() {
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let cameraViewModel = CameraViewModel()
-                cameraViewModel.input.accept(.sender(.clueLeave))
-                
-                let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
-                cameraView.modalPresentationStyle = .fullScreen
-                self?.present(cameraView, animated: true)
+                PermissionManager.requestPermission(type: .camera) { [weak self] isAllowed in
+                    guard let self else { return }
+                    switch isAllowed {
+                    case true:
+                        let cameraViewModel = CameraViewModel()
+                        cameraViewModel.input.accept(.sender(.clueLeave))
+                        
+                        let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
+                        cameraView.modalPresentationStyle = .fullScreen
+                        self.present(cameraView, animated: true)
+                        
+                    case false:
+                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                        
+                        self.present(alert, animated: true)
+                    }
+                }
             })
             .disposed(by: disposeBag)
         
