@@ -9,11 +9,14 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import Firebase
+import FirebaseStorage
 
 class RegistrationViewController: UIViewController {
     
     private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
+    private var selectedImage: UIImage?
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
     var onProfileAdded: ((String) -> Void)?
@@ -77,8 +80,9 @@ class RegistrationViewController: UIViewController {
         cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
-                // todo: 사진 삽입
-                self.registImage.setImage(image, for: .normal) // test
+                
+                self.selectedImage = image
+                self.registImage.setImage(image, for: .normal)
             })
             .disposed(by: disposeBag)
         

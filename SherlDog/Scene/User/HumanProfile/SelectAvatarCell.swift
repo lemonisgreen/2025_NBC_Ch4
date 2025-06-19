@@ -40,7 +40,7 @@ class SelectAvatarCell: UICollectionViewCell {
     
     private func configureUI() {
         imageView.snp.makeConstraints {
-            $0.edges.equalToSuperview().inset(17)
+            $0.edges.equalToSuperview().inset(10)
         }
     }
 }
