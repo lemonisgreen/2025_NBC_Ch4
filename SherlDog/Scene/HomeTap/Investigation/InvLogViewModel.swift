@@ -11,20 +11,24 @@ import UIKit
 
 class InvLogViewModel {
     
-    enum Input {
-        case shareButtonTap
-    }
-    
-    struct InvLogData {
-        let image: UIImage
+    struct UploadData {
+        let imageString: UIImage
         let content: String
     }
     
-    private let disposeBag = DisposeBag()
+    enum Input {
+        case didFinishedWrite(UploadData)
+    }
+    
+    struct Output {
+        let uploadComplete = PublishRelay<Void>()
+    }
+    
     private let collection: String = "InvLog"
+    private let disposeBag = DisposeBag()
     
     let input = PublishRelay<Input>()
-    let output = BehaviorRelay<InvLogData?>(value: nil)
+    let output = Output()
     
     init() {
         transform()
@@ -36,21 +40,36 @@ class InvLogViewModel {
                 guard let self else { return }
                 
                 switch input {
-                case .shareButtonTap:
-                    FirestoreManager.shared.createDocument(collection: collection, data: InvLogModel(userId: "",
-                                                                                                     image: "",
-                                                                                                     content: ""))
-                    .subscribe(onCompleted: { [weak self] in
-                        guard let self else { return }
-                        
-                        
-                    }, onError: { error in
-                        
-                    })
-                    .disposed(by: disposeBag)
+                case .didFinishedWrite(let data):
+                    self.imageToString(data: data)
+                    
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func upload(image: String, content: String) {
+        FirestoreManager.shared.createDocument(collection: self.collection, data: InvLogModel(userId: "", // todo: Insert userId
+                                                                                              image: image,
+                                                                                              content: content))
+        .subscribe(onCompleted: {
+            self.output.uploadComplete.accept(())
+        })
+        .disposed(by: disposeBag)
+    }
+    
+    private func imageToString(data: UploadData) {
+        // todo: Insert petId
+        FirebaseImageManager.shared.uploadPetImage(data.imageString, petId: "") { [weak self] result in
+            switch result {
+            case .success(let value):
+                self?.upload(image: value, content: data.content)
+                
+            case .failure(let error):
+                return // todo: Error 처리
+                
+            }
+        }
     }
     
 }
