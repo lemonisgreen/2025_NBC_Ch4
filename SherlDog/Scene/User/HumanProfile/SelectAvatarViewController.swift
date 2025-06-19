@@ -62,10 +62,6 @@ class SelectAvatarViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
-        
-        self.sheetPresentationController?.animateChanges {
-            self.sheetPresentationController?.detents = [.custom { _ in 400 }]
-        }
     }
 }
 
@@ -82,7 +78,14 @@ extension SelectAvatarViewController {
                 guard let self else { return }
                 
                 let detailView = DetailAvatarViewController(viewModel: self.viewModel)
-                self.navigationController?.pushViewController(detailView, animated: true)
+                detailView.modalPresentationStyle = .pageSheet
+                if let sheet = detailView.sheetPresentationController {
+                    sheet.detents = [.custom { _ in 610 }]
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.preferredCornerRadius = 20
+                    sheet.prefersGrabberVisible = true
+                }
+                self.present(detailView, animated: true)
             })
             .disposed(by: disposeBag)
     }
