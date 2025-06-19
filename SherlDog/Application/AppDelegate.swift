@@ -10,6 +10,7 @@ import FirebaseCore
 import KakaoSDKCommon
 import KakaoSDKAuth
 import GoogleSignIn
+import IQKeyboardManagerSwift
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -25,6 +26,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         // 카카오 SDK 초기화
         setupKakaoSDK()
+        
+        // IQ 키보드 작동 코드
+        IQKeyboardManager.shared.isEnabled = true
         
         return true
     }

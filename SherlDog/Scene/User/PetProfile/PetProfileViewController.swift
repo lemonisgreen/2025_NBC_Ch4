@@ -38,7 +38,6 @@ final class PetProfileViewController: UIViewController {
     
     let navigationBackButton = UIButton()
     let navigationTitleLabel = UILabel()
-    let navigationStackView = UIStackView()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -52,11 +51,6 @@ final class PetProfileViewController: UIViewController {
     }
     
     // MARK: - UI Setup
-//    private func setupNavigationBar() {
-//        navigationItem.title = "멍탐정 프로필 입력하기"
-//        navigationController?.navigationBar.prefersLargeTitles = false
-//    }
-    
     private func setupCollectionView() {
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -77,11 +71,16 @@ final class PetProfileViewController: UIViewController {
         navigationTitleLabel.textColor = .textPrimary
         navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
+        let navigationBarAppearance = UINavigationBarAppearance()
+        navigationBarAppearance.configureWithOpaqueBackground()
+        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.shadowColor = .clear
+        
         self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
-        
-        navigationStackView.axis = .horizontal
+        self.navigationItem.standardAppearance = navigationBarAppearance
+        self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
         view.backgroundColor = UIColor.keycolorBackground
         
@@ -96,9 +95,6 @@ final class PetProfileViewController: UIViewController {
         nextButton.isEnabled = false
         nextButton.alpha = 0.5
         
-//        [navigationBackButton, navigationTitleLabel,]
-//            .forEach { navigationStackView.addArrangedSubview($0) }
-        
         [collectionView, dogImageView, infoLabel, nextButton].forEach {
             view.addSubview($0)
         }
@@ -106,17 +102,6 @@ final class PetProfileViewController: UIViewController {
     
     private func configureUI() {
         updateCollectionViewConstraints()
-        
-//        navigationBackButton.snp.makeConstraints {
-//            $0.top.equalTo(view.safeAreaLayoutGuide).inset(17)
-//            $0.leading.equalToSuperview().inset(12)
-//            $0.height.equalTo(24)
-//        }
-//        
-//        navigationTitleLabel.snp.makeConstraints {
-//            $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-//            $0.leading.equalTo(navigationBackButton.snp.trailing).offset(16)
-//        }
         
         dogImageView.snp.makeConstraints {
             $0.centerX.equalToSuperview()
@@ -139,12 +124,12 @@ final class PetProfileViewController: UIViewController {
         collectionView.snp.remakeConstraints {
             if petProfiles.isEmpty {
                 // 프로필이 없을 때: 상단부터 제한된 높이까지만
-                $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+                $0.top.equalTo(view.safeAreaLayoutGuide)
                 $0.leading.trailing.equalToSuperview()
                 $0.height.equalTo(250) // 고정 높이로 설정
             } else {
                 // 프로필이 있을 때: nextButton 위까지 전체 영역 사용
-                $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
+                $0.top.equalTo(view.safeAreaLayoutGuide)
                 $0.leading.trailing.equalToSuperview()
                 $0.bottom.equalTo(nextButton.snp.top).offset(-20)
             }
@@ -156,10 +141,10 @@ final class PetProfileViewController: UIViewController {
     private func bindUI() {
         
         navigationBackButton.rx.tap
-                .subscribe(onNext: { [weak self] in
-                    self?.navigationController?.popViewController(animated: true)
-                })
-                .disposed(by: disposeBag)
+            .subscribe(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: disposeBag)
         
         // 프로필이 추가될 때마다 다음 버튼 활성화 상태 업데이트
         updateNextButtonState()
