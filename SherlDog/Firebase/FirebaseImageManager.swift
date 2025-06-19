@@ -15,8 +15,41 @@ class FirebaseImageManager {
     private let storage = Storage.storage()
     private let storageRef: StorageReference
     
+    private let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+    
     private init() {
         storageRef = storage.reference()
+    }
+    
+    // MARK: - Type지정 Upload
+    func uploadImage(_ image: UIImage, type: UploadImageFor, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            completion(.failure(ImageError.invalidImageData))
+            return
+        }
+        
+        let imagePath = "\(type)/\(userId)/\(type).jpg"
+        let imageRef = storageRef.child(imagePath)
+        
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+        
+        imageRef.putData(imageData, metadata: metadata) { _, error in
+            if let error {
+                completion(.failure(error))
+                return
+            }
+            
+            imageRef.downloadURL { url, error in
+                if let error {
+                    completion(.failure(error))
+                } else if let downloadUrl = url?.absoluteString {
+                    completion(.success(downloadUrl))
+                } else {
+                    completion(.failure(ImageError.urlGenerationFailed))
+                }
+            }
+        }
     }
     
     // MARK: - 이미지 업로드
@@ -56,6 +89,22 @@ class FirebaseImageManager {
                     completion(.failure(ImageError.urlGenerationFailed))
                 }
             }
+        }
+    }
+}
+
+// MARK: - UploadType
+enum UploadImageFor {
+    case assistant, clue, invLog
+    
+    var type: String {
+        switch self {
+        case .assistant:
+            "assistant"
+        case .clue:
+            "clue"
+        case .invLog:
+            "invLog"
         }
     }
 }
