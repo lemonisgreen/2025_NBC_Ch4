@@ -48,6 +48,12 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        navigationBackButton.rx.tap
+                .subscribe(onNext: { [weak self] in
+                    self?.navigationController?.popViewController(animated: true)
+                })
+                .disposed(by: disposeBag)
+        
         self.avatarViewModel.output.completeSelect
             .subscribe(onNext: { [weak self] imageName in
                 guard let self else { return }

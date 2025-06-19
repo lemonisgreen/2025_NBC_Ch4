@@ -14,6 +14,7 @@ import SnapKit
 class CreateLogViewController: UIViewController {
     
     private let cameraViewModel: CameraViewModel
+    private let viewModel = InvLogViewModel()
     private let disposeBag = DisposeBag()
     
     private let titleLabel = UILabel()
@@ -70,11 +71,28 @@ extension CreateLogViewController {
     
     private func bind() {
         cameraViewModel.output.capturedImage
-            .subscribe(onNext: { [weak self] image in
-                self?.photoImageView.image = image
-            })
+            .bind(to: self.photoImageView.rx.image)
             .disposed(by: disposeBag)
         
+        self.viewModel.output.uploadComplete
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                
+                let alert = AlertManager(message: "등록되었습니다.",
+                                         buttonTitles: ["확인"],
+                                         buttonActions: [{ [weak self] in
+                    guard let self,
+                          let mainView = self.view.window?.rootViewController as? BottomTabBarController else { return }
+                    mainView.dismiss(animated: true)
+                    mainView.selectedIndex = 1
+                }])
+                
+                self.present(alert, animated: true)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func inputBind() {
         textView.rx.text
             .subscribe(onNext: { [weak self] text in
                 guard let self, let text else { return }
@@ -113,19 +131,13 @@ extension CreateLogViewController {
         
         self.shareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
+                guard let self,
+                      let text = self.textView.text else { return }
+                let image = photoImageView.viewCapture()
+                let data = InvLogViewModel.UploadData(imageString: image,
+                                                      content: text)
                 
-                // todo: 공유 기능 구현
-                
-                let alert = AlertManager(message: "등록되었습니다.",
-                                         buttonTitles: ["확인"],
-                                         buttonActions: [{ [weak self] in
-                    guard let self,
-                          let mainView = self.view.window?.rootViewController as? BottomTabBarController else { return }
-                    mainView.dismiss(animated: true)
-                    mainView.selectedIndex = 1
-                }])
-                
-                self?.present(alert, animated: true)
+                self.viewModel.input.accept(.didFinishedWrite(data))
             })
             .disposed(by: disposeBag)
     }
