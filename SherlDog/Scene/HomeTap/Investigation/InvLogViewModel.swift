@@ -49,9 +49,8 @@ class InvLogViewModel {
     }
     
     private func upload(image: String, content: String) {
-        FirestoreManager.shared.createDocument(collection: self.collection, data: InvLogModel(userId: "", // todo: Insert userId
-                                                                                              image: image,
-                                                                                              content: content))
+        FirestoreManager.shared.createDocument(collection: self.collection, // todo: Insert userId
+                                               data: InvLogModel(userId: "", image: image, content: content))
         .subscribe(onCompleted: {
             self.output.uploadComplete.accept(())
         })
@@ -59,14 +58,14 @@ class InvLogViewModel {
     }
     
     private func imageToString(data: UploadData) {
-        // todo: Insert petId
-        FirebaseImageManager.shared.uploadPetImage(data.imageString, petId: "") { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(data.imageString, type: .invLog) { [weak self] result in
             switch result {
             case .success(let value):
                 self?.upload(image: value, content: data.content)
                 
             case .failure(let error):
-                return // todo: Error 처리
+                print(error) // todo: Error 처리
+                return
                 
             }
         }
