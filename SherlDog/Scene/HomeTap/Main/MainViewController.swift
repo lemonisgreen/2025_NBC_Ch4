@@ -20,6 +20,9 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     private let viewModel = MainViewModel()
     private var hasSetInitialCamera = false
     
+    // clueMarkers: 단서 마커 배열
+    private var clueMarkers: [NMFMarker] = []
+    
     // 지도 배경
     private let mapView = NMFMapView()
 
@@ -75,6 +78,17 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                     guard let self else { return }
                     switch isAllowed {
                     case true:
+                        // 현재 위치에 clue 마커 추가
+                        guard let currentLocation = self.locationManager.location else { return }
+                        let clueMarker = NMFMarker()
+                        clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
+                                                        lng: currentLocation.coordinate.longitude)
+                        clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
+                        clueMarker.width = 36
+                        clueMarker.height = 36
+                        clueMarker.mapView = self.mapView
+                        self.clueMarkers.append(clueMarker)
+
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
                         
@@ -135,7 +149,13 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     }
     private func setupUI() {
         // 지도 배경 설정
-        mapView.positionMode = .direction
+        mapView.positionMode = .normal
+        
+        let locationOverlay = mapView.locationOverlay
+        let overlayImage = NMFOverlayImage(name: "locationImage")
+        locationOverlay.icon = overlayImage
+        locationOverlay.iconWidth = 36
+        locationOverlay.iconHeight = 36
         
         // statusView 설정
         statusView.backgroundColor = .gray50
@@ -297,6 +317,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
                 guard let self = self else { return }
+                guard self.viewModel.isTracking.value else { return }
                 guard coords.count >= 2 else { return }
 
                 let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
