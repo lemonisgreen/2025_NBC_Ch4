@@ -15,12 +15,16 @@ import CoreLocation
 
 class MainViewController: UIViewController, CLLocationManagerDelegate {
     
+    private let requestViewModel = PictureUploadRequestViewModel()
     private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
     private let viewModel = MainViewModel()
     private var hasSetInitialCamera = false
     
-    // clueMarkers: 단서 마커 배열
+    // 경로 배열
+    private var pathOverlays: [NMFPath] = []
+    
+    // 단서 마커 배열
     private var clueMarkers: [NMFMarker] = []
     
     // 지도 배경
@@ -60,7 +64,6 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         super.viewDidLoad()
         locationManager.requestWhenInUseAuthorization()
         locationManager.delegate = self
-        locationManager.distanceFilter = 5
         locationManager.startUpdatingLocation()
         setupUI()
         setupConstraints()
@@ -113,6 +116,32 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                     guard let self else { return }
                     switch isAllowed {
                     case true:
+                        // 현재 위치에 clue 마커 추가
+                        guard let currentLocation = self.locationManager.location else { return }
+                        let clueMarker = NMFMarker()
+                        clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
+                                                        lng: currentLocation.coordinate.longitude)
+                        clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
+                        clueMarker.width = 36
+                        clueMarker.height = 36
+                        clueMarker.mapView = self.mapView
+                        clueMarker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
+                            guard let self = self else { return false }
+                            let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
+                            let detailVC = ClueDetailViewController(viewModel: viewModel)
+                            let nav = UINavigationController(rootViewController: detailVC)
+                            nav.modalPresentationStyle = .pageSheet
+                            if let sheet = nav.sheetPresentationController {
+                                sheet.detents = [.custom { _ in 650 }]
+                                sheet.selectedDetentIdentifier = .medium
+                                sheet.prefersGrabberVisible = true
+                                sheet.preferredCornerRadius = 20
+                            }
+                            self.present(nav, animated: true)
+                            return true
+                        }
+                        self.clueMarkers.append(clueMarker)
+
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
                         
@@ -132,19 +161,39 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.DataTrackingVM.stopTracking()
-                
+                self?.viewModel.stopTracking.accept(())
                 guard let viewModel = self?.DataTrackingVM else { return }
                 let endVC = WalkEndModalViewController(viewModel: viewModel)
                 let nav = UINavigationController(rootViewController: endVC)
                 nav.modalPresentationStyle = .overFullScreen
                 self?.present(nav, animated: true)
+                self?.pathOverlays.forEach { $0.mapView = nil }
+                self?.pathOverlays.removeAll()
+                self?.setInvestigation(active: false)                                
             })
             .disposed(by: disposeBag)
         
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.startInvestigation()
-                self?.viewModel.startTracking.accept(())
+                self?.setInvestigation(active: true)
+                
+                guard let self = self else { return }
+                self.requestViewModel.input.accept(.sender(.sherlDogRequest))
+                let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
+                requestView.modalPresentationStyle = .pageSheet
+                if let sheet = requestView.sheetPresentationController {
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.preferredCornerRadius = 20
+                    sheet.prefersGrabberVisible = true
+                    let dummyData = [0, 1, 2]
+                    switch dummyData.count {
+                    case 1: sheet.detents = [.custom { _ in 240 }]
+                    case 2: sheet.detents = [.custom { _ in 320 }]
+                    case 3: sheet.detents = [.custom { _ in 400 }]
+                    default: return
+                    }
+                }
+                self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -166,15 +215,13 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         clueButton.isHidden = true
         endButton.isHidden = true
     }
-    
-    private func startInvestigation() {
+  
+    private func setInvestigation(active: Bool) {
         hasSetInitialCamera = false
-        statusView.isHidden = false
-        clueButton.isHidden = false
-        endButton.isHidden = false
-        walkStartButton.isHidden = true
-        
-        DataTrackingVM.startTracking()
+        statusView.isHidden = !active
+        clueButton.isHidden = !active
+        endButton.isHidden = !active
+        walkStartButton.isHidden = active
     }
     private func setupUI() {
         // 지도 배경 설정
@@ -350,9 +397,15 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 pathOverlay.color = .keycolorPrimary1
                 pathOverlay.width = 4
                 pathOverlay.mapView = self.mapView
-                
+                self.pathOverlays.append(pathOverlay)
             })
             .disposed(by: disposeBag)
+        
+        requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
+            self?.viewModel.startTracking.accept(())
+            self?.DataTrackingVM.startTracking()                                                            
+        })
+        .disposed(by: disposeBag)
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {

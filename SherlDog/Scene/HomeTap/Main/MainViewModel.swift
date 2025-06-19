@@ -43,9 +43,13 @@ final class MainViewModel {
 
     private func setupLocationUpdates() {
         locationManager.requestWhenInUseAuthorization()
+        locationManager.distanceFilter = 10
         locationManager.startUpdatingLocation()
+//        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.pausesLocationUpdatesAutomatically = false
 
         locationManager.rx.didUpdateLocations
+            .throttle(.seconds(2), latest: true, scheduler: MainScheduler.instance)
             .compactMap { $0.locations.last }
             .subscribe(onNext: { [weak self] newLocation in
                 guard let self = self else { return }
@@ -56,7 +60,7 @@ final class MainViewModel {
                     let distance = CLLocation(latitude: prev.latitude, longitude: prev.longitude)
                         .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude))
 
-                    if distance < 30 {
+                    if distance >= 10 && distance < 50 {
                         self.coordinates.accept(self.coordinates.value + [current])
                     }
                 } else {

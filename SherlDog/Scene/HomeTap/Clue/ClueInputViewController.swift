@@ -11,17 +11,16 @@ import RxSwift
 import RxCocoa
 
 class ClueInputViewController: UIViewController {
+    private let clueLabel = UILabel()
     private let imageView = UIImageView()
     private let textView = UITextView()
     private let registerButton = UIButton()
-    private let closeButton = UIButton()
     private let countLabel = UILabel()
     private let placeholderLabel = UILabel()
-
+   
     private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     
-  
     init(viewModel: CameraViewModel) {
         self.cameraViewModel = viewModel
         
@@ -33,25 +32,21 @@ class ClueInputViewController: UIViewController {
     }
     
     override func viewDidLoad() {
+        navigationController?.setNavigationBarHidden(true, animated: false)
         super.viewDidLoad()
         setupUI()
         setupConstraints()
         bindRegisterAction()
-        bindCloseAction()
         bindTextView()
         bind()
     }
     
-    private func bind() {
-        cameraViewModel.output.capturedImage
-            .subscribe(onNext: { [weak self] image in
-                self?.imageView.image = image
-            })
-            .disposed(by: disposeBag)
-    }
-
     private func setupUI() {
         view.backgroundColor = .keycolorTertiaryBG
+        
+        clueLabel.text = "단서 남기기"
+        clueLabel.font = .highlight3
+        clueLabel.textColor = .textPrimary
 
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
@@ -59,6 +54,7 @@ class ClueInputViewController: UIViewController {
         imageView.layer.borderColor = UIColor(named: "gray300")?.cgColor
         imageView.layer.cornerRadius = 6
         
+        textView.backgroundColor = .gray50
         textView.textColor = .textPrimary
         textView.font = .body3
         textView.layer.borderColor = UIColor(named: "gray300")?.cgColor
@@ -83,28 +79,29 @@ class ClueInputViewController: UIViewController {
         registerButton.backgroundColor = .keycolorPrimary3
         registerButton.layer.cornerRadius = 6
         
-        countLabel.text = "0 / 150자"
         countLabel.font = .alert2
         countLabel.textColor = .gray400
         
-        closeButton.setImage(UIImage(systemName: "xmark"), for: .normal)
-        closeButton.tintColor = .textPrimary
-        
-        [imageView, textView, registerButton, closeButton, countLabel].forEach { view.addSubview($0) }
+        [clueLabel, imageView, textView, registerButton, countLabel].forEach { view.addSubview($0) }
     }
     
     private func setupConstraints() {
+        clueLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().inset(18)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(24)
+        }
+        
         imageView.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(32)
-            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.top.equalTo(clueLabel.snp.bottom).offset(6)
+            $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(imageView.snp.width).multipliedBy(1.2).priority(.low)
             $0.height.greaterThanOrEqualTo(100).priority(.low)
         }
 
         textView.snp.makeConstraints{
-            $0.top.equalTo(imageView.snp.bottom).offset(20)
+            $0.top.equalTo(imageView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(180)
+            $0.height.equalTo(156)
         }
         
         countLabel.snp.makeConstraints {
@@ -113,16 +110,10 @@ class ClueInputViewController: UIViewController {
         }
 
         registerButton.snp.makeConstraints {
-            $0.top.equalTo(textView.snp.bottom).offset(50)
-            $0.leading.trailing.equalToSuperview().inset(24)
+            $0.top.equalTo(textView.snp.bottom).offset(32)
+            $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(52)
-        }
-        
-        closeButton.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(1)
-            $0.trailing.equalToSuperview().inset(16)
-            $0.width.height.equalTo(24)
         }
     }
 
@@ -131,36 +122,32 @@ class ClueInputViewController: UIViewController {
             .bind { [weak self] in
                 guard let self,
                       let mainView = self.view.window?.rootViewController else { return }
-                print("단서 등록 로직 실행됨")
                 mainView.dismiss(animated: true)
             }
             .disposed(by: disposeBag)
     }
-    
-    private func bindCloseAction() {
-        closeButton.rx.tap
-            .bind { [weak self] in
-                guard let self,
-                      let cameraView = self.presentingViewController,
-                      let mainView = cameraView.presentingViewController else { return }
-                mainView.dismiss(animated: true)
-            }
-            .disposed(by: disposeBag)
-    }
-    
+
     private func bindTextView() {
         textView.rx.text.orEmpty
             .do(onNext: { [weak self] text in
-                if text.count > 150 {
-                    let trimmed = String(text.prefix(150))
+                if text.count > 120 {
+                    let trimmed = String(text.prefix(120))
                     self?.textView.text = trimmed
-                    self?.countLabel.text = "150 / 150자"
+                    self?.countLabel.text = "120 / 120자"
                 } else {
-                    self?.countLabel.text = "\(text.count) / 150자"
+                    self?.countLabel.text = "\(text.count) / 120자"
                 }
             })
             .map { !$0.isEmpty }
             .bind(to: placeholderLabel.rx.isHidden)
+            .disposed(by: disposeBag)
+    }
+    
+    private func bind() {
+        cameraViewModel.output.capturedImage
+            .subscribe(onNext: { [weak self] image in
+                self?.imageView.image = image
+            })
             .disposed(by: disposeBag)
     }
 }

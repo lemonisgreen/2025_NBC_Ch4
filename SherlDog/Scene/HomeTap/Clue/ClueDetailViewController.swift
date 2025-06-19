@@ -16,11 +16,24 @@ final class ClueDetailViewController: UIViewController {
     private let clueImageView = UIImageView()
     private let clipNoteBackgroundImageView = UIImageView()
     private let clueTextView = UITextView()
+    
+    private let viewModel: ClueDetailViewModel
+    private let disposeBag = DisposeBag()
+
+    init(viewModel: ClueDetailViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
+        bindViewModel()
     }
 
     private func setupUI() {
@@ -40,7 +53,6 @@ final class ClueDetailViewController: UIViewController {
         clipNoteBackgroundImageView.image = UIImage(named: "clipSet")
         clipNoteBackgroundImageView.contentMode = .scaleAspectFill
 
-        clueTextView.backgroundColor = .clear
         clueTextView.textColor = .black
         clueTextView.font = .body6
         clueTextView.isEditable = false
@@ -52,7 +64,7 @@ final class ClueDetailViewController: UIViewController {
 
     private func setupConstraints() {
         polaroidBackgroundImageView.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(52)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(46)
             $0.leading.trailing.equalToSuperview().inset(28)
         }
 
@@ -73,5 +85,15 @@ final class ClueDetailViewController: UIViewController {
             $0.top.equalTo(clipNoteBackgroundImageView).inset(42)
             $0.bottom.equalTo(clipNoteBackgroundImageView).inset(20)
         }
+    }
+    
+    private func bindViewModel() {
+        viewModel.savedClue
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] clue in
+                self?.clueTextView.text = clue.content
+                self?.clueImageView.image = UIImage(named: clue.image)
+            })
+            .disposed(by: disposeBag)
     }
 }

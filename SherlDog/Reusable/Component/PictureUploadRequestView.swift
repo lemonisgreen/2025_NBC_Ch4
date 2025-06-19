@@ -190,6 +190,9 @@ extension PictureUploadRequestView {
                 }
                 
                 self.viewModel.input.accept(.setButtonTapped(selectedIndex))
+                if self.viewModel.output.sender.value == .sherlDogRequest {
+                    self.dismiss(animated: true)
+                }
             }
             .disposed(by: disposeBag)
     }
