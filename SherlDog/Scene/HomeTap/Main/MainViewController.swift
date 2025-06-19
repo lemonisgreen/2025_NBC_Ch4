@@ -20,7 +20,10 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     private let viewModel = MainViewModel()
     private var hasSetInitialCamera = false
     
-    // clueMarkers: 단서 마커 배열
+    // 경로 배열
+    private var pathOverlays: [NMFPath] = []
+    
+    // 단서 마커 배열
     private var clueMarkers: [NMFMarker] = []
     
     // 지도 배경
@@ -57,7 +60,6 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         super.viewDidLoad()
         locationManager.requestWhenInUseAuthorization()
         locationManager.delegate = self
-        locationManager.distanceFilter = 5
         locationManager.startUpdatingLocation()
         setupUI()
         setupConstraints()
@@ -87,6 +89,21 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                         clueMarker.width = 36
                         clueMarker.height = 36
                         clueMarker.mapView = self.mapView
+                        clueMarker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
+                            guard let self = self else { return false }
+                            let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
+                            let detailVC = ClueDetailViewController(viewModel: viewModel)
+                            let nav = UINavigationController(rootViewController: detailVC)
+                            nav.modalPresentationStyle = .pageSheet
+                            if let sheet = nav.sheetPresentationController {
+                                sheet.detents = [.custom { _ in 650 }]
+                                sheet.selectedDetentIdentifier = .medium
+                                sheet.prefersGrabberVisible = true
+                                sheet.preferredCornerRadius = 20
+                            }
+                            self.present(nav, animated: true)
+                            return true
+                        }
                         self.clueMarkers.append(clueMarker)
 
                         let cameraViewModel = CameraViewModel()
@@ -111,12 +128,15 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 let endView = UINavigationController(rootViewController: WalkEndModalViewController())
                 endView.modalPresentationStyle = .overFullScreen
                 self?.present(endView, animated: true)
+                self?.pathOverlays.forEach { $0.mapView = nil }
+                self?.pathOverlays.removeAll()
+                self?.setInvestigation(active: false)
             })
             .disposed(by: disposeBag)
 
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.startInvestigation()
+                self?.setInvestigation(active: true)
                 self?.viewModel.startTracking.accept(())
             })
             .disposed(by: disposeBag)
@@ -140,12 +160,12 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         endButton.isHidden = true
     }
 
-    private func startInvestigation() {
+    private func setInvestigation(active: Bool) {
         hasSetInitialCamera = false
-        statusView.isHidden = false
-        clueButton.isHidden = false
-        endButton.isHidden = false
-        walkStartButton.isHidden = true
+        statusView.isHidden = !active
+        clueButton.isHidden = !active
+        endButton.isHidden = !active
+        walkStartButton.isHidden = active
     }
     private func setupUI() {
         // 지도 배경 설정
@@ -319,7 +339,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 guard let self = self else { return }
                 guard self.viewModel.isTracking.value else { return }
                 guard coords.count >= 2 else { return }
-
+                
                 let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
                 let path = NMGLineString(points: nmfCoords)
 
@@ -328,7 +348,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 pathOverlay.color = .keycolorPrimary1
                 pathOverlay.width = 4
                 pathOverlay.mapView = self.mapView
-
+                self.pathOverlays.append(pathOverlay)
             })
             .disposed(by: disposeBag)
     }
