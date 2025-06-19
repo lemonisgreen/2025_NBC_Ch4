@@ -225,9 +225,7 @@ class WalkEndModalViewController : UIViewController {
         stepCountContentLabel.textColor = UIColor(named: "textSecondary")
         stepCountContentLabel.font = UIFont.highlight3
         stepCountContentLabel.backgroundColor = .clear
-        stepCountContentLabel.textAlignment = .right
-        stepCountContentLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
-        stepCountContentLabel.setContentHuggingPriority(.required, for: .horizontal)
+        stepCountContentLabel.textAlignment = .center
         stepCountContentLabel.lineBreakMode = .byClipping
         
         
@@ -290,7 +288,6 @@ class WalkEndModalViewController : UIViewController {
         distanceStack.addArrangedSubview(distanceLabel)
         distanceStack.addArrangedSubview(distanceContentLabel)
         distanceStack.backgroundColor = .clear
-        distanceStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
         
         timeStack.axis = .vertical
         timeStack.spacing = 4
@@ -298,8 +295,6 @@ class WalkEndModalViewController : UIViewController {
         timeStack.addArrangedSubview(timeLabel)
         timeStack.addArrangedSubview(timeContentLabel)
         timeStack.backgroundColor = .clear
-        timeStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        
         
         stepCountStack.axis = .vertical
         stepCountStack.spacing = 4
@@ -307,16 +302,14 @@ class WalkEndModalViewController : UIViewController {
         stepCountStack.addArrangedSubview(stepLabelWrapper)
         stepCountStack.addArrangedSubview(stepCountContentLabel)
         stepCountStack.backgroundColor = .clear
-        stepCountStack.setContentHuggingPriority(.required, for: .horizontal)
-        stepCountStack.setContentCompressionResistancePriority(.required, for: .horizontal)
         
         infoStack.axis = .horizontal
         infoStack.distribution = .fillEqually
-        infoStack.spacing = 10
         infoStack.addArrangedSubview(distanceStack)
         infoStack.addArrangedSubview(timeStack)
         infoStack.addArrangedSubview(stepCountStack)
         infoStack.backgroundColor = .clear
+        
         
         closeButton.setImage(UIImage(named: "modalExit"), for: .normal)
         closeButton.contentMode = .scaleAspectFit
@@ -388,11 +381,6 @@ class WalkEndModalViewController : UIViewController {
             $0.trailing.equalToSuperview().inset(30)
             $0.width.height.equalTo(24)
         }
-    }
-    
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        super.touchesBegan(touches, with: event)
-        dismiss(animated: true, completion: nil)
     }
     
     override func viewDidLayoutSubviews() {
