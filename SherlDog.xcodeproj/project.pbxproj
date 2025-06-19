@@ -24,6 +24,9 @@
 		3A1CC74F2E03D5D7000040B8 /* RxCoreLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 3A1CC74E2E03D5D7000040B8 /* RxCoreLocation */; };
 		3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BECE2DF7FAF700397F6C /* Differentiator */; };
 		3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BED02DF7FAF700397F6C /* RxDataSources */; };
+		4CF9017A2E003CB8004E094A /* RxCoreLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 4CF901792E003CB8004E094A /* RxCoreLocation */; };
+		F14F6CBF2E03EA9100FFCD80 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */; };
+
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +64,7 @@
 				39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */,
 				390947272DF8FF6700D8B28E /* FirebaseCore in Frameworks */,
 				39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */,
+				F14F6CBF2E03EA9100FFCD80 /* IQKeyboardManagerSwift in Frameworks */,
 				39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */,
 				39BA2DCD2DF03B660008A54D /* SnapKit in Frameworks */,
 				39BA2E192DF03ECB0008A54D /* NMapsMap in Frameworks */,
@@ -131,7 +135,9 @@
 				390947682DF94C8800D8B28E /* KakaoSDKCommon */,
 				3909476A2DF94C8800D8B28E /* KakaoSDKUser */,
 				39EF106F2DFAD67200646675 /* GoogleSignIn */,
-				3A1CC74E2E03D5D7000040B8 /* RxCoreLocation */,
+				4CF901792E003CB8004E094A /* RxCoreLocation */,
+				F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */,
+
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -169,7 +175,8 @@
 				3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */,
 				390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
 				39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
-				3A1CC74D2E03D5D7000040B8 /* XCRemoteSwiftPackageReference "RxCoreLocation" */,
+				4CF901782E003CB8004E094A /* XCRemoteSwiftPackageReference "RxCoreLocation" */,
+				F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -481,6 +488,14 @@
 				minimumVersion = 5.0.2;
 			};
 		};
+		F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hackiftekhar/IQKeyboardManager.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -563,6 +578,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */;
 			productName = RxDataSources;
+		};
+		4CF901792E003CB8004E094A /* RxCoreLocation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CF901782E003CB8004E094A /* XCRemoteSwiftPackageReference "RxCoreLocation" */;
+			productName = RxCoreLocation;
+		};
+		F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */;
+			productName = IQKeyboardManagerSwift;
 		};
 		F1CC70C92DF718270038A80C /* FirebaseCore */ = {
 			isa = XCSwiftPackageProductDependency;

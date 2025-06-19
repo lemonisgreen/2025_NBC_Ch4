@@ -19,6 +19,8 @@ class BottomTabBarController: UITabBarController {
         let controllers = [VC1, VC2, VC3]
         self.viewControllers = controllers
         
+        self.navigationItem.hidesBackButton = true
+        
         setupTabBar()
         configureTabBar()
     }
@@ -52,7 +54,7 @@ class BottomTabBarController: UITabBarController {
         
         let appearance = UITabBarAppearance()
         
-        appearance.backgroundEffect = UIBlurEffect(style: .light)
+        appearance.backgroundColor = .white
         //standardAppearance랑 scrollEdgeAppearance 둘 다 지정해줘야 UITabBarAppearance()에 지정한 스타일이 먹음.
         appearance.stackedLayoutAppearance.selected.titleTextAttributes = selectedAttributes
         appearance.stackedLayoutAppearance.normal.titleTextAttributes = unselectedAttributes
