@@ -397,7 +397,7 @@ class RegistrationViewController: UIViewController {
         
         topUnderLine.backgroundColor = .gray200
         
-        scrollView.isScrollEnabled = false
+//        scrollView.isScrollEnabled = false
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.alwaysBounceVertical = true
         
@@ -547,24 +547,23 @@ class RegistrationViewController: UIViewController {
         scrollView.snp.makeConstraints {
             $0.top.equalTo(topUnderLine.snp.bottom)
             $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide)   // 바깥-뷰와만 연결
+            $0.bottom.equalTo(registCompletButton.snp.top).offset(-8)
         }
         
         contentView.snp.makeConstraints {
-            $0.edges.equalTo(scrollView.contentLayoutGuide)
             $0.width.equalTo(scrollView.frameLayoutGuide)
-            $0.bottom.equalTo(registIntroduce.snp.bottom).offset(32) // 내부-뷰끼리만 연결
+            $0.top.leading.trailing.bottom.equalToSuperview()
         }
         
         registImage.snp.makeConstraints {
-            $0.top.equalTo(registrationLabel.snp.bottom).offset(16)
+            $0.top.equalToSuperview().inset(16)
             $0.leading.equalToSuperview()
             $0.height.equalTo(200)
             $0.width.equalTo(160)
         }
         
         registNameLabel.snp.makeConstraints {
-            $0.top.equalTo(registrationLabel.snp.bottom).offset(30)
+            $0.top.equalToSuperview().inset(30)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.height.equalTo(22)
         }
@@ -580,7 +579,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameCountLabel.snp.makeConstraints {
-            $0.top.equalTo(registrationLabel.snp.bottom).offset(30)
+            $0.top.equalToSuperview().inset(30)
             $0.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(24)
         }
@@ -697,6 +696,7 @@ class RegistrationViewController: UIViewController {
         registIntroduce.snp.makeConstraints {
             $0.top.equalTo(registIntroduceLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalToSuperview().inset(16)
         }
         
         registCompletButton.snp.remakeConstraints {  // 교차 제약 제거
