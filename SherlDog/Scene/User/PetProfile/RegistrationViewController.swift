@@ -9,14 +9,16 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import Firebase
+import FirebaseStorage
 
 class RegistrationViewController: UIViewController {
     
     private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
+    private var selectedImage: UIImage?
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
-    
     let registrationLabel = UILabel()
     let registImage = UIButton()
     let registNameLabel = UILabel()
@@ -71,8 +73,9 @@ class RegistrationViewController: UIViewController {
         cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
-                // todo: 사진 삽입
-                self.registImage.setImage(image, for: .normal) // test
+                
+                self.selectedImage = image
+                self.registImage.setImage(image, for: .normal)
             })
             .disposed(by: disposeBag)
         
@@ -126,7 +129,7 @@ class RegistrationViewController: UIViewController {
                         owner?.viewModel.breed.accept(breed)
                     })
                     .disposed(by: breedSearchVC.disposeBag)
-    
+                
                 if let sheet = breedSearchVC.sheetPresentationController {
                     sheet.detents = [.large()]
                     sheet.selectedDetentIdentifier = .large
@@ -269,12 +272,21 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         self.registCompletButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                
+            .subscribe(onNext: { [weak self] in
                 guard let self = self else { return }
-                viewModel.savePetProfile()
                 
-                self.dismiss(animated: true)
+                guard let image = self.selectedImage else { return }
+                
+                self.viewModel.uploadImageAndSaveProfile(image: image)
+                self.viewModel.saveResult
+                    .take(1)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { result in
+                        if case .success = result {
+                            self.dismiss(animated: true)
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
             })
             .disposed(by: disposeBag)
     }
