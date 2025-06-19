@@ -20,6 +20,9 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     private let viewModel = MainViewModel()
     private var hasSetInitialCamera = false
     
+    // clueMarkers: 단서 마커 배열
+    private var clueMarkers: [NMFMarker] = []
+    
     // 지도 배경
     private let mapView = NMFMapView()
     
