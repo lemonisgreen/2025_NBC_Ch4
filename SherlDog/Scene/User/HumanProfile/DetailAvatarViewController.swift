@@ -53,9 +53,6 @@ extension DetailAvatarViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.navigationBar.isHidden = true
-        self.sheetPresentationController?.animateChanges {
-            self.sheetPresentationController?.detents = [.custom { _ in 610 }]
-        }
     }
     
 }
@@ -79,7 +76,7 @@ extension DetailAvatarViewController {
         self.backButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
-                self.navigationController?.popViewController(animated: true)
+                self.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
         

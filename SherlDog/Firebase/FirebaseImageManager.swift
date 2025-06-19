@@ -64,7 +64,7 @@ class FirebaseImageManager {
         }
         
         // 파일 경로 설정: pets/{userId}/{petId}/profile.jpg
-        let userId = "user123" // 실제로는 Auth.auth().currentUser?.uid 사용
+        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
         let imagePath = "pets/\(userId)/\(petId)/profile.jpg"
         let imageRef = storageRef.child(imagePath)
         
