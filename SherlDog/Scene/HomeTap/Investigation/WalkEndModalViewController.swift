@@ -14,6 +14,7 @@ class WalkEndModalViewController : UIViewController {
     private let DataTrackingVM: DataTrackingViewModel
     private let disposeBag = DisposeBag()
     
+    let stepLabelWrapper = UIView()
     let backgroundImageView = UIImageView()
     let todayLabel = UILabel()
     let distanceLabel = UILabel()
@@ -28,8 +29,10 @@ class WalkEndModalViewController : UIViewController {
         .sampleDog
     ]
     let walkEndLabel = UILabel()
+    let showProfileButton = UIButton()
     let walkShareButton = UIButton()
     let mapImageView = UIImageView()
+    let closeButton = UIButton()
     
     let dogImagesStack = UIStackView()
     let walkEndStack = UIStackView()
@@ -37,6 +40,33 @@ class WalkEndModalViewController : UIViewController {
     let timeStack = UIStackView()
     let distanceStack = UIStackView()
     let stepCountStack = UIStackView()
+    let labelAndButtonStack = UIStackView()
+    
+    let infoBox = UIView()
+    let walkEndBox = UIView()
+    let dividerLine = UIView()
+    
+    func addVerticalSeparators() {
+        infoBox.layoutIfNeeded()
+        
+        let totalWidth = infoBox.bounds.width
+        let sectionCount = infoStack.arrangedSubviews.count
+        let sectionWidth = totalWidth / CGFloat(sectionCount)
+        
+        for i in 1..<sectionCount {
+            let xPos = sectionWidth * CGFloat(i)
+            let line = CALayer()
+            line.frame = CGRect(
+                x: xPos,
+                y: 0,
+                width: 1 / UIScreen.main.scale,
+                height: infoBox.bounds.height
+            )
+            line.backgroundColor = UIColor(named: "gray300")?.cgColor
+            line.name = "vLine"
+            infoBox.layer.addSublayer(line)
+        }
+    }
     
     init(viewModel: DataTrackingViewModel) {
         self.DataTrackingVM = viewModel
@@ -95,6 +125,19 @@ class WalkEndModalViewController : UIViewController {
             }
             .bind(to: timeContentLabel.rx.text)
             .disposed(by: disposeBag)
+        
+        closeButton.rx.tap
+            .bind { [weak self] in
+                self?.dismiss(animated: true)
+            }
+            .disposed(by: disposeBag)
+        
+        showProfileButton.rx.tap
+            .bind { [weak self] in
+                let profileVC = PetProfileViewController()
+                self?.present(profileVC, animated: true)
+            }
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
@@ -108,16 +151,36 @@ class WalkEndModalViewController : UIViewController {
             timeContentLabel,
             stepCountContentLabel,
             walkEndLabel,
+            showProfileButton,
             walkShareButton,
-            infoStack,
             timeStack,
             distanceStack,
             stepCountStack,
+            labelAndButtonStack,
             mapImageView,
-            walkEndStack
+            infoBox,
+            walkEndBox,
+            dividerLine,
+            closeButton
         ].forEach {
             view.addSubview($0)
         }
+        
+        infoBox.addSubview(infoStack)
+        walkEndBox.addSubview(walkEndStack)
+        stepLabelWrapper.addSubview(stepCountLabel)
+        
+        infoBox.layer.borderWidth = 1
+        infoBox.layer.borderColor = UIColor(named: "gray300")?.cgColor
+        infoBox.layer.cornerRadius = 2
+        infoBox.backgroundColor = .clear
+    
+        walkEndBox.layer.borderWidth = 1
+        walkEndBox.layer.borderColor = UIColor(named: "gray300")?.cgColor
+        walkEndBox.layer.cornerRadius = 2
+        walkEndBox.backgroundColor = .clear
+        
+        dividerLine.backgroundColor = UIColor(named: "gray300")
         
         backgroundImageView.image = .endInvestigation
         backgroundImageView.contentMode = .scaleAspectFit
@@ -143,40 +206,57 @@ class WalkEndModalViewController : UIViewController {
         
         stepCountLabel.text = "걸음수"
         stepCountLabel.textColor = UIColor(named: "textTertiary")
-        stepCountLabel.textAlignment = .left
+        stepCountLabel.textAlignment = .right
         stepCountLabel.font = UIFont.body6
         stepCountLabel.backgroundColor = .clear
         
-//        distanceContentLabel.text = "11.23km"
+        //        distanceContentLabel.text = "11.23km"
         distanceContentLabel.textColor = UIColor(named: "textSecondary")
         distanceContentLabel.font = UIFont.highlight3
         distanceContentLabel.backgroundColor = .clear
         
-//        timeContentLabel.text = "10:11:12"
+        //        timeContentLabel.text = "10:11:12"
         timeContentLabel.textColor = UIColor(named: "textSecondary")
         timeContentLabel.font = UIFont.highlight3
         timeContentLabel.backgroundColor = .clear
+        timeContentLabel.textAlignment = .left
         
-//        stepCountContentLabel.text = "12345"
+        //        stepCountContentLabel.text = "12345"
         stepCountContentLabel.textColor = UIColor(named: "textSecondary")
         stepCountContentLabel.font = UIFont.highlight3
         stepCountContentLabel.backgroundColor = .clear
+        stepCountContentLabel.textAlignment = .right
+        stepCountContentLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+        stepCountContentLabel.setContentHuggingPriority(.required, for: .horizontal)
+        stepCountContentLabel.lineBreakMode = .byClipping
+        
         
         walkEndStack.arrangedSubviews.forEach {
             walkEndStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
         }
-
+        
         walkEndLabel.textColor = UIColor(named: "textSecondary")
         walkEndLabel.font = UIFont.title1
-        walkEndLabel.text = "멍탐정 수사 완료"
+        walkEndLabel.text = "멍탐정 수사 완료!"
         walkEndLabel.backgroundColor = .clear
+        
         walkEndStack.axis = .horizontal
         walkEndStack.alignment = .center
         walkEndStack.backgroundColor = .clear
         walkEndStack.spacing = 12
         walkEndStack.addArrangedSubview(dogImagesStack)
-        walkEndStack.addArrangedSubview(walkEndLabel)
+        walkEndStack.addArrangedSubview(labelAndButtonStack)
+        
+        labelAndButtonStack.axis = .horizontal
+        labelAndButtonStack.spacing = 8
+        labelAndButtonStack.alignment = .center
+        labelAndButtonStack.addArrangedSubview(walkEndLabel)
+        labelAndButtonStack.addArrangedSubview(showProfileButton)
+        
+        showProfileButton.setImage(UIImage(named: "showProfile"), for: .normal)
+        showProfileButton.contentMode = .scaleAspectFit
+        showProfileButton.snp.makeConstraints { $0.size.equalTo(CGSize(width: 75, height: 28)) }
         
         for dogImage in dogImages {
             let imageView = UIImageView(image: dogImage)
@@ -210,6 +290,7 @@ class WalkEndModalViewController : UIViewController {
         distanceStack.addArrangedSubview(distanceLabel)
         distanceStack.addArrangedSubview(distanceContentLabel)
         distanceStack.backgroundColor = .clear
+        distanceStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
         
         timeStack.axis = .vertical
         timeStack.spacing = 4
@@ -217,21 +298,28 @@ class WalkEndModalViewController : UIViewController {
         timeStack.addArrangedSubview(timeLabel)
         timeStack.addArrangedSubview(timeContentLabel)
         timeStack.backgroundColor = .clear
+        timeStack.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        
         
         stepCountStack.axis = .vertical
         stepCountStack.spacing = 4
-        stepCountStack.alignment = .leading
-        stepCountStack.addArrangedSubview(stepCountLabel)
+        stepCountStack.alignment = .fill
+        stepCountStack.addArrangedSubview(stepLabelWrapper)
         stepCountStack.addArrangedSubview(stepCountContentLabel)
         stepCountStack.backgroundColor = .clear
+        stepCountStack.setContentHuggingPriority(.required, for: .horizontal)
+        stepCountStack.setContentCompressionResistancePriority(.required, for: .horizontal)
         
         infoStack.axis = .horizontal
         infoStack.distribution = .fillEqually
-        infoStack.spacing = 25
+        infoStack.spacing = 10
         infoStack.addArrangedSubview(distanceStack)
         infoStack.addArrangedSubview(timeStack)
         infoStack.addArrangedSubview(stepCountStack)
         infoStack.backgroundColor = .clear
+        
+        closeButton.setImage(UIImage(named: "modalExit"), for: .normal)
+        closeButton.contentMode = .scaleAspectFit
     }
     
     private func configureUI() {
@@ -241,43 +329,75 @@ class WalkEndModalViewController : UIViewController {
         
         todayLabel.snp.makeConstraints {
             $0.top.equalTo(backgroundImageView.snp.top).offset(75)
-//            $0.leading.equalToSuperview().inset(36)
-            $0.leading.equalTo(backgroundImageView.snp.leading).inset(36) // 36
+            $0.leading.equalTo(backgroundImageView.snp.leading).inset(60) // 36
             $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(199)
         }
         
+        infoBox.snp.makeConstraints {
+            $0.top.equalTo(todayLabel.snp.bottom).offset(60)
+            $0.leading.trailing.equalToSuperview().inset(30)
+        }
+        
+        stepCountLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(55)
+        }
+        
+        stepCountContentLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(45)
+        }
+
         infoStack.snp.makeConstraints {
-            $0.top.equalTo(todayLabel.snp.bottom).offset(77) //  77
-            $0.leading.equalTo(backgroundImageView.snp.leading).offset(43) // 37
-            $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(31) // 31
+            $0.top.equalToSuperview().offset(20)
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview().inset(20)
+        }
+
+        walkEndBox.snp.makeConstraints {
+            $0.top.equalTo(infoBox.snp.bottom).offset(15)
+            $0.leading.trailing.equalToSuperview().inset(30)
+        }
+        
+        dividerLine.snp.makeConstraints {
+            $0.top.equalTo(walkEndBox.snp.bottom).offset(15)
+            $0.leading.trailing.equalToSuperview().inset(30)
+            $0.height.equalTo(1 / UIScreen.main.scale)
         }
         
         walkEndStack.snp.makeConstraints {
-            $0.top.equalTo(infoStack.snp.bottom).offset(55) // 40
-            $0.centerX.equalTo(backgroundImageView.snp.centerX)
-            $0.height.equalTo(22)
-            $0.leading.equalTo(backgroundImageView.snp.leading).offset(52)
-            $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(51)
+            $0.top.equalToSuperview().offset(20)
+            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.bottom.equalToSuperview().inset(20)
         }
         
         mapImageView.snp.makeConstraints {
             $0.top.equalTo(walkEndStack.snp.bottom).offset(45) // 45
             $0.bottom.equalTo(walkShareButton.snp.top).offset(-12) // 32
-            $0.leading.equalTo(backgroundImageView.snp.leading).inset(36)
-            $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(36)
+            $0.leading.trailing.equalToSuperview().inset(33)
         }
         
         walkShareButton.snp.makeConstraints {
             $0.top.equalTo(mapImageView.snp.bottom).offset(24)
             $0.height.equalTo(52)
-            $0.leading.equalTo(backgroundImageView.snp.leading).offset(35)
-            $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(35)
-            $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(170) // 109
+            $0.leading.equalTo(backgroundImageView.snp.leading).inset(30)
+            $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(30)
+            $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(140) // 109
+        }
+        
+        closeButton.snp.makeConstraints {
+            $0.top.equalTo(todayLabel.snp.bottom).offset(30)
+            $0.trailing.equalToSuperview().inset(30)
+            $0.width.height.equalTo(24)
         }
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesBegan(touches, with: event)
         dismiss(animated: true, completion: nil)
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        infoBox.layer.sublayers?.removeAll(where: { $0.name == "vLine" })
+        addVerticalSeparators()
     }
 }
