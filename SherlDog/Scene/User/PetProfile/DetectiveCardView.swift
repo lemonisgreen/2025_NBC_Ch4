@@ -58,9 +58,13 @@ class DetectiveCardView: UIView {
             
         self.layer.cornerRadius = 16
         self.layer.masksToBounds = true
+        self.layer.borderWidth = 1
+        self.layer.borderColor = UIColor.textTertiary.cgColor
         self.backgroundColor = .keycolorSecondary4
         
         detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary1
+        detectiveHeaderBackgroundView.layer.borderWidth = 1
+        detectiveHeaderBackgroundView.layer.borderColor = UIColor.textTertiary.cgColor
         
         detectiveCardLabel.text = "멍탐정 프로필 카드"
         detectiveCardLabel.font = UIFont.cardTitle
@@ -70,7 +74,6 @@ class DetectiveCardView: UIView {
         detectiveNumberLabel.font = UIFont.alert2
         detectiveNumberLabel.textColor = .textPrimary
         
-        detectiveNumber.text = "250613" // 예시값
         detectiveNumber.font = UIFont.cardTitle
         detectiveNumber.textColor = .textPrimary
         
@@ -81,7 +84,6 @@ class DetectiveCardView: UIView {
         detectiveNameLabel.font = UIFont.alert1
         detectiveNameLabel.textColor = .textSecondary
         
-        detectiveName.text = "멍멍멍멍멍멍멍멍멍멍" // 예시값
         detectiveName.font = UIFont.body4
         detectiveName.textColor = .textPrimary
         
@@ -90,7 +92,6 @@ class DetectiveCardView: UIView {
         detectiveBreedLabel.font = UIFont.alert1
         detectiveBreedLabel.textColor = .textSecondary
 
-        detectiveBreed.text = "아이리쉬 소프트 코티드 휘튼 테리어" // 예시값
         detectiveBreed.font = UIFont.body4
         detectiveBreed.textColor = .textPrimary
 
@@ -99,7 +100,6 @@ class DetectiveCardView: UIView {
         detectiveAgeLabel.font = UIFont.alert1
         detectiveAgeLabel.textColor = .textSecondary
 
-        detectiveAge.text = "12세" // 예시값
         detectiveAge.font = UIFont.body4
         detectiveAge.textColor = .textPrimary
 
@@ -112,7 +112,6 @@ class DetectiveCardView: UIView {
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
         detectiveIntroduceBackgroundView.backgroundColor = .gray50
 
-        detectiveIntroduce.text = "# 우리애기는완전쫄보" // 예시값
         detectiveIntroduce.font = UIFont.title5
         detectiveIntroduce.textColor = .textSecondary
     }

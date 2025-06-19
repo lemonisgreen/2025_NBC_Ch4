@@ -32,18 +32,16 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
     }
     
     func configure(with profile: PetProfile) {
-        //나이 변환 코드
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        if let birthDate = formatter.date(from: profile.age) {
-            let age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
-        }
+        var age: Int = 0
+        var detectiveNumber: String = "?"
         
-        //생년월일 포맷 변환
         if let birthDate = formatter.date(from: profile.age) {
+            age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
             let detectiveNumberFormatter = DateFormatter()
             detectiveNumberFormatter.dateFormat = "yyMMdd"
-            let detectiveNumber = detectiveNumberFormatter.string(from: birthDate)
+            detectiveNumber = detectiveNumberFormatter.string(from: birthDate)
         }
         
         detectiveCardView.detectiveNumber.text = detectiveNumber

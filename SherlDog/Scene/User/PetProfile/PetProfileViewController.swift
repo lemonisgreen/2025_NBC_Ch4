@@ -36,10 +36,14 @@ final class PetProfileViewController: UIViewController {
     private let infoLabel = UILabel()
     private let nextButton = ButtonManager(title: "다음")
     
+    let navigationBackButton = UIButton()
+    let navigationTitleLabel = UILabel()
+    let navigationStackView = UIStackView()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
+        //setupNavigationBar()
         setupCollectionView()
         setupUI()
         configureUI()
@@ -48,10 +52,10 @@ final class PetProfileViewController: UIViewController {
     }
     
     // MARK: - UI Setup
-    private func setupNavigationBar() {
-        navigationItem.title = "멍탐정 프로필 입력하기"
-        navigationController?.navigationBar.prefersLargeTitles = false
-    }
+//    private func setupNavigationBar() {
+//        navigationItem.title = "멍탐정 프로필 입력하기"
+//        navigationController?.navigationBar.prefersLargeTitles = false
+//    }
     
     private func setupCollectionView() {
         collectionView.delegate = self
@@ -63,6 +67,22 @@ final class PetProfileViewController: UIViewController {
     }
     
     private func setupUI() {
+        
+        navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
+        navigationBackButton.imageView?.tintColor = .textPrimary
+        
+        navigationTitleLabel.text = "멍탐정 프로필 입력하기"
+        navigationTitleLabel.textAlignment = .left
+        navigationTitleLabel.font = .highlight3
+        navigationTitleLabel.textColor = .textPrimary
+        navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
+        
+        self.navigationController?.navigationBar.isHidden = false
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        self.navigationItem.titleView = navigationTitleLabel
+        
+        navigationStackView.axis = .horizontal
+        
         view.backgroundColor = UIColor.keycolorBackground
         
         dogImageView.image = UIImage(named: "sherlDog")
@@ -76,6 +96,9 @@ final class PetProfileViewController: UIViewController {
         nextButton.isEnabled = false
         nextButton.alpha = 0.5
         
+//        [navigationBackButton, navigationTitleLabel,]
+//            .forEach { navigationStackView.addArrangedSubview($0) }
+        
         [collectionView, dogImageView, infoLabel, nextButton].forEach {
             view.addSubview($0)
         }
@@ -83,6 +106,17 @@ final class PetProfileViewController: UIViewController {
     
     private func configureUI() {
         updateCollectionViewConstraints()
+        
+//        navigationBackButton.snp.makeConstraints {
+//            $0.top.equalTo(view.safeAreaLayoutGuide).inset(17)
+//            $0.leading.equalToSuperview().inset(12)
+//            $0.height.equalTo(24)
+//        }
+//        
+//        navigationTitleLabel.snp.makeConstraints {
+//            $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
+//            $0.leading.equalTo(navigationBackButton.snp.trailing).offset(16)
+//        }
         
         dogImageView.snp.makeConstraints {
             $0.centerX.equalToSuperview()
@@ -96,7 +130,7 @@ final class PetProfileViewController: UIViewController {
         }
         
         nextButton.snp.makeConstraints {
-            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(20)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.leading.trailing.equalToSuperview().inset(20)
         }
     }
@@ -105,12 +139,12 @@ final class PetProfileViewController: UIViewController {
         collectionView.snp.remakeConstraints {
             if petProfiles.isEmpty {
                 // 프로필이 없을 때: 상단부터 제한된 높이까지만
-                $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
+                $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
                 $0.leading.trailing.equalToSuperview()
                 $0.height.equalTo(250) // 고정 높이로 설정
             } else {
                 // 프로필이 있을 때: nextButton 위까지 전체 영역 사용
-                $0.top.equalTo(view.safeAreaLayoutGuide).offset(0)
+                $0.top.equalTo(view.safeAreaLayoutGuide).offset(20)
                 $0.leading.trailing.equalToSuperview()
                 $0.bottom.equalTo(nextButton.snp.top).offset(-20)
             }
@@ -120,12 +154,31 @@ final class PetProfileViewController: UIViewController {
     }
     
     private func bindUI() {
+        
+        navigationBackButton.rx.tap
+                .subscribe(onNext: { [weak self] in
+                    self?.navigationController?.popViewController(animated: true)
+                })
+                .disposed(by: disposeBag)
+        
         // 프로필이 추가될 때마다 다음 버튼 활성화 상태 업데이트
         updateNextButtonState()
+        
+        nextButton.rx.tap
+            .subscribe(onNext: { [weak self] _ in
+                guard let self else { return }
+                
+                let createAssistantVC = CreateAssistantProfileViewController()
+                self.navigationController?.pushViewController(createAssistantVC, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
+    
     
     private func updateNextButtonState() {
         let hasProfiles = !petProfiles.isEmpty
+        
+        nextButton.isEnabled = hasProfiles
         
         if hasProfiles {
             nextButton.backgroundColor = UIColor.keycolorPrimary3
@@ -155,19 +208,9 @@ final class PetProfileViewController: UIViewController {
         updateNextButtonState()
     }
     
-    private func addNewProfile() {
-      
-        // 최대 개수 체크
-        guard petProfiles.count < maxProfileCount else {
-            return
-        }
-        // UserDefaults에서 저장된 ID 읽기
-        guard let petProfileID = UserDefaults.standard.string(forKey: "newPetProfileId") else {
-            print("저장된 펫 프로필 ID가 없습니다.")
-            return
-        }
+    private func addNewProfile(with petProfileID: String) {
+        guard petProfiles.count < maxProfileCount else { return }
         
-        // Firestore에서 해당 프로필 불러오기
         FirestoreManager.shared.fetchDocument(
             collection: "PetProfile",
             documentId: petProfileID,
@@ -184,42 +227,22 @@ final class PetProfileViewController: UIViewController {
             print("펫 프로필 불러오기 실패: \(error)")
         })
         .disposed(by: disposeBag)
-        
-        // 새로운 프로필 추가 (하드코딩)
-//        let newProfile = PetProfile(
-//            uid: "22061",
-//            userId: "user1",
-//            name: "새로운 멍멍이 \(petProfiles.count + 1)",
-//            age: Int.random(in: 1...15),
-//            size: ["소형", "중형", "대형"].randomElement()!,
-//            image: "bigLogo",
-//            gender: ["수컷", "암컷"].randomElement()!,
-//            neutered: Bool.random(),
-//            breed: ["골든 리트리버", "시바견", "푸들", "말티즈"].randomElement()!,
-//            introduce: ["활발하고 사교적인 성격", "조용하고 차분함", "장난기 많음", "순하고 착함"].randomElement()!
-//        )
-        
-        //petProfiles.append(newProfile)
-        
-        // 안전하게 전체 리로드
-        DispatchQueue.main.async {
-            self.collectionView.reloadData()
-            self.updateNextButtonState()
-        }
     }
     
     // MARK: - Navigation
-    private func presentBreedSearch() {
-        
+    private func presentRegistrationView() {
         let registrationVC = RegistrationViewController()
+        registrationVC.onProfileAdded = { [weak self] newProfileID in
+            self?.addNewProfile(with: newProfileID)
+        }
         if let sheet = registrationVC.sheetPresentationController {
             sheet.detents = [.large()]
             sheet.selectedDetentIdentifier = .large
-            sheet.prefersGrabberVisible = true
+            sheet.prefersGrabberVisible = false
             sheet.preferredCornerRadius = 32
             self.present(registrationVC, animated: true)
         }
-        addNewProfile()
+        registrationVC.isModalInPresentation = true
     }
 }
 
@@ -252,7 +275,7 @@ extension PetProfileViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         if indexPath.item >= petProfiles.count {
             // 프로필 추가 버튼 탭
-            presentBreedSearch()
+            presentRegistrationView()
         }
     }
     

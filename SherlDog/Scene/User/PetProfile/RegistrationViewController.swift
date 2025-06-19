@@ -16,8 +16,14 @@ class RegistrationViewController: UIViewController {
     private let cameraViewModel = CameraViewModel()
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
+    var onProfileAdded: ((String) -> Void)?
     
     let registrationLabel = UILabel()
+    let registrationButton = UIButton()
+    let registrationStackView = UIStackView()
+    let topUnderLine = UIView()
+    let scrollView = UIScrollView()
+    let contentView = UIView()
     let registImage = UIButton()
     let registNameLabel = UILabel()
     let registNameCountLabel = UILabel()
@@ -270,16 +276,37 @@ class RegistrationViewController: UIViewController {
         
         self.registCompletButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                
                 guard let self = self else { return }
                 viewModel.savePetProfile()
-                
-                self.dismiss(animated: true)
+                // 저장 결과 구독
+                viewModel.saveResult
+                    .take(1) // 한 번만 받음
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] result in
+                        guard let self = self else { return }
+                        switch result {
+                        case .success:
+                            // 저장이 끝난 후, UserDefaults에서 ID를 읽어 콜백으로 전달
+                            if let newProfileID = UserDefaults.standard.string(forKey: "newPetProfileId") {
+                                self.onProfileAdded?(newProfileID)
+                            }
+                            self.dismiss(animated: true)
+                        case .failure(let error):
+                            // 에러 처리 (알림 등)
+                            print("저장 실패: \(error)")
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
             })
             .disposed(by: disposeBag)
     }
     
     private func setupUI() {
+        [
+            registrationLabel,
+            registrationButton
+        ].forEach { registrationStackView.addArrangedSubview($0) }
+        
         [
             registNameAlertImage,
             registNameAlertLabel
@@ -322,8 +349,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredFalse,
         ].forEach { registNeuteredStackView.addArrangedSubview($0) }
         
-        [
-            registrationLabel,
+        contentView.addSubviews([
             registImage,
             registNameLabel,
             registName,
@@ -343,8 +369,16 @@ class RegistrationViewController: UIViewController {
             registIntroduceLabel,
             registIntroduceCountLabel,
             registIntroduce,
-            registCompletButton,
-        ].forEach { view.addSubview($0) }
+        ])
+        
+        scrollView.addSubview(contentView)
+        
+        view.addSubviews([
+            registrationStackView,
+            topUnderLine,
+            scrollView,
+            registCompletButton
+        ])
         
         //MARK: 배경 --
         view.backgroundColor = .keycolorBackground
@@ -352,6 +386,18 @@ class RegistrationViewController: UIViewController {
         registrationLabel.text = "멍탐정 프로필 입력하기"
         registrationLabel.textColor = .textPrimary
         registrationLabel.font = .highlight3
+        
+        registrationButton.setTitle("닫기", for: .normal)
+        registrationButton.titleLabel?.font = .title3
+        registrationButton.setTitleColor(.keycolorPrimary2, for: .normal)
+        
+        topUnderLine.backgroundColor = .gray200
+        
+        scrollView.isScrollEnabled = false
+        scrollView.contentInsetAdjustmentBehavior = .never
+        scrollView.alwaysBounceVertical = true
+        
+        sheetPresentationController?.prefersScrollingExpandsWhenScrolledToEdge = false
         
         //MARK: 사진 --
         
@@ -473,8 +519,37 @@ class RegistrationViewController: UIViewController {
     private func configureUI() {
         
         registrationLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(16)
-            $0.leading.equalToSuperview().inset(20)
+            $0.top.equalToSuperview()
+            $0.leading.equalToSuperview()
+        }
+        
+        registrationButton.snp.makeConstraints {
+            $0.top.equalToSuperview()
+            $0.trailing.equalToSuperview()
+        }
+        
+        registrationStackView.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(20)
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(28)
+        }
+        
+        topUnderLine.snp.makeConstraints {
+            $0.top.equalTo(registrationLabel.snp.bottom).offset(20)
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(0.5)
+        }
+        
+        scrollView.snp.makeConstraints {
+            $0.top.equalTo(topUnderLine.snp.bottom)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)   // 바깥-뷰와만 연결
+        }
+        
+        contentView.snp.makeConstraints {
+            $0.edges.equalTo(scrollView.contentLayoutGuide)
+            $0.width.equalTo(scrollView.frameLayoutGuide)
+            $0.bottom.equalTo(registIntroduce.snp.bottom).offset(32) // 내부-뷰끼리만 연결
         }
         
         registImage.snp.makeConstraints {
@@ -485,7 +560,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameLabel.snp.makeConstraints {
-            $0.top.equalTo(registrationLabel.snp.bottom).offset(16)
+            $0.top.equalTo(registrationLabel.snp.bottom).offset(30)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.height.equalTo(22)
         }
@@ -501,20 +576,20 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameCountLabel.snp.makeConstraints {
-            $0.top.equalTo(registrationLabel.snp.bottom).offset(16)
+            $0.top.equalTo(registrationLabel.snp.bottom).offset(30)
             $0.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(24)
         }
         
         registNameAlertStackView.snp.makeConstraints {
-            $0.top.equalTo(registName.snp.bottom)
+            $0.top.equalTo(registName.snp.bottom).offset(4)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.height.equalTo(24)
             $0.width.equalTo(132)
         }
         
         registBreedLabel.snp.makeConstraints {
-            $0.top.equalTo(registName.snp.bottom).offset(28)
+            $0.top.equalTo(registName.snp.bottom).offset(32)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.height.equalTo(22)
         }
@@ -564,10 +639,11 @@ class RegistrationViewController: UIViewController {
         registSizeStackButtonView.snp.makeConstraints {
             $0.top.equalTo(registSizeLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(48)
         }
         
         registAgeLabel.snp.makeConstraints {
-            $0.top.equalTo(registSizeSmallButton.snp.bottom).offset(12)
+            $0.top.equalTo(registSizeSmallButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
@@ -578,7 +654,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registGenderLabel.snp.makeConstraints {
-            $0.top.equalTo(registAgeButton.snp.bottom).offset(12)
+            $0.top.equalTo(registAgeButton.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
@@ -586,10 +662,12 @@ class RegistrationViewController: UIViewController {
         registGenderStackView.snp.makeConstraints {
             $0.top.equalTo(registGenderLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(48)
+            
         }
         
         registNeuteredLabel.snp.makeConstraints {
-            $0.top.equalTo(registGenderFemale.snp.bottom).offset(12)
+            $0.top.equalTo(registGenderFemale.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
@@ -597,16 +675,17 @@ class RegistrationViewController: UIViewController {
         registNeuteredStackView.snp.makeConstraints {
             $0.top.equalTo(registNeuteredLabel.snp.bottom).offset(8)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.height.equalTo(48)
         }
         
         registIntroduceLabel.snp.makeConstraints {
-            $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(12)
+            $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }
         
         registIntroduceCountLabel.snp.makeConstraints {
-            $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(12)
+            $0.top.equalTo(registNeuteredTrue.snp.bottom).offset(16)
             $0.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(24)
         }
@@ -616,9 +695,10 @@ class RegistrationViewController: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
-        registCompletButton.snp.makeConstraints {
-            $0.top.equalTo(registIntroduce.snp.bottom).offset(12 + 16)
+        registCompletButton.snp.remakeConstraints {  // 교차 제약 제거
+            $0.height.equalTo(52)
             $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
         }
     }
 }
