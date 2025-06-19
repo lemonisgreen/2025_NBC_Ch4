@@ -10,21 +10,35 @@ import RxCocoa
 import CoreLocation
 import RxCoreLocation
 
-
 final class MainViewModel {
-    // MARK: Input
+    
     let startTracking = PublishRelay<Void>()
     let stopTracking = PublishRelay<Void>()
+    let isTracking = BehaviorRelay<Bool>(value: false)
 
-    // MARK: Output
     let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])
 
     private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
-    private var trackingDisposable: Disposable?
 
     init() {
         setupLocationUpdates()
+        bindInputs()
+    }
+    
+    private func bindInputs() {
+        startTracking
+            .subscribe(onNext: { [weak self] in
+                self?.isTracking.accept(true)
+            })
+            .disposed(by: disposeBag)
+        
+        stopTracking
+            .subscribe(onNext: { [weak self] in
+                self?.isTracking.accept(false)
+                self?.coordinates.accept([])
+            })
+            .disposed(by: disposeBag)
     }
 
     private func setupLocationUpdates() {
