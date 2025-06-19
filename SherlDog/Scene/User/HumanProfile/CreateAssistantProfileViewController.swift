@@ -178,9 +178,16 @@ extension CreateAssistantProfileViewController {
         navigationTitleLabel.textColor = .textPrimary
         navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
+        let navigationBarAppearance = UINavigationBarAppearance()
+        navigationBarAppearance.configureWithOpaqueBackground()
+        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.shadowColor = .clear
+        
         self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
+        self.navigationItem.standardAppearance = navigationBarAppearance
+        self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
       
         profileImageView.image = .petProfile
         profileImageView.contentMode = .scaleAspectFill
