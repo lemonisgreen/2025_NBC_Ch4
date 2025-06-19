@@ -8,11 +8,15 @@
 import RxSwift
 import FirebaseFirestore
 import RxRelay
+import UIKit
+import FirebaseAuth
 
 class RegistrationViewModel {
     let disposeBag = DisposeBag()
     
     let imageURL = BehaviorRelay<String>(value: "")
+    var imageDocumentId: String = ""
+    
     let name = BehaviorRelay<String>(value: "")
     let breed = BehaviorRelay<String>(value: "")
     let selectedSize = BehaviorRelay<String>(value: "")
@@ -20,54 +24,64 @@ class RegistrationViewModel {
     let selectedGender = BehaviorRelay<String>(value: "")
     let isNeutered = BehaviorRelay<Bool>(value: false)
     let introduce = BehaviorRelay<String>(value: "")
-    
     let saveResult = PublishSubject<Result<Void, Error>>()
-    
-    //func savePetProfile(userID: String) {
-    func savePetProfile() {
-        
+
+    func uploadImageAndSaveProfile(image: UIImage) {
         let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
         let petProfileID = newDocRef.documentID
+        self.imageDocumentId = petProfileID
         
-        // selectedAge값 스트링으로 변경
-        let dateString: String
-           if let date = selectedAge.value {
-               let formatter = DateFormatter()
-               formatter.dateFormat = "yyyy-MM-dd"
-               dateString = formatter.string(from: date)
-           } else {
-               dateString = "" // 혹은 nil 허용, 기본값 등
-           }
+        FirebaseImageManager.shared.uploadPetImage(image, petId: petProfileID) { [weak self] result in
+            switch result {
+            case .success(let urlString):
+                self?.imageURL.accept(urlString)
+                self?.savePetProfile(petProfileID: petProfileID)
+            case .failure(let error):
+                self?.saveResult.onNext(.failure(error))
+            }
+        }
+    }
+
+    private func savePetProfile(petProfileID: String) {
+        let dateString: String = {
+            if let date = selectedAge.value {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy-MM-dd"
+                return formatter.string(from: date)
+            } else {
+                return ""
+            }
+        }()
+        
+        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
         
         let newProfile = PetProfile(
             petProfileId: petProfileID,
-            userId: "추후 입력",
+            userId: userId,
             name: name.value,
             age: dateString,
             size: selectedSize.value,
-            image: selectedGender.value,
+            image: imageURL.value,
             gender: selectedGender.value,
             neutered: isNeutered.value,
             breed: breed.value,
             introduce: introduce.value
         )
         
-        // FirestoreManager를 통한 저장
-               FirestoreManager.shared.createDocument(
-                   collection: "PetProfile",
-                   data: newProfile,
-                   documentId: petProfileID
-               )
-               .subscribe(
-                   onCompleted: { [weak self] in
-                       //petProfileID 유저 디폴트에 저장하기
-                       UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
-                       self?.saveResult.onNext(.success(()))
-                   },
-                   onError: { [weak self] error in
-                       self?.saveResult.onNext(.failure(error))
-                   }
-               )
-               .disposed(by: disposeBag)
-           }
-       }
+        FirestoreManager.shared.createDocument(
+            collection: "PetProfile",
+            data: newProfile,
+            documentId: petProfileID
+        )
+        .subscribe(
+            onCompleted: { [weak self] in
+                UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
+                self?.saveResult.onNext(.success(()))
+            },
+            onError: { [weak self] error in
+                self?.saveResult.onNext(.failure(error))
+            }
+        )
+        .disposed(by: disposeBag)
+    }
+}
