@@ -85,7 +85,6 @@ class RegistrationViewController: UIViewController {
                 
                 self.selectedImage = image
                 self.registedProfileImage.image = image
-                self.registedProfileImage.isHidden = false
             })
             .disposed(by: disposeBag)
         
