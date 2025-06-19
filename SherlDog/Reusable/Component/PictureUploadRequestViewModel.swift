@@ -40,6 +40,7 @@ class PictureUploadRequestViewModel {
         let buttonName = BehaviorRelay<String>(value: "")
         let cellData = BehaviorRelay(value: [RequestDataSource]())
         let moveToView = PublishRelay<MoveToView>()
+        let petIndex = PublishRelay<[Int]>()
     }
     
     typealias RequestDataSource = SectionModel<String, CellList>
@@ -120,8 +121,7 @@ class PictureUploadRequestViewModel {
                         }
                         
                     case .sherlDogRequest:  // 수사할 탐정 선택
-                        print("함께 수사할 탐정: \(index)")
-                        
+                        self.output.petIndex.accept(index)
                     case .sherlDogResult: return    // .sherlDogResult is read only
                     }
                 }

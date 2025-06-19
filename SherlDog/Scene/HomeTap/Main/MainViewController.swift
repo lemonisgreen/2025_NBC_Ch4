@@ -15,6 +15,7 @@ import CoreLocation
 
 class MainViewController: UIViewController, CLLocationManagerDelegate {
     
+    private let requestViewModel = PictureUploadRequestViewModel()
     private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
     private let viewModel = MainViewModel()
@@ -133,11 +134,28 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 self?.setInvestigation(active: false)
             })
             .disposed(by: disposeBag)
-
+        
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.setInvestigation(active: true)
-                self?.viewModel.startTracking.accept(())
+                
+                guard let self = self else { return }
+                self.requestViewModel.input.accept(.sender(.sherlDogRequest))
+                let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
+                requestView.modalPresentationStyle = .pageSheet
+                if let sheet = requestView.sheetPresentationController {
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.preferredCornerRadius = 20
+                    sheet.prefersGrabberVisible = true
+                    let dummyData = [0, 1, 2]
+                    switch dummyData.count {
+                    case 1: sheet.detents = [.custom { _ in 240 }]
+                    case 2: sheet.detents = [.custom { _ in 320 }]
+                    case 3: sheet.detents = [.custom { _ in 400 }]
+                    default: return
+                    }
+                }
+                self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -351,6 +369,11 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 self.pathOverlays.append(pathOverlay)
             })
             .disposed(by: disposeBag)
+        
+        requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
+            self?.viewModel.startTracking.accept(())
+        })
+        .disposed(by: disposeBag)
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
