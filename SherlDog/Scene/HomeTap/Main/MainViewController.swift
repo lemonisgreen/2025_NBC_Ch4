@@ -25,7 +25,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     
     // 지도 배경
     private let mapView = NMFMapView()
-
+    
     // 상단 기록 뷰
     private let statusView = UIView()
     
@@ -52,7 +52,10 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     private let clueButton = UIButton()
     private let walkStartButton = UIButton()
     private let locationButton = UIButton()
-
+    
+    // 거리 측정 함수 뷰모델
+    private let DataTrackingVM = DataTrackingViewModel()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         locationManager.requestWhenInUseAuthorization()
@@ -63,14 +66,46 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         setupConstraints()
         bind()
         inputBind()
+        trackingBind()
         configureInitialVisibility()
     }
-
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(true, animated: false)
     }
-
+    
+    private func trackingBind() {
+        DataTrackingVM.numberOfSteps
+            .map { "\($0)" }
+            .bind(to: steps.rx.text)
+            .disposed(by: disposeBag)
+        
+        DataTrackingVM.distance
+            .map { String(format: "%.2f", $0 / 1000.0) }
+            .bind(to: distance.rx.text)
+            .disposed(by: disposeBag)
+        
+        DataTrackingVM.trackingActive
+            .filter { $0 }
+            .flatMapLatest { _ in
+                Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
+                    .take(until: self.DataTrackingVM.trackingActive.filter { !$0 })
+                    .withLatestFrom(self.DataTrackingVM.startDate)
+                    .compactMap { $0 }
+                    .map { start in
+                        let interval = Int(Date().timeIntervalSince(start))
+                        let hours = interval / 3600
+                        let minutes = (interval % 3600) / 60
+                        let seconds = interval % 60
+                        let text = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+                        return text
+                    }
+            }
+            .bind(to: time.rx.text)
+            .disposed(by: disposeBag)
+    }
+    
     private func inputBind() {
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -78,17 +113,6 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                     guard let self else { return }
                     switch isAllowed {
                     case true:
-                        // 현재 위치에 clue 마커 추가
-                        guard let currentLocation = self.locationManager.location else { return }
-                        let clueMarker = NMFMarker()
-                        clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
-                                                        lng: currentLocation.coordinate.longitude)
-                        clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
-                        clueMarker.width = 36
-                        clueMarker.height = 36
-                        clueMarker.mapView = self.mapView
-                        self.clueMarkers.append(clueMarker)
-
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
                         
@@ -107,13 +131,16 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.viewModel.stopTracking.accept(())
-                let endView = UINavigationController(rootViewController: WalkEndModalViewController())
-                endView.modalPresentationStyle = .overFullScreen
-                self?.present(endView, animated: true)
+                self?.DataTrackingVM.stopTracking()
+                
+                guard let viewModel = self?.DataTrackingVM else { return }
+                let endVC = WalkEndModalViewController(viewModel: viewModel)
+                let nav = UINavigationController(rootViewController: endVC)
+                nav.modalPresentationStyle = .overFullScreen
+                self?.present(nav, animated: true)
             })
             .disposed(by: disposeBag)
-
+        
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.startInvestigation()
@@ -132,30 +159,26 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             })
             .disposed(by: disposeBag)
     }
-
+    
     private func configureInitialVisibility() {
         // 시작 시 상태 뷰 및 버튼 숨김
         statusView.isHidden = true
         clueButton.isHidden = true
         endButton.isHidden = true
     }
-
+    
     private func startInvestigation() {
         hasSetInitialCamera = false
         statusView.isHidden = false
         clueButton.isHidden = false
         endButton.isHidden = false
         walkStartButton.isHidden = true
+        
+        DataTrackingVM.startTracking()
     }
     private func setupUI() {
         // 지도 배경 설정
-        mapView.positionMode = .normal
-        
-        let locationOverlay = mapView.locationOverlay
-        let overlayImage = NMFOverlayImage(name: "locationImage")
-        locationOverlay.icon = overlayImage
-        locationOverlay.iconWidth = 36
-        locationOverlay.iconHeight = 36
+        mapView.positionMode = .direction
         
         // statusView 설정
         statusView.backgroundColor = .gray50
@@ -184,7 +207,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         }
         
         distance.text = "0.45"
-        time.text = "00:12:23"
+        time.text = "00:00:00"
         steps.text = "1234"
         valueStack.axis = .horizontal
         valueStack.distribution = .fillEqually
@@ -192,7 +215,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         // detectiveImageStack 설정
         detectiveImageStack.axis = .horizontal
         detectiveImageStack.alignment = .center
-
+        
         // StatusStack 설정
         statusLabel.text = "멍탐정과 함께 수사 중"
         statusLabel.textAlignment = .center
@@ -205,7 +228,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         
         detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         detectiveImageStack.spacing = image.count > 1 ? -8 : 0
-
+        
         image.forEach { name in
             let imageView = UIImageView(image: UIImage(named: name))
             imageView.contentMode = .scaleAspectFill
@@ -245,52 +268,52 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         [distance, time, steps].forEach { valueStack.addArrangedSubview($0) }
         
         [distanceLabel, timeLabel, stepsLabel].forEach { titleStack.addArrangedSubview($0) }
-
+        
         [detectiveImageStack, statusLabel].forEach { statusStack.addArrangedSubview($0) }
         
         // 스택 + 상태 넣기
         [titleStack, valueStack, statusStack].forEach { statusView.addSubview($0) }
-
+        
         
         [mapView, statusView, endButton, clueButton, walkStartButton, locationButton].forEach {
             view.addSubview($0)
         }
     }
-
+    
     private func setupConstraints() {
         mapView.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
-
+        
         statusView.snp.makeConstraints {
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(136) // estimated height
         }
-
+        
         titleStack.snp.makeConstraints {
             $0.top.equalToSuperview().offset(18)
             $0.leading.trailing.equalToSuperview().inset(20)
         }
-
+        
         valueStack.snp.makeConstraints {
             $0.top.equalTo(titleStack.snp.bottom).offset(18)
             $0.leading.trailing.equalToSuperview().inset(20)
         }
-
+        
         statusStack.snp.makeConstraints {
             $0.top.equalTo(valueStack.snp.bottom).offset(12)
             $0.bottom.equalToSuperview().inset(10)
             $0.centerX.equalToSuperview()
         }
-
+        
         clueButton.snp.makeConstraints {
             $0.leading.equalToSuperview().offset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.trailing.equalTo(view.snp.centerX).offset(-8)
             $0.height.equalTo(52)
         }
-
+        
         endButton.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(clueButton)
@@ -317,25 +340,24 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
                 guard let self = self else { return }
-                guard self.viewModel.isTracking.value else { return }
                 guard coords.count >= 2 else { return }
-
+                
                 let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
                 let path = NMGLineString(points: nmfCoords)
-
+                
                 let pathOverlay = NMFPath()
                 pathOverlay.path = path
                 pathOverlay.color = .keycolorPrimary1
                 pathOverlay.width = 4
                 pathOverlay.mapView = self.mapView
-
+                
             })
             .disposed(by: disposeBag)
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-
+        
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
             let coord = location.coordinate
@@ -344,7 +366,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             cameraUpdate.animation = .none
             mapView.moveCamera(cameraUpdate)
             mapView.zoomLevel = 16.0
-
+            
             hasSetInitialCamera = true
         }
     }
