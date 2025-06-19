@@ -28,6 +28,8 @@ class RegistrationViewController: UIViewController {
     let scrollView = UIScrollView()
     let contentView = UIView()
     let registImage = UIButton()
+    let registImageStamp = UIImageView()
+    let registedProfileImage = UIImageView()
     let registNameLabel = UILabel()
     let registNameCountLabel = UILabel()
     let registNameAlertStackView = UIStackView()
@@ -82,7 +84,8 @@ class RegistrationViewController: UIViewController {
                 guard let self, let image else { return }
                 
                 self.selectedImage = image
-                self.registImage.setImage(image, for: .normal)
+                self.registedProfileImage.image = image
+                self.registedProfileImage.isHidden = false
             })
             .disposed(by: disposeBag)
         
@@ -353,6 +356,8 @@ class RegistrationViewController: UIViewController {
             registNeuteredFalse,
         ].forEach { registNeuteredStackView.addArrangedSubview($0) }
         
+        registImage.addSubviews([registImageStamp, registedProfileImage])
+        
         contentView.addSubviews([
             registImage,
             registNameLabel,
@@ -406,6 +411,16 @@ class RegistrationViewController: UIViewController {
         //MARK: 사진 --
         
         registImage.setImage(UIImage(named: "smallPolaroid"), for: .normal)
+        
+        let transToFigma = CGFloat.pi / 180
+        registImageStamp.contentMode = .scaleAspectFit
+        registImageStamp.image = .stamp
+        registImageStamp.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
+        
+        registedProfileImage.contentMode = .scaleAspectFill
+        registedProfileImage.layer.cornerRadius = 4
+        registedProfileImage.clipsToBounds = true
+        registedProfileImage.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
         
         //MARK: 이름 --
         registNameLabel.text = "이름"
@@ -560,6 +575,19 @@ class RegistrationViewController: UIViewController {
             $0.leading.equalToSuperview()
             $0.height.equalTo(200)
             $0.width.equalTo(160)
+        }
+        
+        registedProfileImage.snp.makeConstraints {
+            $0.height.equalTo(112)
+            $0.width.equalTo(104)
+            $0.centerX.equalToSuperview().offset(1) // 이게
+            $0.centerY.equalToSuperview().offset(2) // 최선입니다.
+        }
+        
+        registImageStamp.snp.makeConstraints {
+            $0.width.height.equalTo(48)
+            $0.top.equalTo(registedProfileImage.snp.bottom).offset(-4)
+            $0.trailing.equalTo(registedProfileImage.snp.leading).offset(24)
         }
         
         registNameLabel.snp.makeConstraints {
