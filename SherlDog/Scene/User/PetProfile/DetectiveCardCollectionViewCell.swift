@@ -32,10 +32,22 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
     }
     
     func configure(with profile: PetProfile) {
-        detectiveCardView.detectiveNumber.text = profile.petProfileId
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        var age: Int = 0
+        var detectiveNumber: String = "?"
+        
+        if let birthDate = formatter.date(from: profile.age) {
+            age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
+            let detectiveNumberFormatter = DateFormatter()
+            detectiveNumberFormatter.dateFormat = "yyMMdd"
+            detectiveNumber = detectiveNumberFormatter.string(from: birthDate)
+        }
+        
+        detectiveCardView.detectiveNumber.text = detectiveNumber
         detectiveCardView.detectiveName.text = profile.name
         detectiveCardView.detectiveBreed.text = profile.breed
-        detectiveCardView.detectiveAge.text = "\(profile.age)세"
+        detectiveCardView.detectiveAge.text = "\(age)세"
         detectiveCardView.detectiveIntroduce.text = "# \(profile.introduce)"
         
         // 프로필 이미지 설정
