@@ -53,6 +53,7 @@ class CreateLogViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
+        inputBind()
     }
     
     override func viewDidLayoutSubviews() {
