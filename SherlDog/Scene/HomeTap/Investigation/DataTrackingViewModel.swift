@@ -16,6 +16,7 @@ class DataTrackingViewModel {
     let startDate = BehaviorRelay<Date?>(value: nil)
     let endDate = BehaviorRelay<Date?>(value: nil)
     let trackingActive = BehaviorRelay<Bool>(value: false)
+    let capturedImage = BehaviorRelay(value: UIImage())
 
     private let pedometer = CMPedometer()
     
