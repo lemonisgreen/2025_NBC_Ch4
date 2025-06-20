@@ -49,9 +49,13 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
         detectiveCardView.detectiveBreed.text = profile.breed
         detectiveCardView.detectiveAge.text = "\(age)세"
         detectiveCardView.detectiveIntroduce.text = "# \(profile.introduce)"
+        FirebaseImageManager.shared.downloadPetImage(petId: profile.petProfileId, userId: profile.userId) { [weak self] image in
+            DispatchQueue.main.async {
+                self?.detectiveCardView.detectivePhotoImageView.image = image
+            }
+        }
         
         // 프로필 이미지 설정
         detectiveCardView.detectivePhotoImageView.backgroundColor = .gray400
-        // TODO: 실제 이미지 로딩 시 profile.image 사용
     }
 }
