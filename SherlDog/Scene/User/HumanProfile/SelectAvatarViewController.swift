@@ -113,7 +113,7 @@ extension SelectAvatarViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .white
+        view.backgroundColor = .textInverse
         
         [backButton, choiceButton]
             .forEach { horizontalStackView.addArrangedSubview($0) }
