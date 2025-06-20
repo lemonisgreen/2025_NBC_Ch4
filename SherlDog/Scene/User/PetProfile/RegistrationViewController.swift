@@ -283,22 +283,25 @@ class RegistrationViewController: UIViewController {
         self.registCompletButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self = self else { return }
-                viewModel.savePetProfile()
-                // 저장 결과 구독
-                viewModel.saveResult
-                    .take(1) // 한 번만 받음
+                
+                if let selectedImage = self.selectedImage {
+                    self.viewModel.uploadImageAndSaveProfile(image: selectedImage)
+                } else {
+                    print("프로필 이미지가 선택되지 않았습니다.")
+                }
+                
+                self.viewModel.saveResult
+                    .take(1)
                     .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] result in
                         guard let self = self else { return }
                         switch result {
                         case .success:
-                            // 저장이 끝난 후, UserDefaults에서 ID를 읽어 콜백으로 전달
                             if let newProfileID = UserDefaults.standard.string(forKey: "newPetProfileId") {
                                 self.onProfileAdded?(newProfileID)
                             }
                             self.dismiss(animated: true)
                         case .failure(let error):
-                            // 에러 처리 (알림 등)
                             print("저장 실패: \(error)")
                         }
                     })
@@ -306,7 +309,6 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
     }
-    
     private func setupUI() {
         [
             registrationLabel,

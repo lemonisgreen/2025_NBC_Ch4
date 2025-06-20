@@ -35,16 +35,13 @@ class RegistrationViewModel {
             switch result {
             case .success(let urlString):
                 self?.imageURL.accept(urlString)
-                self?.savePetProfile()
+                self?.savePetProfile(petProfileID: petProfileID)
             case .failure(let error):
                 self?.saveResult.onNext(.failure(error))
             }
         }
     }
-
-    func savePetProfile() {
-        let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
-        let petProfileID = newDocRef.documentID
+    func savePetProfile(petProfileID: String) {
         let dateString: String = {
             if let date = selectedAge.value {
                 let formatter = DateFormatter()

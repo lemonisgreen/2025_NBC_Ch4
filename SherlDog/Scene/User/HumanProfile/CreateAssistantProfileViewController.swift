@@ -15,6 +15,7 @@ class CreateAssistantProfileViewController: UIViewController {
     
     private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
+    private let viewModel = HumanProfileViewModel()
     private let disposeBag = DisposeBag()
     
     private let navigationBackButton = UIButton()
@@ -41,6 +42,7 @@ class CreateAssistantProfileViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
+        bindViewModel()
     }
 }
 
@@ -140,13 +142,66 @@ extension CreateAssistantProfileViewController {
                 self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func bindViewModel() {
+        // 닉네임 입력
+        nicknameTextField.rx.text.orEmpty
+            .bind(to: viewModel.nickname)
+            .disposed(by: disposeBag)
+
+        // 소개글 입력
+        introduceTextView.rx.text.orEmpty
+            .bind(to: viewModel.introduce)
+            .disposed(by: disposeBag)
+
+        // 카메라로 촬영한 이미지 바인딩
+        cameraViewModel.output.capturedImage
+            .compactMap { $0 }
+            .bind(to: viewModel.image)
+            .disposed(by: disposeBag)
         
-        self.nextButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                let mainView = BottomTabBarController()
-                self?.navigationController?.pushViewController(mainView, animated: true)
+        // 아바타 선택한 이미지 바인딩
+        avatarViewModel.output.completeSelect
+            .compactMap { imageName in UIImage(named: imageName) }
+            .bind(to: viewModel.image)
+            .disposed(by: disposeBag)
+
+        // 로딩 상태 처리
+        viewModel.isLoading
+            .subscribe(onNext: { [weak self] isLoading in
+                self?.nextButton.isEnabled = !isLoading
+                // 로딩 인디케이터가 있다면 여기서 처리
             })
             .disposed(by: disposeBag)
+
+        // 저장 결과 처리
+        viewModel.saveResult
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] result in
+                switch result {
+                case .success:
+                    // 저장 성공 시 메인 화면으로 이동
+                    let mainView = BottomTabBarController()
+                    self?.navigationController?.pushViewController(mainView, animated: true)
+                case .failure(let error):
+                    self?.showError(error.localizedDescription)
+                }
+            })
+            .disposed(by: disposeBag)
+
+        // 다음 버튼
+        nextButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.viewModel.uploadAndSaveProfile()
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func showError(_ message: String) {
+        let alert = UIAlertController(title: "오류", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
     }
     
     private func setupUI() {
@@ -328,6 +383,7 @@ extension CreateAssistantProfileViewController {
     }
     
 }
+
 // 키보드 완료 버튼 익스텐션
 extension CreateAssistantProfileViewController: UITextViewDelegate {
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
