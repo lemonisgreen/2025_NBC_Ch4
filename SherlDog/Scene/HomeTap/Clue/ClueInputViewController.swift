@@ -90,14 +90,14 @@ class ClueInputViewController: UIViewController {
     
     private func setupConstraints() {
         clueLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(18)
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(24)
+            $0.leading.equalToSuperview().inset(16)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(26)
         }
         
         imageView.snp.makeConstraints {
-            $0.top.equalTo(clueLabel.snp.bottom).offset(6)
+            $0.top.equalTo(clueLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(imageView.snp.width).multipliedBy(1.2).priority(.low)
+            $0.height.equalTo(imageView.snp.width).multipliedBy(1.1).priority(.low)
             $0.height.greaterThanOrEqualTo(100).priority(.low)
         }
 
