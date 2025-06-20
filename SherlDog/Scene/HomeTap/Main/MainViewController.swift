@@ -149,8 +149,8 @@ class MainViewController: UIViewController {
                         clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
                                                         lng: currentLocation.coordinate.longitude)
                         clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
-                        clueMarker.width = 36
-                        clueMarker.height = 36
+                        clueMarker.width = 60
+                        clueMarker.height = 60
                         clueMarker.mapView = self.mapView
                         clueMarker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
                             guard let self = self else { return false }

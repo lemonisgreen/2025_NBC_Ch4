@@ -72,6 +72,9 @@ class ClueInputViewController: UIViewController {
             $0.top.equalToSuperview().offset(16)
             $0.leading.equalToSuperview().offset(16)
         }
+        
+        textView.delegate = self
+        textView.returnKeyType = .done
 
         registerButton.setTitle("단서 등록하기", for: .normal)
         registerButton.setTitleColor(.textInverse, for: .normal)
@@ -87,14 +90,14 @@ class ClueInputViewController: UIViewController {
     
     private func setupConstraints() {
         clueLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(18)
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(24)
+            $0.leading.equalToSuperview().inset(16)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(26)
         }
         
         imageView.snp.makeConstraints {
-            $0.top.equalTo(clueLabel.snp.bottom).offset(6)
+            $0.top.equalTo(clueLabel.snp.bottom).offset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(imageView.snp.width).multipliedBy(1.2).priority(.low)
+            $0.height.equalTo(imageView.snp.width).multipliedBy(1.1).priority(.low)
             $0.height.greaterThanOrEqualTo(100).priority(.low)
         }
 
@@ -149,5 +152,16 @@ class ClueInputViewController: UIViewController {
                 self?.imageView.image = image
             })
             .disposed(by: disposeBag)
+    }
+}
+
+// 키보드 완료 버튼 익스텐션
+extension ClueInputViewController: UITextViewDelegate {
+    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
+        if text == "\n" {
+            textView.resignFirstResponder() // 키보드 내림
+            return false // 개행문자 입력 방지
+        }
+        return true
     }
 }

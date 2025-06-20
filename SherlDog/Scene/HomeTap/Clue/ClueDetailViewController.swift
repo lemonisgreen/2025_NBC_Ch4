@@ -40,11 +40,13 @@ final class ClueDetailViewController: UIViewController {
         view.backgroundColor = .white
 
         polaroidBackgroundImageView.image = UIImage(named: "bigPolaroidSet")
-        polaroidBackgroundImageView.contentMode = .scaleAspectFit
+        polaroidBackgroundImageView.contentMode = .scaleAspectFill
 //        polaroidBackgroundImageView.layer.borderWidth = 1
 //        polaroidBackgroundImageView.layer.borderColor = UIColor.black.cgColor // 영역 확인용
         clueImageView.contentMode = .scaleAspectFill
         clueImageView.clipsToBounds = true
+        clueImageView.image = UIImage(named: "clueSampleImage") // 예시용
+
 //        clueImageView.layer.borderWidth = 1
 //        clueImageView.layer.borderColor = UIColor.black.cgColor // 영역 확인용
         clueImageView.transform = CGAffineTransform(rotationAngle: -.pi / 36) // 약 -5도
@@ -54,6 +56,7 @@ final class ClueDetailViewController: UIViewController {
         clipNoteBackgroundImageView.contentMode = .scaleAspectFill
 
         clueTextView.textColor = .black
+        clueTextView.backgroundColor = .clear
         clueTextView.font = .body6
         clueTextView.isEditable = false
         
@@ -64,8 +67,8 @@ final class ClueDetailViewController: UIViewController {
 
     private func setupConstraints() {
         polaroidBackgroundImageView.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(46)
-            $0.leading.trailing.equalToSuperview().inset(28)
+            $0.top.equalToSuperview().inset(46)
+            $0.leading.trailing.equalToSuperview().inset(36)
         }
 
         clueImageView.snp.makeConstraints {
@@ -75,9 +78,9 @@ final class ClueDetailViewController: UIViewController {
         }
 
         clipNoteBackgroundImageView.snp.makeConstraints {
-            $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(60)
-            $0.centerX.equalToSuperview()
-            $0.bottom.equalToSuperview().inset(80)
+            $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(36)
+            $0.leading.trailing.equalToSuperview().inset(14)
+            $0.bottom.equalToSuperview().inset(60)
         }
 
         clueTextView.snp.makeConstraints {
