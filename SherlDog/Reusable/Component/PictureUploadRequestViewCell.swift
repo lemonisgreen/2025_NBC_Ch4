@@ -28,8 +28,7 @@ class PictureUploadRequestViewCell: UICollectionViewCell {
 
     func settingCell(text: String, imageName: String) {
         self.label.text = text
-//        self.imageView.image = UIImage(named: imageName)
-        imageView.image = UIImage(systemName: "camera.metering.center.weighted.average")
+        self.imageView.image = UIImage(named: imageName)
         imageView.tintColor = .textPrimary
     }
 

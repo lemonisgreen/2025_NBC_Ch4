@@ -125,7 +125,7 @@ extension CreateAssistantProfileViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
-                pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
+                pictureViewModel.input.accept(.sender(.pictureRequestForAssistant))
                 
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
                 requestView.modalPresentationStyle = .pageSheet

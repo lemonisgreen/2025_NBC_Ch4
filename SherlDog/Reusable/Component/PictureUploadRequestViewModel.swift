@@ -14,7 +14,8 @@ class PictureUploadRequestViewModel {
     
     enum RequestSender {
         case pictureRequest
-        case pictureRequestWithIcon
+        case pictureRequestForAssistant
+        case pictureRequestForPet
         case sherlDogRequest
         case sherlDogResult
     }
@@ -70,21 +71,34 @@ class PictureUploadRequestViewModel {
                         self.output.cellData.accept([
                             RequestDataSource(model: "수사일지 사진 업로드",
                                            items: [
-                                            CellList(title: "사진 찍기", image: "imageName"),
-                                            CellList(title: "사진 보관함", image: "imageName")
+                                            CellList(title: "사진 찍기", image: "camera"),
+                                            CellList(title: "사진 보관함", image: "gallery")
                                            ])
                         ])
-                    case .pictureRequestWithIcon:
-                        self.output.sender.accept(.pictureRequestWithIcon)
+                    case .pictureRequestForAssistant:
+                        self.output.sender.accept(.pictureRequestForAssistant)
                         self.output.buttonName.accept("선택 완료")
                         self.output.cellData.accept([
                             RequestDataSource(model: "프로필 사진 설정",
                                            items: [
-                                            CellList(title: "기본 아바타 설정", image: "imageName"),
-                                            CellList(title: "사진 찍기", image: "imageName"),
-                                            CellList(title: "사진 보관함", image: "imageName"),
+                                            CellList(title: "기본 아바타 설정", image: "avatar"),
+                                            CellList(title: "사진 찍기", image: "camera"),
+                                            CellList(title: "사진 보관함", image: "gallery"),
                                            ])
                         ])
+                        
+                    case .pictureRequestForPet:
+                        self.output.sender.accept(.pictureRequestForPet)
+                        self.output.buttonName.accept("선택 완료")
+                        self.output.cellData.accept([
+                            RequestDataSource(model: "프로필 사진 설정",
+                                           items: [
+                                            CellList(title: "기본 아바타 설정", image: "avatar"),
+                                            CellList(title: "사진 찍기", image: "camera"),
+                                            CellList(title: "사진 보관함", image: "gallery"),
+                                           ])
+                        ])
+                        
                     case .sherlDogRequest:
                         self.output.sender.accept(.sherlDogRequest)
                         self.output.buttonName.accept("선택 완료")
@@ -112,7 +126,15 @@ class PictureUploadRequestViewModel {
                         default: return
                         }
                         
-                    case .pictureRequestWithIcon:
+                    case .pictureRequestForAssistant:
+                        switch index.first {
+                        case 0: self.output.moveToView.accept(.avatar)
+                        case 1: self.output.moveToView.accept(.camera)
+                        case 2: self.output.moveToView.accept(.album)
+                        default: return
+                        }
+                        
+                    case .pictureRequestForPet:
                         switch index.first {
                         case 0: self.output.moveToView.accept(.avatar)
                         case 1: self.output.moveToView.accept(.camera)
@@ -131,9 +153,9 @@ class PictureUploadRequestViewModel {
     
     private func fetchSherlDogList() -> [CellList] {
         return [
-            CellList(title: "멍탐정 1", image: "imageName"),
-            CellList(title: "멍탐정 2", image: "imageName"),
-            CellList(title: "멍탐정 3", image: "imageName"),
+            CellList(title: "멍탐정 1", image: "largeDog"),
+            CellList(title: "멍탐정 2", image: "mediumDog"),
+            CellList(title: "멍탐정 3", image: "smallDog"),
         ]
     }
     

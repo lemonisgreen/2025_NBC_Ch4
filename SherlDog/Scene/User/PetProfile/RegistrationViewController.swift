@@ -14,7 +14,6 @@ import FirebaseStorage
 
 class RegistrationViewController: UIViewController {
     
-    private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
     private var selectedImage: UIImage?
     let disposeBag = DisposeBag()
@@ -92,15 +91,15 @@ class RegistrationViewController: UIViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
-                pictureViewModel.input.accept(.sender(.pictureRequestWithIcon))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
+                pictureViewModel.input.accept(.sender(.pictureRequestForPet))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
                     sheet.detents = [.custom { _ in 400 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 32
+                    sheet.preferredCornerRadius = 20
                 }
                 self.present(requestView, animated: true)
             })
@@ -143,7 +142,7 @@ class RegistrationViewController: UIViewController {
                     sheet.detents = [.large()]
                     sheet.selectedDetentIdentifier = .large
                     sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 32
+                    sheet.preferredCornerRadius = 20
                     self.present(breedSearchVC, animated: true)
                 }
             })
@@ -200,7 +199,7 @@ class RegistrationViewController: UIViewController {
                     sheet.detents = [.medium()]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 32
+                    sheet.preferredCornerRadius = 20
                 }
                 owner.present(birthSelectVC, animated: true)
             })
