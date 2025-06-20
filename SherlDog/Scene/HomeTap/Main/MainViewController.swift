@@ -189,6 +189,14 @@ class MainViewController: UIViewController {
             .subscribe(onNext: { [weak self] _ in
                 self?.DataTrackingVM.stopTracking()
                 self?.viewModel.stopTracking.accept(())
+                if let window = self?.view.window {
+                    let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
+                    let image = renderer.image { ctx in
+                        window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                    }
+                    self?.DataTrackingVM.capturedImage.accept(image)
+                }
+                
                 guard let viewModel = self?.DataTrackingVM else { return }
                 let endVC = WalkEndModalViewController(viewModel: viewModel)
                 let nav = UINavigationController(rootViewController: endVC)

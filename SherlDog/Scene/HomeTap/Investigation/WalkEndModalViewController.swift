@@ -85,6 +85,10 @@ class WalkEndModalViewController : UIViewController {
     
     private func bind() {
         
+        self.DataTrackingVM.capturedImage
+            .bind(to: self.mapImageView.rx.image)
+            .disposed(by: disposeBag)
+        
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 let requestViewModel = PictureUploadRequestViewModel()
