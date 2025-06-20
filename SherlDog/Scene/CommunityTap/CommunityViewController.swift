@@ -45,7 +45,7 @@ extension CommunityViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .gray50
+        view.backgroundColor = .textInverse
         view.addSubviews([
             titleLabel,
             collectionView
@@ -55,6 +55,7 @@ extension CommunityViewController {
         titleLabel.font = .title1
         titleLabel.textColor = .textPrimary
         
+        collectionView.backgroundColor = .textInverse
         collectionView.register(CommunityCell.self, forCellWithReuseIdentifier: CommunityCell.identifier)
     }
     

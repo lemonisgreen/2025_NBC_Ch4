@@ -47,7 +47,7 @@ class PictureUploadRequestViewCell: UICollectionViewCell {
         selectedCell.layer.borderWidth = 1
         
         self.selectedBackgroundView = selectedCell
-
+        
         contentView.layer.cornerRadius = cornerRadius
         contentView.layer.borderColor = UIColor.gray200.cgColor
         contentView.layer.borderWidth = 1

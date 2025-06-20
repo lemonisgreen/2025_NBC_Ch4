@@ -90,7 +90,6 @@ class WalkEndModalViewController : UIViewController {
                 let requestViewModel = PictureUploadRequestViewModel()
                 requestViewModel.input.accept(.sender(.pictureRequest))
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
-                requestView.modalPresentationStyle = .overFullScreen
                 
                 if let sheet = requestView.sheetPresentationController {
                     sheet.detents = [.custom { _ in 320 }]
