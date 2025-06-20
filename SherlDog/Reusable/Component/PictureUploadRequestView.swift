@@ -82,7 +82,7 @@ extension PictureUploadRequestView {
                 guard let sender else { return }
                 switch sender {
                     
-                case .pictureRequest, .pictureRequestWithIcon:
+                case .pictureRequest, .pictureRequestForAssistant, .pictureRequestForPet:
                     self.collectionView.allowsMultipleSelection = false
                     self.setButton.isEnabled = false
                     
@@ -114,7 +114,7 @@ extension PictureUploadRequestView {
                 case .pictureRequest:
                     cameraViewModel.input.accept(.sender(.communityShare))
                     
-                case .pictureRequestWithIcon:
+                case .pictureRequestForAssistant, .pictureRequestForPet:
                     cameraViewModel.input.accept(.sender(.profile))
                     
                 case .sherlDogRequest, .sherlDogResult: break
@@ -153,7 +153,12 @@ extension PictureUploadRequestView {
                     }
                     
                 case .avatar:
-                    self.navigationController?.pushViewController(SelectAvatarViewController(viewModel: avatarViewModel), animated: true)
+                    if sender == .pictureRequestForAssistant {
+                        self.navigationController?.pushViewController(SelectAvatarViewController(viewModel: avatarViewModel), animated: true)
+                    } else {
+                        self.cameraViewModel.input.accept(.captureImage(.petAvatar))
+                        self.dismiss(animated: true)
+                    }
                 }
             })
             .disposed(by: disposeBag)

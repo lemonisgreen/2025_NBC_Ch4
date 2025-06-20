@@ -96,7 +96,7 @@ class WalkEndModalViewController : UIViewController {
                     sheet.detents = [.custom { _ in 320 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 32
+                    sheet.preferredCornerRadius = 20
                 }
                 
                 self?.present(requestView, animated: true)
@@ -134,8 +134,25 @@ class WalkEndModalViewController : UIViewController {
         
         showProfileButton.rx.tap
             .bind { [weak self] in
-                let profileVC = PetProfileViewController()
-                self?.present(profileVC, animated: true)
+                let requestViewModel = PictureUploadRequestViewModel()
+                requestViewModel.input.accept(.sender(.sherlDogResult))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                
+                let dummyData = [0, 1, 2]
+                if let sheet = requestView.sheetPresentationController {
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 20
+                    
+                    switch dummyData.count {
+                    case 1: sheet.detents = [.custom { _ in 240 }]
+                    case 2: sheet.detents = [.custom { _ in 320 }]
+                    case 3: sheet.detents = [.custom { _ in 400 }]
+                    default: return
+                    }
+                }
+                
+                self?.present(requestView, animated: true)
             }
             .disposed(by: disposeBag)
     }

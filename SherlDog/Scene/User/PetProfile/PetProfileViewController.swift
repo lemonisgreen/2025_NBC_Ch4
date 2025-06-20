@@ -224,7 +224,7 @@ final class PetProfileViewController: UIViewController {
             sheet.detents = [.large()]
             sheet.selectedDetentIdentifier = .large
             sheet.prefersGrabberVisible = false
-            sheet.preferredCornerRadius = 32
+            sheet.preferredCornerRadius = 20
             self.present(registrationVC, animated: true)
         }
         registrationVC.isModalInPresentation = true
