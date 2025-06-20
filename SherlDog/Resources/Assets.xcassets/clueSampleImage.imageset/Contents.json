@@ -1,17 +1,15 @@
 {
   "images" : [
     {
-      "filename" : "icon=clue mark, oppacity=default.png",
+      "filename" : "스크린샷 2025-06-20 11.33.03.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "icon=clue mark, oppacity=default@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "icon=clue mark, oppacity=default@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
