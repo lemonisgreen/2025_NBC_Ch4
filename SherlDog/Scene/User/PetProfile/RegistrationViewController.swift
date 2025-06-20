@@ -79,6 +79,12 @@ class RegistrationViewController: UIViewController {
     
     func bind() {
         
+        self.registrationButton.rx.tap
+            .subscribe(onNext: { [weak self]  _ in
+                self?.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         cameraViewModel.output.capturedImage
             .subscribe(onNext: { [weak self] image in
                 guard let self, let image else { return }
