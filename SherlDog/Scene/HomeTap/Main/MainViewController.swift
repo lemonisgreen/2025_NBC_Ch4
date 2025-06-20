@@ -13,7 +13,7 @@ import RxSwift
 import RxCoreLocation
 import CoreLocation
 
-class MainViewController: UIViewController, CLLocationManagerDelegate {
+class MainViewController: UIViewController {
     
     private let requestViewModel = PictureUploadRequestViewModel()
     private let locationManager = CLLocationManager()
@@ -37,7 +37,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
     private let distanceLabel = UILabel()
     private let timeLabel = UILabel()
     private let stepsLabel = UILabel()
-    private let image: [String] = []
+    private let image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
     private let statusLabel = UILabel()
     
     // distance, time, steps
@@ -109,6 +109,33 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             .disposed(by: disposeBag)
     }
     
+    private func bind() {
+        viewModel.coordinates
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
+                guard let self = self else { return }
+                guard coords.count >= 2 else { return }
+                
+                let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
+                let path = NMGLineString(points: nmfCoords)
+                
+                let pathOverlay = NMFPath()
+                pathOverlay.path = path
+                pathOverlay.color = .keycolorPrimary1
+                pathOverlay.width = 4
+                pathOverlay.mapView = self.mapView
+                self.pathOverlays.append(pathOverlay)
+            })
+            .disposed(by: disposeBag)
+        
+        requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
+            self?.viewModel.startTracking.accept(())
+            self?.DataTrackingVM.startTracking()
+            self?.setInvestigation(active: true)
+        })
+        .disposed(by: disposeBag)
+    }
+    
     private func inputBind() {
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -169,13 +196,12 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
                 self?.present(nav, animated: true)
                 self?.pathOverlays.forEach { $0.mapView = nil }
                 self?.pathOverlays.removeAll()
-                self?.setInvestigation(active: false)                                
+                self?.setInvestigation(active: false)
             })
             .disposed(by: disposeBag)
         
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.setInvestigation(active: true)
                 
                 guard let self = self else { return }
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
@@ -222,10 +248,23 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         clueButton.isHidden = !active
         endButton.isHidden = !active
         walkStartButton.isHidden = active
+        
+        if !active {
+            distance.text = "0.00"
+            time.text = "00:00:00"
+            steps.text = "0"
+        }
     }
+    
     private func setupUI() {
-        // 지도 배경 설정
-        mapView.positionMode = .direction
+        // 현재위치 아이콘 설정
+        mapView.positionMode = .normal
+        
+        let locationOverlay = mapView.locationOverlay
+        let overlayImage = NMFOverlayImage(name: "locationImage")
+        locationOverlay.icon = overlayImage
+        locationOverlay.iconWidth = 36
+        locationOverlay.iconHeight = 36
         
         // statusView 설정
         statusView.backgroundColor = .gray50
@@ -253,9 +292,6 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             $0.textColor = .textPrimary
         }
         
-        distance.text = "0.45"
-        time.text = "00:00:00"
-        steps.text = "1234"
         valueStack.axis = .horizontal
         valueStack.distribution = .fillEqually
         
@@ -277,7 +313,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
         detectiveImageStack.spacing = image.count > 1 ? -8 : 0
         
         image.forEach { name in
-            let imageView = UIImageView(image: UIImage(named: name))
+            let imageView = UIImageView(image: UIImage(named: "sampleDogImage"))
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
             imageView.layer.cornerRadius = 12
@@ -381,36 +417,12 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             $0.bottom.equalTo(walkStartButton.snp.top).offset(-16)
         }
     }
-    
-    private func bind() {
-        viewModel.coordinates
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
-                guard let self = self else { return }
-                guard coords.count >= 2 else { return }
-                
-                let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
-                let path = NMGLineString(points: nmfCoords)
-                
-                let pathOverlay = NMFPath()
-                pathOverlay.path = path
-                pathOverlay.color = .keycolorPrimary1
-                pathOverlay.width = 4
-                pathOverlay.mapView = self.mapView
-                self.pathOverlays.append(pathOverlay)
-            })
-            .disposed(by: disposeBag)
-        
-        requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
-            self?.viewModel.startTracking.accept(())
-            self?.DataTrackingVM.startTracking()                                                            
-        })
-        .disposed(by: disposeBag)
-    }
-    
+}
+
+extension MainViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-        
+
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
             let coord = location.coordinate
@@ -419,7 +431,7 @@ class MainViewController: UIViewController, CLLocationManagerDelegate {
             cameraUpdate.animation = .none
             mapView.moveCamera(cameraUpdate)
             mapView.zoomLevel = 16.0
-            
+
             hasSetInitialCamera = true
         }
     }
