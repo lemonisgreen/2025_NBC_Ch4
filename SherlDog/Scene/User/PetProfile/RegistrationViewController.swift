@@ -78,20 +78,25 @@ class RegistrationViewController: UIViewController {
     
     func bind() {
         Observable.combineLatest(
-            self.viewModel.name.asObservable(),
-            self.viewModel.breed.asObservable(),
-            self.viewModel.selectedSize.asObservable(),
-            self.viewModel.selectedGender.asObservable(),
-            self.viewModel.introduce.asObservable(),
+            self.cameraViewModel.output.capturedImage.map {
+                guard $0 != nil else { return "" }
+                return "set"
+            },
+            self.viewModel.name,
+            self.viewModel.breed,
+            self.viewModel.selectedSize,
+            self.viewModel.selectedGender,
+            self.viewModel.introduce,
             self.viewModel.selectedAge.map {
                 guard let date = $0 else { return "" }
                 let formatter = DateFormatter()
                 formatter.dateFormat = "yyyy"
                 return formatter.string(from: date)
-            }.asObservable()
+            }
         )
-        .subscribe(onNext: { [weak self] name, breed, size, gender, introduce, age in
-            if name.count > 0,
+        .subscribe(onNext: { [weak self] image, name, breed, size, gender, introduce, age in
+            if image.count > 0,
+               name.count > 0,
                breed.count > 0,
                size.count > 0,
                gender.count > 0,
