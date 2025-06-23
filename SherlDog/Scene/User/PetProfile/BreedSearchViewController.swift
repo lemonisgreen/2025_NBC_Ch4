@@ -189,6 +189,7 @@ class BreedSearchViewController: UIViewController {
                       let text = self.searchTextField.text?.trimmingCharacters(in: .whitespacesAndNewlines),
                       !text.isEmpty else { return }
                 self.allBreeds.append(text)
+                self.selectedBreed.onNext(text)
                 print("직접 추가된 견종: \(text)")
                 self.dismiss(animated: true)
             }
