@@ -77,6 +77,33 @@ class RegistrationViewController: UIViewController {
     }
     
     func bind() {
+        Observable.combineLatest(
+            self.viewModel.name.asObservable(),
+            self.viewModel.breed.asObservable(),
+            self.viewModel.selectedSize.asObservable(),
+            self.viewModel.selectedGender.asObservable(),
+            self.viewModel.introduce.asObservable(),
+            self.viewModel.selectedAge.map {
+                guard let date = $0 else { return "" }
+                let formatter = DateFormatter()
+                formatter.dateFormat = "yyyy"
+                return formatter.string(from: date)
+            }.asObservable()
+        )
+        .subscribe(onNext: { [weak self] name, breed, size, gender, introduce, age in
+            if name.count > 0,
+               breed.count > 0,
+               size.count > 0,
+               gender.count > 0,
+               introduce.count > 0,
+               age.count > 0 {
+                self?.registCompletButton.isEnabled = true
+            } else {
+                self?.registCompletButton.isEnabled = false
+            }
+               
+        })
+        .disposed(by: disposeBag)
         
         self.registrationButton.rx.tap
             .subscribe(onNext: { [weak self]  _ in
@@ -539,6 +566,9 @@ class RegistrationViewController: UIViewController {
         registIntroduceCountLabel.text = "0 / 28 자"
         registIntroduceCountLabel.textColor = .gray400
         registIntroduceCountLabel.font = .alert2
+        
+        // MARK: 다음 버튼 --
+        registCompletButton.isEnabled = false
     }
     
     private func configureUI() {
