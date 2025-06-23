@@ -59,6 +59,7 @@ class BreedSearchViewController: UIViewController {
         searchTextField.font = .systemFont(ofSize: 16)
         searchTextField.setLeftPaddingIcon(systemName: "magnifyingglass")
         searchTextField.delegate = self
+        searchTextField.textColor = .textPrimary
 
         emptyImageView.image = UIImage(named: "sherlDog")
         emptyImageView.contentMode = .scaleAspectFit
