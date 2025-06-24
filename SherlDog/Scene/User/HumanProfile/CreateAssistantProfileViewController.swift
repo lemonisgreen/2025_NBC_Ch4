@@ -50,6 +50,36 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        Observable.combineLatest(
+            self.cameraViewModel.output.capturedImage,
+            self.avatarViewModel.output.selectedAvatar,
+            self.nicknameTextField.rx.text,
+            self.introduceTextView.rx.text,
+            self.viewModel.isLoading
+        )
+        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce, isLoading in
+            if image != nil || avatar != nil,
+               nickName != "",
+               introduce != "" {
+                if let nickName, nickName.contains(" ") {
+                    self?.nextButton.isEnabled = false
+                    
+                } else {
+                    self?.nextButton.isEnabled = true
+                    
+                }
+                
+            } else {
+                self?.nextButton.isEnabled = false
+            }
+            
+            // 로딩 중이라면 버튼 비활성
+            if isLoading {
+                self?.nextButton.isEnabled = false
+            }
+        })
+        .disposed(by: disposeBag)
+        
         navigationBackButton.rx.tap
                 .subscribe(onNext: { [weak self] in
                     self?.navigationController?.popViewController(animated: true)
@@ -85,20 +115,13 @@ extension CreateAssistantProfileViewController {
                 
                 self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
                 
-                if text.count > 0 {
-                    if text.contains(" ") {
-                        self.nickNameSeparatorAlert.isHidden = false
-                        self.nickNameSeparatorAlertImage.isHidden = false
-                        self.nextButton.isEnabled = false
-                        
-                    } else {
-                        self.nickNameSeparatorAlert.isHidden = true
-                        self.nickNameSeparatorAlertImage.isHidden = true
-                        self.nextButton.isEnabled = true
-                    }
+                if text.contains(" ") {
+                    self.nickNameSeparatorAlert.isHidden = false
+                    self.nickNameSeparatorAlertImage.isHidden = false
                     
                 } else {
-                    self.nextButton.isEnabled = false
+                    self.nickNameSeparatorAlert.isHidden = true
+                    self.nickNameSeparatorAlertImage.isHidden = true
                 }
                 
             })
@@ -170,7 +193,7 @@ extension CreateAssistantProfileViewController {
         // 로딩 상태 처리
         viewModel.isLoading
             .subscribe(onNext: { [weak self] isLoading in
-                self?.nextButton.isEnabled = !isLoading
+                // 로딩 중일 때 버튼이 비활성화되는 로직은 Observable.combineLatest 쪽에서 처리함
                 // 로딩 인디케이터가 있다면 여기서 처리
             })
             .disposed(by: disposeBag)
