@@ -70,7 +70,8 @@ class RegistrationViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+
         setupUI()
         configureUI()
         bind()
