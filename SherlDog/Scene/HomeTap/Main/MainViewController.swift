@@ -110,6 +110,48 @@ class MainViewController: UIViewController {
     }
     
     private func bind() {
+        viewModel.fullSideOfCourse
+            .subscribe(onNext: { [weak self] fullSide in
+                guard let self else { return }
+                
+                // WalkendModalViewController의 imageView에 맞게 들어가도록 예측한 값.
+                /*
+                 top 25추정 + 박스사이즈(약 120추정) + 15 + 박스사이즈(약 150추정) + 60 + 라벨사이즈(약 24추정) + 75 = 469
+                 bottom 140 + 버튼사이즈(52) + 24추정(이미지뷰는 아래 버튼에 -12로 걸려있고, 아래 버튼은 이미지 뷰에 24로 걸려있음) = 216
+                 합 약 685
+                 paddingInsets의 top, bottom을 300씩 줘 여유공간 85, top, bottom 각각 42정도 확보
+                 leading, trailing도 비슷한 수준의 여유공간 50을 설정
+                 */
+                let paddingInset = UIEdgeInsets(top: 300, left: 50, bottom: 300, right: 50)
+                let cameraUpdate = NMFCameraUpdate(fit: fullSide, paddingInsets: paddingInset)
+                cameraUpdate.animation = .easeIn
+                self.mapView.moveCamera(cameraUpdate)
+                
+                // 설정된 animationDuration에 0.1초의 여유시간을 주고 그 이후에 코드가 실행되도록 설정
+                let duration = max(self.mapView.animationDuration, cameraUpdate.animationDuration) + 0.1
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                    if let window = self.view.window {
+                        let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
+                        let image = renderer.image { ctx in
+                            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+                        }
+                        self.DataTrackingVM.capturedImage.accept(image)
+                    }
+                    
+                    let endVC = WalkEndModalViewController(viewModel: self.DataTrackingVM)
+                    let nav = UINavigationController(rootViewController: endVC)
+                    nav.modalPresentationStyle = .overFullScreen
+                    self.present(nav, animated: true)
+                    
+                    self.pathOverlays.forEach { $0.mapView = nil }
+                    self.pathOverlays.removeAll()
+                    self.setInvestigation(active: false)
+                    self.viewModel.coordinates.accept([])
+                }
+            })
+            .disposed(by: disposeBag)
+        
         viewModel.coordinates
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
@@ -189,22 +231,6 @@ class MainViewController: UIViewController {
             .subscribe(onNext: { [weak self] _ in
                 self?.DataTrackingVM.stopTracking()
                 self?.viewModel.stopTracking.accept(())
-                if let window = self?.view.window {
-                    let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
-                    let image = renderer.image { ctx in
-                        window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
-                    }
-                    self?.DataTrackingVM.capturedImage.accept(image)
-                }
-                
-                guard let viewModel = self?.DataTrackingVM else { return }
-                let endVC = WalkEndModalViewController(viewModel: viewModel)
-                let nav = UINavigationController(rootViewController: endVC)
-                nav.modalPresentationStyle = .overFullScreen
-                self?.present(nav, animated: true)
-                self?.pathOverlays.forEach { $0.mapView = nil }
-                self?.pathOverlays.removeAll()
-                self?.setInvestigation(active: false)
             })
             .disposed(by: disposeBag)
         
