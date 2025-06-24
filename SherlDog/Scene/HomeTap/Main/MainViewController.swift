@@ -62,8 +62,62 @@ class MainViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        locationManager.requestWhenInUseAuthorization()
         locationManager.delegate = self
+        requestLocationAuthorization()
+    }
+    
+    private func requestLocationAuthorization() {
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways:
+            setupMapAndStartLocation()
+        case .denied, .restricted:
+            showLocationSettingsAlert()
+        @unknown default:
+            break
+        }
+    }
+    // 위치권한을 거부 했을때
+    private func showLocationSettingsAlert() {
+        let alert = AlertManager(
+            message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+            buttonTitles: ["취소", "설정으로 이동"],
+            buttonActions: [nil, {
+                if let settingsURL = URL(string: UIApplication.openSettingsURLString),
+                   UIApplication.shared.canOpenURL(settingsURL) {
+                    UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                }
+            }]
+        )
+        self.present(alert, animated: true)
+    }
+    
+    /// 위치 권한이 '사용 중'일 때 '항상 허용' 권장 안내
+    private func checkAndGuideAlwaysAuthorizationIfNeeded() {
+        let status = locationManager.authorizationStatus
+
+        // 이미 Always 허용이면 패스
+        guard status == .authorizedWhenInUse else { return }
+
+        // 사용 중 허용인 경우만 항상 허용을 유도
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            guard let self = self else { return }
+            let alert = AlertManager(
+                message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+                buttonTitles: ["취소", "설정으로 이동"],
+                buttonActions: [nil, {
+                    if let settingsURL = URL(string: UIApplication.openSettingsURLString),
+                       UIApplication.shared.canOpenURL(settingsURL) {
+                        UIApplication.shared.open(settingsURL)
+                    }
+                }]
+            )
+            self.present(alert, animated: true)
+        }
+    }
+
+    private func setupMapAndStartLocation() {
         locationManager.startUpdatingLocation()
         setupUI()
         setupConstraints()
@@ -467,6 +521,18 @@ extension MainViewController: CLLocationManagerDelegate {
             mapView.zoomLevel = 16.0
 
             hasSetInitialCamera = true
+        }
+    }
+
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            setupMapAndStartLocation()
+            checkAndGuideAlwaysAuthorizationIfNeeded()
+        case .denied, .restricted:
+            showLocationSettingsAlert()
+        default:
+            break
         }
     }
 }

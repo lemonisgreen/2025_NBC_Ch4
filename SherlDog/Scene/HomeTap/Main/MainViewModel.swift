@@ -45,11 +45,10 @@ final class MainViewModel {
     }
 
     private func setupLocationUpdates() {
-        locationManager.requestWhenInUseAuthorization()
         locationManager.distanceFilter = 10
-        locationManager.startUpdatingLocation()
-//        locationManager.allowsBackgroundLocationUpdates = true
+        locationManager.allowsBackgroundLocationUpdates = true
         locationManager.pausesLocationUpdatesAutomatically = false
+        locationManager.startUpdatingLocation()
 
         locationManager.rx.didUpdateLocations
             .throttle(.seconds(2), latest: true, scheduler: MainScheduler.instance)
