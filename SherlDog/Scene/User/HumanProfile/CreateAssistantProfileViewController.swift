@@ -54,10 +54,9 @@ extension CreateAssistantProfileViewController {
             self.cameraViewModel.output.capturedImage,
             self.avatarViewModel.output.selectedAvatar,
             self.nicknameTextField.rx.text,
-            self.introduceTextView.rx.text,
-            self.viewModel.isLoading
+            self.introduceTextView.rx.text
         )
-        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce, isLoading in
+        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce in
             if image != nil || avatar != nil,
                nickName != "",
                introduce != "" {
@@ -70,11 +69,6 @@ extension CreateAssistantProfileViewController {
                 }
                 
             } else {
-                self?.nextButton.isEnabled = false
-            }
-            
-            // 로딩 중이라면 버튼 비활성
-            if isLoading {
                 self?.nextButton.isEnabled = false
             }
         })
@@ -193,7 +187,7 @@ extension CreateAssistantProfileViewController {
         // 로딩 상태 처리
         viewModel.isLoading
             .subscribe(onNext: { [weak self] isLoading in
-                // 로딩 중일 때 버튼이 비활성화되는 로직은 Observable.combineLatest 쪽에서 처리함
+                self?.nextButton.isEnabled = !isLoading
                 // 로딩 인디케이터가 있다면 여기서 처리
             })
             .disposed(by: disposeBag)
