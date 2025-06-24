@@ -38,7 +38,8 @@ class CreateAssistantProfileViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+
         setupUI()
         configureUI()
         bind()
@@ -290,9 +291,6 @@ extension CreateAssistantProfileViewController {
         introduceTextView.backgroundColor = .gray50
         introduceTextView.layer.cornerRadius = 6
         introduceTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
-        // 키보드 완료 버튼으로 만들기
-        introduceTextView.delegate = self
-        introduceTextView.returnKeyType = .done
         
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
@@ -382,15 +380,4 @@ extension CreateAssistantProfileViewController {
         }
     }
     
-}
-
-// 키보드 완료 버튼 익스텐션
-extension CreateAssistantProfileViewController: UITextViewDelegate {
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" {
-            textView.resignFirstResponder() // 키보드 내림
-            return false // 개행문자 입력 방지
-        }
-        return true
-    }
 }
