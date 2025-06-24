@@ -27,6 +27,8 @@ class CameraViewController: UIViewController {
     private let cameraView = UIView()
     private let pinchGesture = UIPinchGestureRecognizer()
     private let shutterButton = UIButton()
+    private let cancelButton = UIButton()
+    private let guideLabel = UILabel()
     
     // MARK: - Initialize
     init(viewModel: CameraViewModel) {
@@ -53,6 +55,12 @@ extension CameraViewController {
         inputBind()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.navigationBar.isHidden = true
+    }
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
@@ -64,6 +72,12 @@ extension CameraViewController {
 extension CameraViewController {
     
     private func inputBind() {
+        cancelButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         shutterButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 self?.viewModel.input.accept(.shutterButtonTap)
@@ -88,6 +102,8 @@ extension CameraViewController {
     }
     
     private func bind() {
+        // todo: guideLabel text설정
+        
         self.viewModel.output.sender
             .subscribe(onNext: { [weak self] sender in
                 guard let self else { return }
@@ -95,6 +111,7 @@ extension CameraViewController {
                 switch sender {
                 case .clueLeave:
                     self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
+                    self.guideLabel.isHidden = false
                     
                 case .communityShare:
                     self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
@@ -154,13 +171,25 @@ extension CameraViewController {
     private func setupUI() {
         guard let previewLayer else { return }
         
-        [cameraView, shutterButton]
+        [cameraView, shutterButton, guideLabel, cancelButton]
             .forEach { view.addSubview($0) }
         
         cameraView.layer.insertSublayer(previewLayer, at: 0)
         cameraView.addGestureRecognizer(pinchGesture)
         
         previewLayer.videoGravity = .resizeAspectFill
+        
+        cancelButton.setImage(.modalExit.withRenderingMode(.alwaysTemplate), for: .normal)
+        cancelButton.imageView?.tintColor = .textInverse
+        
+        guideLabel.text = "(강쥐이름)과의 추억을 단서로 남겨보세요!"
+        guideLabel.textColor = .textInverse
+        guideLabel.font = .highlight5
+        guideLabel.backgroundColor = .gray600.withAlphaComponent(0.3)
+        guideLabel.textAlignment = .center
+        guideLabel.layer.cornerRadius = 6
+        guideLabel.clipsToBounds = true
+        guideLabel.isHidden = true
         
         shutterButton.setImage(UIImage(named: "cameraShutter"), for: .normal)
     }
@@ -174,6 +203,17 @@ extension CameraViewController {
             $0.width.height.equalTo(72)
             $0.centerX.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(36)
+        }
+        
+        cancelButton.snp.makeConstraints {
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+            $0.trailing.equalToSuperview().inset(18)
+        }
+        
+        guideLabel.snp.makeConstraints {
+            $0.top.equalTo(cancelButton.snp.bottom).offset(18)
+            $0.leading.trailing.equalToSuperview().inset(33.5)
+            $0.height.equalTo(56)
         }
     }
     
