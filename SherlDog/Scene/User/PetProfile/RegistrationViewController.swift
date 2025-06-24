@@ -77,10 +77,45 @@ class RegistrationViewController: UIViewController {
     }
     
     func bind() {
+        Observable.combineLatest(
+            self.cameraViewModel.output.capturedImage,
+            self.viewModel.name,
+            self.viewModel.breed,
+            self.viewModel.selectedSize,
+            self.viewModel.selectedGender,
+            self.viewModel.isNeutered,
+            self.viewModel.introduce,
+            self.viewModel.selectedAge
+        )
+        .subscribe(onNext: { [weak self] image, name, breed, size, gender, isNeutered, introduce, age in
+            if image != nil,
+               name.count > 0,
+               breed.count > 0,
+               size.count > 0,
+               gender.count > 0,
+               isNeutered != nil,
+               introduce.count > 0,
+               age != nil {
+                self?.registCompletButton.isEnabled = true
+            } else {
+                self?.registCompletButton.isEnabled = false
+            }
+               
+        })
+        .disposed(by: disposeBag)
         
         self.registrationButton.rx.tap
             .subscribe(onNext: { [weak self]  _ in
-                self?.dismiss(animated: true)
+                let alert = AlertManager(message: "작성을 종료하시겠습니까?\n 작성한 정보는 저장되지 않습니다.",
+                                         buttonTitles: ["취소", "확인"],
+                                         buttonActions: [
+                                            nil,
+                                            { [weak self] in
+                                                self?.dismiss(animated: true)
+                                            }
+                                         ])
+                
+                self?.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -539,6 +574,9 @@ class RegistrationViewController: UIViewController {
         registIntroduceCountLabel.text = "0 / 28 자"
         registIntroduceCountLabel.textColor = .gray400
         registIntroduceCountLabel.font = .alert2
+        
+        // MARK: 다음 버튼 --
+        registCompletButton.isEnabled = false
     }
     
     private func configureUI() {

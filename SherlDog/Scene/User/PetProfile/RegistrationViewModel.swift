@@ -22,7 +22,7 @@ class RegistrationViewModel {
     let selectedSize = BehaviorRelay<String>(value: "")
     let selectedAge = BehaviorRelay<Date?>(value: nil)
     let selectedGender = BehaviorRelay<String>(value: "")
-    let isNeutered = BehaviorRelay<Bool>(value: false)
+    let isNeutered = BehaviorRelay<Bool?>(value: nil)
     let introduce = BehaviorRelay<String>(value: "")
     let saveResult = PublishSubject<Result<Void, Error>>()
 
@@ -42,6 +42,8 @@ class RegistrationViewModel {
         }
     }
     func savePetProfile(petProfileID: String) {
+        guard let isNeutered = isNeutered.value else { return }
+        
         let dateString: String = {
             if let date = selectedAge.value {
                 let formatter = DateFormatter()
@@ -62,7 +64,7 @@ class RegistrationViewModel {
             size: selectedSize.value,
             image: imageURL.value,
             gender: selectedGender.value,
-            neutered: isNeutered.value,
+            neutered: isNeutered,
             breed: breed.value,
             introduce: introduce.value
         )
