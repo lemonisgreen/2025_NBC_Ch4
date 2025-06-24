@@ -47,12 +47,14 @@ class AlertManager: UIViewController {
         } else {
             backgroundImageView.image = UIImage(named: "alertBackgroundDouble")
         }
+        backgroundImageView.isUserInteractionEnabled = true
         backgroundImageView.contentMode = .scaleAspectFill
         backgroundImageView.clipsToBounds = true
         backgroundImageView.layer.cornerRadius = 6
 
         messageLabel.text = message
         messageLabel.textAlignment = .center
+        messageLabel.numberOfLines = 0
         messageLabel.font = UIFont.title3
         messageLabel.textColor = UIColor(named: "textPrimary")
 
@@ -63,10 +65,8 @@ class AlertManager: UIViewController {
         for (index, title) in buttonTitles.enumerated() {
             let button = UIButton()
             button.setTitle(title, for: .normal)
-            button.backgroundColor = UIColor(named: "textInverse")
             button.setTitleColor(UIColor(named: "textPrimary"), for: .normal)
             button.titleLabel?.font = UIFont.title3
-            button.layer.cornerRadius = 6
             button.tag = index
 
             button.rx.tap
@@ -81,25 +81,30 @@ class AlertManager: UIViewController {
 
             buttonStackView.addArrangedSubview(button)
         }
-
-        [backgroundImageView, messageLabel, buttonStackView].forEach { view.addSubview($0) }
-
+        backgroundImageView.addSubviews([messageLabel, buttonStackView])
+        view.addSubview(backgroundImageView)
+        
+        let originHeight: CGFloat = 124
+        let setHeight: CGFloat = 160
+        let scale: CGFloat = setHeight / originHeight
+        
         backgroundImageView.snp.makeConstraints {
             $0.center.equalToSuperview()
             $0.width.equalTo(276)
-            $0.height.equalTo(160)
+            $0.height.equalTo(setHeight)
         }
 
         messageLabel.snp.makeConstraints {
-            $0.centerX.equalTo(backgroundImageView)
-            $0.centerY.equalTo(backgroundImageView.snp.centerY).offset(-25)
+            $0.centerX.equalToSuperview()
+            $0.top.equalToSuperview()
+            $0.bottom.equalTo(buttonStackView.snp.top)
         }
 
         buttonStackView.snp.makeConstraints {
-            $0.centerX.equalTo(backgroundImageView)
-            $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(15)
-            $0.width.equalTo(244)
-            $0.height.equalTo(40)
+            $0.centerX.equalToSuperview()
+            $0.bottom.equalToSuperview()
+            $0.width.equalToSuperview()
+            $0.height.equalTo(50 * scale)
         }
     }
 }
