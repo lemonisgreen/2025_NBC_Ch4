@@ -9,11 +9,13 @@ import RxSwift
 import RxCocoa
 import CoreLocation
 import RxCoreLocation
+import NMapsMap
 
 final class MainViewModel {
     
     let startTracking = PublishRelay<Void>()
     let stopTracking = PublishRelay<Void>()
+    let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
     let isTracking = BehaviorRelay<Bool>(value: false)
 
     let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])
@@ -35,8 +37,9 @@ final class MainViewModel {
         
         stopTracking
             .subscribe(onNext: { [weak self] in
-                self?.isTracking.accept(false)
-                self?.coordinates.accept([])
+                guard let self else { return }
+                self.isTracking.accept(false)
+                self.fullSideOfCourse.accept(self.fetchFullSide())
             })
             .disposed(by: disposeBag)
     }
@@ -68,5 +71,15 @@ final class MainViewModel {
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func fetchFullSide() -> NMGLatLngBounds {
+        var latLng = [NMGLatLng]()
+        
+        self.coordinates.value.forEach {
+            latLng.append(NMGLatLng(lat: $0.latitude, lng: $0.longitude))
+        }
+        
+        return NMGLatLngBounds(latLngs: latLng)
     }
 }
