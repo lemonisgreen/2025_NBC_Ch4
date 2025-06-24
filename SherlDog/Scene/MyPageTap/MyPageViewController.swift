@@ -29,7 +29,6 @@ class MyPageViewController : UIViewController {
         ].forEach {
             view.addSubview($0)
         }
-        
     }
     
     private func configureUI() {
@@ -43,8 +42,15 @@ class MyPageViewController : UIViewController {
         settingButton.rx.tap
             .bind { [weak self] in
                 let settingVC = SettingVIewController()
-                self?.navigationController?
-                    .pushViewController(settingVC, animated: true)
+                let backItem = UIBarButtonItem()
+                backItem.title = "설정"
+                self?.navigationItem.backBarButtonItem = backItem
+                self?.navigationController?.navigationBar.titleTextAttributes = [
+                    .foregroundColor: UIColor(named: "textPrimary"),
+                    .font: UIFont.highlight3
+                ]
+                self?.navigationController?.navigationBar.tintColor = .textPrimary
+                self?.navigationController?.pushViewController(settingVC, animated: true)
             }
             .disposed(by: disposeBag)
     }
