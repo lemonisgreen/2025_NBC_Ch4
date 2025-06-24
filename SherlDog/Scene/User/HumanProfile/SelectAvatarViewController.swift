@@ -121,6 +121,7 @@ extension SelectAvatarViewController {
         [collectionView, horizontalStackView]
             .forEach { view.addSubview($0) }
         
+        collectionView.backgroundColor = .textInverse
         collectionView.register(SelectAvatarCell.self, forCellWithReuseIdentifier: SelectAvatarCell.identifier)
         collectionView.register(PictureUploadRequestViewHeader.self,
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,

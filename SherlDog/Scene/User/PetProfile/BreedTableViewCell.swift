@@ -9,6 +9,7 @@ import SnapKit
 
 class BreedTableViewCell: UITableViewCell {
     
+    private let selectedView = UIView()
     private let breedLabel: UILabel = {
         let label = UILabel()
         label.font = .systemFont(ofSize: 16, weight: .medium)
@@ -35,7 +36,8 @@ class BreedTableViewCell: UITableViewCell {
     
     private func setupCell() {
         backgroundColor = .clear
-        selectionStyle = .none
+        selectedView.backgroundColor = .keycolorDisabled
+        self.selectedBackgroundView = selectedView
         
         [breedLabel, arrowImageView].forEach {
             contentView.addSubview($0)
