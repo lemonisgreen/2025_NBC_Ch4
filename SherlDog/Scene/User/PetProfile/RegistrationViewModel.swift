@@ -41,6 +41,7 @@ class RegistrationViewModel {
             }
         }
     }
+    
     func savePetProfile(petProfileID: String) {
         let dateString: String = {
             if let date = selectedAge.value {
