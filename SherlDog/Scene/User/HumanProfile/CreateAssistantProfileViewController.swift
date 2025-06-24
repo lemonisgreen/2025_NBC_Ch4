@@ -50,6 +50,30 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        Observable.combineLatest(
+            self.cameraViewModel.output.capturedImage,
+            self.avatarViewModel.output.selectedAvatar,
+            self.nicknameTextField.rx.text,
+            self.introduceTextView.rx.text
+        )
+        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce in
+            if image != nil || avatar != nil,
+               nickName != "",
+               introduce != "" {
+                if let nickName, nickName.contains(" ") {
+                    self?.nextButton.isEnabled = false
+                    
+                } else {
+                    self?.nextButton.isEnabled = true
+                    
+                }
+                
+            } else {
+                self?.nextButton.isEnabled = false
+            }
+        })
+        .disposed(by: disposeBag)
+        
         navigationBackButton.rx.tap
                 .subscribe(onNext: { [weak self] in
                     self?.navigationController?.popViewController(animated: true)
@@ -85,20 +109,13 @@ extension CreateAssistantProfileViewController {
                 
                 self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
                 
-                if text.count > 0 {
-                    if text.contains(" ") {
-                        self.nickNameSeparatorAlert.isHidden = false
-                        self.nickNameSeparatorAlertImage.isHidden = false
-                        self.nextButton.isEnabled = false
-                        
-                    } else {
-                        self.nickNameSeparatorAlert.isHidden = true
-                        self.nickNameSeparatorAlertImage.isHidden = true
-                        self.nextButton.isEnabled = true
-                    }
+                if text.contains(" ") {
+                    self.nickNameSeparatorAlert.isHidden = false
+                    self.nickNameSeparatorAlertImage.isHidden = false
                     
                 } else {
-                    self.nextButton.isEnabled = false
+                    self.nickNameSeparatorAlert.isHidden = true
+                    self.nickNameSeparatorAlertImage.isHidden = true
                 }
                 
             })
