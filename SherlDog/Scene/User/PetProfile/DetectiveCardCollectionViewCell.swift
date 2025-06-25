@@ -56,6 +56,6 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
         }
         
         // 프로필 이미지 설정
-        detectiveCardView.detectivePhotoImageView.backgroundColor = .gray400
+//        detectiveCardView.detectivePhotoImageView.backgroundColor = .gray400
     }
 }
