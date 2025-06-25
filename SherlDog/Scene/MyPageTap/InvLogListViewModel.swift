@@ -24,8 +24,6 @@ class InvLogListViewModel {
     
     struct Output {
         let cellData = BehaviorRelay<[InvLogListDataSource]>(value: [])
-        let deleteButtonTapped = PublishRelay<UICollectionViewCell>()
-        let showButtonTapped = PublishRelay<UICollectionViewCell>()
     }
     
     let input = PublishRelay<Input>()
