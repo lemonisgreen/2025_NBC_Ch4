@@ -171,7 +171,20 @@ class MainViewController: UIViewController {
         viewModel.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
-                
+
+                // If not enough path, show alert and return
+                if fullSide.isEmpty {
+                    let alert = AlertManager(
+                        message: "기록된 경로가 부족해요!",
+                        subMessage: "5미터 이상 이동 시 기록이 가능해요.",
+                        buttonTitles: ["확인"],
+                        buttonActions: [nil]
+                    )
+                    self.present(alert, animated: true)
+                    self.setInvestigation(active: false)
+                    return
+                }
+
                 // WalkendModalViewController의 imageView에 맞게 들어가도록 예측한 값.
                 /*
                  top 25추정 + 박스사이즈(약 120추정) + 15 + 박스사이즈(약 150추정) + 60 + 라벨사이즈(약 24추정) + 75 = 469
@@ -561,6 +574,9 @@ extension MainViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
+        let coord = location.coordinate
+           mapView.locationOverlay.location = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
+
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
             let coord = location.coordinate
