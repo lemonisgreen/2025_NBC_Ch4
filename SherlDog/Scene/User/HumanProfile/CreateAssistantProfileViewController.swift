@@ -314,9 +314,6 @@ extension CreateAssistantProfileViewController {
         introduceTextView.backgroundColor = .gray50
         introduceTextView.layer.cornerRadius = 6
         introduceTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
-        // 키보드 완료 버튼으로 만들기
-        introduceTextView.delegate = self
-        introduceTextView.returnKeyType = .done
         introduceTextView.textColor = .textPrimary
         
         introduceConstraintsLabel.text = "0 / 150자"
