@@ -12,6 +12,7 @@ import RxCocoa
 import RxSwift
 import RxCoreLocation
 import CoreLocation
+import FirebaseAuth
 
 class MainViewController: UIViewController {
     
@@ -71,11 +72,91 @@ class MainViewController: UIViewController {
         inputBind()
         trackingBind()
         configureInitialVisibility()
+        loadSavedClues()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(true, animated: false)
+        loadSavedClues()
+    }
+    
+    // 저장된 단서들을 Firebase에서 불러와서 마커로 표시
+    private func loadSavedClues() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            print("로그인되지 않음 - 단서를 불러올 수 없습니다")
+            return
+        }
+        
+        print(" 단서 불러오기 시작 - 사용자: \(userId)")
+        
+        // 기존 단서 마커들 제거
+        clueMarkers.forEach { $0.mapView = nil }
+        clueMarkers.removeAll()
+        
+        // Firestore에서 내 단서들 가져오기
+        FirestoreManager.shared.fetchCollection(collection: "clues", type: ClueModel.self)
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] allClues in
+                    print(" 전체 단서 개수: \(allClues.count)")
+                    let myClues = allClues.filter { $0.userID == userId }
+                    print(" 내 단서 개수: \(myClues.count)")
+                    
+                    if myClues.isEmpty {
+                        print("저장된 단서가 없습니다")
+                    } else {
+                        self?.addClueMarkers(clues: myClues)
+                    }
+                },
+                onFailure: { error in
+                    print("단서 불러오기 실패: \(error.localizedDescription)")
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+    
+    private func addClueMarkers(clues: [ClueModel]) {
+        print("마커 추가 시작 - 단서 개수: \(clues.count)")
+        
+        for (index, clue) in clues.enumerated() {
+            print("마커 \(index + 1) 추가: (\(clue.latitude), \(clue.longitude))")
+            
+            let marker = NMFMarker()
+            marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
+            marker.userInfo = ["clue": clue]
+            marker.iconImage = NMFOverlayImage(name: "clueMark")
+            marker.width = 60
+            marker.height = 60
+            marker.mapView = mapView
+            
+            marker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
+                guard let self = self,
+                      let marker = overlay as? NMFMarker else { return false }
+                
+                print("마커 터치됨!")
+                
+                // 마커 위치 정보 가져오기
+                let markerPosition = marker.position
+                guard let clue = marker.userInfo["clue"] as? ClueModel else { return false }
+                let viewModel = ClueDetailViewModel(clue: clue)
+                let detailVC = ClueDetailViewController(viewModel: viewModel)
+                let nav = UINavigationController(rootViewController: detailVC)
+                nav.modalPresentationStyle = .pageSheet
+                if let sheet = nav.sheetPresentationController {
+                    sheet.detents = [.custom { _ in 650 }]
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 20
+                }
+                self.present(nav, animated: true)
+                return true
+            }
+            
+            clueMarkers.append(marker)
+        }
+        
+        print("모든 마커 추가 완료! 총 \(clueMarkers.count)개")
     }
     
     private func trackingBind() {
@@ -185,34 +266,10 @@ class MainViewController: UIViewController {
                     guard let self else { return }
                     switch isAllowed {
                     case true:
-                        // 현재 위치에 clue 마커 추가
                         guard let currentLocation = self.locationManager.location else { return }
-                        let clueMarker = NMFMarker()
-                        clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
-                                                        lng: currentLocation.coordinate.longitude)
-                        clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
-                        clueMarker.width = 60
-                        clueMarker.height = 60
-                        clueMarker.mapView = self.mapView
-                        clueMarker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
-                            guard let self = self else { return false }
-                            let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
-                            let detailVC = ClueDetailViewController(viewModel: viewModel)
-                            let nav = UINavigationController(rootViewController: detailVC)
-                            nav.modalPresentationStyle = .pageSheet
-                            if let sheet = nav.sheetPresentationController {
-                                sheet.detents = [.custom { _ in 650 }]
-                                sheet.selectedDetentIdentifier = .medium
-                                sheet.prefersGrabberVisible = true
-                                sheet.preferredCornerRadius = 20
-                            }
-                            self.present(nav, animated: true)
-                            return true
-                        }
-                        self.clueMarkers.append(clueMarker)
-
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
+                        cameraViewModel.markerLocation = currentLocation.coordinate
                         
                         let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
                         cameraView.modalPresentationStyle = .fullScreen

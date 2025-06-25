@@ -9,6 +9,8 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import CoreLocation
+import FirebaseAuth
 
 class ClueInputViewController: UIViewController {
     private let clueLabel = UILabel()
@@ -21,8 +23,11 @@ class ClueInputViewController: UIViewController {
     private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     
-    init(viewModel: CameraViewModel) {
+    private let markerLocation: CLLocationCoordinate2D
+    
+    init(viewModel: CameraViewModel, location: CLLocationCoordinate2D) {
         self.cameraViewModel = viewModel
+        self.markerLocation = location  // 마커 위치 저장
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -123,9 +128,7 @@ class ClueInputViewController: UIViewController {
     private func bindRegisterAction() {
         registerButton.rx.tap
             .bind { [weak self] in
-                guard let self,
-                      let mainView = self.view.window?.rootViewController else { return }
-                mainView.dismiss(animated: true)
+                self?.saveClue()
             }
             .disposed(by: disposeBag)
     }
@@ -153,14 +156,84 @@ class ClueInputViewController: UIViewController {
             })
             .disposed(by: disposeBag)
     }
+    
+    // 단서저장
+    private func saveClue() {
+        guard let image = imageView.image,
+              let text = textView.text, !text.isEmpty,
+              let userId = Auth.auth().currentUser?.uid else {
+            showSimpleAlert("이미지와 텍스트를 확인해주세요.")
+            return
+        }
+        
+        registerButton.isEnabled = false
+        registerButton.setTitle("저장 중...", for: .normal)
+        
+        FirebaseImageManager.shared.uploadImage(image, type: .clue) { [weak self] result in
+            switch result {
+            case .success(let imageUrl):
+                self?.saveToFirestore(userId: userId, text: text, imageUrl: imageUrl)
+            case .failure(let error):
+                self?.showSimpleAlert("이미지 업로드 실패: \(error.localizedDescription)")
+                self?.resetButton()
+            }
+        }
+    }
+    
+    private func saveToFirestore(userId: String, text: String, imageUrl: String) {
+        let clue = ClueModel(
+            userID: userId,
+            latitude: markerLocation.latitude,
+            longitude: markerLocation.longitude,
+            content: text,
+            image: imageUrl
+        )
+        
+        FirestoreManager.shared.createDocument(collection: "clues", data: clue)
+            .subscribe(
+                onCompleted: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.showSuccessAndClose()
+                    }
+                },
+                onError: { [weak self] error in
+                    DispatchQueue.main.async {
+                        self?.showSimpleAlert("저장 실패: \(error.localizedDescription)")
+                        self?.resetButton()
+                    }
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+    
+    private func resetButton() {
+        registerButton.isEnabled = true
+        registerButton.setTitle("단서 등록하기", for: .normal)
+    }
+    
+    private func showSuccessAndClose() {
+        let alert = UIAlertController(title: "성공", message: "단서가 등록되었습니다!", preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self] _ in
+            guard let self = self,
+                  let mainView = self.view.window?.rootViewController else { return }
+            mainView.dismiss(animated: true)
+        })
+        present(alert, animated: true)
+    }
+    
+    private func showSimpleAlert(_ message: String) {
+        let alert = UIAlertController(title: "알림", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+    }
 }
 
 // 키보드 완료 버튼 익스텐션
 extension ClueInputViewController: UITextViewDelegate {
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
-            textView.resignFirstResponder() // 키보드 내림
-            return false // 개행문자 입력 방지
+            textView.resignFirstResponder()
+            return false
         }
         return true
     }

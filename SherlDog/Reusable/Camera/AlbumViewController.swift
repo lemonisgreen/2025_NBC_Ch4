@@ -9,6 +9,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 import SnapKit
+import CoreLocation
 
 // MARK: - AlbumViewController
 class AlbumViewController: UIViewController {
@@ -45,7 +46,13 @@ class AlbumViewController: UIViewController {
                 
                 switch sender {
                 case .clueLeave:
-                    self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
+                    let location = self.viewModel.markerLocation ?? CLLocationCoordinate2D(latitude: 0, longitude: 0)
+                    self.viewControllerForPicture = UINavigationController(
+                        rootViewController: ClueInputViewController(
+                            viewModel: viewModel,
+                            location: location
+                        )
+                    )
                     
                 case .communityShare:
                     self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
