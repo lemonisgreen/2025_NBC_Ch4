@@ -81,7 +81,8 @@ class MainViewController: UIViewController {
     // 위치권한을 거부 했을때
     private func showLocationSettingsAlert() {
         let alert = AlertManager(
-            message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+            message: "위치 권한을 '항상 허용'으로\n설정해주세요",
+            subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
             buttonTitles: ["취소", "설정으로 이동"],
             buttonActions: [nil, {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString),
@@ -104,7 +105,8 @@ class MainViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self = self else { return }
             let alert = AlertManager(
-                message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+                message: "위치 권한을 '항상 허용'으로\n설정해주세요",
+                subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
                 buttonTitles: ["취소", "설정으로 이동"],
                 buttonActions: [nil, {
                     if let settingsURL = URL(string: UIApplication.openSettingsURLString),
@@ -280,7 +282,7 @@ class MainViewController: UIViewController {
                         self.present(cameraView, animated: true)
                         
                     case false:
-                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", subMessage: nil, buttonTitles: ["확인"], buttonActions: [nil])
                         
                         self.present(alert, animated: true)
                     }
