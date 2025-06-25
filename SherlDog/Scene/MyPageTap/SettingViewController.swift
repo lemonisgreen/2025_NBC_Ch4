@@ -10,7 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class SettingVIewController : UIViewController {
+class SettingViewController : UIViewController {
     
     private let disposeBag = DisposeBag()
     let loginView = UIView()
@@ -33,6 +33,8 @@ class SettingVIewController : UIViewController {
         setupUI()
         configureUI()
         bind()
+        navigationController?.navigationBar.prefersLargeTitles = false
+        navigationItem.largeTitleDisplayMode = .never
     }
     
     private func setupUI() {
@@ -143,9 +145,6 @@ class SettingVIewController : UIViewController {
         cancelmembershipButton.rx.tap
             .bind { [weak self] in
                 let cancelMembershipVC = CancelMembershipViewController()
-                let backItem = UIBarButtonItem()
-                backItem.title = "회원탈퇴"
-                self?.navigationItem.backBarButtonItem = backItem
                 self?.navigationController?.navigationBar.titleTextAttributes = [
                     .foregroundColor: UIColor(named: "textPrimary"),
                     .font: UIFont.highlight3
