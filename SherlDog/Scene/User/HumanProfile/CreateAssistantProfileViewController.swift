@@ -200,8 +200,13 @@ extension CreateAssistantProfileViewController {
                 switch result {
                 case .success:
                     // 저장 성공 시 메인 화면으로 이동
-                    let mainView = BottomTabBarController()
-                    self?.navigationController?.pushViewController(mainView, animated: true)
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let delegate = windowScene.delegate as? SceneDelegate,
+                       let window = delegate.window {
+                        let mainView = BottomTabBarController()
+                        window.rootViewController = mainView
+                        window.makeKeyAndVisible()
+                    }
                 case .failure(let error):
                     self?.showError(error.localizedDescription)
                 }
@@ -278,6 +283,7 @@ extension CreateAssistantProfileViewController {
         nicknameTextField.layer.cornerRadius = 6
         nicknameTextField.leftView = UIView(frame: .init(x: 0, y: 0, width: 12, height: 0))
         nicknameTextField.leftViewMode = .always
+        nicknameTextField.textColor = .textPrimary
         
         nickNameLabel.text = "닉네임"
         nickNameLabel.font = .body1
@@ -308,6 +314,7 @@ extension CreateAssistantProfileViewController {
         introduceTextView.backgroundColor = .gray50
         introduceTextView.layer.cornerRadius = 6
         introduceTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
+        introduceTextView.textColor = .textPrimary
         
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2

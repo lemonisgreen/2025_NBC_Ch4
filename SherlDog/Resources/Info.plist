@@ -39,11 +39,18 @@
 	<key>NMFClientId</key>
 	<string></string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>사용자의 위치를 받습니다.</string>
+	<string>앱이 백그라운드에 있을 때도 산책 경로를 추적하기 위해 위치 접근이 필요합니다.
+</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>위치정보 권한이 필요합니다.</string>
+	<string>앱 사용 중과 백그라운드 모두에서 산책 경로를 추적할 수 있도록 허용해 주세요.
+</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>위치정보 권한이 필요합니다.</string>
+	<string>산책 경로를 기록하기 위해 위치 접근이 필요합니다.
+</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NMFNcpKeyId</key>
 	<string>$(CLIENT_ID)</string>
 	<key>UIAppFonts</key>
