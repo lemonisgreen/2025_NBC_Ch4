@@ -25,6 +25,7 @@ class RegistrationViewModel {
     let isNeutered = BehaviorRelay<Bool?>(value: nil)
     let introduce = BehaviorRelay<String>(value: "")
     let saveResult = PublishSubject<Result<Void, Error>>()
+    let newPetProfileId = BehaviorSubject<String?>(value: nil)
 
     func uploadImageAndSaveProfile(image: UIImage) {
         let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
@@ -34,6 +35,7 @@ class RegistrationViewModel {
         FirebaseImageManager.shared.uploadPetImage(image, petId: petProfileID) { [weak self] result in
             switch result {
             case .success(let urlString):
+                self?.newPetProfileId.onNext(petProfileID)
                 self?.imageURL.accept(urlString)
                 self?.savePetProfile(petProfileID: petProfileID)
             case .failure(let error):
@@ -77,7 +79,7 @@ class RegistrationViewModel {
         )
         .subscribe(
             onCompleted: { [weak self] in
-                UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
+                self?.newPetProfileId.onNext(petProfileID)
                 self?.saveResult.onNext(.success(()))
             },
             onError: { [weak self] error in

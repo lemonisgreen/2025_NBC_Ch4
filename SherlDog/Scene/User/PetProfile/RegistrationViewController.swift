@@ -100,7 +100,7 @@ class RegistrationViewController: UIViewController {
             } else {
                 self?.registCompletButton.isEnabled = false
             }
-               
+            
         })
         .disposed(by: disposeBag)
         
@@ -337,9 +337,9 @@ class RegistrationViewController: UIViewController {
                         guard let self = self else { return }
                         switch result {
                         case .success:
-                            if let newProfileID = UserDefaults.standard.string(forKey: "newPetProfileId") {
-                                self.onProfileAdded?(newProfileID)
-                            }
+                            let petProfileID = self.viewModel.imageDocumentId
+                            self.onProfileAdded?(petProfileID)
+                            
                             self.dismiss(animated: true)
                         case .failure(let error):
                             print("저장 실패: \(error)")
@@ -443,7 +443,7 @@ class RegistrationViewController: UIViewController {
         
         topUnderLine.backgroundColor = .gray200
         
-//        scrollView.isScrollEnabled = false
+        //        scrollView.isScrollEnabled = false
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.alwaysBounceVertical = true
         
