@@ -51,7 +51,7 @@ extension CommunityViewController {
             collectionView
         ])
         
-        titleLabel.text = "커뮤니티"
+        titleLabel.text = "수사일지"
         titleLabel.font = .title1
         titleLabel.textColor = .textPrimary
         

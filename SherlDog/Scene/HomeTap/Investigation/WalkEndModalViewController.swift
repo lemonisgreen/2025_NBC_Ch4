@@ -296,7 +296,7 @@ class WalkEndModalViewController : UIViewController {
         mapImageView.clipsToBounds = true
         mapImageView.backgroundColor = .clear
         
-        walkShareButton.setTitle("수사 일지 공유하기", for: .normal)
+        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
         walkShareButton.titleLabel?.font = UIFont.highlight4
         walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
         walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
