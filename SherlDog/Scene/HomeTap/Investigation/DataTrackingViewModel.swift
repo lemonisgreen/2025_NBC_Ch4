@@ -13,7 +13,7 @@ import FirebaseAuth
 
 class DataTrackingViewModel {
     let disposeBag = DisposeBag()
-    
+    let requestViewModel = PictureUploadRequestViewModel()
     let imageURL = BehaviorRelay<String>(value: "")
     var imageDocumentId: String = ""
     
@@ -23,9 +23,9 @@ class DataTrackingViewModel {
     let endDate = BehaviorRelay<Date?>(value: nil)
     let trackingActive = BehaviorRelay<Bool>(value: false)
     let capturedImage = BehaviorRelay(value: UIImage())
-
+    
     let saveResult = PublishSubject<Result<Void, Error>>()
-
+    
     private let pedometer = CMPedometer()
     
     func startTracking() {
@@ -47,19 +47,19 @@ class DataTrackingViewModel {
         endDate.accept(Date())
     }
     
-    func saveWalkResultCapturedImage(image: UIImage) {
+    func saveWalkResultCapturedImage(image: UIImage, selectedProfiles: [PetProfile]) {
         FirebaseImageManager.shared.uploadImage(image, type: .walkResult) { [weak self] result in
             switch result {
             case .success(let urlString):
                 self?.imageURL.accept(urlString)
-                self?.saveWalkResult()
+                self?.saveWalkResult(selectedProfiles: selectedProfiles)
             case .failure(let error):
                 self?.saveResult.onNext(.failure(error))
             }
         }
     }
     
-    func saveWalkResult() {
+    func saveWalkResult(selectedProfiles: [PetProfile]) {
         let dateString: String = {
             if let date = endDate.value {
                 let formatter = DateFormatter()
@@ -71,10 +71,11 @@ class DataTrackingViewModel {
         }()
         
         let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+        let profileIds = selectedProfiles.map { $0.petProfileId }
         
         let newWalkResult = WalkResult(
             userId: userId,
-            petProfileId: "추후 입력",
+            petProfileId: profileIds,
             date: dateString,
             distance: distance.value,
             steps: numberOfSteps.value,
