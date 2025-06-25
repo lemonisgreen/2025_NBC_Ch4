@@ -98,10 +98,6 @@ extension InvLogListViewController {
         }
     }
     
-    private func configureCell() {
-        
-    }
-    
     private func configureCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { index, environment in
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
