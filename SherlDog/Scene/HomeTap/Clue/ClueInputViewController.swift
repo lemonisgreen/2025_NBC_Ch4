@@ -37,6 +37,7 @@ class ClueInputViewController: UIViewController {
     }
     
     override func viewDidLoad() {
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
         navigationController?.setNavigationBarHidden(true, animated: false)
         super.viewDidLoad()
         setupUI()
