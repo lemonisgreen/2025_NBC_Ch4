@@ -200,8 +200,13 @@ extension CreateAssistantProfileViewController {
                 switch result {
                 case .success:
                     // 저장 성공 시 메인 화면으로 이동
-                    let mainView = BottomTabBarController()
-                    self?.navigationController?.pushViewController(mainView, animated: true)
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let delegate = windowScene.delegate as? SceneDelegate,
+                       let window = delegate.window {
+                        let mainView = BottomTabBarController()
+                        window.rootViewController = mainView
+                        window.makeKeyAndVisible()
+                    }
                 case .failure(let error):
                     self?.showError(error.localizedDescription)
                 }
