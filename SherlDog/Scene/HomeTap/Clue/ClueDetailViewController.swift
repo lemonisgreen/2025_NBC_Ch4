@@ -17,7 +17,7 @@ final class ClueDetailViewController: UIViewController {
     private let clipNoteBackgroundImageView = UIImageView()
     private let clueTextView = UITextView()
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
-    
+    private let registImageStamp = UIImageView()
     private let viewModel: ClueDetailViewModel
     private let disposeBag = DisposeBag()
 
@@ -42,8 +42,9 @@ final class ClueDetailViewController: UIViewController {
 
         polaroidBackgroundImageView.image = UIImage(named: "bigPolaroidSet")
         polaroidBackgroundImageView.contentMode = .scaleAspectFill
+        polaroidBackgroundImageView.clipsToBounds = false
         
-        clueImageView.contentMode = .scaleAspectFit
+        clueImageView.contentMode = .scaleAspectFill
         clueImageView.clipsToBounds = true
         clueImageView.backgroundColor = .systemGray6
         clueImageView.transform = CGAffineTransform(rotationAngle: -.pi / 36)
@@ -59,15 +60,22 @@ final class ClueDetailViewController: UIViewController {
         clueTextView.isScrollEnabled = true
         clueTextView.text = "단서를 불러오는 중..."
         
+        let transToFigma = CGFloat.pi / 180
+        registImageStamp.contentMode = .scaleAspectFit
+        registImageStamp.image = .stamp
+        registImageStamp.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
+        registImageStamp.alpha = 0.5
+        
         // 로딩 인디케이터 설정
         loadingIndicator.color = .gray
         loadingIndicator.hidesWhenStopped = true
         
-        [polaroidBackgroundImageView, clipNoteBackgroundImageView, clueTextView, loadingIndicator].forEach {
+        [polaroidBackgroundImageView, clipNoteBackgroundImageView, clueTextView, registImageStamp ,loadingIndicator].forEach {
             view.addSubview($0)
         }
 
         polaroidBackgroundImageView.addSubview(clueImageView)
+        polaroidBackgroundImageView.addSubview(registImageStamp)
     }
 
     private func setupConstraints() {
@@ -85,13 +93,21 @@ final class ClueDetailViewController: UIViewController {
         clipNoteBackgroundImageView.snp.makeConstraints {
             $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(36)
             $0.leading.trailing.equalToSuperview().inset(14)
-            $0.height.equalTo(200)
+            $0.height.equalTo(132)
         }
 
+        
+        
         clueTextView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(38)
             $0.top.equalTo(clipNoteBackgroundImageView).inset(42)
             $0.bottom.equalTo(clipNoteBackgroundImageView).inset(20)
+        }
+        
+        registImageStamp.snp.makeConstraints {
+            $0.width.height.equalTo(48)
+            $0.trailing.equalTo(clueImageView.snp.trailing).offset(12)
+            $0.bottom.equalTo(clueImageView.snp.bottom).offset(12)
         }
         
         loadingIndicator.snp.makeConstraints {
