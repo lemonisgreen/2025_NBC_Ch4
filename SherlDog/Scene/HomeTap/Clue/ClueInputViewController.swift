@@ -32,6 +32,7 @@ class ClueInputViewController: UIViewController {
     }
     
     override func viewDidLoad() {
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
         navigationController?.setNavigationBarHidden(true, animated: false)
         super.viewDidLoad()
         setupUI()
@@ -72,9 +73,6 @@ class ClueInputViewController: UIViewController {
             $0.top.equalToSuperview().offset(16)
             $0.leading.equalToSuperview().offset(16)
         }
-        
-        textView.delegate = self
-        textView.returnKeyType = .done
 
         registerButton.setTitle("단서 등록하기", for: .normal)
         registerButton.setTitleColor(.textInverse, for: .normal)
@@ -152,16 +150,5 @@ class ClueInputViewController: UIViewController {
                 self?.imageView.image = image
             })
             .disposed(by: disposeBag)
-    }
-}
-
-// 키보드 완료 버튼 익스텐션
-extension ClueInputViewController: UITextViewDelegate {
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" {
-            textView.resignFirstResponder() // 키보드 내림
-            return false // 개행문자 입력 방지
-        }
-        return true
     }
 }

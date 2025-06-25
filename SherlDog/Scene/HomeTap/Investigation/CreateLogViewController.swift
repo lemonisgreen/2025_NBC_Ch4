@@ -49,6 +49,7 @@ class CreateLogViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
         
         setupUI()
         configureUI()
@@ -218,9 +219,6 @@ extension CreateLogViewController {
         textView.backgroundColor = .gray50
         textView.layer.cornerRadius = 6
         textView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
-        // 키보드 완료 버튼으로 만들기
-        textView.delegate = self
-        textView.returnKeyType = .done
         
         textViewPlaceholderLabel.text = "오늘의 수사일지를 간단히 적어주세요."
         textViewPlaceholderLabel.font = .body3
@@ -314,15 +312,4 @@ extension CreateLogViewController {
         }
     }
     
-}
-
-// 키보드 완료 버튼 익스텐션
-extension CreateLogViewController: UITextViewDelegate {
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" {
-            textView.resignFirstResponder() // 키보드 내림
-            return false // 개행문자 입력 방지
-        }
-        return true
-    }
 }

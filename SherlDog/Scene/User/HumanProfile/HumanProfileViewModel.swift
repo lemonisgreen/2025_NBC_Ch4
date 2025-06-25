@@ -15,7 +15,7 @@ final class HumanProfileViewModel {
     let introduce = BehaviorRelay<String>(value: "")
     let image = BehaviorRelay<UIImage?>(value: nil)
     let saveResult = PublishSubject<Result<Void, Error>>()
-    let isLoading = BehaviorRelay<Bool>(value: false)
+    let isLoading = PublishRelay<Bool>()
 
     private let disposeBag = DisposeBag()
 

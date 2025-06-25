@@ -38,7 +38,8 @@ class CreateAssistantProfileViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+
         setupUI()
         configureUI()
         bind()
@@ -50,6 +51,30 @@ class CreateAssistantProfileViewController: UIViewController {
 extension CreateAssistantProfileViewController {
     
     private func bind() {
+        Observable.combineLatest(
+            self.cameraViewModel.output.capturedImage,
+            self.avatarViewModel.output.selectedAvatar,
+            self.nicknameTextField.rx.text,
+            self.introduceTextView.rx.text
+        )
+        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce in
+            if image != nil || avatar != nil,
+               nickName != "",
+               introduce != "" {
+                if let nickName, nickName.contains(" ") {
+                    self?.nextButton.isEnabled = false
+                    
+                } else {
+                    self?.nextButton.isEnabled = true
+                    
+                }
+                
+            } else {
+                self?.nextButton.isEnabled = false
+            }
+        })
+        .disposed(by: disposeBag)
+        
         navigationBackButton.rx.tap
                 .subscribe(onNext: { [weak self] in
                     self?.navigationController?.popViewController(animated: true)
@@ -85,20 +110,13 @@ extension CreateAssistantProfileViewController {
                 
                 self.nickNameConstraintsLabel.text = "\(text.count) / 12자"
                 
-                if text.count > 0 {
-                    if text.contains(" ") {
-                        self.nickNameSeparatorAlert.isHidden = false
-                        self.nickNameSeparatorAlertImage.isHidden = false
-                        self.nextButton.isEnabled = false
-                        
-                    } else {
-                        self.nickNameSeparatorAlert.isHidden = true
-                        self.nickNameSeparatorAlertImage.isHidden = true
-                        self.nextButton.isEnabled = true
-                    }
+                if text.contains(" ") {
+                    self.nickNameSeparatorAlert.isHidden = false
+                    self.nickNameSeparatorAlertImage.isHidden = false
                     
                 } else {
-                    self.nextButton.isEnabled = false
+                    self.nickNameSeparatorAlert.isHidden = true
+                    self.nickNameSeparatorAlertImage.isHidden = true
                 }
                 
             })
@@ -182,8 +200,13 @@ extension CreateAssistantProfileViewController {
                 switch result {
                 case .success:
                     // 저장 성공 시 메인 화면으로 이동
-                    let mainView = BottomTabBarController()
-                    self?.navigationController?.pushViewController(mainView, animated: true)
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let delegate = windowScene.delegate as? SceneDelegate,
+                       let window = delegate.window {
+                        let mainView = BottomTabBarController()
+                        window.rootViewController = mainView
+                        window.makeKeyAndVisible()
+                    }
                 case .failure(let error):
                     self?.showError(error.localizedDescription)
                 }
@@ -260,6 +283,7 @@ extension CreateAssistantProfileViewController {
         nicknameTextField.layer.cornerRadius = 6
         nicknameTextField.leftView = UIView(frame: .init(x: 0, y: 0, width: 12, height: 0))
         nicknameTextField.leftViewMode = .always
+        nicknameTextField.textColor = .textPrimary
         
         nickNameLabel.text = "닉네임"
         nickNameLabel.font = .body1
@@ -290,9 +314,7 @@ extension CreateAssistantProfileViewController {
         introduceTextView.backgroundColor = .gray50
         introduceTextView.layer.cornerRadius = 6
         introduceTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
-        // 키보드 완료 버튼으로 만들기
-        introduceTextView.delegate = self
-        introduceTextView.returnKeyType = .done
+        introduceTextView.textColor = .textPrimary
         
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
@@ -382,15 +404,4 @@ extension CreateAssistantProfileViewController {
         }
     }
     
-}
-
-// 키보드 완료 버튼 익스텐션
-extension CreateAssistantProfileViewController: UITextViewDelegate {
-    func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-        if text == "\n" {
-            textView.resignFirstResponder() // 키보드 내림
-            return false // 개행문자 입력 방지
-        }
-        return true
-    }
 }
