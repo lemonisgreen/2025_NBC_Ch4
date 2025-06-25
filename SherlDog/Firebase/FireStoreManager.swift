@@ -60,6 +60,30 @@ extension FirestoreManager {
         }
     }
     
+    /// 원하는 문서만 선별적으로 읽기
+    func fetchDocuments<T: Decodable>(
+        collection: String,
+        whereField field: String,
+        isEqualTo value: Any,
+        type: T.Type
+    ) -> Single<[T]> {
+        return Single.create { [weak self] single in
+            self?.db.collection(collection)
+                .whereField(field, isEqualTo: value)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        single(.failure(error))
+                    } else if let snapshot = snapshot {
+                        let items: [T] = snapshot.documents.compactMap { try? $0.data(as: T.self) }
+                        single(.success(items))
+                    } else {
+                        single(.failure(FirestoreError.noData))
+                    }
+                }
+            return Disposables.create()
+        }
+    }
+    
     /// 컬렉션 전체 읽기
     func fetchCollection<T: Decodable>(collection: String, type: T.Type) -> Single<[T]> {
         return Single.create { [weak self] single in
