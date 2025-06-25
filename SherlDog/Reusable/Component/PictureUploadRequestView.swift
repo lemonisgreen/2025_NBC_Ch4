@@ -131,7 +131,7 @@ extension PictureUploadRequestView {
                             self.present(cameraView, animated: true)
                             
                         case false:
-                            let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", subMessage: nil, buttonTitles: ["확인"], buttonActions: [nil])
                             
                             self.present(alert, animated: true)
                         }
@@ -146,7 +146,7 @@ extension PictureUploadRequestView {
                             self.present(albumView, animated: true)
                             
                         case false:
-                            let alert = AlertManager(message: "앨범 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            let alert = AlertManager(message: "앨범 권한이 필요합니다.\n 설정에서 변경해주세요.", subMessage: nil, buttonTitles: ["확인"], buttonActions: [nil])
                             
                             self.present(alert, animated: true)
                         }
