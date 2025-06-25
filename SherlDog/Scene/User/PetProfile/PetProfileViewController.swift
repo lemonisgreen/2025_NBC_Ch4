@@ -16,6 +16,7 @@ final class PetProfileViewController: UIViewController {
     private let disposeBag = DisposeBag()
     private var petProfiles: [PetProfile] = []
     private let maxProfileCount = 3 // 최대 프로필 개수 제한
+    private let viewModel = RegistrationViewModel()
     
     // MARK: - UI Components
     private let collectionView: UICollectionView = {
@@ -192,6 +193,14 @@ final class PetProfileViewController: UIViewController {
         collectionView.reloadData()
         updateNextButtonState()
     }
+    
+    private func bindViewModel() {
+            viewModel.newPetProfileId
+                .subscribe(onNext: { [weak self] id in
+                    self?.addNewProfile(with: id ?? "")
+                })
+                .disposed(by: disposeBag)
+        }
     
     private func addNewProfile(with petProfileID: String) {
         guard petProfiles.count < maxProfileCount else { return }

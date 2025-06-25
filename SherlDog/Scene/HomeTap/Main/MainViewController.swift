@@ -37,7 +37,7 @@ class MainViewController: UIViewController {
     private let distanceLabel = UILabel()
     private let timeLabel = UILabel()
     private let stepsLabel = UILabel()
-    private let image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
+    private var image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
     private let statusLabel = UILabel()
     
     // distance, time, steps
@@ -125,6 +125,8 @@ class MainViewController: UIViewController {
         inputBind()
         trackingBind()
         configureInitialVisibility()
+        
+        requestViewModel.fetchPetProfiles()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -191,12 +193,17 @@ class MainViewController: UIViewController {
                             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                         }
                         self.DataTrackingVM.capturedImage.accept(image)
+                        
+                        let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
+                        
+                        self.DataTrackingVM.saveWalkResultCapturedImage(
+                            image: image,
+                            selectedProfiles: selectedProfiles
+                        )
                     }
                     
-                    let endVC = WalkEndModalViewController(viewModel: self.DataTrackingVM)
-                    let nav = UINavigationController(rootViewController: endVC)
-                    nav.modalPresentationStyle = .overFullScreen
-                    self.present(nav, animated: true)
+                    // 선택된 멍탐정 정보 연동된 WalkEndModal띄우는 메서드
+                    self.showWalkEndModal()
                     
                     self.pathOverlays.forEach { $0.mapView = nil }
                     self.pathOverlays.removeAll()
@@ -264,7 +271,7 @@ class MainViewController: UIViewController {
                             return true
                         }
                         self.clueMarkers.append(clueMarker)
-
+                        
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
                         
@@ -290,8 +297,8 @@ class MainViewController: UIViewController {
         
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                
                 guard let self = self else { return }
+                self.requestViewModel.fetchPetProfiles()
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
                 let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
                 requestView.modalPresentationStyle = .pageSheet
@@ -299,12 +306,13 @@ class MainViewController: UIViewController {
                     sheet.selectedDetentIdentifier = .medium
                     sheet.preferredCornerRadius = 20
                     sheet.prefersGrabberVisible = true
-                    let dummyData = [0, 1, 2]
-                    switch dummyData.count {
+                    let petCount = self.requestViewModel.output.petProfiles.value.count
+                    switch petCount {
                     case 1: sheet.detents = [.custom { _ in 240 }]
                     case 2: sheet.detents = [.custom { _ in 320 }]
                     case 3: sheet.detents = [.custom { _ in 400 }]
-                    default: return
+                    case 4: sheet.detents = [.custom { _ in 480 }] //나중에 지우기
+                    default: sheet.detents = [.custom { _ in 400 }]
                     }
                 }
                 self.present(requestView, animated: true)
@@ -321,6 +329,61 @@ class MainViewController: UIViewController {
                 self.mapView.moveCamera(cameraUpdate)
             })
             .disposed(by: disposeBag)
+        
+        requestViewModel.output.selectedPetProfiles
+            .subscribe(onNext: { [weak self] selectedProfiles in
+                guard let self = self else { return }
+                
+                // 선택된 강아지들의 이미지로 배열 업데이트
+                if !selectedProfiles.isEmpty {
+                    self.image = selectedProfiles.map { $0.image }
+                    self.updateDetectiveImageStack()
+                }
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func updateDetectiveImageStack() {
+        // 기존 이미지뷰들 제거
+        detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        detectiveImageStack.spacing = image.count > 1 ? -8 : 0
+        
+        image.forEach { imageName in
+            let imageView = UIImageView()
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            imageView.layer.cornerRadius = 18
+            imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
+            imageView.layer.borderWidth = 1
+            imageView.snp.makeConstraints { $0.size.equalTo(36) }
+            
+            // URL인지 확인해서 이미지 로드
+            if imageName.hasPrefix("http") {
+                if let url = URL(string: imageName) {
+                    DispatchQueue.global().async {
+                        if let data = try? Data(contentsOf: url),
+                           let image = UIImage(data: data) {
+                            DispatchQueue.main.async {
+                                imageView.image = image
+                            }
+                        }
+                    }
+                }
+            } else {
+                imageView.image = UIImage(named: imageName)
+            }
+            detectiveImageStack.addArrangedSubview(imageView)
+        }
+        // 텍스트도 업데이트
+        statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
+    }
+    
+    private func showWalkEndModal() {
+        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
+        let walkEndModal = WalkEndModalViewController(viewModel: DataTrackingVM, selectedProfiles: selectedProfiles)
+        let nav = UINavigationController(rootViewController: walkEndModal)
+        nav.modalPresentationStyle = .overFullScreen
+        present(nav, animated: true)
     }
     
     private func configureInitialVisibility() {
@@ -329,7 +392,7 @@ class MainViewController: UIViewController {
         clueButton.isHidden = true
         endButton.isHidden = true
     }
-  
+    
     private func setInvestigation(active: Bool) {
         hasSetInitialCamera = false
         statusView.isHidden = !active
@@ -396,21 +459,6 @@ class MainViewController: UIViewController {
         statusStack.spacing = 8
         statusStack.alignment = .center
         statusStack.distribution = .fill
-        
-        detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        detectiveImageStack.spacing = image.count > 1 ? -8 : 0
-        
-        image.forEach { name in
-            let imageView = UIImageView(image: UIImage(named: "sampleDogImage"))
-            imageView.contentMode = .scaleAspectFill
-            imageView.clipsToBounds = true
-            imageView.layer.cornerRadius = 12
-            imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
-            imageView.layer.borderWidth = 1
-            imageView.snp.makeConstraints { $0.size.equalTo(24) }
-            detectiveImageStack.addArrangedSubview(imageView)
-        }
-        statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
         
         // 버튼 설정
         clueButton.setTitle("단서 남기기", for: .normal)
@@ -510,7 +558,7 @@ class MainViewController: UIViewController {
 extension MainViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
-
+        
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
             let coord = location.coordinate
@@ -519,7 +567,7 @@ extension MainViewController: CLLocationManagerDelegate {
             cameraUpdate.animation = .none
             mapView.moveCamera(cameraUpdate)
             mapView.zoomLevel = 16.0
-
+            
             hasSetInitialCamera = true
         }
     }

@@ -26,6 +26,7 @@ class RegistrationViewModel {
     let introduce = BehaviorRelay<String>(value: "")
     let isLoading = PublishRelay<Bool>()
     let saveResult = PublishSubject<Result<Void, Error>>()
+    let newPetProfileId = BehaviorSubject<String?>(value: nil)
 
     func uploadImageAndSaveProfile(image: UIImage) {
         self.isLoading.accept(true)
@@ -37,6 +38,7 @@ class RegistrationViewModel {
         FirebaseImageManager.shared.uploadPetImage(image, petId: petProfileID) { [weak self] result in
             switch result {
             case .success(let urlString):
+                self?.newPetProfileId.onNext(petProfileID)
                 self?.imageURL.accept(urlString)
                 self?.savePetProfile(petProfileID: petProfileID)
             case .failure(let error):
@@ -45,6 +47,7 @@ class RegistrationViewModel {
             }
         }
     }
+    
     func savePetProfile(petProfileID: String) {
         guard let isNeutered = isNeutered.value else { return }
         
@@ -80,7 +83,7 @@ class RegistrationViewModel {
         )
         .subscribe(
             onCompleted: { [weak self] in
-                UserDefaults.standard.set(petProfileID, forKey: "newPetProfileId")
+                self?.newPetProfileId.onNext(petProfileID)
                 self?.saveResult.onNext(.success(()))
                 self?.isLoading.accept(false)
             },
