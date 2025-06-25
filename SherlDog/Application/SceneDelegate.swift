@@ -21,7 +21,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 로그인 상태 확인 후 초기 화면 결정
        let initialViewController = determineInitialViewController()
         
-        window.rootViewController = UINavigationController(rootViewController: InvLogListViewController())
+        window.rootViewController = initialViewController
         self.window = window
         window.makeKeyAndVisible()
     }
