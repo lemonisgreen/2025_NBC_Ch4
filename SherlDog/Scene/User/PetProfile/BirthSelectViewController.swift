@@ -54,6 +54,7 @@ class BirthSelectViewController: UIViewController {
         
         datePicker.datePickerMode = .date
         datePicker.preferredDatePickerStyle = .wheels
+        datePicker.setValue(UIColor(named: "textPrimary"), forKeyPath: "textColor")
 
     }
     

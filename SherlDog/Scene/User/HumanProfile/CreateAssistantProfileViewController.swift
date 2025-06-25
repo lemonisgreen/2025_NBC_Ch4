@@ -283,6 +283,7 @@ extension CreateAssistantProfileViewController {
         nicknameTextField.layer.cornerRadius = 6
         nicknameTextField.leftView = UIView(frame: .init(x: 0, y: 0, width: 12, height: 0))
         nicknameTextField.leftViewMode = .always
+        nicknameTextField.textColor = .textPrimary
         
         nickNameLabel.text = "닉네임"
         nickNameLabel.font = .body1
@@ -313,6 +314,10 @@ extension CreateAssistantProfileViewController {
         introduceTextView.backgroundColor = .gray50
         introduceTextView.layer.cornerRadius = 6
         introduceTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
+        // 키보드 완료 버튼으로 만들기
+        introduceTextView.delegate = self
+        introduceTextView.returnKeyType = .done
+        introduceTextView.textColor = .textPrimary
         
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
