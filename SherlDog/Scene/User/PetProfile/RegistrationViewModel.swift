@@ -24,10 +24,13 @@ class RegistrationViewModel {
     let selectedGender = BehaviorRelay<String>(value: "")
     let isNeutered = BehaviorRelay<Bool?>(value: nil)
     let introduce = BehaviorRelay<String>(value: "")
+    let isLoading = PublishRelay<Bool>()
     let saveResult = PublishSubject<Result<Void, Error>>()
     let newPetProfileId = BehaviorSubject<String?>(value: nil)
 
     func uploadImageAndSaveProfile(image: UIImage) {
+        self.isLoading.accept(true)
+        
         let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
         let petProfileID = newDocRef.documentID
         self.imageDocumentId = petProfileID
@@ -40,6 +43,7 @@ class RegistrationViewModel {
                 self?.savePetProfile(petProfileID: petProfileID)
             case .failure(let error):
                 self?.saveResult.onNext(.failure(error))
+                self?.isLoading.accept(false)
             }
         }
     }
@@ -81,9 +85,11 @@ class RegistrationViewModel {
             onCompleted: { [weak self] in
                 self?.newPetProfileId.onNext(petProfileID)
                 self?.saveResult.onNext(.success(()))
+                self?.isLoading.accept(false)
             },
             onError: { [weak self] error in
                 self?.saveResult.onNext(.failure(error))
+                self?.isLoading.accept(false)
             }
         )
         .disposed(by: disposeBag)

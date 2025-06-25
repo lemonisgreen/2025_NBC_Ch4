@@ -70,7 +70,8 @@ class RegistrationViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+
         setupUI()
         configureUI()
         bind()
@@ -100,9 +101,15 @@ class RegistrationViewController: UIViewController {
             } else {
                 self?.registCompletButton.isEnabled = false
             }
-            
         })
         .disposed(by: disposeBag)
+        
+        viewModel.isLoading
+            .subscribe(onNext: { [weak self] isLoading in
+                self?.registCompletButton.isEnabled = !isLoading
+                // 인디케이터 활성, 비활성은 여기서 진행
+            })
+            .disposed(by: disposeBag)
         
         self.registrationButton.rx.tap
             .subscribe(onNext: { [weak self]  _ in
