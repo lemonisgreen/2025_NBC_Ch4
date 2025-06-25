@@ -34,7 +34,6 @@ final class ClueDetailViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         setupConstraints()
-        setupNavigationBar()
         bindViewModel()
     }
 
@@ -98,19 +97,6 @@ final class ClueDetailViewController: UIViewController {
         loadingIndicator.snp.makeConstraints {
             $0.center.equalTo(clueImageView)
         }
-    }
-    
-    private func setupNavigationBar() {
-        navigationItem.title = "단서 상세"
-        navigationController?.setNavigationBarHidden(false, animated: false)
-        
-        let backButton = UIBarButtonItem(
-            image: UIImage(systemName: "chevron.left"),
-            style: .plain,
-            target: self,
-            action: #selector(backButtonTapped)
-        )
-        navigationItem.leftBarButtonItem = backButton
     }
     
     @objc private func backButtonTapped() {

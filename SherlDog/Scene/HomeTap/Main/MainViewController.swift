@@ -141,15 +141,15 @@ class MainViewController: UIViewController {
                 guard let clue = marker.userInfo["clue"] as? ClueModel else { return false }
                 let viewModel = ClueDetailViewModel(clue: clue)
                 let detailVC = ClueDetailViewController(viewModel: viewModel)
-                let nav = UINavigationController(rootViewController: detailVC)
-                nav.modalPresentationStyle = .pageSheet
-                if let sheet = nav.sheetPresentationController {
+//                let nav = UINavigationController(rootViewController: detailVC)
+                detailVC.modalPresentationStyle = .pageSheet
+                if let sheet = detailVC.sheetPresentationController {
                     sheet.detents = [.custom { _ in 650 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 20
                 }
-                self.present(nav, animated: true)
+                self.present(detailVC, animated: true)
                 return true
             }
             
