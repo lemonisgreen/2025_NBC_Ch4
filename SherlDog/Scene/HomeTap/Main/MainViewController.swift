@@ -207,14 +207,7 @@ class MainViewController: UIViewController {
                         let image = renderer.image { ctx in
                             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                         }
-                        self.DataTrackingVM.capturedImage.accept(image)
-                        
-                        let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
-                        
-                        self.DataTrackingVM.saveWalkResultCapturedImage(
-                            image: image,
-                            selectedProfiles: selectedProfiles
-                        )
+                        self.DataTrackingVM.fullScreenImage.accept(image)
                     }
                     
                     // 선택된 멍탐정 정보 연동된 WalkEndModal띄우는 메서드

@@ -33,7 +33,7 @@ class WalkEndModalViewController : UIViewController {
     ]
     let walkEndLabel = UILabel()
     let showProfileButton = UIButton()
-    let walkShareButton = UIButton()
+    let walkShareButton = ButtonManager(title: "멍탐정과 남긴 단서")
     let mapImageView = UIImageView()
     let closeButton = UIButton()
     
@@ -95,8 +95,49 @@ class WalkEndModalViewController : UIViewController {
     
     private func bind() {
         
+        self.DataTrackingVM.fullScreenImage
+            .bind(onNext: { [weak self] image in
+                guard let self else { return }
+                
+                DispatchQueue.main.async {
+                    self.mapImageView.image = image
+                    self.isLoading(isLoading: true)
+                    
+                    self.DataTrackingVM.capturedImage.accept(self.mapImageView.viewCapture())
+                }
+            })
+            .disposed(by: disposeBag)
+        
         self.DataTrackingVM.capturedImage
-            .bind(to: self.mapImageView.rx.image)
+            .bind(onNext: { [weak self] image in
+                guard let self else { return }
+                
+                self.DataTrackingVM.saveWalkResultCapturedImage(
+                    image: image,
+                    selectedProfiles: self.selectedPetProfiles
+                )
+            })
+            .disposed(by: disposeBag)
+        
+        self.DataTrackingVM.saveResult
+            .subscribe(onNext: { [weak self] result in
+                guard let self else { return }
+                
+                switch result {
+                case .success():
+                    self.isLoading(isLoading: false)
+                    
+                    let alert = AlertManager(message: "산책이 기록되었습니다.\n 마이페이지에서 확인하실 수 있습니다.",
+                                             buttonTitles: ["닫기"],
+                                             buttonActions: [nil])
+                    self.present(alert, animated: true)
+                    
+                case .failure(let error):
+                    // todo: 에러 처리
+                    print(error.localizedDescription)
+                    return
+                }
+            })
             .disposed(by: disposeBag)
         
         self.walkShareButton.rx.tap
@@ -175,6 +216,12 @@ class WalkEndModalViewController : UIViewController {
                 self.present(requestView, animated: true)
             }
             .disposed(by: disposeBag)
+    }
+    
+    private func isLoading(isLoading: Bool) {
+            self.walkShareButton.isEnabled = !isLoading
+            self.closeButton.isEnabled = !isLoading
+            self.showProfileButton.isEnabled = !isLoading
     }
     
     private func setupUI() {
@@ -358,11 +405,11 @@ class WalkEndModalViewController : UIViewController {
         mapImageView.clipsToBounds = true
         mapImageView.backgroundColor = .clear
         
-        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
-        walkShareButton.titleLabel?.font = UIFont.highlight4
-        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
-        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
-        walkShareButton.layer.cornerRadius = 6
+//        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
+//        walkShareButton.titleLabel?.font = UIFont.highlight4
+//        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
+//        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
+//        walkShareButton.layer.cornerRadius = 6
         
         distanceStack.axis = .vertical
         distanceStack.spacing = 4
