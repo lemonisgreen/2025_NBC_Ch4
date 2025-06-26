@@ -26,6 +26,10 @@ class SettingViewController : UIViewController {
     let cancelMembershipStack = UIStackView()
     let cancelMembershipLabel = UILabel()
     let cancelmembershipButton = UIButton()
+    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+    let settingBackStack = UIStackView()
+    let settingBackButton = UIButton()
+    let settingTitleLabel = UILabel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,8 +37,14 @@ class SettingViewController : UIViewController {
         setupUI()
         configureUI()
         bind()
+        setupNavigationBar()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationItem.largeTitleDisplayMode = .never
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: false)
     }
     
     private func setupUI() {
@@ -51,7 +61,7 @@ class SettingViewController : UIViewController {
             privacyPolicyButton,
             cancelMembershipStack,
             cancelMembershipLabel,
-            cancelmembershipButton
+            cancelmembershipButton,
         ].forEach {
             view.addSubview($0)
         }
@@ -111,6 +121,20 @@ class SettingViewController : UIViewController {
         cancelMembershipStack.alignment = .leading
         cancelMembershipStack.addArrangedSubview(cancelMembershipLabel)
         cancelMembershipStack.addArrangedSubview(cancelmembershipButton)
+        
+        spacer.width = -8
+        
+        settingBackButton.setImage(UIImage(named: "leftChevron"), for: .normal)
+        settingTitleLabel.text = "설정"
+        settingTitleLabel.font = .highlight3
+        settingTitleLabel.textColor = .textPrimary
+        
+        settingBackStack.addArrangedSubview(settingBackButton)
+        settingBackStack.addArrangedSubview(settingTitleLabel)
+        settingBackStack.axis = .horizontal
+        settingBackStack.spacing = 10
+        settingBackStack.alignment = .center
+        
     }
     
     private func configureUI() {
@@ -144,16 +168,22 @@ class SettingViewController : UIViewController {
         cancelmembershipButton.rx.tap
             .bind { [weak self] in
                 let cancelMembershipVC = CancelMembershipViewController()
-                let backItem = UIBarButtonItem()
-                backItem.title = "회원탈퇴"
-                self?.navigationItem.backBarButtonItem = backItem
-                self?.navigationController?.navigationBar.titleTextAttributes = [
-                    .foregroundColor: UIColor(named: "textPrimary"),
-                    .font: UIFont.highlight3
-                ]
-                self?.navigationController?.navigationBar.tintColor = .textPrimary
                 self?.navigationController?.pushViewController(cancelMembershipVC, animated: true)
             }
             .disposed(by: disposeBag)
+        
+        settingBackButton.rx.tap
+            .bind { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
             }
+            .disposed(by: disposeBag)
     }
+    
+    private func setupNavigationBar() {
+        let barItem = UIBarButtonItem(customView: settingBackStack)
+        let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        spacer.width = 8
+        navigationItem.leftBarButtonItems = [spacer, barItem]
+    }
+
+}

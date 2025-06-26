@@ -21,6 +21,9 @@ class CancelMembershipViewController : UIViewController {
     let continueButton = ButtonManager(title: "그래도 탈퇴할래요")
     let buttonStackView = UIStackView()
     let separator = UIView()
+    let backLabel = UILabel()
+    let chevronButton = UIButton()
+    let backStack = UIStackView()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,6 +31,7 @@ class CancelMembershipViewController : UIViewController {
         setupUI()
         configureUI()
         bind()
+        setupNavigationBar()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationItem.largeTitleDisplayMode = .never
     }
@@ -62,7 +66,7 @@ class CancelMembershipViewController : UIViewController {
         contentLabel.textAlignment = .center
         
         finalLabel.text = "정말 탈퇴하시나요?\n멍탐정과의 모든 기록이 한순간에 사라져요"
-        finalLabel.font = .alert2
+        finalLabel.font = .body3
         finalLabel.textColor = .textPrimary
         finalLabel.numberOfLines = 0
         finalLabel.textAlignment = .center
@@ -79,7 +83,19 @@ class CancelMembershipViewController : UIViewController {
         buttonStackView.axis = .horizontal
         buttonStackView.distribution = .fillEqually
         buttonStackView.spacing = 16
+        
+        backLabel.text = "회원 탈퇴"
+        backLabel.font = .highlight3
+        backLabel.textColor = .textPrimary
 
+        backStack.addArrangedSubview(chevronButton)
+        backStack.addArrangedSubview(backLabel)
+        backStack.axis = .horizontal
+        backStack.distribution = .fill
+        backStack.spacing = 10
+        backStack.alignment = .center
+
+        chevronButton.setImage(UIImage(named: "leftChevron"), for: .normal)
     }
     
     private func configureUI() {
@@ -110,7 +126,8 @@ class CancelMembershipViewController : UIViewController {
         
         finalLabel.snp.makeConstraints {
             $0.top.equalTo(imageView.snp.bottom).offset(10)
-            $0.leading.trailing.equalToSuperview().inset(88)
+            $0.leading.trailing.equalToSuperview().inset(12)
+
         }
         
         buttonStackView.snp.makeConstraints {
@@ -121,6 +138,17 @@ class CancelMembershipViewController : UIViewController {
     }
     
     private func bind() {
-        
+        chevronButton.rx.tap
+            .bind { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+            .disposed(by: disposeBag)
+    }
+    
+    private func setupNavigationBar() {
+        let backBarButtonItem = UIBarButtonItem(customView: backStack)
+        let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+        spacer.width = 8
+        navigationItem.leftBarButtonItems = [spacer, backBarButtonItem]
     }
 }
