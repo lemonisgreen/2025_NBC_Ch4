@@ -15,16 +15,20 @@ class MyPageViewModel {
     struct Input {
         let refreshTrigger = PublishSubject<Void>()
         let profileUpdateTrigger = PublishSubject<Void>()
+        let humanProfileRefreshTrigger = PublishSubject<Void>()
     }
     
     struct Output {
         let petProfiles = BehaviorRelay<[PetProfile]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let errorMessage = PublishSubject<String>()
+        let humanProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
     }
     
     let input = Input()
     let output = Output()
+    
+    let userId = Auth.auth().currentUser?.uid ?? "anonymous"
     
     // 페이지 계산을 위한 설정값들
     private let cardWidth: CGFloat = 336
@@ -33,11 +37,11 @@ class MyPageViewModel {
     
     init() {
         setupBindings()
-        fetchUserPetProfiles() // 초기 로드
+        fetchUserPetProfiles()
+        fetchHumanProfile()
     }
     
     private func setupBindings() {
-        // 새로고침 트리거
         Observable.merge(
             input.refreshTrigger.asObservable(),
             input.profileUpdateTrigger.asObservable()
@@ -46,6 +50,12 @@ class MyPageViewModel {
             self?.fetchUserPetProfiles()
         })
         .disposed(by: disposeBag)
+        
+        input.humanProfileRefreshTrigger
+            .subscribe(onNext: { [weak self] in
+                self?.fetchHumanProfile()
+            })
+            .disposed(by: disposeBag)
     }
     
     // MARK: - Public Methods
@@ -57,6 +67,10 @@ class MyPageViewModel {
         input.profileUpdateTrigger.onNext(())
     }
     
+    func refreshHumanProfile() {
+        input.humanProfileRefreshTrigger.onNext(())
+    }
+    
     func calculatePageIndex(from contentOffset: CGPoint) -> Int {
         let adjustedOffset = contentOffset.x + leftInset
         let index = Int((adjustedOffset + cardWidth / 2) / (cardWidth + spacing))
@@ -65,7 +79,6 @@ class MyPageViewModel {
     
     // MARK: - Private Methods
     private func fetchUserPetProfiles() {
-        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
         output.isLoading.accept(true)
         
         FirestoreManager.shared.fetchDocuments(
@@ -83,6 +96,25 @@ class MyPageViewModel {
                 self?.output.errorMessage.onNext("펫 프로필 불러오기 실패: \(error.localizedDescription)")
                 self?.output.petProfiles.accept([])
                 self?.output.isLoading.accept(false)
+            }
+        )
+        .disposed(by: disposeBag)
+    }
+    
+    private func fetchHumanProfile() {
+        FirestoreManager.shared.fetchDocument(
+            collection: "HumanProfile",
+            documentId: userId,
+            type: HumanProfileModel.self
+        )
+        .subscribe(
+            onSuccess: { [weak self] humanProfile in
+                self?.output.humanProfile.accept(humanProfile)
+            },
+            onFailure: { [weak self] error in
+                self?.output.errorMessage.onNext("HumanProfile 로드 실패: \(error.localizedDescription)")
+                let defaultProfile = HumanProfileModel(nickname: "똥봉투 조수", image: "", introduce: "")
+                self?.output.humanProfile.accept(defaultProfile)
             }
         )
         .disposed(by: disposeBag)

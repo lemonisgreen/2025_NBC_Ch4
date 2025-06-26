@@ -35,6 +35,11 @@ class MyPageViewController : UIViewController {
         bind()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+            super.viewWillAppear(animated)
+            viewModel.refreshHumanProfile()
+        }
+    
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         let topLine = CALayer()
@@ -64,9 +69,10 @@ class MyPageViewController : UIViewController {
         
         mypageSettingButton.setImage(UIImage(named: "setting"), for: .normal)
         
-        assistantImage.image = UIImage(named: "mypageSample")
+        assistantImage.backgroundColor = .keycolorPrimary4
+        assistantImage.layer.cornerRadius = 8
+        assistantImage.layer.masksToBounds = true
         
-        assistantLabel.text = "똥봉투 조수"
         assistantLabel.font = .title3
         assistantLabel.textColor = .textPrimary
         
@@ -75,6 +81,11 @@ class MyPageViewController : UIViewController {
         assistantButton.titleLabel?.font = .body3
         
         layout.scrollDirection = .horizontal
+        layout.scrollDirection = .horizontal
+        layout.itemSize = CGSize(width: 336, height: 208)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        layout.minimumLineSpacing = 12
+        layout.minimumInteritemSpacing = 0
         
         collectionView.register(
             DetectiveCardCell.self,
@@ -82,7 +93,6 @@ class MyPageViewController : UIViewController {
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
-        collectionView.delegate = self
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
@@ -135,6 +145,7 @@ class MyPageViewController : UIViewController {
         assistantImage.snp.makeConstraints {
             $0.top.equalTo(mypageLabel.snp.bottom).offset(24)
             $0.leading.equalToSuperview().inset(16)
+            $0.height.width.equalTo(40)
         }
         
         assistantLabel.snp.makeConstraints {
@@ -188,6 +199,32 @@ class MyPageViewController : UIViewController {
                 ]
                 self?.navigationController?.navigationBar.tintColor = .textPrimary
                 self?.navigationController?.pushViewController(settingVC, animated: true)
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.humanProfile
+            .compactMap { $0 }
+            .subscribe(onNext: { [weak self] humanProfile in
+                DispatchQueue.main.async {
+                    self?.assistantLabel.text = humanProfile.nickname
+                    
+                    if !humanProfile.image.isEmpty, let url = URL(string: humanProfile.image) {
+                        self?.loadImage(from: url)
+                    }
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        assistantButton.rx.tap
+            .withLatestFrom(viewModel.output.humanProfile)
+        
+            .bind { [weak self] humanProfile in
+                guard let self = self else { return }
+                let createAssistantVC = CreateAssistantProfileViewController()
+                if let profile = humanProfile {
+                    createAssistantVC.configure(with: profile)
+                }
+                self.navigationController?.pushViewController(createAssistantVC, animated: true)
             }
             .disposed(by: disposeBag)
         
@@ -251,13 +288,22 @@ class MyPageViewController : UIViewController {
             .disposed(by: disposeBag)
     }
     
+    private func loadImage(from url: URL) {
+        DispatchQueue.global().async { [weak self] in
+            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
+                DispatchQueue.main.async {
+                    self?.assistantImage.image = image
+                }
+            }
+        }
+    }
+    
+    // 인덱스 닷 누르면 해당 순서의 멍카드 화면 중앙으로 이동
     private func scrollToItem(at index: Int) {
         let indexPath = IndexPath(item: index, section: 0)
         
-        // 해당 셀이 존재하는지 확인
         guard collectionView.numberOfItems(inSection: 0) > index else { return }
         
-        // 중앙 정렬로 스크롤
         collectionView.scrollToItem(
             at: indexPath,
             at: .centeredHorizontally,
@@ -297,31 +343,5 @@ class MyPageViewController : UIViewController {
             
             return Disposables.create()
         }
-    }
-}
-
-extension MyPageViewController: UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 336, height: 208)
-    }
-    // 섹션 인셋 설정
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        insetForSectionAt section: Int) -> UIEdgeInsets {
-        return UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
-    }
-    // 라인 간격 설정
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-        return 12
-    }
-    // 아이템 간격 설정
-    func collectionView(_ collectionView: UICollectionView,
-                        layout collectionViewLayout: UICollectionViewLayout,
-                        minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
-        return 0
     }
 }
