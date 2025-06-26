@@ -24,7 +24,7 @@ class DataTrackingViewModel {
     let duration = BehaviorRelay(value: "")
     let trackingActive = BehaviorRelay<Bool>(value: false)
     let fullScreenImage = BehaviorRelay(value: UIImage())
-    let capturedImage = PublishRelay<UIImage>()
+    let capturedImage = BehaviorRelay(value: UIImage())
     
     let saveResult = PublishSubject<Result<Void, Error>>()
     

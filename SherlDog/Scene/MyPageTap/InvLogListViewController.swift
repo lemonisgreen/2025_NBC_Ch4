@@ -13,6 +13,7 @@ import RxDataSources
 // MARK: - InvLogListViewController
 class InvLogListViewController: UIViewController {
     
+    private let walkResultViewModel = DataTrackingViewModel()
     private let viewModel = InvLogListViewModel()
     private let disposeBag = DisposeBag()
     
@@ -133,6 +134,8 @@ extension InvLogListViewController: InvLogListCellEventDelegate {
     
     func showButtonTapEvent(_ cell: UICollectionViewCell) {
         guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
+        
+        let originalData = self.viewModel.originalData[indexPath.row]
         
         print("\(indexPath.row)번 셀 수사일지 보기")
     }
