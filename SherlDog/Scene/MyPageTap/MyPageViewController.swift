@@ -9,13 +9,16 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import FirebaseAuth
 
 class MyPageViewController : UIViewController {
+    private let petProfilesSubject = PublishSubject<[PetProfile]>()
+    private var petProfiles: [PetProfile] = []
+    private let disposeBag = DisposeBag()
     
     let layout = UICollectionViewFlowLayout()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
     private let pageControl = UIPageControl()
-    private let disposeBag = DisposeBag()
     let mypageLabel = UILabel()
     let mypageSettingButton = UIButton()
     let assistantImage = UIImageView()
@@ -31,6 +34,7 @@ class MyPageViewController : UIViewController {
         setupUI()
         configureUI()
         bind()
+        fetchUserPetProfiles()
     }
     
     override func viewDidLayoutSubviews() {
@@ -73,15 +77,16 @@ class MyPageViewController : UIViewController {
         assistantButton.titleLabel?.font = .alert2
         
         layout.scrollDirection = .horizontal
-        layout.minimumLineSpacing = 8
-        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 16, right: 16)
         
-        collectionView.register(DetectiveCardCell.self, forCellWithReuseIdentifier: DetectiveCardCell.identifier)
-        collectionView.dataSource = self
+        collectionView.register(
+            DetectiveCardCell.self,
+            forCellWithReuseIdentifier: DetectiveCardCell.identifier)
+        collectionView.isPagingEnabled = false
+        collectionView.showsHorizontalScrollIndicator = false
+        collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
         collectionView.delegate = self
-        collectionView.isPagingEnabled = true
         
-        pageControl.numberOfPages = 3
+        pageControl.numberOfPages = 0
         pageControl.currentPage = 0
         pageControl.pageIndicatorTintColor = .gray400
         pageControl.currentPageIndicatorTintColor = .gray500
@@ -147,13 +152,13 @@ class MyPageViewController : UIViewController {
         collectionView.snp.makeConstraints {
             $0.top.equalTo(assistantImage.snp.bottom).offset(24)
             $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(250)
+            $0.height.equalTo(208)
         }
         
         pageControl.snp.makeConstraints {
             $0.top.equalTo(collectionView.snp.bottom).offset(8)
             $0.centerX.equalToSuperview()
-            $0.height.equalTo(16)
+            $0.height.equalTo(24)
         }
         
         buttonStack.snp.makeConstraints {
@@ -161,7 +166,6 @@ class MyPageViewController : UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(120)
         }
-
     }
     
     private func bind() {
@@ -188,32 +192,177 @@ class MyPageViewController : UIViewController {
                 self?.navigationController?.pushViewController(settingVC, animated: true)
             }
             .disposed(by: disposeBag)
+        
+        // 데이터 스트림 설정
+        let petProfiles = petProfilesSubject
+            .startWith([]) // 초기값
+            .share(replay: 1)
+        
+        // 컬렉션뷰 바인딩
+        petProfiles
+            .bind(to: collectionView.rx.items(
+                cellIdentifier: DetectiveCardCell.identifier,
+                cellType: DetectiveCardCell.self
+            )) { row, profile, cell in
+                cell.configure(with: profile)
+            }
+            .disposed(by: disposeBag)
+        
+        // 펫프로필 갯수에 따른 인덱스닷 생성
+        petProfiles
+            .map { $0.count }
+            .bind(to: pageControl.rx.numberOfPages)
+            .disposed(by: disposeBag)
+        
+        // 옆으로 얼만큼 스크롤 되어야 인덱스 닷이 넘어가는지에 대한 설정
+        collectionView.rx.contentOffset
+            .map { [weak self] offset in
+                guard let self = self else { return 0 }
+                
+                let cardWidth: CGFloat = 336
+                let spacing: CGFloat = 12
+                let leftInset: CGFloat = 16
+                
+                // 현재 보이는 카드의 인덱스 계산
+                let adjustedOffset = offset.x + leftInset
+                let index = Int((adjustedOffset + cardWidth / 2) / (cardWidth + spacing))
+                
+                return max(0, index)
+            }
+            .bind(to: pageControl.rx.currentPage)
+            .disposed(by: disposeBag)
+        
+        // 인덱스닷 누르면 해당 순서의 카드로 넘어가는 스크롤 설정
+        pageControl.rx.controlEvent(.valueChanged)
+            .map { [weak self] in self?.pageControl.currentPage ?? 0 }
+            .subscribe(onNext: { [weak self] pageIndex in
+                guard let self = self else { return }
+                let indexPath = IndexPath(item: pageIndex, section: 0)
+                self.collectionView.scrollToItem(
+                    at: indexPath,
+                    at: .centeredHorizontally,
+                    animated: true
+                )
+            })
+            .disposed(by: disposeBag)
+        
+        let selectedProfile = collectionView.rx.itemSelected
+            .withLatestFrom(petProfiles) { indexPath, profiles -> PetProfile? in
+                guard indexPath.item < profiles.count else { return nil }
+                return profiles[indexPath.item]
+            }
+            .compactMap { $0 }
+            .share()
+        
+        // 선택된 프로필로 수정 화면 present
+        selectedProfile
+            .flatMapLatest { [weak self] profile -> Observable<Void> in
+                guard let self = self else { return .empty() }
+                return self.presentRegistrationViewController(with: profile)
+            }
+            .subscribe()
+            .disposed(by: disposeBag)
+        
+        // 셀 선택 해제 (시각적 효과)
+        collectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] indexPath in
+                self?.collectionView.deselectItem(at: indexPath, animated: true)
+            })
+            .disposed(by: disposeBag)
     }
-
     
-    func scrollViewDidScroll(_ scrollView: UIScrollView) {
-        let page = Int(scrollView.contentOffset.x / scrollView.frame.width + 0.5)
-        pageControl.currentPage = page
+    private func scrollToItem(at index: Int) {
+        let indexPath = IndexPath(item: index, section: 0)
+        
+        // 해당 셀이 존재하는지 확인
+        guard collectionView.numberOfItems(inSection: 0) > index else { return }
+        
+        // 중앙 정렬로 스크롤
+        collectionView.scrollToItem(
+            at: indexPath,
+            at: .centeredHorizontally,
+            animated: true
+        )
+    }
+    
+    private func fetchUserPetProfiles() {
+        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+        
+        FirestoreManager.shared.fetchDocuments(
+            collection: "PetProfile",
+            whereField: "userId",
+            isEqualTo: userId,
+            type: PetProfile.self
+        )
+        .subscribe(onSuccess: { [weak self] profiles in
+            guard let self = self else { return }
+            self.petProfiles = profiles
+            self.petProfilesSubject.onNext(profiles)
+        }, onFailure: { error in
+            print("펫 프로필 불러오기 실패: \(error)")
+            // 빈 배열로 초기화
+            self.petProfilesSubject.onNext([])
+        })
+        .disposed(by: disposeBag)
+    }
+    
+    private func presentRegistrationViewController(with profile: PetProfile) -> Observable<Void> {
+        return Observable.create { [weak self] observer in
+            guard let self = self else {
+                observer.onCompleted()
+                return Disposables.create()
+            }
+            
+            let registrationVC = RegistrationViewController()
+            registrationVC.configure(for: .edit(profile), with: profile)
+            
+            // 수정 완료 시 데이터 새로고침을 위한 Observable 구독
+            registrationVC.profileUpdateSubject
+                .take(1)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.fetchUserPetProfiles()
+                    observer.onNext(())
+                    observer.onCompleted()
+                })
+                .disposed(by: registrationVC.disposeBag)
+            
+            if let sheet = registrationVC.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.selectedDetentIdentifier = .large
+                sheet.prefersGrabberVisible = false
+                sheet.preferredCornerRadius = 20
+            }
+            registrationVC.isModalInPresentation = true
+            
+            self.present(registrationVC, animated: true)
+            
+            return Disposables.create()
+        }
     }
 }
-extension MyPageViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 1
-    }
 
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: DetectiveCardCell.identifier,
-            for: indexPath
-        ) as? DetectiveCardCell else {
-            return UICollectionViewCell()
-        }
-        return cell
-    }
-
+extension MyPageViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView,
                         layout collectionViewLayout: UICollectionViewLayout,
                         sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: collectionView.bounds.width - 32, height: 208)
+        return CGSize(width: 336, height: 208)
+    }
+    // 섹션 인셋 설정
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        insetForSectionAt section: Int) -> UIEdgeInsets {
+        return UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+    }
+    // 라인 간격 설정
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 12
+    }
+    // 아이템 간격 설정
+    func collectionView(_ collectionView: UICollectionView,
+                        layout collectionViewLayout: UICollectionViewLayout,
+                        minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+        return 0
     }
 }

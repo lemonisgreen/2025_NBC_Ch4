@@ -19,6 +19,7 @@ class RegistrationViewController: UIViewController {
     let disposeBag = DisposeBag()
     let viewModel = RegistrationViewModel()
     var onProfileAdded: ((String) -> Void)?
+    let profileUpdateSubject = PublishSubject<PetProfile>()
     
     let registrationLabel = UILabel()
     let registrationButton = UIButton()
@@ -71,10 +72,75 @@ class RegistrationViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
-
+        
         setupUI()
         configureUI()
+        
+        updateButtonStates()
         bind()
+    }
+    
+    func configure(for mode: RegistrationViewModel.Mode, with profile: PetProfile? = nil) {
+        if let profile = profile {
+            viewModel.setEditMode(with: profile)
+        }
+        // 뷰가 로드된 후에 UI 업데이트 보장
+        DispatchQueue.main.async { [weak self] in
+            if self?.isViewLoaded == true {
+                self?.updateButtonStates()
+            }
+        }
+    }
+    
+    private func updateButtonStates() {
+        guard viewModel.isEditMode() else { return }
+        
+        // 크기 버튼 상태
+        let selectedSize = viewModel.selectedSize.value
+        registSizeSmallButton.isSelected = (selectedSize == "small")
+        registSizeMediumButton.isSelected = (selectedSize == "medium")
+        registSizeLargeButton.isSelected = (selectedSize == "large")
+        
+        // 성별 버튼 상태
+        let selectedGender = viewModel.selectedGender.value
+        registGenderFemale.isSelected = (selectedGender == "female")
+        registGenderMale.isSelected = (selectedGender == "male")
+        
+        // 중성화 버튼 상태
+        if let isNeutered = viewModel.isNeutered.value {
+            registNeuteredTrue.isSelected = isNeutered
+            registNeuteredFalse.isSelected = !isNeutered
+        }
+        
+        // 이름 텍스트필드
+        registName.text = viewModel.name.value
+        registName.sendActions(for: .editingChanged)
+        registNameCountLabel.text = "\(viewModel.name.value.count) / 10 자"
+        
+        // 성격 및 특성 텍스트필드
+        registIntroduce.text = viewModel.introduce.value
+        registIntroduce.sendActions(for: .editingChanged)
+        registIntroduceCountLabel.text = "\(viewModel.introduce.value.count) / 28 자"
+        
+        // 프로필 이미지 로드
+        loadProfileImage()
+    }
+    
+    private func loadProfileImage() {
+        guard case .edit(let profile) = viewModel.currentMode else { return }
+        
+        FirebaseImageManager.shared.downloadPetImage(
+            petId: profile.petProfileId,
+            userId: profile.userId
+        ) { [weak self] image in
+            DispatchQueue.main.async {
+                if let image = image {
+                    self?.selectedImage = image
+                    self?.registedProfileImage.image = image
+                    self?.cameraViewModel.output.capturedImage.accept(image)
+                }
+            }
+        }
     }
     
     func bind() {
@@ -109,6 +175,10 @@ class RegistrationViewController: UIViewController {
                 self?.registCompletButton.isEnabled = !isLoading
                 // 인디케이터 활성, 비활성은 여기서 진행
             })
+            .disposed(by: disposeBag)
+        
+        viewModel.titleText
+            .bind(to: registrationLabel.rx.text)
             .disposed(by: disposeBag)
         
         self.registrationButton.rx.tap
@@ -329,12 +399,17 @@ class RegistrationViewController: UIViewController {
         
         self.registCompletButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                guard let self = self else { return }
+                guard let self = self,
+                      let selectedImage = self.selectedImage else { return }
                 
-                if let selectedImage = self.selectedImage {
-                    self.viewModel.uploadImageAndSaveProfile(image: selectedImage)
+                if self.viewModel.isEditMode() {
+                    // 편집 모드: 기존 프로필 업데이트
+                    if case .edit(let originalProfile) = self.viewModel.currentMode {
+                        self.viewModel.updateProfileWithImage(image: selectedImage, originalProfile: originalProfile)
+                    }
                 } else {
-                    print("프로필 이미지가 선택되지 않았습니다.")
+                    // 생성 모드: 새 프로필 생성
+                    self.viewModel.uploadImageAndSaveProfile(image: selectedImage)
                 }
                 
                 self.viewModel.saveResult
@@ -344,9 +419,16 @@ class RegistrationViewController: UIViewController {
                         guard let self = self else { return }
                         switch result {
                         case .success:
-                            let petProfileID = self.viewModel.imageDocumentId
-                            self.onProfileAdded?(petProfileID)
-                            
+                            if self.viewModel.isEditMode() {
+                                // 편집 완료 알림
+                                if case .edit(let profile) = self.viewModel.currentMode {
+                                    self.profileUpdateSubject.onNext(profile)
+                                }
+                            } else {
+                                // 생성 완료
+                                let petProfileID = self.viewModel.imageDocumentId
+                                self.onProfileAdded?(petProfileID)
+                            }
                             self.dismiss(animated: true)
                         case .failure(let error):
                             print("저장 실패: \(error)")
@@ -355,7 +437,13 @@ class RegistrationViewController: UIViewController {
                     .disposed(by: self.disposeBag)
             })
             .disposed(by: disposeBag)
+        
+        viewModel.buttonTitle
+            .bind(to: registCompletButton.rx.title(for: .normal))
+            .disposed(by: disposeBag)
+        
     }
+    
     private func setupUI() {
         [
             registrationLabel,
