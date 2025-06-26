@@ -326,7 +326,6 @@ class MainViewController: UIViewController {
                     case 1: sheet.detents = [.custom { _ in 240 }]
                     case 2: sheet.detents = [.custom { _ in 320 }]
                     case 3: sheet.detents = [.custom { _ in 400 }]
-                    case 4: sheet.detents = [.custom { _ in 480 }] //나중에 지우기
                     default: sheet.detents = [.custom { _ in 400 }]
                     }
                 }
