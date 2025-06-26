@@ -77,7 +77,7 @@ class MyPageViewController : UIViewController {
         assistantButton.titleLabel?.font = .alert2
         
         layout.scrollDirection = .horizontal
-       
+        
         collectionView.register(
             DetectiveCardCell.self,
             forCellWithReuseIdentifier: DetectiveCardCell.identifier)
@@ -201,9 +201,9 @@ class MyPageViewController : UIViewController {
         
         // 펫프로필 갯수에 따른 인덱스닷 생성
         petProfiles
-                .map { $0.count }
-                .bind(to: pageControl.rx.numberOfPages)
-                .disposed(by: disposeBag)
+            .map { $0.count }
+            .bind(to: pageControl.rx.numberOfPages)
+            .disposed(by: disposeBag)
         
         // 옆으로 얼만큼 스크롤 되어야 인덱스 닷이 넘어가는지에 대한 설정
         collectionView.rx.contentOffset
@@ -234,6 +234,30 @@ class MyPageViewController : UIViewController {
                     at: .centeredHorizontally,
                     animated: true
                 )
+            })
+            .disposed(by: disposeBag)
+        
+        let selectedProfile = collectionView.rx.itemSelected
+            .withLatestFrom(petProfiles) { indexPath, profiles -> PetProfile? in
+                guard indexPath.item < profiles.count else { return nil }
+                return profiles[indexPath.item]
+            }
+            .compactMap { $0 }
+            .share()
+        
+        // 선택된 프로필로 수정 화면 present
+        selectedProfile
+            .flatMapLatest { [weak self] profile -> Observable<Void> in
+                guard let self = self else { return .empty() }
+                return self.presentRegistrationViewController(with: profile)
+            }
+            .subscribe()
+            .disposed(by: disposeBag)
+        
+        // 셀 선택 해제 (시각적 효과)
+        collectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] indexPath in
+                self?.collectionView.deselectItem(at: indexPath, animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -271,6 +295,40 @@ class MyPageViewController : UIViewController {
             self.petProfilesSubject.onNext([])
         })
         .disposed(by: disposeBag)
+    }
+    
+    private func presentRegistrationViewController(with profile: PetProfile) -> Observable<Void> {
+        return Observable.create { [weak self] observer in
+            guard let self = self else {
+                observer.onCompleted()
+                return Disposables.create()
+            }
+            
+            let registrationVC = RegistrationViewController()
+            registrationVC.configure(for: .edit(profile), with: profile)
+            
+            // 수정 완료 시 데이터 새로고침을 위한 Observable 구독
+            registrationVC.profileUpdateSubject
+                .take(1)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.fetchUserPetProfiles()
+                    observer.onNext(())
+                    observer.onCompleted()
+                })
+                .disposed(by: registrationVC.disposeBag)
+            
+            if let sheet = registrationVC.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.selectedDetentIdentifier = .large
+                sheet.prefersGrabberVisible = false
+                sheet.preferredCornerRadius = 20
+            }
+            registrationVC.isModalInPresentation = true
+            
+            self.present(registrationVC, animated: true)
+            
+            return Disposables.create()
+        }
     }
 }
 
