@@ -1,13 +1,7 @@
-//
-//  AuthManager.swift
-//  SherlDog
-//
-//  Created by 최영락 on 6/16/25.
-//
-
 import Foundation
 import FirebaseAuth
 import GoogleSignIn
+import AuthenticationServices // 추가
 
 class AuthManager {
     static let shared = AuthManager()
@@ -18,7 +12,8 @@ class AuthManager {
     func isLoggedIn() -> Bool {
         return Auth.auth().currentUser != nil &&
                (UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") ||
-                UserDefaults.standard.bool(forKey: "isGoogleLoggedIn"))
+                UserDefaults.standard.bool(forKey: "isGoogleLoggedIn") ||
+                UserDefaults.standard.bool(forKey: "isAppleLoggedIn")) // 추가
     }
     
     // 로그아웃
@@ -32,6 +27,10 @@ class AuthManager {
         // 구글 로그아웃
         else if UserDefaults.standard.bool(forKey: "isGoogleLoggedIn") {
             GIDSignIn.sharedInstance.signOut()
+            completeLogout(completion: completion)
+        }
+        // 애플 로그아웃
+        else if UserDefaults.standard.bool(forKey: "isAppleLoggedIn") {
             completeLogout(completion: completion)
         }
         else {
@@ -59,6 +58,7 @@ class AuthManager {
         let keysToRemove = [
             "isKakaoLoggedIn",
             "isGoogleLoggedIn",
+            "isAppleLoggedIn", // 추가
             "userNickname",
             "userEmail",
             "firebaseUID"

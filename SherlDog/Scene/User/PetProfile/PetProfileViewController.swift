@@ -9,6 +9,7 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import FirebaseAuth
 
 final class PetProfileViewController: UIViewController {
     
@@ -188,10 +189,32 @@ final class PetProfileViewController: UIViewController {
     
     // MARK: - Data
     private func loadSampleData() {
-        // 초기에는 빈 배열로 시작 (프로필 추가 버튼만 보이도록)
-        petProfiles = []
-        collectionView.reloadData()
-        updateNextButtonState()
+        // 현재 사용자 ID 가져오기
+        guard let currentUserId = Auth.auth().currentUser?.uid else {
+            // 로그인되지 않은 경우 빈 배열로 시작
+            petProfiles = []
+            collectionView.reloadData()
+            updateNextButtonState()
+            return
+        }
+        
+        // 기존 펫 프로필들 불러오기
+        FirestoreManager.shared.fetchUserPetProfiles(userId: currentUserId)
+            .subscribe(onSuccess: { [weak self] profiles in
+                self?.petProfiles = profiles
+                DispatchQueue.main.async {
+                    self?.collectionView.reloadData()
+                    self?.updateNextButtonState()
+                }
+            }, onFailure: { error in
+                // 실패 시 빈 배열로 초기화
+                self.petProfiles = []
+                DispatchQueue.main.async {
+                    self.collectionView.reloadData()
+                    self.updateNextButtonState()
+                }
+            })
+            .disposed(by: disposeBag)
     }
     
     private func bindViewModel() {

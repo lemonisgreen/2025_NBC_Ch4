@@ -34,21 +34,25 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 로컬 로그인 상태 확인
         let isKakaoLoggedIn = UserDefaults.standard.bool(forKey: "isKakaoLoggedIn")
         let isGoogleLoggedIn = UserDefaults.standard.bool(forKey: "isGoogleLoggedIn")
+        let isAppleLoggedIn = UserDefaults.standard.bool(forKey: "isAppleLoggedIn") // 추가
         
         // 카카오 토큰 유효성 확인 (카카오 로그인인 경우)
         if isKakaoLoggedIn && hasFirebaseUser {
-            // 카카오 토큰이 유효한지 확인
             if KakaoLoginManager.shared.isLoggedIn() {
                 return createMainViewController()
             } else {
-                // 토큰이 만료된 경우 로그인 정보 정리
                 clearExpiredLoginInfo()
                 return createLoginViewController()
             }
         }
         
-        // 구글 로그인인 경우 또는 다른 로그인 방식
+        // 구글 로그인인 경우
         if (isGoogleLoggedIn && hasFirebaseUser) {
+            return createMainViewController()
+        }
+        
+        // 애플 로그인인 경우 추가
+        if (isAppleLoggedIn && hasFirebaseUser) {
             return createMainViewController()
         }
         
@@ -73,6 +77,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let keysToRemove = [
             "isKakaoLoggedIn",
             "isGoogleLoggedIn",
+            "isAppleLoggedIn", // 추가
             "userNickname",
             "userEmail",
             "firebaseUID"
