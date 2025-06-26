@@ -12,7 +12,6 @@ struct WalkResultToList {
     let distance: String
     let duration: String
     let steps: String
-    let walkingPathImage: String
 }
 
 extension WalkResultToList {
@@ -46,6 +45,5 @@ extension WalkResultToList {
         self.distance = "\(result.distance / 1000)km"
         self.duration = duration
         self.steps = "\(result.steps)보"
-        self.walkingPathImage = result.walkingPathImage
     }
 }

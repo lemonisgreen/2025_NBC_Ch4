@@ -140,6 +140,10 @@ class WalkEndModalViewController : UIViewController {
             })
             .disposed(by: disposeBag)
         
+        self.DataTrackingVM.invLogListViewSendImage
+            .bind(to: self.mapImageView.rx.image)
+            .disposed(by: disposeBag)
+        
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 let requestViewModel = PictureUploadRequestViewModel()
@@ -181,8 +185,11 @@ class WalkEndModalViewController : UIViewController {
                 guard let self else { return }
                 
                 self.DataTrackingVM.duration.accept(duration)
-                self.timeContentLabel.text = duration
             })
+            .disposed(by: disposeBag)
+        
+        DataTrackingVM.duration
+            .bind(to: self.timeContentLabel.rx.text)
             .disposed(by: disposeBag)
         
         closeButton.rx.tap
