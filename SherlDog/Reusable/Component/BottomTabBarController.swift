@@ -10,13 +10,13 @@ import UIKit
 class BottomTabBarController: UITabBarController {
     
     let VC1 = UINavigationController(rootViewController: MainViewController())
-    let VC2 = UINavigationController(rootViewController: CommunityViewController())
+    //let VC2 = UINavigationController(rootViewController: CommunityViewController())
     let VC3 = UINavigationController(rootViewController: MyPageViewController())
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let controllers = [VC1, VC2, VC3]
+        let controllers = [VC1, VC3]
         self.viewControllers = controllers
         
         self.navigationItem.hidesBackButton = true
@@ -64,7 +64,6 @@ class BottomTabBarController: UITabBarController {
         UITabBar.appearance().unselectedItemTintColor = .white
         UITabBar.appearance().tintColor = .white
     }
-    
 }
 
 extension UIImage {
