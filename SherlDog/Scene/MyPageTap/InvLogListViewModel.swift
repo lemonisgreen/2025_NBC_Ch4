@@ -22,7 +22,7 @@ class InvLogListViewModel {
     private var data: [WalkResultToList] = []
     
     enum Input {
-        case viewWillAppear
+        
     }
     
     struct Output {
@@ -34,8 +34,8 @@ class InvLogListViewModel {
     
     // MARK: - Initialize
     init() {
-        fetchWalkResultData()
         transform()
+        fetchWalkResultData()
     }
     
 }
@@ -44,21 +44,12 @@ class InvLogListViewModel {
 extension InvLogListViewModel {
     
     private func transform() {
-        self.input
-            .bind(onNext: { [weak self] input in
-                guard let self else { return }
-                
-                switch input {
-                case .viewWillAppear:
-                    self.fetchWalkResultData()
-                    
-                }
-            })
-            .disposed(by: disposeBag)
+        
     }
     
     private func fetchWalkResultData() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
+        self.data = []
         
         FirestoreManager.shared.fetchDocuments(collection: "WalkResult",
                                                whereField: "userId",

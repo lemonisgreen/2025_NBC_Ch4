@@ -41,12 +41,6 @@ class InvLogListViewController: UIViewController {
         inputBind()
     }
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        self.viewModel.input.accept(.viewWillAppear)
-    }
-    
 }
 
 // MARK: - Method
