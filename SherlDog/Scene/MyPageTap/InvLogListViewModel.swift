@@ -23,11 +23,12 @@ class InvLogListViewModel {
     private var data = [WalkResultToList]()
     
     enum Input {
-        
+        case delete(IndexPath)
     }
     
     struct Output {
         let cellData = BehaviorRelay<[InvLogListDataSource]>(value: [])
+        let deleteCompleted = PublishRelay<Void>()
     }
     
     let input = PublishRelay<Input>()
@@ -45,7 +46,16 @@ class InvLogListViewModel {
 extension InvLogListViewModel {
     
     private func transform() {
-        
+        self.input
+            .bind(onNext: { [weak self] input in
+                guard let self else { return }
+                
+                switch input {
+                case .delete(let index):
+                    self.deleteWalkResultData(at: index)
+                }
+            })
+            .disposed(by: disposeBag)
     }
     
     private func fetchWalkResultData() {
@@ -65,6 +75,17 @@ extension InvLogListViewModel {
             }
             
             self.output.cellData.accept([InvLogListDataSource(model: "", items: self.data)])
+        })
+        .disposed(by: disposeBag)
+    }
+    
+    private func deleteWalkResultData(at indexPath: IndexPath) {
+        self.originalData[indexPath.row]
+        
+        FirestoreManager.shared.deleteDocument(collection: "WalkResult",
+                                               documentId: "") // todo: 도큐먼트 아이디,,?
+        .subscribe(onCompleted: { [weak self] in
+            self?.output.deleteCompleted.accept(())
         })
         .disposed(by: disposeBag)
     }
