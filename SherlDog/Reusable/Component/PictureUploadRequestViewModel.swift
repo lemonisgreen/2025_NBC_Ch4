@@ -189,7 +189,6 @@ class PictureUploadRequestViewModel {
         .subscribe(onSuccess: { [weak self] profiles in
             self?.output.petProfiles.accept(profiles)
         }, onFailure: { error in
-            print("펫 프로필 불러오기 실패: \(error)")
         })
         .disposed(by: disposeBag)
     }

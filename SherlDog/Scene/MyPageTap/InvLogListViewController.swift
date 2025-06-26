@@ -21,7 +21,7 @@ class InvLogListViewController: UIViewController {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
             
             cell.delegate = self
-            cell.settingCell(data: items)
+            cell.settingCell(data: items, caseNumber: indexPath.row)
             
             return cell
         })
@@ -38,6 +38,7 @@ class InvLogListViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
+        inputBind()
     }
     
 }
@@ -48,6 +49,14 @@ extension InvLogListViewController {
     private func bind() {
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+    }
+    
+    private func inputBind() {
+        self.navigationBackButton.rx.tap
+            .bind(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
             .disposed(by: disposeBag)
     }
     
@@ -125,6 +134,13 @@ extension InvLogListViewController: InvLogListCellEventDelegate {
     func showButtonTapEvent(_ cell: UICollectionViewCell) {
         guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
         
+//        let originalData = self.viewModel.originalData[indexPath.row]
+//        let walkResultViewModel = DataTrackingViewModel()
+//        let walkEndView = WalkEndModalViewController(viewModel: walkResultViewModel)
+//        
+//        walkResultViewModel.fetchResult.accept(originalData)
+//        
+//        self.present(walkEndView, animated: true)
         print("\(indexPath.row)번 셀 수사일지 보기")
     }
     

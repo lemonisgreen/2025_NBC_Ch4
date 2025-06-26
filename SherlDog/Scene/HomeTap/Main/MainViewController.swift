@@ -12,6 +12,7 @@ import RxCocoa
 import RxSwift
 import RxCoreLocation
 import CoreLocation
+import FirebaseAuth
 
 class MainViewController: UIViewController {
     
@@ -127,6 +128,7 @@ class MainViewController: UIViewController {
         inputBind()
         trackingBind()
         configureInitialVisibility()
+        loadSavedClues()
         
         requestViewModel.fetchPetProfiles()
     }
@@ -134,6 +136,72 @@ class MainViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(true, animated: false)
+        loadSavedClues()
+    }
+    
+    // 저장된 단서들을 Firebase에서 불러와서 마커로 표시
+    private func loadSavedClues() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            return
+        }
+        
+        // 기존 단서 마커들 제거
+        clueMarkers.forEach { $0.mapView = nil }
+        clueMarkers.removeAll()
+        
+        // Firestore에서 내 단서들 가져오기
+        FirestoreManager.shared.fetchCollection(collection: "clues", type: ClueModel.self)
+            .observe(on: MainScheduler.instance)
+            .subscribe(
+                onSuccess: { [weak self] allClues in
+                    let myClues = allClues.filter { $0.userID == userId }
+                    if myClues.isEmpty {
+                        print("저장된 단서가 없습니다")
+                    } else {
+                        self?.addClueMarkers(clues: myClues)
+                    }
+                },
+                onFailure: { error in
+                    print("단서 불러오기 실패: \(error.localizedDescription)")
+                }
+            )
+            .disposed(by: disposeBag)
+    }
+    
+    private func addClueMarkers(clues: [ClueModel]) {
+        
+        for (index, clue) in clues.enumerated() {
+            let marker = NMFMarker()
+            marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
+            marker.userInfo = ["clue": clue]
+            marker.iconImage = NMFOverlayImage(name: "clueMark")
+            marker.width = 60
+            marker.height = 60
+            marker.mapView = mapView
+            
+            marker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
+                guard let self = self,
+                      let marker = overlay as? NMFMarker else { return false }
+
+                // 마커 위치 정보 가져오기
+                let markerPosition = marker.position
+                guard let clue = marker.userInfo["clue"] as? ClueModel else { return false }
+                let viewModel = ClueDetailViewModel(clue: clue)
+                let detailVC = ClueDetailViewController(viewModel: viewModel)
+//                let nav = UINavigationController(rootViewController: detailVC)
+                detailVC.modalPresentationStyle = .pageSheet
+                if let sheet = detailVC.sheetPresentationController {
+                    sheet.detents = [.custom { _ in 650 }]
+                    sheet.selectedDetentIdentifier = .medium
+                    sheet.prefersGrabberVisible = true
+                    sheet.preferredCornerRadius = 20
+                }
+                self.present(detailVC, animated: true)
+                return true
+            }
+            
+            clueMarkers.append(marker)
+        }
     }
     
     private func trackingBind() {
@@ -207,14 +275,7 @@ class MainViewController: UIViewController {
                         let image = renderer.image { ctx in
                             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                         }
-                        self.DataTrackingVM.capturedImage.accept(image)
-                        
-                        let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
-                        
-                        self.DataTrackingVM.saveWalkResultCapturedImage(
-                            image: image,
-                            selectedProfiles: selectedProfiles
-                        )
+                        self.DataTrackingVM.fullScreenImage.accept(image)
                     }
                     
                     // 선택된 멍탐정 정보 연동된 WalkEndModal띄우는 메서드
@@ -261,7 +322,6 @@ class MainViewController: UIViewController {
                     guard let self else { return }
                     switch isAllowed {
                     case true:
-                        // 현재 위치에 clue 마커 추가
                         guard let currentLocation = self.locationManager.location else { return }
                         let clueMarker = NMFMarker()
                         clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
@@ -289,6 +349,7 @@ class MainViewController: UIViewController {
                         
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
+                        cameraViewModel.markerLocation = currentLocation.coordinate
                         
                         let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
                         cameraView.modalPresentationStyle = .fullScreen
@@ -326,7 +387,6 @@ class MainViewController: UIViewController {
                     case 1: sheet.detents = [.custom { _ in 240 }]
                     case 2: sheet.detents = [.custom { _ in 320 }]
                     case 3: sheet.detents = [.custom { _ in 400 }]
-                    case 4: sheet.detents = [.custom { _ in 480 }] //나중에 지우기
                     default: sheet.detents = [.custom { _ in 400 }]
                     }
                 }
@@ -429,8 +489,8 @@ class MainViewController: UIViewController {
         let locationOverlay = mapView.locationOverlay
         let overlayImage = NMFOverlayImage(name: "locationImage")
         locationOverlay.icon = overlayImage
-        locationOverlay.iconWidth = 36
-        locationOverlay.iconHeight = 36
+        locationOverlay.iconWidth = 46
+        locationOverlay.iconHeight = 46
         
         // statusView 설정
         statusView.backgroundColor = .gray50

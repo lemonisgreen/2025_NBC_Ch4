@@ -10,6 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 import AVFoundation
+import CoreLocation
 
 // MARK: - CameraViewController
 class CameraViewController: UIViewController {
@@ -102,7 +103,6 @@ extension CameraViewController {
     }
     
     private func bind() {
-        // todo: guideLabel text설정
         
         self.viewModel.output.sender
             .subscribe(onNext: { [weak self] sender in
@@ -110,7 +110,13 @@ extension CameraViewController {
                 
                 switch sender {
                 case .clueLeave:
-                    self.viewControllerForPicture = UINavigationController(rootViewController: ClueInputViewController(viewModel: viewModel))
+                    let location = self.viewModel.markerLocation ?? CLLocationCoordinate2D(latitude: 0, longitude: 0)
+                    self.viewControllerForPicture = UINavigationController(
+                        rootViewController: ClueInputViewController(
+                            viewModel: viewModel,
+                            location: location
+                        )
+                    )
                     self.guideLabel.isHidden = false
                     
                 case .communityShare:
