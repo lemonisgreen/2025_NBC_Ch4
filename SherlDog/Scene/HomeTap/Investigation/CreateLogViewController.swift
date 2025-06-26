@@ -33,7 +33,7 @@ class CreateLogViewController: UIViewController {
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
     private let cancelButton = SubButtonManager(title: "취소")
-    private let shareButton = ButtonManager(title: "공유하기")
+    private let shareButton = ButtonManager(title: "등록하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -81,6 +81,7 @@ extension CreateLogViewController {
                 guard let self else { return }
                 
                 let alert = AlertManager(message: "등록되었습니다.",
+                                         subMessage: nil,
                                          buttonTitles: ["확인"],
                                          buttonActions: [{ [weak self] in
                     guard let self,
@@ -116,7 +117,7 @@ extension CreateLogViewController {
         
         self.cancelButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let alert = AlertManager(message: "작성을 취소하시겠습니까?",
+                let alert = AlertManager(message: "작성을 취소하시겠습니까?", subMessage: nil,
                                          buttonTitles: ["취소", "확인"],
                                          buttonActions: [
                                             nil,

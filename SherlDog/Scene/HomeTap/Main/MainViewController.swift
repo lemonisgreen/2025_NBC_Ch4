@@ -38,7 +38,7 @@ class MainViewController: UIViewController {
     private let distanceLabel = UILabel()
     private let timeLabel = UILabel()
     private let stepsLabel = UILabel()
-    private let image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
+    private var image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
     private let statusLabel = UILabel()
     
     // distance, time, steps
@@ -82,7 +82,8 @@ class MainViewController: UIViewController {
     // 위치권한을 거부 했을때
     private func showLocationSettingsAlert() {
         let alert = AlertManager(
-            message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+            message: "위치 권한을 '항상 허용'으로\n설정해주세요",
+            subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
             buttonTitles: ["취소", "설정으로 이동"],
             buttonActions: [nil, {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString),
@@ -105,7 +106,8 @@ class MainViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self = self else { return }
             let alert = AlertManager(
-                message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+                message: "위치 권한을 '항상 허용'으로\n설정해주세요",
+                subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
                 buttonTitles: ["취소", "설정으로 이동"],
                 buttonActions: [nil, {
                     if let settingsURL = URL(string: UIApplication.openSettingsURLString),
@@ -127,6 +129,8 @@ class MainViewController: UIViewController {
         trackingBind()
         configureInitialVisibility()
         loadSavedClues()
+        
+        requestViewModel.fetchPetProfiles()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -248,7 +252,20 @@ class MainViewController: UIViewController {
         viewModel.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
-                
+
+                // If not enough path, show alert and return
+                if fullSide.isEmpty {
+                    let alert = AlertManager(
+                        message: "기록된 경로가 부족해요!",
+                        subMessage: "5미터 이상 이동 시 기록이 가능해요.",
+                        buttonTitles: ["확인"],
+                        buttonActions: [nil]
+                    )
+                    self.present(alert, animated: true)
+                    self.setInvestigation(active: false)
+                    return
+                }
+
                 // WalkendModalViewController의 imageView에 맞게 들어가도록 예측한 값.
                 /*
                  top 25추정 + 박스사이즈(약 120추정) + 15 + 박스사이즈(약 150추정) + 60 + 라벨사이즈(약 24추정) + 75 = 469
@@ -272,12 +289,17 @@ class MainViewController: UIViewController {
                             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                         }
                         self.DataTrackingVM.capturedImage.accept(image)
+                        
+                        let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
+                        
+                        self.DataTrackingVM.saveWalkResultCapturedImage(
+                            image: image,
+                            selectedProfiles: selectedProfiles
+                        )
                     }
                     
-                    let endVC = WalkEndModalViewController(viewModel: self.DataTrackingVM)
-                    let nav = UINavigationController(rootViewController: endVC)
-                    nav.modalPresentationStyle = .overFullScreen
-                    self.present(nav, animated: true)
+                    // 선택된 멍탐정 정보 연동된 WalkEndModal띄우는 메서드
+                    self.showWalkEndModal()
                     
                     self.pathOverlays.forEach { $0.mapView = nil }
                     self.pathOverlays.removeAll()
@@ -321,6 +343,30 @@ class MainViewController: UIViewController {
                     switch isAllowed {
                     case true:
                         guard let currentLocation = self.locationManager.location else { return }
+                        let clueMarker = NMFMarker()
+                        clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
+                                                        lng: currentLocation.coordinate.longitude)
+                        clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
+                        clueMarker.width = 60
+                        clueMarker.height = 60
+                        clueMarker.mapView = self.mapView
+                        clueMarker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
+                            guard let self = self else { return false }
+                            let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
+                            let detailVC = ClueDetailViewController(viewModel: viewModel)
+                            let nav = UINavigationController(rootViewController: detailVC)
+                            nav.modalPresentationStyle = .pageSheet
+                            if let sheet = nav.sheetPresentationController {
+                                sheet.detents = [.custom { _ in 650 }]
+                                sheet.selectedDetentIdentifier = .medium
+                                sheet.prefersGrabberVisible = true
+                                sheet.preferredCornerRadius = 20
+                            }
+                            self.present(nav, animated: true)
+                            return true
+                        }
+                        self.clueMarkers.append(clueMarker)
+                        
                         let cameraViewModel = CameraViewModel()
                         cameraViewModel.input.accept(.sender(.clueLeave))
                         cameraViewModel.markerLocation = currentLocation.coordinate
@@ -330,7 +376,7 @@ class MainViewController: UIViewController {
                         self.present(cameraView, animated: true)
                         
                     case false:
-                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", subMessage: nil, buttonTitles: ["확인"], buttonActions: [nil])
                         
                         self.present(alert, animated: true)
                     }
@@ -347,8 +393,8 @@ class MainViewController: UIViewController {
         
         self.walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                
                 guard let self = self else { return }
+                self.requestViewModel.fetchPetProfiles()
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
                 let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
                 requestView.modalPresentationStyle = .pageSheet
@@ -356,12 +402,13 @@ class MainViewController: UIViewController {
                     sheet.selectedDetentIdentifier = .medium
                     sheet.preferredCornerRadius = 20
                     sheet.prefersGrabberVisible = true
-                    let dummyData = [0, 1, 2]
-                    switch dummyData.count {
+                    let petCount = self.requestViewModel.output.petProfiles.value.count
+                    switch petCount {
                     case 1: sheet.detents = [.custom { _ in 240 }]
                     case 2: sheet.detents = [.custom { _ in 320 }]
                     case 3: sheet.detents = [.custom { _ in 400 }]
-                    default: return
+                    case 4: sheet.detents = [.custom { _ in 480 }] //나중에 지우기
+                    default: sheet.detents = [.custom { _ in 400 }]
                     }
                 }
                 self.present(requestView, animated: true)
@@ -378,6 +425,61 @@ class MainViewController: UIViewController {
                 self.mapView.moveCamera(cameraUpdate)
             })
             .disposed(by: disposeBag)
+        
+        requestViewModel.output.selectedPetProfiles
+            .subscribe(onNext: { [weak self] selectedProfiles in
+                guard let self = self else { return }
+                
+                // 선택된 강아지들의 이미지로 배열 업데이트
+                if !selectedProfiles.isEmpty {
+                    self.image = selectedProfiles.map { $0.image }
+                    self.updateDetectiveImageStack()
+                }
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func updateDetectiveImageStack() {
+        // 기존 이미지뷰들 제거
+        detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        detectiveImageStack.spacing = image.count > 1 ? -8 : 0
+        
+        image.forEach { imageName in
+            let imageView = UIImageView()
+            imageView.contentMode = .scaleAspectFill
+            imageView.clipsToBounds = true
+            imageView.layer.cornerRadius = 18
+            imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
+            imageView.layer.borderWidth = 1
+            imageView.snp.makeConstraints { $0.size.equalTo(36) }
+            
+            // URL인지 확인해서 이미지 로드
+            if imageName.hasPrefix("http") {
+                if let url = URL(string: imageName) {
+                    DispatchQueue.global().async {
+                        if let data = try? Data(contentsOf: url),
+                           let image = UIImage(data: data) {
+                            DispatchQueue.main.async {
+                                imageView.image = image
+                            }
+                        }
+                    }
+                }
+            } else {
+                imageView.image = UIImage(named: imageName)
+            }
+            detectiveImageStack.addArrangedSubview(imageView)
+        }
+        // 텍스트도 업데이트
+        statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
+    }
+    
+    private func showWalkEndModal() {
+        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
+        let walkEndModal = WalkEndModalViewController(viewModel: DataTrackingVM, selectedProfiles: selectedProfiles)
+        let nav = UINavigationController(rootViewController: walkEndModal)
+        nav.modalPresentationStyle = .overFullScreen
+        present(nav, animated: true)
     }
     
     private func configureInitialVisibility() {
@@ -386,7 +488,7 @@ class MainViewController: UIViewController {
         clueButton.isHidden = true
         endButton.isHidden = true
     }
-  
+    
     private func setInvestigation(active: Bool) {
         hasSetInitialCamera = false
         statusView.isHidden = !active
@@ -453,21 +555,6 @@ class MainViewController: UIViewController {
         statusStack.spacing = 8
         statusStack.alignment = .center
         statusStack.distribution = .fill
-        
-        detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        detectiveImageStack.spacing = image.count > 1 ? -8 : 0
-        
-        image.forEach { name in
-            let imageView = UIImageView(image: UIImage(named: "sampleDogImage"))
-            imageView.contentMode = .scaleAspectFill
-            imageView.clipsToBounds = true
-            imageView.layer.cornerRadius = 12
-            imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
-            imageView.layer.borderWidth = 1
-            imageView.snp.makeConstraints { $0.size.equalTo(24) }
-            detectiveImageStack.addArrangedSubview(imageView)
-        }
-        statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
         
         // 버튼 설정
         clueButton.setTitle("단서 남기기", for: .normal)
@@ -567,6 +654,9 @@ class MainViewController: UIViewController {
 extension MainViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        
+        let coord = location.coordinate
+           mapView.locationOverlay.location = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
 
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
@@ -576,7 +666,7 @@ extension MainViewController: CLLocationManagerDelegate {
             cameraUpdate.animation = .none
             mapView.moveCamera(cameraUpdate)
             mapView.zoomLevel = 16.0
-
+            
             hasSetInitialCamera = true
         }
     }

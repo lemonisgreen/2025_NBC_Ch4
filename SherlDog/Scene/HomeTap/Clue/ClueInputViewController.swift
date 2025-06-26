@@ -14,6 +14,7 @@ import FirebaseAuth
 
 class ClueInputViewController: UIViewController {
     private let clueLabel = UILabel()
+    private let cancelButton = UIButton()
     private let imageView = UIImageView()
     private let textView = UITextView()
     private let registerButton = UIButton()
@@ -53,6 +54,8 @@ class ClueInputViewController: UIViewController {
         clueLabel.text = "단서 남기기"
         clueLabel.font = .highlight3
         clueLabel.textColor = .textPrimary
+        
+        cancelButton.setImage(.modalExit, for: .normal)
 
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
@@ -91,13 +94,18 @@ class ClueInputViewController: UIViewController {
         countLabel.font = .alert2
         countLabel.textColor = .gray400
         
-        [clueLabel, imageView, textView, registerButton, countLabel].forEach { view.addSubview($0) }
+        [clueLabel, cancelButton, imageView, textView, registerButton, countLabel].forEach { view.addSubview($0) }
     }
     
     private func setupConstraints() {
         clueLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(16)
             $0.top.equalTo(view.safeAreaLayoutGuide).offset(26)
+        }
+        
+        cancelButton.snp.makeConstraints {
+            $0.top.equalTo(clueLabel)
+            $0.trailing.equalToSuperview().inset(16)
         }
         
         imageView.snp.makeConstraints {
@@ -131,6 +139,12 @@ class ClueInputViewController: UIViewController {
             .bind { [weak self] in
                 self?.saveClue()
             }
+            .disposed(by: disposeBag)
+        
+        cancelButton.rx.tap
+            .bind(onNext: { [weak self] in
+                self?.dismiss(animated: true)
+            })
             .disposed(by: disposeBag)
     }
 

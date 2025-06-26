@@ -77,7 +77,8 @@ class DetectiveCardView: UIView {
         detectiveNumber.font = UIFont.cardTitle
         detectiveNumber.textColor = .textPrimary
         
-        detectivePhotoImageView.backgroundColor = .gray400
+        detectivePhotoImageView.layer.cornerRadius = 4
+        detectivePhotoImageView.clipsToBounds = true
         
         detectiveNameLabel.text = "탐정명"
         detectiveNameLabel.verticalAlignment = .top

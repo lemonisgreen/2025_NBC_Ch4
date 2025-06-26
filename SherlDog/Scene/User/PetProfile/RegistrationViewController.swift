@@ -113,7 +113,7 @@ class RegistrationViewController: UIViewController {
         
         self.registrationButton.rx.tap
             .subscribe(onNext: { [weak self]  _ in
-                let alert = AlertManager(message: "작성을 종료하시겠습니까?\n 작성한 정보는 저장되지 않습니다.",
+                let alert = AlertManager(message: "작성을 종료하시겠습니까?\n 작성한 정보는 저장되지 않습니다.", subMessage: nil,
                                          buttonTitles: ["취소", "확인"],
                                          buttonActions: [
                                             nil,
@@ -344,9 +344,9 @@ class RegistrationViewController: UIViewController {
                         guard let self = self else { return }
                         switch result {
                         case .success:
-                            if let newProfileID = UserDefaults.standard.string(forKey: "newPetProfileId") {
-                                self.onProfileAdded?(newProfileID)
-                            }
+                            let petProfileID = self.viewModel.imageDocumentId
+                            self.onProfileAdded?(petProfileID)
+                            
                             self.dismiss(animated: true)
                         case .failure(let error):
                             print("저장 실패: \(error)")
@@ -450,7 +450,7 @@ class RegistrationViewController: UIViewController {
         
         topUnderLine.backgroundColor = .gray200
         
-//        scrollView.isScrollEnabled = false
+        //        scrollView.isScrollEnabled = false
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.alwaysBounceVertical = true
         

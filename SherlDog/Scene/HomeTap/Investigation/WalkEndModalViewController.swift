@@ -12,7 +12,10 @@ import RxCocoa
 class WalkEndModalViewController : UIViewController {
     
     private let DataTrackingVM: DataTrackingViewModel
+    private let requestViewModel = PictureUploadRequestViewModel()
     private let disposeBag = DisposeBag()
+    // 선택된 강아지 정보를 받을 프로퍼티
+    var selectedPetProfiles: [PetProfile] = []
     
     let stepLabelWrapper = UIView()
     let backgroundImageView = UIImageView()
@@ -66,6 +69,13 @@ class WalkEndModalViewController : UIViewController {
             line.name = "vLine"
             infoBox.layer.addSublayer(line)
         }
+    }
+    
+    //함께 산책한 강아지 정보 받아오기용 init
+    init(viewModel: DataTrackingViewModel, selectedProfiles: [PetProfile] = []) {
+        self.DataTrackingVM = viewModel
+        self.selectedPetProfiles = selectedProfiles
+        super.init(nibName: nil, bundle: nil)
     }
     
     init(viewModel: DataTrackingViewModel) {
@@ -137,25 +147,32 @@ class WalkEndModalViewController : UIViewController {
         
         showProfileButton.rx.tap
             .bind { [weak self] in
+                guard let self = self else { return }
+                
+                // 현재 모달에 전달된 선택된 강아지 사용
                 let requestViewModel = PictureUploadRequestViewModel()
+                
+                // 선택된 강아지 데이터를 새 requestViewModel에 설정
+                requestViewModel.output.selectedPetProfiles.accept(self.selectedPetProfiles)
+                requestViewModel.fetchPetProfiles() // 전체 프로필도 로드
+                
                 requestViewModel.input.accept(.sender(.sherlDogResult))
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
                 
-                let dummyData = [0, 1, 2]
                 if let sheet = requestView.sheetPresentationController {
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 20
                     
-                    switch dummyData.count {
+                    switch self.selectedPetProfiles.count {
                     case 1: sheet.detents = [.custom { _ in 240 }]
                     case 2: sheet.detents = [.custom { _ in 320 }]
                     case 3: sheet.detents = [.custom { _ in 400 }]
-                    default: return
+                    default: sheet.detents = [.custom { _ in 400 }]
                     }
                 }
                 
-                self?.present(requestView, animated: true)
+                self.present(requestView, animated: true)
             }
             .disposed(by: disposeBag)
     }
@@ -194,7 +211,7 @@ class WalkEndModalViewController : UIViewController {
         infoBox.layer.borderColor = UIColor(named: "gray300")?.cgColor
         infoBox.layer.cornerRadius = 2
         infoBox.backgroundColor = .clear
-    
+        
         walkEndBox.layer.borderWidth = 1
         walkEndBox.layer.borderColor = UIColor(named: "gray300")?.cgColor
         walkEndBox.layer.cornerRadius = 2
@@ -276,27 +293,72 @@ class WalkEndModalViewController : UIViewController {
         showProfileButton.contentMode = .scaleAspectFit
         showProfileButton.snp.makeConstraints { $0.size.equalTo(CGSize(width: 75, height: 28)) }
         
-        for dogImage in dogImages {
-            let imageView = UIImageView(image: dogImage)
-            imageView.contentMode = .scaleAspectFill
-            imageView.clipsToBounds = true
-            imageView.snp.makeConstraints {
-                $0.width.height.equalTo(32)
-            }
-            dogImagesStack.addArrangedSubview(imageView)
-        }
-        
+//        for dogImage in dogImages {
+//            let imageView = UIImageView(image: dogImage)
+//            imageView.contentMode = .scaleAspectFill
+//            imageView.clipsToBounds = true
+//            imageView.snp.makeConstraints {
+//                $0.width.height.equalTo(32)
+//            }
+//            dogImagesStack.addArrangedSubview(imageView)
+//        }
+//        
         dogImagesStack.axis = .horizontal
         dogImagesStack.spacing = -20
         dogImagesStack.alignment = .center
         dogImagesStack.backgroundColor = .clear
+        dogImagesStack.arrangedSubviews.forEach {
+            dogImagesStack.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+        
+        // 선택된 강아지들의 실제 이미지 사용
+        if !selectedPetProfiles.isEmpty {
+            for profile in selectedPetProfiles {
+                let imageView = UIImageView()
+                imageView.contentMode = .scaleAspectFill
+                imageView.clipsToBounds = true
+                imageView.layer.cornerRadius = 16 // 32/2
+                imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
+                imageView.layer.borderWidth = 1
+                imageView.snp.makeConstraints {
+                    $0.width.height.equalTo(32)
+                }
+                
+                // URL에서 이미지 로드
+                if let url = URL(string: profile.image) {
+                    DispatchQueue.global().async {
+                        if let data = try? Data(contentsOf: url),
+                           let image = UIImage(data: data) {
+                            DispatchQueue.main.async {
+                                imageView.image = image
+                            }
+                        }
+                    }
+                }
+                
+                dogImagesStack.addArrangedSubview(imageView)
+            }
+        } else {
+            // 기본 이미지 사용 (선택된 강아지가 없을 때)
+            for dogImage in dogImages {
+                let imageView = UIImageView(image: dogImage)
+                imageView.contentMode = .scaleAspectFill
+                imageView.clipsToBounds = true
+                imageView.layer.cornerRadius = 16
+                imageView.snp.makeConstraints {
+                    $0.width.height.equalTo(32)
+                }
+                dogImagesStack.addArrangedSubview(imageView)
+            }
+        }
         
         mapImageView.image = UIImage(named: "mapPolaroid")
         mapImageView.contentMode = .scaleAspectFill
         mapImageView.clipsToBounds = true
         mapImageView.backgroundColor = .clear
         
-        walkShareButton.setTitle("수사 일지 공유하기", for: .normal)
+        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
         walkShareButton.titleLabel?.font = UIFont.highlight4
         walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
         walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
@@ -330,7 +392,6 @@ class WalkEndModalViewController : UIViewController {
         infoStack.addArrangedSubview(stepCountStack)
         infoStack.backgroundColor = .clear
         
-        
         closeButton.setImage(UIImage(named: "modalExit"), for: .normal)
         closeButton.contentMode = .scaleAspectFit
     }
@@ -358,13 +419,13 @@ class WalkEndModalViewController : UIViewController {
         stepCountContentLabel.snp.makeConstraints {
             $0.trailing.equalToSuperview().inset(45)
         }
-
+        
         infoStack.snp.makeConstraints {
             $0.top.equalToSuperview().offset(20)
             $0.leading.trailing.equalToSuperview().inset(12)
             $0.bottom.equalToSuperview().inset(20)
         }
-
+        
         walkEndBox.snp.makeConstraints {
             $0.top.equalTo(infoBox.snp.bottom).offset(15)
             $0.leading.trailing.equalToSuperview().inset(30)
