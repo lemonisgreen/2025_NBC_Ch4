@@ -275,11 +275,15 @@ class MainViewController: UIViewController {
                         let image = renderer.image { ctx in
                             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
                         }
-                        self.DataTrackingVM.fullScreenImage.accept(image)
+                        
+                        let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
+                        let walkEndModal = WalkEndModalViewController(viewModel: self.DataTrackingVM, selectedProfiles: selectedProfiles)
+                        let nav = UINavigationController(rootViewController: walkEndModal)
+                        nav.modalPresentationStyle = .overFullScreen
+                        self.present(nav, animated: true) {
+                            self.DataTrackingVM.fullScreenImage.accept(image)
+                        }
                     }
-                    
-                    // 선택된 멍탐정 정보 연동된 WalkEndModal띄우는 메서드
-                    self.showWalkEndModal()
                     
                     self.pathOverlays.forEach { $0.mapView = nil }
                     self.pathOverlays.removeAll()
@@ -453,13 +457,13 @@ class MainViewController: UIViewController {
         statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
     }
     
-    private func showWalkEndModal() {
-        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
-        let walkEndModal = WalkEndModalViewController(viewModel: DataTrackingVM, selectedProfiles: selectedProfiles)
-        let nav = UINavigationController(rootViewController: walkEndModal)
-        nav.modalPresentationStyle = .overFullScreen
-        present(nav, animated: true)
-    }
+//    private func showWalkEndModal() {
+//        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
+//        let walkEndModal = WalkEndModalViewController(viewModel: DataTrackingVM, selectedProfiles: selectedProfiles)
+//        let nav = UINavigationController(rootViewController: walkEndModal)
+//        nav.modalPresentationStyle = .overFullScreen
+//        present(nav, animated: true)
+//    }
     
     private func configureInitialVisibility() {
         // 시작 시 상태 뷰 및 버튼 숨김

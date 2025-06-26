@@ -23,8 +23,8 @@ class DataTrackingViewModel {
     let endDate = BehaviorRelay<Date?>(value: nil)
     let duration = BehaviorRelay(value: "")
     let trackingActive = BehaviorRelay<Bool>(value: false)
-    let fullScreenImage = BehaviorRelay(value: UIImage())
-    let capturedImage = BehaviorRelay(value: UIImage())
+    let fullScreenImage = PublishRelay<UIImage>()
+    let capturedImage = PublishRelay<UIImage>()
     let invLogListViewSendImage = BehaviorRelay(value: UIImage())
     
     let fetchResult = BehaviorRelay<WalkResult?>(value: nil)

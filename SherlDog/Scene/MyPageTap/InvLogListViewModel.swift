@@ -19,10 +19,15 @@ class InvLogListViewModel {
     typealias InvLogListDataSource = SectionModel<String, WalkResultToList>
     
     private let disposeBag = DisposeBag()
+    private var data = [WalkResultToList]() {
+        didSet {
+            self.output.cellData.accept([InvLogListDataSource(model: "", items: self.data)])
+        }
+    }
     var originalData = [WalkResult]()
-    private var data = [WalkResultToList]()
     
     enum Input {
+        case viewWillAppear
         case delete(IndexPath)
     }
     
@@ -37,7 +42,6 @@ class InvLogListViewModel {
     // MARK: - Initialize
     init() {
         transform()
-        fetchWalkResultData()
     }
     
 }
@@ -51,6 +55,9 @@ extension InvLogListViewModel {
                 guard let self else { return }
                 
                 switch input {
+                case .viewWillAppear:
+                    self.fetchWalkResultData()
+                    
                 case .delete(let index):
                     self.deleteWalkResultData(at: index)
                 }
@@ -61,6 +68,7 @@ extension InvLogListViewModel {
     private func fetchWalkResultData() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         self.data = []
+        self.originalData = []
         
         FirestoreManager.shared.fetchDocuments(collection: "WalkResult",
                                                whereField: "userId",
@@ -73,19 +81,27 @@ extension InvLogListViewModel {
                 self.originalData.append($0)
                 self.data.append(WalkResultToList(from: $0))
             }
-            
-            self.output.cellData.accept([InvLogListDataSource(model: "", items: self.data)])
         })
         .disposed(by: disposeBag)
     }
     
     private func deleteWalkResultData(at indexPath: IndexPath) {
-        self.originalData[indexPath.row]
-        
-        FirestoreManager.shared.deleteDocument(collection: "WalkResult",
-                                               documentId: "") // todo: 도큐먼트 아이디,,?
+        FirestoreManager.shared.findDocumentId(collection: "WalkResult",
+                                               whereField: "walkingPathImage",
+                                               isEqualTo: self.originalData[indexPath.row].walkingPathImage)
+        .flatMapCompletable { documentId in
+            guard let id = documentId.first else { return Completable.error(FirestoreError.noData) }
+            
+            return FirestoreManager.shared.deleteDocument(collection: "WalkResult", documentId: id)
+                .andThen(FirebaseImageManager.shared.deleteImage(urlString: self.originalData[indexPath.row].walkingPathImage))
+        }
         .subscribe(onCompleted: { [weak self] in
-            self?.output.deleteCompleted.accept(())
+            guard let self else { return }
+            
+            self.data.remove(at: indexPath.row)
+            self.originalData.remove(at: indexPath.row)
+            
+            self.output.deleteCompleted.accept(())
         })
         .disposed(by: disposeBag)
     }

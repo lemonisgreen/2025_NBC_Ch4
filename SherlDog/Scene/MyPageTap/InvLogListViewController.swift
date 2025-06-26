@@ -41,6 +41,12 @@ class InvLogListViewController: UIViewController {
         inputBind()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.viewModel.input.accept(.viewWillAppear)
+    }
+    
 }
 
 // MARK: - Method
@@ -53,7 +59,7 @@ extension InvLogListViewController {
         
         self.viewModel.output.deleteCompleted
             .bind(onNext: { [weak self] in
-                // todo: 완료 처리
+                print("삭제 완료") // todo: 완료 처리
             })
             .disposed(by: disposeBag)
     }
@@ -141,8 +147,6 @@ extension InvLogListViewController: InvLogListCellEventDelegate {
         }])
         
         self.present(alert, animated: true)
-        
-        print("\(indexPath.row)번 셀 삭제")
     }
     
     func showButtonTapEvent(_ cell: UICollectionViewCell) {
