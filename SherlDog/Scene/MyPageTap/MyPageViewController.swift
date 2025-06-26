@@ -69,12 +69,12 @@ class MyPageViewController : UIViewController {
         assistantImage.image = UIImage(named: "mypageSample")
         
         assistantLabel.text = "똥봉투 조수"
-        assistantLabel.font = .body5
+        assistantLabel.font = .title3
         assistantLabel.textColor = .textPrimary
         
         assistantButton.setTitle("편집", for: .normal)
         assistantButton.setTitleColor(.keycolorPrimary3, for: .normal)
-        assistantButton.titleLabel?.font = .alert2
+        assistantButton.titleLabel?.font = .body3
         
         layout.scrollDirection = .horizontal
         
@@ -192,7 +192,7 @@ class MyPageViewController : UIViewController {
                 self?.navigationController?.pushViewController(settingVC, animated: true)
             }
             .disposed(by: disposeBag)
-        
+ 
         // 데이터 스트림 설정
         let petProfiles = petProfilesSubject
             .startWith([]) // 초기값
@@ -254,7 +254,6 @@ class MyPageViewController : UIViewController {
             .compactMap { $0 }
             .share()
         
-        // 선택된 프로필로 수정 화면 present
         selectedProfile
             .flatMapLatest { [weak self] profile -> Observable<Void> in
                 guard let self = self else { return .empty() }
@@ -263,7 +262,6 @@ class MyPageViewController : UIViewController {
             .subscribe()
             .disposed(by: disposeBag)
         
-        // 셀 선택 해제 (시각적 효과)
         collectionView.rx.itemSelected
             .subscribe(onNext: { [weak self] indexPath in
                 self?.collectionView.deselectItem(at: indexPath, animated: true)
