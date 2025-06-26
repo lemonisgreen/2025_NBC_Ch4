@@ -12,8 +12,7 @@ import RxCocoa
 import FirebaseAuth
 
 class MyPageViewController : UIViewController {
-    private let petProfilesSubject = PublishSubject<[PetProfile]>()
-    private var petProfiles: [PetProfile] = []
+    private let viewModel = MyPageViewModel()
     private let disposeBag = DisposeBag()
     
     let layout = UICollectionViewFlowLayout()
@@ -34,7 +33,6 @@ class MyPageViewController : UIViewController {
         setupUI()
         configureUI()
         bind()
-        fetchUserPetProfiles()
     }
     
     override func viewDidLayoutSubviews() {
@@ -95,7 +93,7 @@ class MyPageViewController : UIViewController {
         buttonStack.distribution = .fillEqually
         buttonStack.spacing = 0
         buttonStack.addArrangedSubview(archiveButton)
-        buttonStack.addArrangedSubview(findMateButton)
+        //buttonStack.addArrangedSubview(findMateButton)
         
         archiveButton.setTitle("수사일지 아카이브", for: .normal)
         archiveButton.titleLabel?.font = .body3
@@ -105,7 +103,7 @@ class MyPageViewController : UIViewController {
         archiveButton.contentHorizontalAlignment = .left
         archiveButton.contentEdgeInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         archiveButton.layer.cornerRadius = 12
-        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        //archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
         archiveButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
         
@@ -164,7 +162,7 @@ class MyPageViewController : UIViewController {
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(pageControl.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(120)
+            $0.height.equalTo(60)
         }
     }
     
@@ -192,14 +190,9 @@ class MyPageViewController : UIViewController {
                 self?.navigationController?.pushViewController(settingVC, animated: true)
             }
             .disposed(by: disposeBag)
- 
-        // 데이터 스트림 설정
-        let petProfiles = petProfilesSubject
-            .startWith([]) // 초기값
-            .share(replay: 1)
         
-        // 컬렉션뷰 바인딩
-        petProfiles
+        // 컬렉션뷰 데이터 바인딩
+        viewModel.output.petProfiles
             .bind(to: collectionView.rx.items(
                 cellIdentifier: DetectiveCardCell.identifier,
                 cellType: DetectiveCardCell.self
@@ -209,7 +202,7 @@ class MyPageViewController : UIViewController {
             .disposed(by: disposeBag)
         
         // 펫프로필 갯수에 따른 인덱스닷 생성
-        petProfiles
+        viewModel.output.petProfiles
             .map { $0.count }
             .bind(to: pageControl.rx.numberOfPages)
             .disposed(by: disposeBag)
@@ -217,17 +210,7 @@ class MyPageViewController : UIViewController {
         // 옆으로 얼만큼 스크롤 되어야 인덱스 닷이 넘어가는지에 대한 설정
         collectionView.rx.contentOffset
             .map { [weak self] offset in
-                guard let self = self else { return 0 }
-                
-                let cardWidth: CGFloat = 336
-                let spacing: CGFloat = 12
-                let leftInset: CGFloat = 16
-                
-                // 현재 보이는 카드의 인덱스 계산
-                let adjustedOffset = offset.x + leftInset
-                let index = Int((adjustedOffset + cardWidth / 2) / (cardWidth + spacing))
-                
-                return max(0, index)
+                self?.viewModel.calculatePageIndex(from: offset) ?? 0
             }
             .bind(to: pageControl.rx.currentPage)
             .disposed(by: disposeBag)
@@ -247,12 +230,11 @@ class MyPageViewController : UIViewController {
             .disposed(by: disposeBag)
         
         let selectedProfile = collectionView.rx.itemSelected
-            .withLatestFrom(petProfiles) { indexPath, profiles -> PetProfile? in
+            .withLatestFrom(viewModel.output.petProfiles) { indexPath, profiles -> PetProfile? in
                 guard indexPath.item < profiles.count else { return nil }
                 return profiles[indexPath.item]
             }
             .compactMap { $0 }
-            .share()
         
         selectedProfile
             .flatMapLatest { [weak self] profile -> Observable<Void> in
@@ -283,27 +265,6 @@ class MyPageViewController : UIViewController {
         )
     }
     
-    private func fetchUserPetProfiles() {
-        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
-        
-        FirestoreManager.shared.fetchDocuments(
-            collection: "PetProfile",
-            whereField: "userId",
-            isEqualTo: userId,
-            type: PetProfile.self
-        )
-        .subscribe(onSuccess: { [weak self] profiles in
-            guard let self = self else { return }
-            self.petProfiles = profiles
-            self.petProfilesSubject.onNext(profiles)
-        }, onFailure: { error in
-            print("펫 프로필 불러오기 실패: \(error)")
-            // 빈 배열로 초기화
-            self.petProfilesSubject.onNext([])
-        })
-        .disposed(by: disposeBag)
-    }
-    
     private func presentRegistrationViewController(with profile: PetProfile) -> Observable<Void> {
         return Observable.create { [weak self] observer in
             guard let self = self else {
@@ -318,7 +279,7 @@ class MyPageViewController : UIViewController {
             registrationVC.profileUpdateSubject
                 .take(1)
                 .subscribe(onNext: { [weak self] _ in
-                    self?.fetchUserPetProfiles()
+                    self?.viewModel.profileDidUpdate()
                     observer.onNext(())
                     observer.onCompleted()
                 })
