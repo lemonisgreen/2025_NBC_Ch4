@@ -13,6 +13,7 @@ struct WalkResult: Codable {
     let petProfileId: [String]
     let date: String
     let distance: Double
+    let duration: String
     let steps: Int
     let walkingPathImage: String
 }

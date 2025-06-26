@@ -8,6 +8,7 @@
 import RxSwift
 import RxRelay
 import UIKit
+import CoreLocation
 
 class CameraViewModel {
     
@@ -34,6 +35,7 @@ class CameraViewModel {
     private let maxZoomScale: CGFloat = 20 // todo: maximum 줌 값 상의하기
     private let minZoomScale: CGFloat = 1
     private var pinchDefault: CGFloat = 1
+    var markerLocation: CLLocationCoordinate2D?
     
     let input = PublishRelay<Input>()
     let output = Output()

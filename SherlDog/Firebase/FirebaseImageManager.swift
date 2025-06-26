@@ -85,6 +85,25 @@ class FirebaseImageManager {
             }
         }
     }
+    
+    // MARK: - 이미지 다운로드
+    func downloadImage(userId: String, type: UploadImageFor, completion: @escaping (UIImage?) -> Void) {
+        let imagePath = "\(type)/\(userId)/\(type).jpg"
+        let imageRef = storageRef.child(imagePath)
+    
+        imageRef.getData(maxSize: 5 * 1024 * 1024) { data, error in
+            if let _ = error {
+                completion(nil)
+                return
+            }
+
+            if let data = data, let image = UIImage(data: data) {
+                completion(image)
+            } else {
+                completion(nil)
+            }
+        }
+    }
 
     // MARK: - 펫 이미지 다운로드
     func downloadPetImage(petId: String, userId: String, completion: @escaping (UIImage?) -> Void) {

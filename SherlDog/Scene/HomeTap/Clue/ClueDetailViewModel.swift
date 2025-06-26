@@ -6,30 +6,24 @@
 //
 
 import Foundation
-import CoreLocation
 import RxSwift
 import RxCocoa
+import CoreLocation
 
 final class ClueDetailViewModel {
-
-    // MARK: - Inputs
-    private let coordinate: CLLocationCoordinate2D
-
-    // MARK: - Stored data
-    let savedClue = PublishRelay<ClueModel>()
-
-    init(coordinate: CLLocationCoordinate2D) {
-        self.coordinate = coordinate
-    }
-
-    func saveClue(userID: String, content: String, imagePath: String) {
-        let clue = ClueModel(
-            userID: userID,
-            latitude: coordinate.latitude,
-            longitude: coordinate.longitude,
-            content: content,
-            image: imagePath
-        )
+    
+    // MARK: - Outputs
+    let savedClue = BehaviorRelay<ClueModel?>(value: nil)
+    let isLoading = BehaviorRelay<Bool>(value: false)
+    let errorMessage = PublishRelay<String>()
+    
+    init(clue: ClueModel) {
         savedClue.accept(clue)
+    }
+    
+    // 새로운 초기화 메서드 추가
+    init(coordinate: CLLocationCoordinate2D) {
+        // 좌표만으로 새 단서를 만드는 경우
+        savedClue.accept(nil)
     }
 }

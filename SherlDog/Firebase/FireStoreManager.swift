@@ -101,18 +101,32 @@ extension FirestoreManager {
         }
     }
     // 데이터 업데이트
-    func updateDocument(collection: String, documentId: String, fields: [String: Any]) -> Completable {
-        return Completable.create { [weak self] completable in
-            self?.db.collection(collection).document(documentId).updateData(fields) { error in
-                if let error = error {
+    func updateDocument<T: Codable>(
+            collection: String,
+            documentId: String,
+            data: T
+        ) -> Completable {
+            return Completable.create { completable in
+                do {
+                    let encodedData = try Firestore.Encoder().encode(data)
+                    
+                    self.db.collection(collection)
+                        .document(documentId)
+                        .updateData(encodedData) { error in
+                            if let error = error {
+                                completable(.error(error))
+                            } else {
+                                completable(.completed)
+                            }
+                        }
+                } catch {
                     completable(.error(error))
-                } else {
-                    completable(.completed)
                 }
+                
+                return Disposables.create()
             }
-            return Disposables.create()
         }
-    }
+    
     // 데이터 삭제
     func deleteDocument(collection: String, documentId: String) -> Completable {
         return Completable.create { [weak self] completable in
@@ -126,7 +140,29 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
+    
+    // 특정 사용자의 펫 프로필들 조회
+    func fetchUserPetProfiles(userId: String) -> Single<[PetProfile]> {
+        return Single.create { [weak self] single in
+            self?.db.collection("PetProfile")
+                .whereField("userId", isEqualTo: userId)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        single(.failure(error))
+                    } else if let snapshot = snapshot {
+                        let profiles: [PetProfile] = snapshot.documents.compactMap {
+                            try? $0.data(as: PetProfile.self)
+                        }
+                        single(.success(profiles))
+                    } else {
+                        single(.failure(FirestoreError.noData))
+                    }
+                }
+            return Disposables.create()
+        }
+    }
 }
+
 
 enum FirestoreError: Error {
     case unknown
