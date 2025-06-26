@@ -21,12 +21,44 @@ class DataTrackingViewModel {
     let distance = BehaviorRelay<Double>(value: 0.0)
     let startDate = BehaviorRelay<Date?>(value: nil)
     let endDate = BehaviorRelay<Date?>(value: nil)
+    let duration = BehaviorRelay(value: "")
     let trackingActive = BehaviorRelay<Bool>(value: false)
+    let fullScreenImage = BehaviorRelay(value: UIImage())
     let capturedImage = BehaviorRelay(value: UIImage())
+    let invLogListViewSendImage = BehaviorRelay(value: UIImage())
     
+    let fetchResult = BehaviorRelay<WalkResult?>(value: nil)
     let saveResult = PublishSubject<Result<Void, Error>>()
     
     private let pedometer = CMPedometer()
+    
+    init() {
+        
+    }
+    
+    private func transform() {
+        self.fetchResult
+            .subscribe(onNext: { [weak self] result in
+                guard let self, let result,
+                      let userId = Auth.auth().currentUser?.uid else { return }
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                let date = dateFormatter.date(from: result.date)
+                
+                self.numberOfSteps.accept(result.steps)
+                self.distance.accept(result.distance)
+                self.duration.accept(result.duration)
+                self.endDate.accept(date)
+                
+                FirebaseImageManager.shared.downloadImage(userId: userId,
+                                                          type: .walkResult) { image in
+                    guard let image else { return }
+                    
+                    self.invLogListViewSendImage.accept(image)
+                }
+            })
+            .disposed(by: disposeBag)
+    }
     
     func startTracking() {
         let now = Date()
@@ -78,6 +110,7 @@ class DataTrackingViewModel {
             petProfileId: profileIds,
             date: dateString,
             distance: distance.value,
+            duration: duration.value,
             steps: numberOfSteps.value,
             walkingPathImage: imageURL.value
         )

@@ -58,21 +58,18 @@ extension InvLogListCell {
             .disposed(by: disposeBag)
     }
     
-    func settingCell(data: InvLogListModel) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M월 dd, yyyy"
-        let date = formatter.string(from: data.date)
-        var caseNumber = "\(data.caseNumber)"
+    func settingCell(data: WalkResultToList, caseNumber: Int) {
+        var caseNumber = String(caseNumber)
         
         if caseNumber.count < 3 {
             while caseNumber.count != 3 {
-                caseNumber.insert(contentsOf: "0", at: caseNumber.startIndex)
+                caseNumber.insert("0", at: caseNumber.startIndex)
             }
         }
         
-        self.dateLabel.text = date
+        self.dateLabel.text = data.date
         self.caseNumberLabel.text = "CASE # \(caseNumber)"
-        self.dataLabel.text = "\(data.distance) km  ·  \(data.duration)  ·  \(data.steps)보 "
+        self.dataLabel.text = "\(data.distance)  ·  \(data.duration)  ·  \(data.steps)"
     }
     
     private func setup() {

@@ -165,6 +165,15 @@ class MyPageViewController : UIViewController {
     }
     
     private func bind() {
+        archiveButton.rx.tap
+            .bind(onNext: { [weak self] in
+                guard let self else { return }
+                
+                let archiveView = InvLogListViewController()
+                self.navigationController?.pushViewController(archiveView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         mypageSettingButton.rx.tap
             .bind { [weak self] in
                 let settingVC = SettingViewController()
