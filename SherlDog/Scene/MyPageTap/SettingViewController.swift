@@ -104,7 +104,6 @@ class SettingViewController : UIViewController {
         cancelMembershipLabel.text = "회원탈퇴"
         cancelMembershipLabel.font = .body1
         cancelMembershipLabel.textColor = .textPrimary
-        
         cancelmembershipButton.setImage(UIImage(named: "rightChevron"), for: .normal)
         
         cancelMembershipStack.axis = .horizontal
@@ -145,6 +144,9 @@ class SettingViewController : UIViewController {
         cancelmembershipButton.rx.tap
             .bind { [weak self] in
                 let cancelMembershipVC = CancelMembershipViewController()
+                let backItem = UIBarButtonItem()
+                backItem.title = "회원탈퇴"
+                self?.navigationItem.backBarButtonItem = backItem
                 self?.navigationController?.navigationBar.titleTextAttributes = [
                     .foregroundColor: UIColor(named: "textPrimary"),
                     .font: UIFont.highlight3
