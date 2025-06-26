@@ -21,6 +21,7 @@ class DataTrackingViewModel {
     let distance = BehaviorRelay<Double>(value: 0.0)
     let startDate = BehaviorRelay<Date?>(value: nil)
     let endDate = BehaviorRelay<Date?>(value: nil)
+    let duration = BehaviorRelay(value: "")
     let trackingActive = BehaviorRelay<Bool>(value: false)
     let fullScreenImage = BehaviorRelay(value: UIImage())
     let capturedImage = PublishRelay<UIImage>()
@@ -79,6 +80,7 @@ class DataTrackingViewModel {
             petProfileId: profileIds,
             date: dateString,
             distance: distance.value,
+            duration: duration.value,
             steps: numberOfSteps.value,
             walkingPathImage: imageURL.value
         )

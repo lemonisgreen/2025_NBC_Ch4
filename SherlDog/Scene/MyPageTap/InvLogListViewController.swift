@@ -21,7 +21,7 @@ class InvLogListViewController: UIViewController {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
             
             cell.delegate = self
-            cell.settingCell(data: items)
+            cell.settingCell(data: items, caseNumber: indexPath.row)
             
             return cell
         })
@@ -38,6 +38,13 @@ class InvLogListViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
+        inputBind()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.viewModel.input.accept(.viewWillAppear)
     }
     
 }
@@ -48,6 +55,14 @@ extension InvLogListViewController {
     private func bind() {
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+    }
+    
+    private func inputBind() {
+        self.navigationBackButton.rx.tap
+            .bind(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
             .disposed(by: disposeBag)
     }
     

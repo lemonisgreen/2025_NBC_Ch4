@@ -177,7 +177,12 @@ class WalkEndModalViewController : UIViewController {
                 let seconds = interval % 60
                 return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
             }
-            .bind(to: timeContentLabel.rx.text)
+            .bind(onNext: { [weak self] duration in
+                guard let self else { return }
+                
+                self.DataTrackingVM.duration.accept(duration)
+                self.timeContentLabel.text = duration
+            })
             .disposed(by: disposeBag)
         
         closeButton.rx.tap

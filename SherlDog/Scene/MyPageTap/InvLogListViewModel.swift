@@ -10,16 +10,19 @@ import RxSwift
 import RxRelay
 import RxDataSources
 import Differentiator
+import FirebaseAuth
+import FirebaseFirestore
 
 // MARK: - InvLogListViewModel
 class InvLogListViewModel {
     
-    typealias InvLogListDataSource = SectionModel<String, InvLogListModel>
+    typealias InvLogListDataSource = SectionModel<String, WalkResultToList>
     
     private let disposeBag = DisposeBag()
+    private var data: [WalkResultToList] = []
     
     enum Input {
-        
+        case viewWillAppear
     }
     
     struct Output {
@@ -31,6 +34,7 @@ class InvLogListViewModel {
     
     // MARK: - Initialize
     init() {
+        fetchWalkResultData()
         transform()
     }
     
@@ -40,7 +44,36 @@ class InvLogListViewModel {
 extension InvLogListViewModel {
     
     private func transform() {
-        self.output.cellData.accept([InvLogListDataSource(model: "", items: InvLogListModel.sample)])
+        self.input
+            .bind(onNext: { [weak self] input in
+                guard let self else { return }
+                
+                switch input {
+                case .viewWillAppear:
+                    self.fetchWalkResultData()
+                    
+                }
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func fetchWalkResultData() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        FirestoreManager.shared.fetchDocuments(collection: "WalkResult",
+                                               whereField: "userId",
+                                               isEqualTo: userId,
+                                               type: WalkResult.self)
+        .subscribe(onSuccess: { [weak self] result in
+            guard let self else { return }
+            
+            result.forEach {
+                self.data.append(WalkResultToList(from: $0))
+            }
+            
+            self.output.cellData.accept([InvLogListDataSource(model: "", items: self.data)])
+        })
+        .disposed(by: disposeBag)
     }
     
 }
