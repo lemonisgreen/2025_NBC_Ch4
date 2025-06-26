@@ -429,8 +429,8 @@ class MainViewController: UIViewController {
         let locationOverlay = mapView.locationOverlay
         let overlayImage = NMFOverlayImage(name: "locationImage")
         locationOverlay.icon = overlayImage
-        locationOverlay.iconWidth = 36
-        locationOverlay.iconHeight = 36
+        locationOverlay.iconWidth = 46
+        locationOverlay.iconHeight = 46
         
         // statusView 설정
         statusView.backgroundColor = .gray50
