@@ -126,7 +126,29 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
+    
+    // 특정 사용자의 펫 프로필들 조회
+    func fetchUserPetProfiles(userId: String) -> Single<[PetProfile]> {
+        return Single.create { [weak self] single in
+            self?.db.collection("PetProfile")
+                .whereField("userId", isEqualTo: userId)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        single(.failure(error))
+                    } else if let snapshot = snapshot {
+                        let profiles: [PetProfile] = snapshot.documents.compactMap {
+                            try? $0.data(as: PetProfile.self)
+                        }
+                        single(.success(profiles))
+                    } else {
+                        single(.failure(FirestoreError.noData))
+                    }
+                }
+            return Disposables.create()
+        }
+    }
 }
+
 
 enum FirestoreError: Error {
     case unknown

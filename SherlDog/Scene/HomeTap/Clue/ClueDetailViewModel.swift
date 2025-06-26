@@ -8,6 +8,7 @@
 import Foundation
 import RxSwift
 import RxCocoa
+import CoreLocation
 
 final class ClueDetailViewModel {
     
@@ -18,5 +19,11 @@ final class ClueDetailViewModel {
     
     init(clue: ClueModel) {
         savedClue.accept(clue)
+    }
+    
+    // 새로운 초기화 메서드 추가
+    init(coordinate: CLLocationCoordinate2D) {
+        // 좌표만으로 새 단서를 만드는 경우
+        savedClue.accept(nil)
     }
 }

@@ -142,11 +142,8 @@ class MainViewController: UIViewController {
     // 저장된 단서들을 Firebase에서 불러와서 마커로 표시
     private func loadSavedClues() {
         guard let userId = Auth.auth().currentUser?.uid else {
-            print("로그인되지 않음 - 단서를 불러올 수 없습니다")
             return
         }
-        
-        print(" 단서 불러오기 시작 - 사용자: \(userId)")
         
         // 기존 단서 마커들 제거
         clueMarkers.forEach { $0.mapView = nil }
@@ -157,10 +154,7 @@ class MainViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(
                 onSuccess: { [weak self] allClues in
-                    print(" 전체 단서 개수: \(allClues.count)")
                     let myClues = allClues.filter { $0.userID == userId }
-                    print(" 내 단서 개수: \(myClues.count)")
-                    
                     if myClues.isEmpty {
                         print("저장된 단서가 없습니다")
                     } else {
@@ -175,11 +169,8 @@ class MainViewController: UIViewController {
     }
     
     private func addClueMarkers(clues: [ClueModel]) {
-        print("마커 추가 시작 - 단서 개수: \(clues.count)")
         
         for (index, clue) in clues.enumerated() {
-            print("마커 \(index + 1) 추가: (\(clue.latitude), \(clue.longitude))")
-            
             let marker = NMFMarker()
             marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
             marker.userInfo = ["clue": clue]
@@ -191,9 +182,7 @@ class MainViewController: UIViewController {
             marker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
                 guard let self = self,
                       let marker = overlay as? NMFMarker else { return false }
-                
-                print("마커 터치됨!")
-                
+
                 // 마커 위치 정보 가져오기
                 let markerPosition = marker.position
                 guard let clue = marker.userInfo["clue"] as? ClueModel else { return false }
@@ -213,8 +202,6 @@ class MainViewController: UIViewController {
             
             clueMarkers.append(marker)
         }
-        
-        print("모든 마커 추가 완료! 총 \(clueMarkers.count)개")
     }
     
     private func trackingBind() {
