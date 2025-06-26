@@ -81,7 +81,8 @@ class MainViewController: UIViewController {
     // 위치권한을 거부 했을때
     private func showLocationSettingsAlert() {
         let alert = AlertManager(
-            message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+            message: "위치 권한을 '항상 허용'으로\n설정해주세요",
+            subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
             buttonTitles: ["취소", "설정으로 이동"],
             buttonActions: [nil, {
                 if let settingsURL = URL(string: UIApplication.openSettingsURLString),
@@ -104,7 +105,8 @@ class MainViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self = self else { return }
             let alert = AlertManager(
-                message: "실시간 산책 경로를 기록하기 위해서는 권한이 필요합니다.\n설정에서 '항상 허용'으로 변경해주세요.",
+                message: "위치 권한을 '항상 허용'으로\n설정해주세요",
+                subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
                 buttonTitles: ["취소", "설정으로 이동"],
                 buttonActions: [nil, {
                     if let settingsURL = URL(string: UIApplication.openSettingsURLString),
@@ -169,7 +171,20 @@ class MainViewController: UIViewController {
         viewModel.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
-                
+
+                // If not enough path, show alert and return
+                if fullSide.isEmpty {
+                    let alert = AlertManager(
+                        message: "기록된 경로가 부족해요!",
+                        subMessage: "5미터 이상 이동 시 기록이 가능해요.",
+                        buttonTitles: ["확인"],
+                        buttonActions: [nil]
+                    )
+                    self.present(alert, animated: true)
+                    self.setInvestigation(active: false)
+                    return
+                }
+
                 // WalkendModalViewController의 imageView에 맞게 들어가도록 예측한 값.
                 /*
                  top 25추정 + 박스사이즈(약 120추정) + 15 + 박스사이즈(약 150추정) + 60 + 라벨사이즈(약 24추정) + 75 = 469
@@ -280,7 +295,7 @@ class MainViewController: UIViewController {
                         self.present(cameraView, animated: true)
                         
                     case false:
-                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                        let alert = AlertManager(message: "카메라 권한이 필요합니다.\n 설정에서 변경해주세요.", subMessage: nil, buttonTitles: ["확인"], buttonActions: [nil])
                         
                         self.present(alert, animated: true)
                     }
@@ -559,6 +574,9 @@ extension MainViewController: CLLocationManagerDelegate {
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
+        let coord = location.coordinate
+           mapView.locationOverlay.location = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
+
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
             let coord = location.coordinate

@@ -39,7 +39,12 @@ final class MainViewModel {
             .subscribe(onNext: { [weak self] in
                 guard let self else { return }
                 self.isTracking.accept(false)
-                self.fullSideOfCourse.accept(self.fetchFullSide())
+                let coords = self.coordinates.value
+                if coords.count < 2 {
+                    self.fullSideOfCourse.accept(NMGLatLngBounds())
+                } else {
+                    self.fullSideOfCourse.accept(self.fetchFullSide())
+                }
             })
             .disposed(by: disposeBag)
     }
@@ -61,11 +66,11 @@ final class MainViewModel {
                 if let prev = previous {
                     let distance = CLLocation(latitude: prev.latitude, longitude: prev.longitude)
                         .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude))
-
-                    if distance >= 10 && distance < 50 {
+                    
+                    if self.isTracking.value && distance >= 5 && distance < 50 {
                         self.coordinates.accept(self.coordinates.value + [current])
                     }
-                } else {
+                } else if self.isTracking.value {
                     self.coordinates.accept(self.coordinates.value + [current])
                 }
             })
