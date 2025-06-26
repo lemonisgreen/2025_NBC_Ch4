@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import FirebaseFirestore
 
 struct ClueModel: Codable {
     let userID: String
@@ -13,4 +14,5 @@ struct ClueModel: Codable {
     let longitude: Double
     let content: String
     let image: String
+//    let date: Timestamp
 }
