@@ -70,8 +70,8 @@ final class ClueDetailViewController: UIViewController {
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
-        pageControl.pageIndicatorTintColor = .gray400
-        pageControl.currentPageIndicatorTintColor = .gray500
+        pageControl.pageIndicatorTintColor = .keycolorPrimary5
+        pageControl.currentPageIndicatorTintColor = .keycolorPrimary2
     }
 
     private func setupConstraints() {
