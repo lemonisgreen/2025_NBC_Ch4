@@ -2,6 +2,7 @@ import UIKit
 import Firebase
 import FirebaseStorage
 import FirebaseAuth
+import RxSwift
 
 class FirebaseImageManager {
     static let shared = FirebaseImageManager()
@@ -123,6 +124,25 @@ class FirebaseImageManager {
             }
         }
     }
+    
+    // MARK: - 이미지 삭제
+    func deleteImage(urlString: String) -> Completable {
+        return Completable.create { completable in
+            let storageRef = Storage.storage().reference(forURL: urlString)
+            
+            storageRef.delete { error in
+                if let error = error {
+                    completable(.error(error))
+                } else {
+                    completable(.completed)
+                }
+            }
+            
+            return Disposables.create()
+        }
+        
+    }
+
 }
 
 // MARK: - UploadType
