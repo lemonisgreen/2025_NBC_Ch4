@@ -50,12 +50,12 @@ class DataTrackingViewModel {
                 self.duration.accept(result.duration)
                 self.endDate.accept(date)
                 
-                FirebaseImageManager.shared.downloadImage(userId: userId,
-                                                          type: .walkResult) { image in
-                    guard let image else { return }
+                self.downloadImage(from: result.walkingPathImage) { [weak self] image in
+                    guard let self, let image else { return }
                     
                     self.invLogListViewSendImage.accept(image)
                 }
+                
             })
             .disposed(by: disposeBag)
         
@@ -106,6 +106,21 @@ class DataTrackingViewModel {
                 self?.saveResult.onNext(.failure(error))
             }
         }
+    }
+    
+    private func downloadImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
+        guard let url = URL(string: urlString) else {
+            completion(nil)
+            return
+        }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            if let data = data, let image = UIImage(data: data) {
+                completion(image)
+            } else {
+                completion(nil)
+            }
+        }.resume()
     }
     
     func saveWalkResult(selectedProfiles: [PetProfile]) {

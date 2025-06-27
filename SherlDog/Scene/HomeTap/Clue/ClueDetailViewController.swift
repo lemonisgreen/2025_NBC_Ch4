@@ -9,11 +9,22 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import RxDataSources
 
 final class ClueDetailViewController: UIViewController {
     
     private let viewModel: ClueDetailViewModel
     private let disposeBag = DisposeBag()
+    
+    private let dataSource = RxCollectionViewSectionedReloadDataSource<ClueDetailViewModel.ClueDataSource>(
+        configureCell: { dataSource, collectionView, indexPath, item  in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ClueDetailCell.identifier, for: indexPath) as? ClueDetailCell else { return .init() }
+            
+            cell.settingCell(image: item.image, content: item.content)
+            
+            return cell
+        }
+    )
     
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout())
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
@@ -32,6 +43,12 @@ final class ClueDetailViewController: UIViewController {
         setupUI()
         setupConstraints()
         bindViewModel()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.navigationBar.isHidden = true
     }
 
     private func setupUI() {
@@ -53,6 +70,8 @@ final class ClueDetailViewController: UIViewController {
     private func setupConstraints() {
         collectionView.snp.makeConstraints {
             $0.edges.equalToSuperview()
+//            $0.height.equalTo(600)
+//            $0.top.leading.trailing.equalToSuperview()
         }
         
         loadingIndicator.snp.makeConstraints {
@@ -78,13 +97,8 @@ final class ClueDetailViewController: UIViewController {
             .disposed(by: disposeBag)
         
         // 단서 데이터 바인딩
-        self.viewModel.output.savedClue
-            .bind(to: self.collectionView.rx.items(
-                cellIdentifier: ClueDetailCell.identifier,
-                cellType: ClueDetailCell.self)
-            ) { index, model, cell in
-                cell.settingCell(image: self.viewModel.output.image.value[index], content: model.content)
-            }
+        viewModel.output.cellData
+            .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
         
         // 에러 메시지 바인딩
@@ -102,7 +116,7 @@ final class ClueDetailViewController: UIViewController {
                                                                 heightDimension: .fractionalHeight(1)))
             
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                             heightDimension: .fractionalHeight(1)),
+                                                                             heightDimension: .estimated(600)),
                                                            subitems: [item])
             
             let section = NSCollectionLayoutSection(group: group)

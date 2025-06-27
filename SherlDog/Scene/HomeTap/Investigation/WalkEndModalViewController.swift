@@ -178,7 +178,7 @@ class WalkEndModalViewController : UIViewController {
                 //
                 //                self?.present(requestView, animated: true)
                 
-                let viewModel = ClueDetailViewModel(coordinate: CLLocationCoordinate2D())
+                let viewModel = ClueDetailViewModel()
                 let detailVC = ClueDetailViewController(viewModel: viewModel)
                 let nav = UINavigationController(rootViewController: detailVC)
                 nav.modalPresentationStyle = .pageSheet
