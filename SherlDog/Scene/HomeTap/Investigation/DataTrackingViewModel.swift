@@ -50,11 +50,15 @@ class DataTrackingViewModel {
                 self.duration.accept(result.duration)
                 self.endDate.accept(date)
                 
-                self.downloadImage(from: result.walkingPathImage) { [weak self] image in
-                    guard let self, let image else { return }
-                    
-                    self.invLogListViewSendImage.accept(image)
-                }
+                self.downloadImage(from: result.walkingPathImage)
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onSuccess: { [weak self] image in
+                        guard let self else { return }
+                        
+                        self.invLogListViewSendImage.accept(image)
+                    })
+                    .disposed(by: disposeBag)
                 
             })
             .disposed(by: disposeBag)
@@ -108,19 +112,21 @@ class DataTrackingViewModel {
         }
     }
     
-    private func downloadImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
+    private func downloadImage(from urlString: String) -> Single<UIImage> {
         guard let url = URL(string: urlString) else {
-            completion(nil)
-            return
+            return .just(UIImage())
         }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data, let image = UIImage(data: data) {
-                completion(image)
-            } else {
-                completion(nil)
-            }
-        }.resume()
+        return Single<UIImage>.create { single in
+            URLSession.shared.dataTask(with: url) { data, response, error in
+                if let data = data, let image = UIImage(data: data) {
+                    single(.success(image))
+                } else {
+                    single(.success(UIImage()))
+                }
+            }.resume()
+            
+            return Disposables.create()
+        }
     }
     
     func saveWalkResult(selectedProfiles: [PetProfile]) {

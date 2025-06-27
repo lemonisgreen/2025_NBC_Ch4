@@ -66,29 +66,30 @@ final class ClueDetailViewModel {
     
     private func updateUI(with clue: ClueModel) {
         // Firebase 이미지 다운로드
-        downloadImage(from: clue.image) { [weak self] image in
-            guard let self else { return }
-            DispatchQueue.main.async {
-                if let image = image {
-                    self.data.append(ClueCellData(image: image, content: clue.content))
-                }
-            }
-        }
+        downloadImage(from: clue.image)
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] image in
+                self?.data.append(ClueCellData(image: image, content: clue.content))
+            })
+            .disposed(by: disposeBag)
     }
     
-    private func downloadImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
+    private func downloadImage(from urlString: String) -> Single<UIImage> {
         guard let url = URL(string: urlString) else {
-            completion(nil)
-            return
+            return .just(UIImage())
         }
-        
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let data = data, let image = UIImage(data: data) {
-                completion(image)
-            } else {
-                completion(nil)
-            }
-        }.resume()
+        return Single<UIImage>.create { single in
+            URLSession.shared.dataTask(with: url) { data, response, error in
+                if let data = data, let image = UIImage(data: data) {
+                    single(.success(image))
+                } else {
+                    single(.success(UIImage()))
+                }
+            }.resume()
+            
+            return Disposables.create()
+        }
     }
     
     private func fetchCluesData() {
@@ -98,40 +99,33 @@ final class ClueDetailViewModel {
         FirestoreManager.shared.fetchDocuments(collection: "clues",
                                                whereField: "userID",
                                                isEqualTo: userId,
+                                               orderBy: "",
                                                type: ClueModel.self)
-        .flatMap { [weak self] clue in
+        .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
             let now = Date()
             let calendar = Calendar.current
             
             let start = calendar.startOfDay(for: now)
-            guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return Single<([ClueModel], [UIImage])>.just(([], []))}
+            guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return .just(([], [])) }
             
             let clue = clue.filter {
                 let date = $0.date as Timestamp
                 return date.dateValue() >= start && date.dateValue() < end
             }
             
-            return Single<([ClueModel], [UIImage])>.create { [weak self] observer in
-                clue.forEach {
-                    self?.downloadImage(from: $0.image) { image in
-                        if let image {
-                            self?.images.append(image)
-                        } else {
-                            self?.images.append(UIImage())
-                        }
-                    }
-                }
-                if let self {
-                    observer(.success((clue, self.images)))
-                }
-                return Disposables.create()
+            let imageSingle = clue.map { [weak self] clue in
+                guard let self else { return Single.just(UIImage()) }
+                return self.downloadImage(from: clue.image)
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    .observe(on: MainScheduler.instance)
+            }
+            
+            return Single.zip(imageSingle) { image in
+                return (clue, image)
             }
         }
         .subscribe(onSuccess: { [weak self] clues, images in
             guard let self else { return }
-            
-            print(clues.count)
-            print(images.count)
             
             for (clue, image) in zip(clues, images) {
                 self.data.append(ClueCellData(image: image, content: clue.content))

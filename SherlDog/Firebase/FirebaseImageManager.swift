@@ -25,7 +25,9 @@ class FirebaseImageManager {
             return
         }
 
-        let imagePath = "\(type)/\(userId)/\(type).jpg"
+        // 타임스탬프로 유니크한 파일명 생성
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let imagePath = "\(type)/\(userId)/\(type)_\(timestamp).jpg"
         let imageRef = storageRef.child(imagePath)
 
         let metadata = StorageMetadata()
