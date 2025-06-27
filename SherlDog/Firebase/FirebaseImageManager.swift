@@ -98,9 +98,45 @@ class FirebaseImageManager {
             return
         }
 
-        // 타임스탬프로 유니크한 파일명 생성
         let timestamp = Int(Date().timeIntervalSince1970)
         let imagePath = "walkResult/\(userId)/walkResult_\(timestamp).jpg"
+        let imageRef = storageRef.child(imagePath)
+
+        let metadata = StorageMetadata()
+        metadata.contentType = "image/jpeg"
+
+        imageRef.putData(imageData, metadata: metadata) { _, error in
+            if let error = error {
+                completion(.failure(error))
+                return
+            }
+
+            imageRef.downloadURL { url, error in
+                if let error = error {
+                    completion(.failure(error))
+                } else if let downloadUrl = url?.absoluteString {
+                    completion(.success(downloadUrl))
+                } else {
+                    completion(.failure(ImageError.urlGenerationFailed))
+                }
+            }
+        }
+    }
+    
+    // MARK: - Clue 이미지 업로드 (타임스탬프 포함)
+    func uploadClueImage(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            completion(.failure(ImageError.invalidImageData))
+            return
+        }
+
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion(.failure(ImageError.invalidImageData))
+            return
+        }
+
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let imagePath = "clue/\(userId)/clue_\(timestamp).jpg"
         let imageRef = storageRef.child(imagePath)
 
         let metadata = StorageMetadata()
