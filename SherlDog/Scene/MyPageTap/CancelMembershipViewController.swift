@@ -53,13 +53,15 @@ class CancelMembershipViewController : UIViewController {
         imageView.image = UIImage(named: "cancelMembership")
         imageView.contentMode = .scaleAspectFit
         
-        mainLabel.text = "그동안 정말 많은 수사를 함께 했네요\n이건 함께 한 추억들이에요"
+//        mainLabel.text = "그동안 정말 많은 수사를 함께 했네요\n이건 함께 한 추억들이에요"
+        mainLabel.text = "그동안 정말 많은 수사를 함께 했네요.\n함께한 시간 모두\n소중한 추억으로 남을 거예요."
         mainLabel.font = .body1
         mainLabel.textColor = .textPrimary
-        mainLabel.numberOfLines = 2
+        mainLabel.numberOfLines = 3
         mainLabel.textAlignment = .center
         
-        contentLabel.text = "멍탐정 2마리와 12.6km를 걷고\n 1123일을 함께하며\n 114개의 단서를 남겼어요"
+//        contentLabel.text = "멍탐정 2마리와 12.6km를 걷고\n 1123일을 함께하며\n 114개의 단서를 남겼어요"
+        contentLabel.text = "함께했던 모든 발자국과 단서들이 \n 오래도록 기억 속에 남을 거예요."
         contentLabel.font = .body6
         contentLabel.textColor = .textPrimary
         contentLabel.numberOfLines = 3
