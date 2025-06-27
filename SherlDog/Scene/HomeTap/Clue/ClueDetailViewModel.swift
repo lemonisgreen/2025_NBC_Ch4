@@ -98,6 +98,7 @@ final class ClueDetailViewModel {
         FirestoreManager.shared.fetchDocuments(collection: "clues",
                                                whereField: "userID",
                                                isEqualTo: userId,
+                                               orderBy: "date",
                                                type: ClueModel.self)
         .flatMap { [weak self] clue in
             let now = Date()
