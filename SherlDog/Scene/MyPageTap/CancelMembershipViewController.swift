@@ -143,6 +143,82 @@ class CancelMembershipViewController : UIViewController {
                 self?.navigationController?.popViewController(animated: true)
             }
             .disposed(by: disposeBag)
+        
+        cancelButton.rx.tap
+            .bind { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+            .disposed(by: disposeBag)
+
+        continueButton.rx.tap
+            .bind { [weak self] in
+                self?.showFinalConfirmationAlert()
+            }
+            .disposed(by: disposeBag)
+    }
+    
+    // MARK: - 회원탈퇴 관련 메서드들
+    private func showFinalConfirmationAlert() {
+        let alert = AlertManager(
+            message: "정말로 탈퇴하시겠습니까?",
+            subMessage: "탈퇴 후에는 모든 데이터가 복구되지 않습니다",
+            buttonTitles: ["아니오", "탈퇴하기"],
+            buttonActions: [
+                nil,
+                { [weak self] in
+                    self?.performDeleteAccount()
+                }
+            ]
+        )
+        present(alert, animated: true)
+    }
+    
+    private func performDeleteAccount() {
+        AccountDeletionManager.shared.deleteAccount(from: self) { [weak self] success in
+            DispatchQueue.main.async {
+                if success {
+                    self?.showSuccessAndNavigate()
+                } else {
+                    self?.showErrorAlert()
+                }
+            }
+        }
+    }
+    
+    private func showSuccessAndNavigate() {
+        let alert = AlertManager(
+            message: "회원탈퇴가 완료되었습니다",
+            subMessage: "그동안 멍탐정을 이용해주셔서 감사했습니다",
+            buttonTitles: ["확인"],
+            buttonActions: [
+                { [weak self] in
+                    self?.navigateToLoginScreen()
+                }
+            ]
+        )
+        present(alert, animated: true)
+    }
+    
+    private func showErrorAlert() {
+        let alert = AlertManager(
+            message: "회원탈퇴에 실패했습니다",
+            subMessage: "잠시 후 다시 시도해주세요",
+            buttonTitles: ["확인"],
+            buttonActions: [nil]
+        )
+        present(alert, animated: true)
+    }
+    
+    private func navigateToLoginScreen() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let sceneDelegate = windowScene.delegate as? SceneDelegate else { return }
+        
+        let loginVC = LoginViewController()
+        let navigationController = UINavigationController(rootViewController: loginVC)
+        
+        UIView.transition(with: sceneDelegate.window!, duration: 0.3, options: .transitionCrossDissolve, animations: {
+            sceneDelegate.window?.rootViewController = navigationController
+        })
     }
     
     private func setupNavigationBar() {

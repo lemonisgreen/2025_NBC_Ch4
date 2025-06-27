@@ -36,9 +36,11 @@ class MyPageViewController : UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            viewModel.refreshHumanProfile()
-        }
+        super.viewWillAppear(animated)
+        viewModel.refreshHumanProfile()
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+        
+    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -46,11 +48,6 @@ class MyPageViewController : UIViewController {
         topLine.backgroundColor = UIColor(named: "gray200")?.cgColor
         topLine.frame = CGRect(x: 0, y: 0, width: findMateButton.bounds.width, height: 1)
         findMateButton.layer.addSublayer(topLine)
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
     }
     
     private func setupUI() {
