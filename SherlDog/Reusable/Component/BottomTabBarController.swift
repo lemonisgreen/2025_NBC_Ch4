@@ -54,15 +54,15 @@ class BottomTabBarController: UITabBarController {
         
         let appearance = UITabBarAppearance()
         
-        appearance.backgroundColor = .white
+        appearance.backgroundColor = .keycolorInverse
         //standardAppearance랑 scrollEdgeAppearance 둘 다 지정해줘야 UITabBarAppearance()에 지정한 스타일이 먹음.
         appearance.stackedLayoutAppearance.selected.titleTextAttributes = selectedAttributes
         appearance.stackedLayoutAppearance.normal.titleTextAttributes = unselectedAttributes
         
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
-        UITabBar.appearance().unselectedItemTintColor = .white
-        UITabBar.appearance().tintColor = .white
+        UITabBar.appearance().unselectedItemTintColor = .keycolorInverse
+        UITabBar.appearance().tintColor = .keycolorInverse
     }
 }
 

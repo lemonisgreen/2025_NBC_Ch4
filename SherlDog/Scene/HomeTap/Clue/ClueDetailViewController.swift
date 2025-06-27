@@ -38,7 +38,7 @@ final class ClueDetailViewController: UIViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = .white
+        view.backgroundColor = .keycolorInverse
 
         polaroidBackgroundImageView.image = UIImage(named: "bigPolaroidSet")
         polaroidBackgroundImageView.contentMode = .scaleAspectFill

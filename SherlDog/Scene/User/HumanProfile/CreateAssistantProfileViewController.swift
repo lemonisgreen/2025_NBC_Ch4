@@ -13,6 +13,7 @@ import SnapKit
 // MARK: - AssistantProfileViewController
 class CreateAssistantProfileViewController: UIViewController {
     
+    private var selectedImage: UIImage?
     private let avatarViewModel = SelectAvatarViewModel()
     private let cameraViewModel = CameraViewModel()
     private let viewModel = HumanProfileViewModel()
@@ -39,9 +40,14 @@ class CreateAssistantProfileViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
-
+        
         setupUI()
         configureUI()
+        
+        if viewModel.isEditMode.value {
+               setInitialUIValues()
+           }
+        
         bind()
         bindViewModel()
     }
@@ -49,6 +55,56 @@ class CreateAssistantProfileViewController: UIViewController {
 
 // MARK: - Method
 extension CreateAssistantProfileViewController {
+    
+    func configure(with profile: HumanProfileModel) {
+        viewModel.setEditMode(with: profile)
+        
+        DispatchQueue.main.async { [weak self] in
+              if self?.isViewLoaded == true {
+                  self?.setInitialUIValues()
+              }
+          }
+    }
+    
+    private func setInitialUIValues() {
+        // 텍스트 설정
+        nicknameTextField.text = viewModel.nickname.value
+        introduceTextView.text = viewModel.introduce.value
+   
+        // 글자 수 업데이트
+        nickNameConstraintsLabel.text = "\(viewModel.nickname.value.count) / 12자"
+        introduceConstraintsLabel.text = "\(viewModel.introduce.value.count) / 150자"
+        
+        // 이미지 설정
+        if let image = viewModel.image.value {
+            profileImageView.image = image
+        }
+    
+        nicknameTextField.sendActions(for: .editingChanged)
+        
+        if let delegate = introduceTextView.delegate {
+            delegate.textViewDidChange?(introduceTextView)
+        }
+        
+        loadProfileImage()
+    }
+    
+    private func loadProfileImage() {
+        guard case .edit(let profile) = viewModel.currentMode else { return }
+        
+        FirebaseImageManager.shared.downloadImage(
+            userId: viewModel.userId ?? "",
+            type: .assistant
+        ) { [weak self] image in
+            DispatchQueue.main.async {
+                if let image = image {
+                    self?.selectedImage = image
+                    self?.profileImageView.image = image
+                    self?.cameraViewModel.output.capturedImage.accept(image)
+                }
+            }
+        }
+    }
     
     private func bind() {
         Observable.combineLatest(
@@ -76,10 +132,10 @@ extension CreateAssistantProfileViewController {
         .disposed(by: disposeBag)
         
         navigationBackButton.rx.tap
-                .subscribe(onNext: { [weak self] in
-                    self?.navigationController?.popViewController(animated: true)
-                })
-                .disposed(by: disposeBag)
+            .subscribe(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: disposeBag)
         
         self.avatarViewModel.output.completeSelect
             .subscribe(onNext: { [weak self] imageName in
@@ -163,16 +219,21 @@ extension CreateAssistantProfileViewController {
     }
     
     private func bindViewModel() {
+        // 네비게이션 타이틀 변경
+        viewModel.navigationTitle
+            .bind(to: navigationTitleLabel.rx.text)
+            .disposed(by: disposeBag)
+        
         // 닉네임 입력
         nicknameTextField.rx.text.orEmpty
             .bind(to: viewModel.nickname)
             .disposed(by: disposeBag)
-
+        
         // 소개글 입력
         introduceTextView.rx.text.orEmpty
             .bind(to: viewModel.introduce)
             .disposed(by: disposeBag)
-
+        
         // 카메라로 촬영한 이미지 바인딩
         cameraViewModel.output.capturedImage
             .compactMap { $0 }
@@ -184,7 +245,7 @@ extension CreateAssistantProfileViewController {
             .compactMap { imageName in UIImage(named: imageName) }
             .bind(to: viewModel.image)
             .disposed(by: disposeBag)
-
+        
         // 로딩 상태 처리
         viewModel.isLoading
             .subscribe(onNext: { [weak self] isLoading in
@@ -192,32 +253,42 @@ extension CreateAssistantProfileViewController {
                 // 로딩 인디케이터가 있다면 여기서 처리
             })
             .disposed(by: disposeBag)
-
+        
         // 저장 결과 처리
         viewModel.saveResult
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] result in
                 switch result {
                 case .success:
-                    // 저장 성공 시 메인 화면으로 이동
-                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let delegate = windowScene.delegate as? SceneDelegate,
-                       let window = delegate.window {
-                        let mainView = BottomTabBarController()
-                        window.rootViewController = mainView
-                        window.makeKeyAndVisible()
+                    // 수정모드일 때 저장 성공시 뒤로가기
+                    if self?.viewModel.isEditMode.value == true {
+                        self?.navigationController?.popViewController(animated: true)
+                    } else {
+                        // 저장 성공 시 메인 화면으로 이동
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let delegate = windowScene.delegate as? SceneDelegate,
+                           let window = delegate.window {
+                            let mainView = BottomTabBarController()
+                            window.rootViewController = mainView
+                            window.makeKeyAndVisible()
+                        }
                     }
                 case .failure(let error):
                     self?.showError(error.localizedDescription)
                 }
             })
             .disposed(by: disposeBag)
-
+        
         // 다음 버튼
         nextButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.viewModel.uploadAndSaveProfile()
             })
+            .disposed(by: disposeBag)
+        
+        //수정모드일 때 다음 버튼 타이틀 변경
+        viewModel.nextButtonTitle
+            .bind(to: nextButton.rx.title(for: .normal))
             .disposed(by: disposeBag)
     }
     
@@ -266,7 +337,7 @@ extension CreateAssistantProfileViewController {
         self.navigationItem.titleView = navigationTitleLabel
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
-      
+        
         profileImageView.image = .petProfile
         profileImageView.contentMode = .scaleAspectFill
         profileImageView.layer.borderColor = UIColor.gray100.cgColor

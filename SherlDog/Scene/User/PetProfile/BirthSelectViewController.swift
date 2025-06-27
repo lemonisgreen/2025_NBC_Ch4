@@ -44,7 +44,7 @@ class BirthSelectViewController: UIViewController {
                           completeButton
                          ])
         
-        view.backgroundColor = .white
+        view.backgroundColor = .keycolorInverse
         
         birthSelectLabel.text = "생년월일을 알려주세요"
         birthSelectLabel.font = .title1

@@ -97,7 +97,8 @@ class WalkEndModalViewController : UIViewController {
         
         self.DataTrackingVM.fullScreenImage
             .bind(onNext: { [weak self] image in
-                guard let self else { return }
+                guard let self,
+                      self.DataTrackingVM.fetchResult.value == nil else { return }
                 
                 DispatchQueue.main.async {
                     self.mapImageView.image = image
@@ -110,7 +111,8 @@ class WalkEndModalViewController : UIViewController {
         
         self.DataTrackingVM.capturedImage
             .bind(onNext: { [weak self] image in
-                guard let self else { return }
+                guard let self,
+                      self.DataTrackingVM.fetchResult.value == nil else { return }
                 
                 self.DataTrackingVM.saveWalkResultCapturedImage(
                     image: image,
@@ -121,7 +123,8 @@ class WalkEndModalViewController : UIViewController {
         
         self.DataTrackingVM.saveResult
             .subscribe(onNext: { [weak self] result in
-                guard let self else { return }
+                guard let self,
+                      self.DataTrackingVM.fetchResult.value == nil else { return }
                 
                 switch result {
                 case .success():
@@ -140,8 +143,22 @@ class WalkEndModalViewController : UIViewController {
             })
             .disposed(by: disposeBag)
         
+        self.DataTrackingVM.fetchResult
+            .bind(onNext: { [weak self] result in
+                guard let self, let result else { return }
+                
+                self.selectedPetProfiles = result.petProfileId
+                self.setPetImages()
+            })
+            .disposed(by: disposeBag)
+        
         self.DataTrackingVM.invLogListViewSendImage
-            .bind(to: self.mapImageView.rx.image)
+            .bind(onNext: { [weak self] image in
+                guard let self,
+                      self.DataTrackingVM.fetchResult.value != nil else { return }
+                
+                self.mapImageView.image = image
+            })
             .disposed(by: disposeBag)
         
         self.walkShareButton.rx.tap
@@ -171,21 +188,14 @@ class WalkEndModalViewController : UIViewController {
             .bind(to: distanceContentLabel.rx.text)
             .disposed(by: disposeBag)
         
-        Observable
-            .combineLatest(DataTrackingVM.startDate, DataTrackingVM.endDate)
-            .compactMap { start, end -> String? in
-                guard let start = start, let end = end else { return nil }
-                let interval = Int(end.timeIntervalSince(start))
-                let hours = interval / 3600
-                let minutes = (interval % 3600) / 60
-                let seconds = interval % 60
-                return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+        DataTrackingVM.endDate
+            .map {
+                guard let endDate = $0 else { return "date" }
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy/MM/dd"
+                return dateFormatter.string(from: endDate)
             }
-            .bind(onNext: { [weak self] duration in
-                guard let self else { return }
-                
-                self.DataTrackingVM.duration.accept(duration)
-            })
+            .bind(to: self.todayLabel.rx.text)
             .disposed(by: disposeBag)
         
         DataTrackingVM.duration
@@ -366,6 +376,53 @@ class WalkEndModalViewController : UIViewController {
         dogImagesStack.spacing = -20
         dogImagesStack.alignment = .center
         dogImagesStack.backgroundColor = .clear
+        // 선택된 강아지들의 실제 이미지 사용
+        setPetImages()
+        
+        mapImageView.image = UIImage(named: "mapPolaroid")
+        mapImageView.contentMode = .scaleAspectFill
+        mapImageView.clipsToBounds = true
+        mapImageView.backgroundColor = .clear
+        
+//        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
+//        walkShareButton.titleLabel?.font = UIFont.highlight4
+//        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
+//        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
+//        walkShareButton.layer.cornerRadius = 6
+        
+        distanceStack.axis = .vertical
+        distanceStack.spacing = 4
+        distanceStack.alignment = .leading
+        distanceStack.addArrangedSubview(distanceLabel)
+        distanceStack.addArrangedSubview(distanceContentLabel)
+        distanceStack.backgroundColor = .clear
+        
+        timeStack.axis = .vertical
+        timeStack.spacing = 4
+        timeStack.alignment = .leading
+        timeStack.addArrangedSubview(timeLabel)
+        timeStack.addArrangedSubview(timeContentLabel)
+        timeStack.backgroundColor = .clear
+        
+        stepCountStack.axis = .vertical
+        stepCountStack.spacing = 4
+        stepCountStack.alignment = .fill
+        stepCountStack.addArrangedSubview(stepLabelWrapper)
+        stepCountStack.addArrangedSubview(stepCountContentLabel)
+        stepCountStack.backgroundColor = .clear
+        
+        infoStack.axis = .horizontal
+        infoStack.distribution = .fillEqually
+        infoStack.addArrangedSubview(distanceStack)
+        infoStack.addArrangedSubview(timeStack)
+        infoStack.addArrangedSubview(stepCountStack)
+        infoStack.backgroundColor = .clear
+        
+        closeButton.setImage(UIImage(named: "modalExit"), for: .normal)
+        closeButton.contentMode = .scaleAspectFit
+    }
+    
+    private func setPetImages() {
         dogImagesStack.arrangedSubviews.forEach {
             dogImagesStack.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -411,48 +468,6 @@ class WalkEndModalViewController : UIViewController {
                 dogImagesStack.addArrangedSubview(imageView)
             }
         }
-        
-        mapImageView.image = UIImage(named: "mapPolaroid")
-        mapImageView.contentMode = .scaleAspectFill
-        mapImageView.clipsToBounds = true
-        mapImageView.backgroundColor = .clear
-        
-//        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
-//        walkShareButton.titleLabel?.font = UIFont.highlight4
-//        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
-//        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
-//        walkShareButton.layer.cornerRadius = 6
-        
-        distanceStack.axis = .vertical
-        distanceStack.spacing = 4
-        distanceStack.alignment = .leading
-        distanceStack.addArrangedSubview(distanceLabel)
-        distanceStack.addArrangedSubview(distanceContentLabel)
-        distanceStack.backgroundColor = .clear
-        
-        timeStack.axis = .vertical
-        timeStack.spacing = 4
-        timeStack.alignment = .leading
-        timeStack.addArrangedSubview(timeLabel)
-        timeStack.addArrangedSubview(timeContentLabel)
-        timeStack.backgroundColor = .clear
-        
-        stepCountStack.axis = .vertical
-        stepCountStack.spacing = 4
-        stepCountStack.alignment = .fill
-        stepCountStack.addArrangedSubview(stepLabelWrapper)
-        stepCountStack.addArrangedSubview(stepCountContentLabel)
-        stepCountStack.backgroundColor = .clear
-        
-        infoStack.axis = .horizontal
-        infoStack.distribution = .fillEqually
-        infoStack.addArrangedSubview(distanceStack)
-        infoStack.addArrangedSubview(timeStack)
-        infoStack.addArrangedSubview(stepCountStack)
-        infoStack.backgroundColor = .clear
-        
-        closeButton.setImage(UIImage(named: "modalExit"), for: .normal)
-        closeButton.contentMode = .scaleAspectFit
     }
     
     private func configureUI() {
