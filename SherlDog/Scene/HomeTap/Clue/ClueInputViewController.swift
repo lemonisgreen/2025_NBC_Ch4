@@ -144,7 +144,9 @@ class ClueInputViewController: UIViewController {
         
         cancelButton.rx.tap
             .bind(onNext: { [weak self] in
-                self?.dismiss(animated: true)
+                self?.dismiss(animated: true) {
+                    self?.cameraViewModel.input.accept(.dismiss)
+                }
             })
             .disposed(by: disposeBag)
     }
