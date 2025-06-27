@@ -14,6 +14,7 @@ import FirebaseAuth
 class MyPageViewController : UIViewController {
     private let viewModel = MyPageViewModel()
     private let disposeBag = DisposeBag()
+    private let maxProfileCount = 3
     
     let layout = UICollectionViewFlowLayout()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
@@ -90,6 +91,9 @@ class MyPageViewController : UIViewController {
         collectionView.register(
             DetectiveCardCell.self,
             forCellWithReuseIdentifier: DetectiveCardCell.identifier)
+        collectionView.register(
+                ProfileAddCollectionViewCell.self,
+                forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
@@ -228,6 +232,35 @@ class MyPageViewController : UIViewController {
             }
             .disposed(by: disposeBag)
         
+        viewModel.output.petProfiles
+                .map { [weak self] profiles -> [Any] in
+                    guard let self = self else { return [] }
+                    var items: [Any] = profiles
+                    
+                    // 3개 미만일 때만 ProfileAdd 셀 추가
+                    if profiles.count < self.maxProfileCount {
+                        items.append("ProfileAdd") // 구분용 문자열
+                    }
+                    return items
+                }
+                .bind(to: collectionView.rx.items) { collectionView, index, item in
+                    if let profile = item as? PetProfile {
+                        let cell = collectionView.dequeueReusableCell(
+                            withReuseIdentifier: DetectiveCardCell.identifier,
+                            for: IndexPath(item: index, section: 0)
+                        ) as! DetectiveCardCell
+                        cell.configure(with: profile)
+                        return cell
+                    } else {
+                        let cell = collectionView.dequeueReusableCell(
+                            withReuseIdentifier: ProfileAddCollectionViewCell.identifier,
+                            for: IndexPath(item: index, section: 0)
+                        ) as! ProfileAddCollectionViewCell
+                        return cell
+                    }
+                }
+                .disposed(by: disposeBag)
+        
         // 컬렉션뷰 데이터 바인딩
         viewModel.output.petProfiles
             .bind(to: collectionView.rx.items(
@@ -281,11 +314,24 @@ class MyPageViewController : UIViewController {
             .subscribe()
             .disposed(by: disposeBag)
         
-        collectionView.rx.itemSelected
-            .subscribe(onNext: { [weak self] indexPath in
-                self?.collectionView.deselectItem(at: indexPath, animated: true)
-            })
-            .disposed(by: disposeBag)
+//        collectionView.rx.itemSelected
+//                .withLatestFrom(viewModel.output.petProfiles) { indexPath, profiles -> Any? in
+//                    let allItems = profiles.count < self.maxProfileCount ?
+//                        profiles + ["ProfileAdd"] : profiles
+//                    
+//                    guard indexPath.item < allItems.count else { return nil }
+//                    return allItems[indexPath.item]
+//                }
+//                .subscribe(onNext: { [weak self] item in
+//                    if let profile = item as? PetProfile {
+//                        // 기존 프로필 편집
+//                        self?.presentRegistrationViewController(with: profile)
+//                    } else if item as? String == "ProfileAdd" {
+//                        // ✅ 새 프로필 추가
+//                        self?.presentRegistrationView()
+//                    }
+//                })
+//                .disposed(by: disposeBag)
     }
     
     private func loadImage(from url: URL) {
