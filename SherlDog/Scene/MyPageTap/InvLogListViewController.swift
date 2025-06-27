@@ -34,19 +34,19 @@ class InvLogListViewController: UIViewController {
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         setupUI()
         configureUI()
         bind()
         inputBind()
+        self.navigationController?.interactivePopGestureRecognizer?.delegate = nil
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
         self.viewModel.input.accept(.viewWillAppear)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
-    
 }
 
 // MARK: - Method
@@ -94,7 +94,6 @@ extension InvLogListViewController {
         navigationBarAppearance.backgroundColor = .gray50
         navigationBarAppearance.shadowColor = .clear
         
-        self.navigationController?.navigationBar.isHidden = false
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
         self.navigationItem.titleView = navigationTitleLabel
         self.navigationItem.standardAppearance = navigationBarAppearance
