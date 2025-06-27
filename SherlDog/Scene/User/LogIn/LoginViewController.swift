@@ -51,10 +51,12 @@ class LoginViewController: UIViewController {
         helloLabel.text = "반가워요!"
         helloLabel.font = UIFont(name: "EF_jejudoldam", size: 24)
         helloLabel.textAlignment = .center
+        helloLabel.textColor = .textPrimary
 
         helloLabel2.text = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
         helloLabel2.font = UIFont(name: "EF_jejudoldam", size: 18)
         helloLabel2.textAlignment = .center
+        helloLabel2.textColor = .textPrimary
 
         joinImage.image = UIImage(named: "join")
         joinImage.contentMode = .scaleAspectFit
