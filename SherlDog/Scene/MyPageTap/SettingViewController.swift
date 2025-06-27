@@ -30,6 +30,9 @@ class SettingViewController : UIViewController {
     let settingBackStack = UIStackView()
     let settingBackButton = UIButton()
     let settingTitleLabel = UILabel()
+    let clauseWholeButton = UIButton()
+    let privacyPolicyWholeButton = UIButton()
+    let cancelMembershipWholeButton = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -136,6 +139,12 @@ class SettingViewController : UIViewController {
         settingBackStack.spacing = 10
         settingBackStack.alignment = .center
         
+        clauseStack.addSubview(clauseWholeButton)
+        
+        privacyPolicyStack.addSubview(privacyPolicyWholeButton)
+        
+        cancelMembershipStack.addSubview(cancelMembershipWholeButton)
+        
     }
     
     private func configureUI() {
@@ -162,6 +171,18 @@ class SettingViewController : UIViewController {
         cancelMembershipStack.snp.makeConstraints {
             $0.top.equalTo(privacyPolicyStack.snp.bottom).offset(34)
             $0.leading.trailing.equalToSuperview().inset(16)
+        }
+
+        clauseWholeButton.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        privacyPolicyWholeButton.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+
+        cancelMembershipWholeButton.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     
@@ -197,6 +218,27 @@ class SettingViewController : UIViewController {
         settingBackButton.rx.tap
             .bind { [weak self] in
                 self?.navigationController?.popViewController(animated: true)
+            }
+            .disposed(by: disposeBag)
+        
+//        clauseWholeButton.rx.tap // 추후 바인딩
+//            .bind { [weak self] in
+//                let vc =
+//                self?.navigationController?.pushViewController(vc, animated: true)
+//            }
+//            .disposed(by: disposeBag)
+//
+//        privacyPolicyWholeButton.rx.tap
+//            .bind { [weak self] in
+//                let vc =
+//                self?.navigationController?.pushViewController(vc, animated: true)
+//            }
+//            .disposed(by: disposeBag)
+
+        cancelMembershipWholeButton.rx.tap
+            .bind { [weak self] in
+                let vc = CancelMembershipViewController()
+                self?.navigationController?.pushViewController(vc, animated: true)
             }
             .disposed(by: disposeBag)
     }
