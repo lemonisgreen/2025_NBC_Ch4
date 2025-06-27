@@ -39,7 +39,6 @@ class MyPageViewController : UIViewController {
         super.viewWillAppear(animated)
         viewModel.refreshHumanProfile()
         navigationController?.setNavigationBarHidden(true, animated: animated)
-        
     }
     
     override func viewDidLayoutSubviews() {
@@ -95,6 +94,7 @@ class MyPageViewController : UIViewController {
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
+        collectionView.backgroundColor = .textInverse
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
