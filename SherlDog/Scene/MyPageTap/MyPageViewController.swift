@@ -36,10 +36,10 @@ class MyPageViewController : UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            viewModel.refreshHumanProfile()
-            navigationController?.setNavigationBarHidden(true, animated: animated)
-        }
+        super.viewWillAppear(animated)
+        viewModel.refreshHumanProfile()
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
