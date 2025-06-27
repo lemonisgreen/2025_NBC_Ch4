@@ -537,7 +537,7 @@ class MainViewController: UIViewController {
         
         // 버튼 설정
         clueButton.setTitle("단서 남기기", for: .normal)
-        clueButton.setTitleColor(.white, for: .normal)
+        clueButton.setTitleColor(.textInverse, for: .normal)
         clueButton.backgroundColor = .textInverse
         clueButton.titleLabel?.font = .highlight4
         clueButton.setTitleColor(UIColor(named: "keycolorPrimary3"), for: .normal)
