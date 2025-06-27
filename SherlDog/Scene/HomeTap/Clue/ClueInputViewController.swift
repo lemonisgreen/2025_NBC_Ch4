@@ -21,7 +21,7 @@ class ClueInputViewController: UIViewController {
     private let registerButton = UIButton()
     private let countLabel = UILabel()
     private let placeholderLabel = UILabel()
-   
+    
     private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
     
@@ -57,7 +57,7 @@ class ClueInputViewController: UIViewController {
         clueLabel.textColor = .textPrimary
         
         cancelButton.setImage(.modalExit, for: .normal)
-
+        
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
         imageView.layer.borderWidth = 1
@@ -71,7 +71,7 @@ class ClueInputViewController: UIViewController {
         textView.layer.borderWidth = 1
         textView.layer.cornerRadius = 6
         textView.textContainerInset = UIEdgeInsets(top: 16, left: 12, bottom: 0, right: 16)
-
+        
         placeholderLabel.text = "사건 파일에 남길 단서의 이야기를 적어주세요"
         placeholderLabel.font = .body3
         placeholderLabel.textColor = .keycolorDisabled
@@ -85,7 +85,7 @@ class ClueInputViewController: UIViewController {
         
         textView.delegate = self
         textView.returnKeyType = .done
-
+        
         registerButton.setTitle("단서 등록하기", for: .normal)
         registerButton.setTitleColor(.textInverse, for: .normal)
         registerButton.titleLabel?.font = .highlight4
@@ -115,7 +115,7 @@ class ClueInputViewController: UIViewController {
             $0.height.equalTo(imageView.snp.width).multipliedBy(1.1).priority(.low)
             $0.height.greaterThanOrEqualTo(100).priority(.low)
         }
-
+        
         textView.snp.makeConstraints{
             $0.top.equalTo(imageView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
@@ -126,7 +126,7 @@ class ClueInputViewController: UIViewController {
             $0.trailing.equalTo(textView.snp.trailing).inset(8)
             $0.bottom.equalTo(textView.snp.bottom).inset(8)
         }
-
+        
         registerButton.snp.makeConstraints {
             $0.top.equalTo(textView.snp.bottom).offset(32)
             $0.leading.trailing.equalToSuperview().inset(16)
@@ -134,7 +134,7 @@ class ClueInputViewController: UIViewController {
             $0.height.equalTo(52)
         }
     }
-
+    
     private func bindRegisterAction() {
         registerButton.rx.tap
             .bind { [weak self] in
@@ -148,7 +148,7 @@ class ClueInputViewController: UIViewController {
             })
             .disposed(by: disposeBag)
     }
-
+    
     private func bindTextView() {
         textView.rx.text.orEmpty
             .do(onNext: { [weak self] text in
@@ -185,7 +185,7 @@ class ClueInputViewController: UIViewController {
         registerButton.isEnabled = false
         registerButton.setTitle("저장 중...", for: .normal)
         
-        FirebaseImageManager.shared.uploadImage(image, type: .clue) { [weak self] result in
+        FirebaseImageManager.shared.uploadClueImage(image) { [weak self] result in
             switch result {
             case .success(let imageUrl):
                 self?.saveToFirestore(userId: userId, text: text, imageUrl: imageUrl)

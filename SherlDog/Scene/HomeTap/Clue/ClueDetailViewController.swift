@@ -27,6 +27,7 @@ final class ClueDetailViewController: UIViewController {
     )
     
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout())
+    private let pageControl = UIPageControl()
     private let loadingIndicator = UIActivityIndicatorView(style: .medium)
 
     init(viewModel: ClueDetailViewModel) {
@@ -56,6 +57,7 @@ final class ClueDetailViewController: UIViewController {
         
         view.addSubviews([
             collectionView,
+            pageControl,
             loadingIndicator
         ])
         
@@ -65,13 +67,21 @@ final class ClueDetailViewController: UIViewController {
         
         collectionView.backgroundColor = .keycolorInverse
         collectionView.register(ClueDetailCell.self, forCellWithReuseIdentifier: ClueDetailCell.identifier)
+        
+        pageControl.numberOfPages = 0
+        pageControl.currentPage = 0
+        pageControl.pageIndicatorTintColor = .gray400
+        pageControl.currentPageIndicatorTintColor = .gray500
     }
 
     private func setupConstraints() {
         collectionView.snp.makeConstraints {
             $0.edges.equalToSuperview()
-//            $0.height.equalTo(600)
-//            $0.top.leading.trailing.equalToSuperview()
+        }
+        
+        pageControl.snp.makeConstraints {
+            $0.bottom.equalToSuperview().inset(24)
+            $0.centerX.equalToSuperview()
         }
         
         loadingIndicator.snp.makeConstraints {
@@ -101,6 +111,25 @@ final class ClueDetailViewController: UIViewController {
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
         
+        viewModel.output.cellData
+            .map { $0.flatMap { $0.items }.count }
+            .bind(to: self.pageControl.rx.numberOfPages)
+            .disposed(by: disposeBag)
+        
+        // 인덱스닷 누르면 해당 순서의 카드로 넘어가는 스크롤 설정
+        pageControl.rx.controlEvent(.valueChanged)
+            .map { [weak self] in self?.pageControl.currentPage ?? 0 }
+            .subscribe(onNext: { [weak self] pageIndex in
+                guard let self = self else { return }
+                let indexPath = IndexPath(item: pageIndex, section: 0)
+                self.collectionView.scrollToItem(
+                    at: indexPath,
+                    at: .centeredHorizontally,
+                    animated: true
+                )
+            })
+            .disposed(by: disposeBag)
+        
         // 에러 메시지 바인딩
         viewModel.output.errorMessage
             .observe(on: MainScheduler.instance)
@@ -122,6 +151,12 @@ final class ClueDetailViewController: UIViewController {
             let section = NSCollectionLayoutSection(group: group)
             
             section.orthogonalScrollingBehavior = .groupPaging
+            
+            section.visibleItemsInvalidationHandler = { [weak self] items, offset, environment in
+                  let pageWidth = environment.container.contentSize.width
+                  let page = Int((offset.x + (pageWidth / 2)) / pageWidth)
+                  self?.pageControl.currentPage = page
+              }
             
             return section
         }
