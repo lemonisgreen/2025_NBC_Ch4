@@ -89,6 +89,7 @@ class MyPageViewModel {
             collection: "PetProfile",
             whereField: "userId",
             isEqualTo: userId,
+            orderBy: "createdAt",
             type: PetProfile.self
         )
         .subscribe(

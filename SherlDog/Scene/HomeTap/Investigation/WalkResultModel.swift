@@ -16,4 +16,5 @@ struct WalkResult: Codable {
     let duration: String
     let steps: Int
     let walkingPathImage: String
+    let createdAt: Timestamp
 }

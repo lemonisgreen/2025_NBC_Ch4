@@ -184,6 +184,7 @@ class PictureUploadRequestViewModel {
             collection: "PetProfile",
             whereField: "userId",
             isEqualTo: userId,
+            orderBy: "createdAt",
             type: PetProfile.self
         )
         .subscribe(onSuccess: { [weak self] profiles in

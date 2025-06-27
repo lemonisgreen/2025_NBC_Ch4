@@ -65,6 +65,8 @@ extension FirestoreManager {
         collection: String,
         whereField field: String,
         isEqualTo value: Any,
+        orderBy: String,
+        descending: Bool = false,
         type: T.Type
     ) -> Single<[T]> {
         return Single.create { [weak self] single in
@@ -125,30 +127,30 @@ extension FirestoreManager {
     }
     // 데이터 업데이트
     func updateDocument<T: Codable>(
-            collection: String,
-            documentId: String,
-            data: T
-        ) -> Completable {
-            return Completable.create { completable in
-                do {
-                    let encodedData = try Firestore.Encoder().encode(data)
-                    
-                    self.db.collection(collection)
-                        .document(documentId)
-                        .updateData(encodedData) { error in
-                            if let error = error {
-                                completable(.error(error))
-                            } else {
-                                completable(.completed)
-                            }
-                        }
-                } catch {
-                    completable(.error(error))
-                }
+        collection: String,
+        documentId: String,
+        data: T
+    ) -> Completable {
+        return Completable.create { completable in
+            do {
+                let encodedData = try Firestore.Encoder().encode(data)
                 
-                return Disposables.create()
+                self.db.collection(collection)
+                    .document(documentId)
+                    .updateData(encodedData) { error in
+                        if let error = error {
+                            completable(.error(error))
+                        } else {
+                            completable(.completed)
+                        }
+                    }
+            } catch {
+                completable(.error(error))
             }
+            
+            return Disposables.create()
         }
+    }
     
     // 데이터 삭제
     func deleteDocument(collection: String, documentId: String) -> Completable {
