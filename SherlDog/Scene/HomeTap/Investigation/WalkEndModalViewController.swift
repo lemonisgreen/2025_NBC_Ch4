@@ -130,7 +130,8 @@ class WalkEndModalViewController : UIViewController {
                 case .success():
                     self.isLoading(isLoading: false)
                     
-                    let alert = AlertManager(message: "산책이 기록되었습니다.\n 마이페이지에서 확인하실 수 있습니다.",
+                    let alert = AlertManager(message: "산책이 기록되었습니다.",
+                                             subMessage: "마이페이지에서 확인하실 수 있습니다.",
                                              buttonTitles: ["닫기"],
                                              buttonActions: [nil])
                     self.present(alert, animated: true)

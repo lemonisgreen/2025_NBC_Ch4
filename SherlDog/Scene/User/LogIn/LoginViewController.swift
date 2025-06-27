@@ -190,7 +190,12 @@ class LoginViewController: UIViewController {
                     } else {
                         // 펫 프로필이 있으면 메인 화면으로
                         let mainVC = BottomTabBarController()
-                        self?.navigationController?.pushViewController(mainVC, animated: true)
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let delegate = windowScene.delegate as? SceneDelegate,
+                           let window = delegate.window {
+                            window.rootViewController = mainVC
+                            window.makeKeyAndVisible()
+                        }
                     }
                 },
                 onFailure: { [weak self] error in
