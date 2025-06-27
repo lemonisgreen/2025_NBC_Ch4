@@ -44,6 +44,7 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
             detectiveNumber = detectiveNumberFormatter.string(from: birthDate)
         }
         
+        self.backgroundColor = .keycolorInverse
         detectiveCardView.detectiveNumber.text = detectiveNumber
         detectiveCardView.detectiveName.text = profile.name
         detectiveCardView.detectiveBreed.text = profile.breed
