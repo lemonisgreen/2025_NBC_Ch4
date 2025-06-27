@@ -99,7 +99,7 @@ final class ClueDetailViewModel {
         FirestoreManager.shared.fetchDocuments(collection: "clues",
                                                whereField: "userID",
                                                isEqualTo: userId,
-                                               orderBy: "",
+                                               orderBy: "date",
                                                type: ClueModel.self)
         .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
             let now = Date()

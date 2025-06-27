@@ -58,7 +58,7 @@ class InvLogViewModel {
     }
     
     private func imageToString(data: UploadData) {
-        FirebaseImageManager.shared.uploadImage(data.imageString, type: .invLog) { [weak self] result in
+        FirebaseImageManager.shared.uploadInvLogImage(data.imageString) { [weak self] result in
             switch result {
             case .success(let value):
                 self?.upload(image: value, content: data.content)
@@ -66,7 +66,6 @@ class InvLogViewModel {
             case .failure(let error):
                 print(error) // todo: Error 처리
                 return
-                
             }
         }
     }

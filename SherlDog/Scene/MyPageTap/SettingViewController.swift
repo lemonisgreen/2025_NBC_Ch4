@@ -221,19 +221,19 @@ class SettingViewController : UIViewController {
             }
             .disposed(by: disposeBag)
         
-//        clauseWholeButton.rx.tap // 추후 바인딩
-//            .bind { [weak self] in
-//                let vc =
-//                self?.navigationController?.pushViewController(vc, animated: true)
-//            }
-//            .disposed(by: disposeBag)
-//
-//        privacyPolicyWholeButton.rx.tap
-//            .bind { [weak self] in
-//                let vc =
-//                self?.navigationController?.pushViewController(vc, animated: true)
-//            }
-//            .disposed(by: disposeBag)
+        clauseWholeButton.rx.tap
+            .bind { [weak self] in
+                guard let url = URL(string: "https://www.notion.so/2185ef6f2e0480c5816cc3a2608c8de6") else { return }
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
+            .disposed(by: disposeBag)
+
+        privacyPolicyWholeButton.rx.tap
+            .bind { [weak self] in
+                guard let url = URL(string: "https://www.notion.so/2185ef6f2e048048a7cdea9899b037b3") else { return }
+                UIApplication.shared.open(url, options: [:], completionHandler: nil)
+            }
+            .disposed(by: disposeBag)
 
         cancelMembershipWholeButton.rx.tap
             .bind { [weak self] in
