@@ -71,6 +71,10 @@ class MyPageViewModel {
         input.humanProfileRefreshTrigger.onNext(())
     }
     
+    func handleNewProfileAdded(with petProfileID: String) {
+         addNewProfile(with: petProfileID)
+     }
+    
     func calculatePageIndex(from contentOffset: CGPoint) -> Int {
         let adjustedOffset = contentOffset.x + leftInset
         let index = Int((adjustedOffset + cardWidth / 2) / (cardWidth + spacing))
@@ -117,6 +121,32 @@ class MyPageViewModel {
                 self?.output.humanProfile.accept(defaultProfile)
             }
         )
+        .disposed(by: disposeBag)
+    }
+    
+    private func addNewProfile(with petProfileID: String) {
+        guard !petProfileID.isEmpty else { return }
+        
+        FirestoreManager.shared.fetchDocument(
+            collection: "PetProfile",
+            documentId: petProfileID,
+            type: PetProfile.self
+        )
+        .subscribe(onSuccess: { [weak self] newProfile in
+            guard let self = self else { return }
+            
+            var currentProfiles = self.output.petProfiles.value
+            currentProfiles.append(newProfile)
+            
+            DispatchQueue.main.async {
+                self.output.petProfiles.accept(currentProfiles)
+            }
+        }, onFailure: { error in
+            print("펫 프로필 불러오기 실패: \(error)")
+            DispatchQueue.main.async { [weak self] in
+                self?.refresh()
+            }
+        })
         .disposed(by: disposeBag)
     }
 }

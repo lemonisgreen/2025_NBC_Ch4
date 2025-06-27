@@ -28,6 +28,12 @@ class MyPageViewController : UIViewController {
     let findMateButton = UIButton()
     let buttonStack = UIStackView()
     
+    // 멍탐정 카드 collectionItem
+    enum CollectionViewItem {
+        case profile(PetProfile)
+        case addProfile
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .keycolorInverse
@@ -37,9 +43,11 @@ class MyPageViewController : UIViewController {
     }
     
     override func viewWillAppear(_ animated: Bool) {
-            super.viewWillAppear(animated)
-            viewModel.refreshHumanProfile()
-        }
+        super.viewWillAppear(animated)
+        viewModel.refresh()
+        viewModel.refreshHumanProfile()
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
@@ -47,11 +55,6 @@ class MyPageViewController : UIViewController {
         topLine.backgroundColor = UIColor(named: "gray200")?.cgColor
         topLine.frame = CGRect(x: 0, y: 0, width: findMateButton.bounds.width, height: 1)
         findMateButton.layer.addSublayer(topLine)
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
     }
     
     private func setupUI() {
@@ -97,11 +100,12 @@ class MyPageViewController : UIViewController {
             DetectiveCardCell.self,
             forCellWithReuseIdentifier: DetectiveCardCell.identifier)
         collectionView.register(
-                ProfileAddCollectionViewCell.self,
-                forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
+            ProfileAddCollectionViewCell.self,
+            forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
+        collectionView.backgroundColor = .keycolorInverse
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
@@ -230,42 +234,60 @@ class MyPageViewController : UIViewController {
             .disposed(by: disposeBag)
         
         viewModel.output.petProfiles
-                .map { [weak self] profiles -> [Any] in
-                    guard let self = self else { return [] }
-                    var items: [Any] = profiles
-                    
-                    // 3개 미만일 때만 ProfileAdd 셀 추가
-                    if profiles.count < self.maxProfileCount {
-                        items.append("ProfileAdd") // 구분용 문자열
-                    }
-                    return items
+            .map { [weak self] profiles -> [CollectionViewItem] in
+                guard let self = self else { return [] }
+                
+                var items: [CollectionViewItem] = profiles.map { .profile($0) }
+                
+                if profiles.count < self.maxProfileCount {
+                    items.append(.addProfile)
                 }
-                .bind(to: collectionView.rx.items) { collectionView, index, item in
-                    if let profile = item as? PetProfile {
-                        let cell = collectionView.dequeueReusableCell(
-                            withReuseIdentifier: DetectiveCardCell.identifier,
-                            for: IndexPath(item: index, section: 0)
-                        ) as! DetectiveCardCell
-                        cell.configure(with: profile)
-                        return cell
-                    } else {
-                        let cell = collectionView.dequeueReusableCell(
-                            withReuseIdentifier: ProfileAddCollectionViewCell.identifier,
-                            for: IndexPath(item: index, section: 0)
-                        ) as! ProfileAddCollectionViewCell
-                        return cell
-                    }
-                }
-                .disposed(by: disposeBag)
-        
-        // 컬렉션뷰 데이터 바인딩
-        viewModel.output.petProfiles
-            .bind(to: collectionView.rx.items(
-                cellIdentifier: DetectiveCardCell.identifier,
-                cellType: DetectiveCardCell.self
-            )) { row, profile, cell in
-                cell.configure(with: profile)
+                return items
             }
+            .bind(to: collectionView.rx.items) { collectionView, index, item in
+                switch item {
+                case .profile(let profile):
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: DetectiveCardCell.identifier,
+                        for: IndexPath(item: index, section: 0)
+                    ) as! DetectiveCardCell
+                    cell.configure(with: profile)
+                    return cell
+                    
+                case .addProfile:
+                    let cell = collectionView.dequeueReusableCell(
+                        withReuseIdentifier: ProfileAddCollectionViewCell.identifier,
+                        for: IndexPath(item: index, section: 0)
+                    ) as! ProfileAddCollectionViewCell
+                    return cell
+                }
+            }
+            .disposed(by: disposeBag)
+        
+        collectionView.rx.itemSelected
+            .withLatestFrom(viewModel.output.petProfiles) { indexPath, profiles -> CollectionViewItem? in
+                var items: [CollectionViewItem] = profiles.map { .profile($0) }
+                if profiles.count < self.maxProfileCount {
+                    items.append(.addProfile)
+                }
+                
+                guard indexPath.item < items.count else { return nil }
+                return items[indexPath.item]
+            }
+            .compactMap { $0 }
+            .subscribe(onNext: { [weak self] item in
+                switch item {
+                case .profile(let profile):
+                    _ = self?.presentRegistrationViewController(with: profile)
+                case .addProfile:
+                    self?.presentRegistrationView()
+                }
+                
+                // 선택 해제
+                if let selectedIndexPath = self?.collectionView.indexPathsForSelectedItems?.first {
+                    self?.collectionView.deselectItem(at: selectedIndexPath, animated: true)
+                }
+            })
             .disposed(by: disposeBag)
         
         // 펫프로필 갯수에 따른 인덱스닷 생성
@@ -276,9 +298,12 @@ class MyPageViewController : UIViewController {
         
         // 옆으로 얼만큼 스크롤 되어야 인덱스 닷이 넘어가는지에 대한 설정
         collectionView.rx.contentOffset
-            .map { [weak self] offset in
-                self?.viewModel.calculatePageIndex(from: offset) ?? 0
+            .withLatestFrom(viewModel.output.petProfiles) { offset, profiles in
+                let pageIndex = self.viewModel.calculatePageIndex(from: offset)
+                // ProfileAdd 셀이 있어도 실제 프로필 개수 내에서만 계산
+                return min(pageIndex, profiles.count - 1)
             }
+            .filter { $0 >= 0 }
             .bind(to: pageControl.rx.currentPage)
             .disposed(by: disposeBag)
         
@@ -295,40 +320,6 @@ class MyPageViewController : UIViewController {
                 )
             })
             .disposed(by: disposeBag)
-        
-        let selectedProfile = collectionView.rx.itemSelected
-            .withLatestFrom(viewModel.output.petProfiles) { indexPath, profiles -> PetProfile? in
-                guard indexPath.item < profiles.count else { return nil }
-                return profiles[indexPath.item]
-            }
-            .compactMap { $0 }
-        
-        selectedProfile
-            .flatMapLatest { [weak self] profile -> Observable<Void> in
-                guard let self = self else { return .empty() }
-                return self.presentRegistrationViewController(with: profile)
-            }
-            .subscribe()
-            .disposed(by: disposeBag)
-        
-//        collectionView.rx.itemSelected
-//                .withLatestFrom(viewModel.output.petProfiles) { indexPath, profiles -> Any? in
-//                    let allItems = profiles.count < self.maxProfileCount ?
-//                        profiles + ["ProfileAdd"] : profiles
-//                    
-//                    guard indexPath.item < allItems.count else { return nil }
-//                    return allItems[indexPath.item]
-//                }
-//                .subscribe(onNext: { [weak self] item in
-//                    if let profile = item as? PetProfile {
-//                        // 기존 프로필 편집
-//                        self?.presentRegistrationViewController(with: profile)
-//                    } else if item as? String == "ProfileAdd" {
-//                        // ✅ 새 프로필 추가
-//                        self?.presentRegistrationView()
-//                    }
-//                })
-//                .disposed(by: disposeBag)
     }
     
     private func loadImage(from url: URL) {
@@ -352,6 +343,44 @@ class MyPageViewController : UIViewController {
             at: .centeredHorizontally,
             animated: true
         )
+    }
+    
+    private func scrollToLastProfile() {
+        let profileCount = viewModel.output.petProfiles.value.count
+        if profileCount > 0 {
+            let lastIndex = profileCount - 1
+            let indexPath = IndexPath(item: lastIndex, section: 0)
+            collectionView.scrollToItem(
+                at: indexPath,
+                at: .centeredHorizontally,
+                animated: true
+            )
+            
+            // 페이지 컨트롤도 업데이트
+            pageControl.currentPage = lastIndex
+        }
+    }
+    
+    private func presentRegistrationView() {
+        let registrationVC = RegistrationViewController()
+        
+        registrationVC.onProfileAdded = { [weak self] newProfileID in
+            self?.viewModel.handleNewProfileAdded(with: newProfileID)
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.scrollToLastProfile()
+            }
+        }
+        
+        if let sheet = registrationVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.selectedDetentIdentifier = .large
+            sheet.prefersGrabberVisible = false
+            sheet.preferredCornerRadius = 20
+        }
+        registrationVC.isModalInPresentation = true
+        
+        present(registrationVC, animated: true)
     }
     
     private func presentRegistrationViewController(with profile: PetProfile) -> Observable<Void> {
