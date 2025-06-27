@@ -109,8 +109,8 @@ class MyPageViewController : UIViewController {
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
-        pageControl.pageIndicatorTintColor = .gray400
-        pageControl.currentPageIndicatorTintColor = .gray500
+        pageControl.pageIndicatorTintColor = .keycolorPrimary2
+        pageControl.currentPageIndicatorTintColor = .keycolorPrimary5
         
         buttonStack.axis = .vertical
         buttonStack.distribution = .fillEqually
