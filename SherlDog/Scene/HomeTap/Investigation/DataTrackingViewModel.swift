@@ -135,10 +135,11 @@ class DataTrackingViewModel {
         }()
         
         let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+        let profileIds = selectedProfiles.map { $0.petProfileId }
         
         let newWalkResult = WalkResult(
             userId: userId,
-            petProfileId: selectedProfiles,
+            petProfileId: profileIds,
             date: dateString,
             distance: distance.value,
             duration: duration.value,

@@ -78,10 +78,8 @@ extension InvLogListViewModel {
         .subscribe(onSuccess: { [weak self] result in
             guard let self else { return }
             
-            result.forEach {
-                self.originalData.append($0)
-                self.data.append(WalkResultToList(from: $0))
-            }
+            self.originalData = result
+            self.data = result.map { WalkResultToList(from: $0) }
         })
         .disposed(by: disposeBag)
     }
@@ -106,5 +104,4 @@ extension InvLogListViewModel {
         })
         .disposed(by: disposeBag)
     }
-    
 }
