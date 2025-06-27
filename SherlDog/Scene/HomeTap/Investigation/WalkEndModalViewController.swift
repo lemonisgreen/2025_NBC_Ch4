@@ -14,8 +14,8 @@ class WalkEndModalViewController : UIViewController {
     
     private let DataTrackingVM: DataTrackingViewModel
     private let requestViewModel = PictureUploadRequestViewModel()
+    private let invLogListVM = InvLogListViewModel()
     private let disposeBag = DisposeBag()
-    // 선택된 강아지 정보를 받을 프로퍼티
     var selectedPetProfiles: [PetProfile] = []
     
     let stepLabelWrapper = UIView()
@@ -50,41 +50,15 @@ class WalkEndModalViewController : UIViewController {
     let walkEndBox = UIView()
     let dividerLine = UIView()
     
-    func addVerticalSeparators() {
-        infoBox.layoutIfNeeded()
-        
-        let totalWidth = infoBox.bounds.width
-        let sectionCount = infoStack.arrangedSubviews.count
-        let sectionWidth = totalWidth / CGFloat(sectionCount)
-        
-        for i in 1..<sectionCount {
-            let xPos = sectionWidth * CGFloat(i)
-            let line = CALayer()
-            line.frame = CGRect(
-                x: xPos,
-                y: 0,
-                width: 1 / UIScreen.main.scale,
-                height: infoBox.bounds.height
-            )
-            line.backgroundColor = UIColor(named: "gray300")?.cgColor
-            line.name = "vLine"
-            infoBox.layer.addSublayer(line)
-        }
-    }
-    
-    //함께 산책한 강아지 정보 받아오기용 init
     init(viewModel: DataTrackingViewModel, selectedProfiles: [PetProfile] = []) {
         self.DataTrackingVM = viewModel
         self.selectedPetProfiles = selectedProfiles
         super.init(nibName: nil, bundle: nil)
     }
-    
-    init(viewModel: DataTrackingViewModel) {
-        self.DataTrackingVM = viewModel
-        super.init(nibName: nil, bundle: nil)
+   
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
-    
-    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -144,13 +118,11 @@ class WalkEndModalViewController : UIViewController {
                 }
             })
             .disposed(by: disposeBag)
-        
         self.DataTrackingVM.fetchResult
             .bind(onNext: { [weak self] result in
                 guard let self, let result else { return }
                 
-                self.selectedPetProfiles = result.petProfileId
-                self.setPetImages()
+                self.fetchSelectedPetProfiles(petProfileIds: result.petProfileId)
             })
             .disposed(by: disposeBag)
         
@@ -259,6 +231,47 @@ class WalkEndModalViewController : UIViewController {
             self.walkShareButton.isEnabled = !isLoading
             self.closeButton.isEnabled = !isLoading
             self.showProfileButton.isEnabled = !isLoading
+    }
+    
+    private func fetchSelectedPetProfiles(petProfileIds: [String]) {
+        let profileObservables = petProfileIds.map { id in
+            FirestoreManager.shared.fetchDocument(collection: "PetProfile",
+                                                documentId: id,
+                                                type: PetProfile.self)
+        }
+        
+        Single.zip(profileObservables)
+            .subscribe(onSuccess: { [weak self] profiles in
+                guard let self else { return }
+                
+                self.selectedPetProfiles = profiles
+                self.setPetImages()
+            }, onFailure: { error in
+                print("펫프로필 조회 실패: \(error)")
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func addVerticalSeparators() {
+        infoBox.layoutIfNeeded()
+        
+        let totalWidth = infoBox.bounds.width
+        let sectionCount = infoStack.arrangedSubviews.count
+        let sectionWidth = totalWidth / CGFloat(sectionCount)
+        
+        for i in 1..<sectionCount {
+            let xPos = sectionWidth * CGFloat(i)
+            let line = CALayer()
+            line.frame = CGRect(
+                x: xPos,
+                y: 0,
+                width: 1 / UIScreen.main.scale,
+                height: infoBox.bounds.height
+            )
+            line.backgroundColor = UIColor(named: "gray300")?.cgColor
+            line.name = "vLine"
+            infoBox.layer.addSublayer(line)
+        }
     }
     
     private func setupUI() {
