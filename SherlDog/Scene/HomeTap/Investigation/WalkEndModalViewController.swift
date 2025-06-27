@@ -8,6 +8,7 @@
 import UIKit
 import RxSwift
 import RxCocoa
+import NMapsMap
 
 class WalkEndModalViewController : UIViewController {
     
@@ -164,18 +165,31 @@ class WalkEndModalViewController : UIViewController {
         
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let requestViewModel = PictureUploadRequestViewModel()
-                requestViewModel.input.accept(.sender(.pictureRequest))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                guard let self else { return }
+                //                let requestViewModel = PictureUploadRequestViewModel()
+                //                requestViewModel.input.accept(.sender(.pictureRequest))
+                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                //
+                //                if let sheet = requestView.sheetPresentationController {
+                //                    sheet.detents = [.custom { _ in 320 }]
+                //                    sheet.selectedDetentIdentifier = .medium
+                //                    sheet.prefersGrabberVisible = true
+                //                    sheet.preferredCornerRadius = 20
+                //                }
+                //
+                //                self?.present(requestView, animated: true)
                 
-                if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 320 }]
+                let viewModel = ClueDetailViewModel()
+                let detailVC = ClueDetailViewController(viewModel: viewModel)
+                let nav = UINavigationController(rootViewController: detailVC)
+                nav.modalPresentationStyle = .pageSheet
+                if let sheet = nav.sheetPresentationController {
+                    sheet.detents = [.custom { _ in 650 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 20
                 }
-                
-                self?.present(requestView, animated: true)
+                self.present(nav, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -473,7 +487,9 @@ class WalkEndModalViewController : UIViewController {
     
     private func configureUI() {
         backgroundImageView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            $0.top.bottom.equalToSuperview().offset(40)
+//            $0.edges.equalToSuperview()
         }
         
         todayLabel.snp.makeConstraints {

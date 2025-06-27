@@ -11,6 +11,7 @@ import RxSwift
 import RxCocoa
 import CoreLocation
 import FirebaseAuth
+import FirebaseFirestore
 
 class ClueInputViewController: UIViewController {
     private let clueLabel = UILabel()
@@ -201,7 +202,8 @@ class ClueInputViewController: UIViewController {
             latitude: markerLocation.latitude,
             longitude: markerLocation.longitude,
             content: text,
-            image: imageUrl
+            image: imageUrl,
+            date: Timestamp(date: Date())
         )
         
         FirestoreManager.shared.createDocument(collection: "clues", data: clue)
