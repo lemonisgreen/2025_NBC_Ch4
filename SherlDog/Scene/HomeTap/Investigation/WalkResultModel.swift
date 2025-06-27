@@ -10,7 +10,7 @@ import FirebaseFirestore
 
 struct WalkResult: Codable {
     let userId: String
-    let petProfileId: [PetProfile]
+    let petProfileId: [String]
     let date: String
     let distance: Double
     let duration: String

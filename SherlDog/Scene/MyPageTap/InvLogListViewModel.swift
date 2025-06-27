@@ -70,18 +70,20 @@ extension InvLogListViewModel {
         self.data = []
         self.originalData = []
         
-        FirestoreManager.shared.fetchDocuments(collection: "WalkResult",
-                                               whereField: "userId",
-                                               isEqualTo: userId,
-                                               orderBy: "createdAt",
-                                               type: WalkResult.self)
+        FirestoreManager.shared.fetchDocumentsWithoutOrder(collection: "WalkResult",
+                                                           whereField: "userId",
+                                                           isEqualTo: userId,
+                                                           type: WalkResult.self)
         .subscribe(onSuccess: { [weak self] result in
             guard let self else { return }
             
-            result.forEach {
-                self.originalData.append($0)
-                self.data.append(WalkResultToList(from: $0))
+            // 클라이언트에서 정렬
+            let sortedResult = result.sorted {
+                $0.createdAt.dateValue() > $1.createdAt.dateValue()
             }
+            
+            self.originalData = result
+            self.data = result.map { WalkResultToList(from: $0) }
         })
         .disposed(by: disposeBag)
     }
@@ -106,5 +108,4 @@ extension InvLogListViewModel {
         })
         .disposed(by: disposeBag)
     }
-    
 }
