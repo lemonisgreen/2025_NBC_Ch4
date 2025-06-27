@@ -120,7 +120,7 @@ class RegistrationViewController: UIViewController {
         // 성격 및 특성 텍스트필드
         registIntroduce.text = viewModel.introduce.value
         registIntroduce.sendActions(for: .editingChanged)
-        registIntroduceCountLabel.text = "\(viewModel.introduce.value.count) / 28 자"
+        registIntroduceCountLabel.text = "\(viewModel.introduce.value.count) / 18 자"
         
         // 프로필 이미지 로드
         loadProfileImage()
@@ -384,12 +384,12 @@ class RegistrationViewController: UIViewController {
                 guard let self,
                       let text = self.registIntroduce.text else { return }
                 
-                self.registIntroduceCountLabel.text = "\(text.count) / 28 자"
+                self.registIntroduceCountLabel.text = "\(text.count) / 18 자"
                 
-                if text.count > 28 {
-                    let overText = text.count - 28
+                if text.count > 18 {
+                    let overText = text.count - 18
                     self.registIntroduce.text?.removeLast(overText)
-                    self.registIntroduceCountLabel.text = "28 / 28 자"
+                    self.registIntroduceCountLabel.text = "18 / 18 자"
                 }
             })
             .disposed(by: disposeBag)
@@ -667,7 +667,7 @@ class RegistrationViewController: UIViewController {
         registIntroduceLabel.textColor = .textPrimary
         registIntroduceLabel.font = .body1
         
-        registIntroduceCountLabel.text = "0 / 28 자"
+        registIntroduceCountLabel.text = "0 / 18 자"
         registIntroduceCountLabel.textColor = .gray400
         registIntroduceCountLabel.font = .alert2
         
