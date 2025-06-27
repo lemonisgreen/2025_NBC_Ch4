@@ -58,17 +58,14 @@ extension InvLogListCell {
             .disposed(by: disposeBag)
     }
     
-    func settingCell(data: WalkResultToList, caseNumber: Int) {
-        var caseNumber = String(caseNumber)
+    func settingCell(data: WalkResultToList, caseNumber: String) {
+        var caseNumber = (Int(caseNumber) ?? 0) + 1
         
-        if caseNumber.count < 3 {
-            while caseNumber.count != 3 {
-                caseNumber.insert("0", at: caseNumber.startIndex)
-            }
-        }
-        
+        // 앞에 0을 넣어 세 자리 수를 만들던 코드 변경
+        let formattedCaseNumber = String(format: "%03d", caseNumber)
+
         self.dateLabel.text = data.date
-        self.caseNumberLabel.text = "CASE # \(caseNumber)"
+        self.caseNumberLabel.text = "CASE # \(formattedCaseNumber)"
         self.dataLabel.text = "\(data.distance)  ·  \(data.duration)  ·  \(data.steps)"
     }
     

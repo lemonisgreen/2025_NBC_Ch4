@@ -21,7 +21,11 @@ class InvLogListViewController: UIViewController {
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
             
             cell.delegate = self
-            cell.settingCell(data: items, caseNumber: indexPath.row)
+            // 역순으로 케이스 번호 계산
+            let totalCount = dataSource.sectionModels.first?.items.count ?? 0
+            let reversedIndex = totalCount - indexPath.row
+            
+            cell.settingCell(data: items, caseNumber: String(reversedIndex))
             
             return cell
         })

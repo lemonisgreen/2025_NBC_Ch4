@@ -42,7 +42,7 @@ extension WalkResultToList {
         
         // MARK: tranform -
         self.date = date
-        self.distance = "\(result.distance / 1000)km"
+        self.distance = String(format: "%.1fkm", result.distance / 1000.0)
         self.duration = duration
         self.steps = "\(result.steps)보"
     }
