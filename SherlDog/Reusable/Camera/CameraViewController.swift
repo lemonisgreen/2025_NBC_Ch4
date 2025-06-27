@@ -142,6 +142,18 @@ extension CameraViewController {
                 captureDevice.unlockForConfiguration()
             })
             .disposed(by: disposeBag)
+        
+        self.viewModel.output.cameraRestart
+            .bind(onNext: { [weak self] in
+                guard let self else { return }
+                
+                if !self.captureSession.isRunning {
+                    DispatchQueue.global().async {
+                        self.captureSession.startRunning()
+                    }
+                }
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupCamera() {
