@@ -188,7 +188,7 @@ extension CameraViewController {
         cancelButton.setImage(.modalExit.withRenderingMode(.alwaysTemplate), for: .normal)
         cancelButton.imageView?.tintColor = .textInverse
         
-        guideLabel.text = "(강쥐이름)과의 추억을 단서로 남겨보세요!"
+        guideLabel.text = "멍탐정과의 추억을 단서로 남겨보세요!"
         guideLabel.textColor = .textInverse
         guideLabel.font = .highlight5
         guideLabel.backgroundColor = .gray600.withAlphaComponent(0.3)
