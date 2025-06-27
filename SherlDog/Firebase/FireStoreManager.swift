@@ -84,6 +84,29 @@ extension FirestoreManager {
         }
     }
     
+    /// 원하는 문서의 도큐멘트 아이디 가져오기
+    func findDocumentId(
+        collection: String,
+        whereField field: String,
+        isEqualTo value: Any
+    ) -> Single<[String]> {
+        return Single.create { [weak self] single in
+            self?.db.collection(collection)
+                .whereField(field, isEqualTo: value)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        single(.failure(error))
+                    } else if let snapshot = snapshot {
+                        let items: [String] = snapshot.documents.compactMap { $0.documentID }
+                        single(.success(items))
+                    } else {
+                        single(.failure(FirestoreError.noData))
+                    }
+                }
+            return Disposables.create()
+        }
+    }
+    
     /// 컬렉션 전체 읽기
     func fetchCollection<T: Decodable>(collection: String, type: T.Type) -> Single<[T]> {
         return Single.create { [weak self] single in

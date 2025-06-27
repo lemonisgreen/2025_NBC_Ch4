@@ -49,10 +49,14 @@ class MyPageViewController : UIViewController {
         findMateButton.layer.addSublayer(topLine)
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
     private func setupUI() {
         [
             mypageLabel,
-            mypageSettingButton,
             assistantImage,
             assistantLabel,
             assistantButton,
@@ -61,6 +65,7 @@ class MyPageViewController : UIViewController {
             archiveButton,
             findMateButton,
             buttonStack,
+            mypageSettingButton
         ].forEach {
             view.addSubview($0)
         }
@@ -164,8 +169,8 @@ class MyPageViewController : UIViewController {
         
         collectionView.snp.makeConstraints {
             $0.top.equalTo(assistantImage.snp.bottom).offset(24)
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(208)
+            $0.leading.trailing.equalTo(view.safeAreaLayoutGuide).inset(0)
+            $0.height.equalTo(250)
         }
         
         pageControl.snp.makeConstraints {
@@ -194,14 +199,6 @@ class MyPageViewController : UIViewController {
         mypageSettingButton.rx.tap
             .bind { [weak self] in
                 let settingVC = SettingViewController()
-                let backItem = UIBarButtonItem()
-                backItem.title = "설정"
-                self?.navigationItem.backBarButtonItem = backItem
-                self?.navigationController?.navigationBar.titleTextAttributes = [
-                    .foregroundColor: UIColor(named: "textPrimary"),
-                    .font: UIFont.highlight3
-                ]
-                self?.navigationController?.navigationBar.tintColor = .textPrimary
                 self?.navigationController?.pushViewController(settingVC, animated: true)
             }
             .disposed(by: disposeBag)
