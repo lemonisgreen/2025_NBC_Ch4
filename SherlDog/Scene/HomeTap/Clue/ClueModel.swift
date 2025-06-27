@@ -14,5 +14,5 @@ struct ClueModel: Codable {
     let longitude: Double
     let content: String
     let image: String
-//    let date: Timestamp
+    let date: Timestamp
 }
