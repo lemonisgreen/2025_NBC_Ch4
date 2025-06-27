@@ -23,8 +23,8 @@ class DataTrackingViewModel {
     let endDate = BehaviorRelay<Date?>(value: nil)
     let duration = BehaviorRelay(value: "")
     let trackingActive = BehaviorRelay<Bool>(value: false)
-    let fullScreenImage = BehaviorRelay(value: UIImage())
-    let capturedImage = BehaviorRelay(value: UIImage())
+    let fullScreenImage = PublishRelay<UIImage>()
+    let capturedImage = PublishRelay<UIImage>()
     let invLogListViewSendImage = BehaviorRelay(value: UIImage())
     
     let fetchResult = BehaviorRelay<WalkResult?>(value: nil)
@@ -33,7 +33,7 @@ class DataTrackingViewModel {
     private let pedometer = CMPedometer()
     
     init() {
-        
+        transform()
     }
     
     private func transform() {
@@ -43,7 +43,7 @@ class DataTrackingViewModel {
                       let userId = Auth.auth().currentUser?.uid else { return }
                 let dateFormatter = DateFormatter()
                 dateFormatter.dateFormat = "yyyy-MM-dd"
-                let date = dateFormatter.date(from: result.date)
+                guard let date = dateFormatter.date(from: result.date) else { return }
                 
                 self.numberOfSteps.accept(result.steps)
                 self.distance.accept(result.distance)
@@ -56,6 +56,23 @@ class DataTrackingViewModel {
                     
                     self.invLogListViewSendImage.accept(image)
                 }
+            })
+            .disposed(by: disposeBag)
+        
+        Observable
+            .combineLatest(startDate, endDate)
+            .compactMap { start, end -> String? in
+                guard let start = start, let end = end else { return nil }
+                let interval = Int(end.timeIntervalSince(start))
+                let hours = interval / 3600
+                let minutes = (interval % 3600) / 60
+                let seconds = interval % 60
+                return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+            }
+            .bind(onNext: { [weak self] result in
+                guard let self else { return }
+                
+                duration.accept(result)
             })
             .disposed(by: disposeBag)
     }
@@ -103,11 +120,10 @@ class DataTrackingViewModel {
         }()
         
         let userId = Auth.auth().currentUser?.uid ?? "anonymous"
-        let profileIds = selectedProfiles.map { $0.petProfileId }
         
         let newWalkResult = WalkResult(
             userId: userId,
-            petProfileId: profileIds,
+            petProfileId: selectedProfiles,
             date: dateString,
             distance: distance.value,
             duration: duration.value,

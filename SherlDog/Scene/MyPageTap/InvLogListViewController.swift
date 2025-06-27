@@ -41,6 +41,12 @@ class InvLogListViewController: UIViewController {
         inputBind()
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.viewModel.input.accept(.viewWillAppear)
+    }
+    
 }
 
 // MARK: - Method
@@ -49,6 +55,12 @@ extension InvLogListViewController {
     private func bind() {
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+        
+        self.viewModel.output.deleteCompleted
+            .bind(onNext: { [weak self] in
+                print("삭제 완료") // todo: 완료 처리
+            })
             .disposed(by: disposeBag)
     }
     
@@ -128,20 +140,28 @@ extension InvLogListViewController: InvLogListCellEventDelegate {
     func deleteButtonTapEvent(_ cell: UICollectionViewCell) {
         guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
         
-        print("\(indexPath.row)번 셀 삭제")
+        let alert = AlertManager(message: "수사일지를 삭제하시겠습니까?",
+                                 buttonTitles: ["취소", "확인"],
+                                 buttonActions: [nil, { [weak self] in
+            self?.viewModel.input.accept(.delete(indexPath))
+        }])
+        
+        self.present(alert, animated: true)
     }
     
     func showButtonTapEvent(_ cell: UICollectionViewCell) {
         guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
         
-//        let originalData = self.viewModel.originalData[indexPath.row]
-//        let walkResultViewModel = DataTrackingViewModel()
-//        let walkEndView = WalkEndModalViewController(viewModel: walkResultViewModel)
-//        
-//        walkResultViewModel.fetchResult.accept(originalData)
-//        
-//        self.present(walkEndView, animated: true)
-        print("\(indexPath.row)번 셀 수사일지 보기")
+        let originalData = self.viewModel.originalData[indexPath.row]
+        
+        let walkResultViewModel = DataTrackingViewModel()
+        let walkEndView = WalkEndModalViewController(viewModel: walkResultViewModel)
+        let nav = UINavigationController(rootViewController: walkEndView)
+        nav.modalPresentationStyle = .overFullScreen
+        
+        walkResultViewModel.fetchResult.accept(originalData)
+        
+        self.present(nav, animated: true)
     }
     
     

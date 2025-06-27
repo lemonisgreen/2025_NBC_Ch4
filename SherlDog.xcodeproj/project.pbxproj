@@ -35,6 +35,7 @@
 		39EF10742DFAE08800646675 /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Config.xcconfig,
 				Resources/Info.plist,
 			);
 			target = 39BA2DAB2DF03A030008A54D /* SherlDog */;
