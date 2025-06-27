@@ -143,7 +143,8 @@ class DataTrackingViewModel {
             distance: distance.value,
             duration: duration.value,
             steps: numberOfSteps.value,
-            walkingPathImage: imageURL.value
+            walkingPathImage: imageURL.value,
+            createdAt: Timestamp(date: Date())
         )
         
         FirestoreManager.shared.createDocument(

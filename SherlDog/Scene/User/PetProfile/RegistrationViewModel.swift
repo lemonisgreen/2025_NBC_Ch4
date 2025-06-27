@@ -148,7 +148,8 @@ class RegistrationViewModel {
             gender: selectedGender.value,
             neutered: isNeutered,
             breed: breed.value,
-            introduce: introduce.value
+            introduce: introduce.value,
+            createdAt: Timestamp(date: Date())
         )
         
         FirestoreManager.shared.createDocument(
@@ -187,7 +188,8 @@ class RegistrationViewModel {
             gender: selectedGender.value,
             neutered: isNeutered,
             breed: breed.value,
-            introduce: introduce.value
+            introduce: introduce.value,
+            createdAt: originalProfile.createdAt
         )
         
         FirestoreManager.shared.updateDocument(

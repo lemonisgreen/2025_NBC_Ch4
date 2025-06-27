@@ -19,4 +19,5 @@ struct PetProfile: Codable {
     let neutered: Bool
     let breed: String
     let introduce: String
+    let createdAt: Timestamp
 }

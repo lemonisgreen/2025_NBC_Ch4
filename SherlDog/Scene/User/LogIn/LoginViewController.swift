@@ -51,10 +51,12 @@ class LoginViewController: UIViewController {
         helloLabel.text = "반가워요!"
         helloLabel.font = UIFont(name: "EF_jejudoldam", size: 24)
         helloLabel.textAlignment = .center
+        helloLabel.textColor = .textPrimary
 
         helloLabel2.text = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
         helloLabel2.font = UIFont(name: "EF_jejudoldam", size: 18)
         helloLabel2.textAlignment = .center
+        helloLabel2.textColor = .textPrimary
 
         joinImage.image = UIImage(named: "join")
         joinImage.contentMode = .scaleAspectFit
@@ -188,7 +190,12 @@ class LoginViewController: UIViewController {
                     } else {
                         // 펫 프로필이 있으면 메인 화면으로
                         let mainVC = BottomTabBarController()
-                        self?.navigationController?.pushViewController(mainVC, animated: true)
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let delegate = windowScene.delegate as? SceneDelegate,
+                           let window = delegate.window {
+                            window.rootViewController = mainVC
+                            window.makeKeyAndVisible()
+                        }
                     }
                 },
                 onFailure: { [weak self] error in
