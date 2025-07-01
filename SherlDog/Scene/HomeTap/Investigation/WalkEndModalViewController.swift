@@ -55,7 +55,7 @@ class WalkEndModalViewController : UIViewController {
         self.selectedPetProfiles = selectedProfiles
         super.init(nibName: nil, bundle: nil)
     }
-   
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -228,16 +228,16 @@ class WalkEndModalViewController : UIViewController {
     }
     
     private func isLoading(isLoading: Bool) {
-            self.walkShareButton.isEnabled = !isLoading
-            self.closeButton.isEnabled = !isLoading
-            self.showProfileButton.isEnabled = !isLoading
+        self.walkShareButton.isEnabled = !isLoading
+        self.closeButton.isEnabled = !isLoading
+        self.showProfileButton.isEnabled = !isLoading
     }
     
     private func fetchSelectedPetProfiles(petProfileIds: [String]) {
         let profileObservables = petProfileIds.map { id in
             FirestoreManager.shared.fetchDocument(collection: "PetProfile",
-                                                documentId: id,
-                                                type: PetProfile.self)
+                                                  documentId: id,
+                                                  type: PetProfile.self)
         }
         
         Single.zip(profileObservables)
@@ -317,7 +317,7 @@ class WalkEndModalViewController : UIViewController {
         dividerLine.backgroundColor = UIColor(named: "gray300")
         
         backgroundImageView.image = .endInvestigation
-        backgroundImageView.contentMode = .scaleAspectFit
+        backgroundImageView.contentMode = isIPhoneSE() ? .scaleToFill : .scaleAspectFit
         view.insertSubview(backgroundImageView, at: 0)
         
         todayLabel.text = "2025/06/05"
@@ -390,16 +390,16 @@ class WalkEndModalViewController : UIViewController {
         showProfileButton.contentMode = .scaleAspectFit
         showProfileButton.snp.makeConstraints { $0.size.equalTo(CGSize(width: 75, height: 28)) }
         
-//        for dogImage in dogImages {
-//            let imageView = UIImageView(image: dogImage)
-//            imageView.contentMode = .scaleAspectFill
-//            imageView.clipsToBounds = true
-//            imageView.snp.makeConstraints {
-//                $0.width.height.equalTo(32)
-//            }
-//            dogImagesStack.addArrangedSubview(imageView)
-//        }
-//        
+        //        for dogImage in dogImages {
+        //            let imageView = UIImageView(image: dogImage)
+        //            imageView.contentMode = .scaleAspectFill
+        //            imageView.clipsToBounds = true
+        //            imageView.snp.makeConstraints {
+        //                $0.width.height.equalTo(32)
+        //            }
+        //            dogImagesStack.addArrangedSubview(imageView)
+        //        }
+        //
         dogImagesStack.axis = .horizontal
         dogImagesStack.spacing = -20
         dogImagesStack.alignment = .center
@@ -412,11 +412,11 @@ class WalkEndModalViewController : UIViewController {
         mapImageView.clipsToBounds = true
         mapImageView.backgroundColor = .clear
         
-//        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
-//        walkShareButton.titleLabel?.font = UIFont.highlight4
-//        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
-//        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
-//        walkShareButton.layer.cornerRadius = 6
+        //        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
+        //        walkShareButton.titleLabel?.font = UIFont.highlight4
+        //        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
+        //        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
+        //        walkShareButton.layer.cornerRadius = 6
         
         distanceStack.axis = .vertical
         distanceStack.spacing = 4
@@ -499,14 +499,21 @@ class WalkEndModalViewController : UIViewController {
     }
     
     private func configureUI() {
-        backgroundImageView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview()
-            $0.top.bottom.equalToSuperview().offset(40)
-//            $0.edges.equalToSuperview()
+        if isIPhoneSE() {
+            backgroundImageView.snp.makeConstraints {
+                $0.leading.trailing.equalToSuperview()
+                $0.top.bottom.equalToSuperview().offset(25)
+            }
+        } else {
+            backgroundImageView.snp.makeConstraints {
+                $0.leading.trailing.equalToSuperview()
+                $0.top.bottom.equalToSuperview().offset(40)
+            }
         }
         
+        
         todayLabel.snp.makeConstraints {
-            $0.top.equalTo(backgroundImageView.snp.top).offset(75)
+            $0.top.equalTo(backgroundImageView.snp.top).offset(isIPhoneSE() ? 55 : 75)
             $0.leading.equalTo(backgroundImageView.snp.leading).inset(60) // 36
             $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(199)
         }
@@ -547,22 +554,40 @@ class WalkEndModalViewController : UIViewController {
             $0.bottom.equalToSuperview().inset(20)
         }
         
-        mapImageView.snp.makeConstraints {
-            $0.top.equalTo(walkEndStack.snp.bottom).offset(45) // 45
-            $0.bottom.equalTo(walkShareButton.snp.top).offset(-12) // 32
-            $0.leading.trailing.equalToSuperview().inset(33)
+        if isIPhoneSE() {
+            mapImageView.snp.makeConstraints {
+                $0.top.equalTo(walkEndStack.snp.bottom).offset(45)
+                $0.bottom.equalTo(walkShareButton.snp.top).offset(-8)
+                $0.leading.trailing.equalToSuperview().inset(2)
+            }
+        } else {
+            mapImageView.snp.makeConstraints {
+                $0.top.equalTo(walkEndStack.snp.bottom).offset(45)
+                $0.bottom.equalTo(walkShareButton.snp.top).offset(-12)
+                $0.leading.trailing.equalToSuperview().inset(33)
+            }
         }
         
-        walkShareButton.snp.makeConstraints {
-            $0.top.equalTo(mapImageView.snp.bottom).offset(24)
-            $0.height.equalTo(52)
-            $0.leading.equalTo(backgroundImageView.snp.leading).inset(30)
-            $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(30)
-            $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(140) // 109
+        if isIPhoneSE() {
+            walkShareButton.snp.makeConstraints {
+                $0.top.equalTo(mapImageView.snp.bottom).offset(isIPhoneSE() ? 20 : 20)
+                $0.height.equalTo(52)
+                $0.leading.equalTo(backgroundImageView.snp.leading).inset(30)
+                $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(30)
+                $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(95)
+            }
+        } else {
+            walkShareButton.snp.makeConstraints {
+                $0.top.equalTo(mapImageView.snp.bottom).offset(24)
+                $0.height.equalTo(52)
+                $0.leading.equalTo(backgroundImageView.snp.leading).inset(30)
+                $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(30)
+                $0.bottom.equalTo(backgroundImageView.snp.bottom).inset(140) // 109
+            }
         }
         
         closeButton.snp.makeConstraints {
-            $0.top.equalTo(todayLabel.snp.bottom).offset(30)
+            $0.top.equalTo(todayLabel.snp.bottom).offset(isIPhoneSE() ? 20 : 30)
             $0.trailing.equalToSuperview().inset(30)
             $0.width.height.equalTo(24)
         }
@@ -572,5 +597,10 @@ class WalkEndModalViewController : UIViewController {
         super.viewDidLayoutSubviews()
         infoBox.layer.sublayers?.removeAll(where: { $0.name == "vLine" })
         addVerticalSeparators()
+    }
+    
+    private func isIPhoneSE() -> Bool {
+        let screenHeight = UIScreen.main.bounds.height
+        return screenHeight <= 667 // SE 1세대(568), SE 2/3세대(667)
     }
 }
