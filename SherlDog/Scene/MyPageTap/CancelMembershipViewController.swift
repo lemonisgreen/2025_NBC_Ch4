@@ -10,9 +10,13 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class CancelMembershipViewController : UIViewController {
+class CancelMembershipViewController: UIViewController {
     
     private let disposeBag = DisposeBag()
+    
+    // MARK: - UI Components (기존과 동일)
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
     let imageView = UIImageView()
     let mainLabel = UILabel()
     let contentLabel = UILabel()
@@ -37,6 +41,10 @@ class CancelMembershipViewController : UIViewController {
     }
     
     private func setupUI() {
+        // ScrollView 추가 (작은 화면 대응)
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        
         [
             imageView,
             mainLabel,
@@ -47,20 +55,18 @@ class CancelMembershipViewController : UIViewController {
             separator,
             buttonStackView
         ].forEach {
-            view.addSubview($0)
+            contentView.addSubview($0)
         }
         
         imageView.image = UIImage(named: "cancelMembership")
         imageView.contentMode = .scaleAspectFit
         
-//        mainLabel.text = "그동안 정말 많은 수사를 함께 했네요\n이건 함께 한 추억들이에요"
         mainLabel.text = "그동안 정말 많은 수사를 함께 했네요.\n함께한 시간 모두\n소중한 추억으로 남을 거예요."
         mainLabel.font = .body1
         mainLabel.textColor = .textPrimary
         mainLabel.numberOfLines = 3
         mainLabel.textAlignment = .center
         
-//        contentLabel.text = "멍탐정 2마리와 12.6km를 걷고\n 1123일을 함께하며\n 114개의 단서를 남겼어요"
         contentLabel.text = "함께했던 모든 발자국과 단서들이 \n 오래도록 기억 속에 남을 거예요."
         contentLabel.font = .body6
         contentLabel.textColor = .textPrimary
@@ -101,18 +107,41 @@ class CancelMembershipViewController : UIViewController {
     }
     
     private func configureUI() {
-        imageView.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(85)
-            $0.centerX.equalToSuperview()
-            $0.leading.trailing.equalToSuperview()
-            $0.height.equalTo(imageView.snp.width).multipliedBy(1.3)
+        setupScrollView()
+        setupConstraints()
+    }
+    
+    private func setupScrollView() {
+        scrollView.snp.makeConstraints {
+            $0.edges.equalTo(view.safeAreaLayoutGuide)
         }
         
+        contentView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+            $0.width.equalToSuperview()
+        }
+    }
+    
+    private func setupConstraints() {
+        // 이미지뷰 - Safe Area 기반으로 개선
+        imageView.snp.makeConstraints {
+            $0.top.equalToSuperview().offset(20)
+            $0.centerX.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
+            
+            // 화면 크기에 따라 적응적으로 높이 조정
+            $0.height.equalTo(imageView.snp.width).multipliedBy(1.3).priority(.medium)
+            $0.height.lessThanOrEqualTo(view.safeAreaLayoutGuide.snp.height).multipliedBy(0.6).priority(.high)
+        }
+        
+        // 메인 라벨 - 이미지 위에 오버레이 (원래 위치)
         mainLabel.snp.makeConstraints {
-            $0.top.equalTo(imageView.snp.top).offset(130)
+            $0.top.equalTo(imageView.snp.top).offset(130) // 원래 위치로 복원
             $0.leading.equalToSuperview().inset(20)
             $0.trailing.equalToSuperview().inset(50)
         }
+        
+        // 구분선 - 원래 위치로 복원
         separator.snp.makeConstraints {
             $0.top.equalTo(mainLabel.snp.bottom).offset(22)
             $0.leading.equalToSuperview().inset(52)
@@ -120,42 +149,53 @@ class CancelMembershipViewController : UIViewController {
             $0.height.equalTo(1)
         }
         
+        // 컨텐츠 라벨 - 원래 위치로 복원
         contentLabel.snp.makeConstraints {
             $0.top.equalTo(separator.snp.bottom).offset(22)
             $0.leading.equalToSuperview().inset(82)
             $0.width.equalTo(180)
         }
         
+        // 최종 라벨 - 이미지 하단에 배치
         finalLabel.snp.makeConstraints {
             $0.top.equalTo(imageView.snp.bottom).offset(10)
             $0.leading.trailing.equalToSuperview().inset(12)
-
         }
         
+        // 버튼 스택뷰
         buttonStackView.snp.makeConstraints {
             $0.top.equalTo(finalLabel.snp.bottom).offset(42)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(52)
+            $0.bottom.equalToSuperview().inset(20) // ScrollView 하단 여백
+        }
+        
+        // ContentView 최소 높이 보장
+        contentView.snp.makeConstraints {
+            $0.height.greaterThanOrEqualTo(view.safeAreaLayoutGuide.snp.height).priority(.low)
         }
     }
     
     private func bind() {
         chevronButton.rx.tap
-            .bind { [weak self] in
-                self?.navigationController?.popViewController(animated: true)
-            }
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
+                owner.navigationController?.popViewController(animated: true)
+            })
             .disposed(by: disposeBag)
         
         cancelButton.rx.tap
-            .bind { [weak self] in
-                self?.navigationController?.popViewController(animated: true)
-            }
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
+                owner.navigationController?.popViewController(animated: true)
+            })
             .disposed(by: disposeBag)
 
         continueButton.rx.tap
-            .bind { [weak self] in
-                self?.showFinalConfirmationAlert()
-            }
+            .withUnretained(self)
+            .subscribe(onNext: { owner, _ in
+                owner.showFinalConfirmationAlert()
+            })
             .disposed(by: disposeBag)
     }
     
