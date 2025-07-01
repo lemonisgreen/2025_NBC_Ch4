@@ -125,10 +125,10 @@ extension InvLogListViewController {
     private func configureCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { index, environment in
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                heightDimension: .fractionalHeight(1/4)))
+                                                                heightDimension: .fractionalHeight(1)))
             
             let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                           heightDimension: .fractionalHeight(1)),
+                                                                           heightDimension: .estimated(154)),
                                                          subitems: [item])
             
             let section = NSCollectionLayoutSection(group: group)
