@@ -76,7 +76,7 @@ class ClueDetailCell: UICollectionViewCell {
 
     private func configureUI() {
         polaroidBackgroundImageView.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(46)
+            $0.top.equalToSuperview().inset(28)
             $0.leading.trailing.equalToSuperview().inset(36)
         }
         
@@ -89,13 +89,13 @@ class ClueDetailCell: UICollectionViewCell {
         clipNoteBackgroundImageView.snp.makeConstraints {
             $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(36)
             $0.leading.trailing.equalToSuperview().inset(14)
-            $0.height.equalTo(132)
+            $0.bottom.equalToSuperview().inset(24)
         }
         
         clueTextView.snp.makeConstraints {
             $0.leading.trailing.equalToSuperview().inset(38)
-            $0.top.equalTo(clipNoteBackgroundImageView).inset(42)
-            $0.bottom.equalTo(clipNoteBackgroundImageView).inset(20)
+            $0.top.equalTo(clipNoteBackgroundImageView).inset(16)
+            $0.bottom.equalTo(clipNoteBackgroundImageView).inset(16)
         }
         
         registImageStamp.snp.makeConstraints {
