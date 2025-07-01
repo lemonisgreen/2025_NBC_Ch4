@@ -315,12 +315,23 @@ class RegistrationViewController: UIViewController {
                     .disposed(by: birthSelectVC.disposeBag)
                 
                 if let sheet = birthSelectVC.sheetPresentationController {
-                    sheet.detents = [.medium()]
-                    sheet.selectedDetentIdentifier = .medium
+                    let screenHeight = UIScreen.main.bounds.height
+                    let isIPhoneSE = screenHeight <= 667
+                    
+                    if isIPhoneSE {
+                        sheet.detents = [.medium()]
+                        sheet.selectedDetentIdentifier = .medium
+                    } else {
+                        let customDetent = UISheetPresentationController.Detent.custom { _ in 360 }
+                        sheet.detents = [customDetent, .medium()]
+                        // 첫 번째 detent가 자동으로 선택됨
+                    }
+                    
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 20
                 }
                 owner.present(birthSelectVC, animated: true)
+
             })
             .disposed(by: disposeBag)
         

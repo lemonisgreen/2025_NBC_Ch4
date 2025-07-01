@@ -25,8 +25,8 @@ class InvLogListViewController: UIViewController {
             let totalCount = dataSource.sectionModels.first?.items.count ?? 0
             let reversedIndex = totalCount - indexPath.row
             
-            cell.settingCell(data: items, caseNumber: String(reversedIndex))
-            
+            cell.settingCell(data: items)
+
             return cell
         })
     

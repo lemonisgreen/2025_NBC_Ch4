@@ -106,6 +106,8 @@ class MyPageViewController : UIViewController {
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
         collectionView.backgroundColor = .keycolorInverse
+        collectionView.isUserInteractionEnabled = true
+        collectionView.allowsSelection = true
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
@@ -278,7 +280,10 @@ class MyPageViewController : UIViewController {
             .subscribe(onNext: { [weak self] item in
                 switch item {
                 case .profile(let profile):
-                    _ = self?.presentRegistrationViewController(with: profile)
+                    self?.presentRegistrationViewController(with: profile)
+                        .subscribe(onNext: { _ in
+                        })
+                        .disposed(by: self?.disposeBag ?? DisposeBag())
                 case .addProfile:
                     self?.presentRegistrationView()
                 }

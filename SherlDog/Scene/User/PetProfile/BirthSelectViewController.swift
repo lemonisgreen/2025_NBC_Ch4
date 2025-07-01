@@ -60,12 +60,12 @@ class BirthSelectViewController: UIViewController {
     
     private func configureUI() {
         birthSelectLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(34 + 16)
+            $0.top.equalToSuperview().inset(28)
             $0.leading.equalToSuperview().inset(16)
         }
         
         underLine.snp.makeConstraints {
-            $0.top.equalTo(birthSelectLabel.snp.bottom).offset(20)
+            $0.top.equalTo(birthSelectLabel.snp.bottom).offset(18)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(1)
         }
@@ -76,7 +76,7 @@ class BirthSelectViewController: UIViewController {
         }
         
         completeButton.snp.makeConstraints {
-            $0.top.equalTo(datePicker.snp.bottom).offset(12 + 16)
+            $0.top.equalTo(datePicker.snp.bottom).offset(4)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
     }

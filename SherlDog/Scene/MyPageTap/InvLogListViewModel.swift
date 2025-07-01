@@ -81,9 +81,12 @@ extension InvLogListViewModel {
             let sortedResult = result.sorted {
                 $0.createdAt.dateValue() > $1.createdAt.dateValue()
             }
-            
-            self.originalData = result
-            self.data = result.map { WalkResultToList(from: $0) }
+
+            self.originalData = sortedResult
+            self.data = sortedResult.enumerated().map { index, result in
+                let caseNumber = sortedResult.count - index  // 최신이 큰 번호
+                return WalkResultToList(from: result, caseNumber: caseNumber)
+            }
         })
         .disposed(by: disposeBag)
     }

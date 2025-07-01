@@ -12,10 +12,11 @@ struct WalkResultToList {
     let distance: String
     let duration: String
     let steps: String
+    let caseNumber: String
 }
 
 extension WalkResultToList {
-    init(from result: WalkResult) {
+    init(from result: WalkResult, caseNumber: Int) {
         let formatter = DateFormatter()
         
         // MARK: result.date transform -
@@ -45,5 +46,6 @@ extension WalkResultToList {
         self.distance = String(format: "%.1fkm", result.distance / 1000.0)
         self.duration = duration
         self.steps = "\(result.steps)보"
+        self.caseNumber = String(format: "%03d", caseNumber)
     }
 }
