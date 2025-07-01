@@ -5,9 +5,9 @@
 	<key>NSMotionUsageDescription</key>
 	<string>산책 데이터를 기록하기 위해 움직임 데이터를 사용합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>프로필 설정, 게시글 등록 등에서 사진을 선택하기 위해 사진 보관함 접근 권한이 필요합니다.</string>
+	<string>프로필 사진을 설정하거나 게시글 등록시 기기에 저장된 사진을 불러오기 위해 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>프로필 설정, 단서 촬영, 게시글 등록 등 앱 내 사진 촬영 기능을 위해 카메라 접근 권한이 필요합니다.</string>
+	<string>프로필 사진을 설정하거나 단서를 촬영하고, 게시글 등록 시 사진을 직접 찍기 위해 카메라 접근 권한이 필요합니다.</string>
 	<key>KAKAO_NATIVE_APP_KEY</key>
 	<string>88917bd32cd5a4e5e50b193984545800</string>
 	<key>CFBundleURLTypes</key>
