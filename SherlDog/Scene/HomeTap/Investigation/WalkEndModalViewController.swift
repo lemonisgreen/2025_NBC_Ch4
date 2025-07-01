@@ -558,7 +558,7 @@ class WalkEndModalViewController : UIViewController {
             mapImageView.snp.makeConstraints {
                 $0.top.equalTo(walkEndStack.snp.bottom).offset(45)
                 $0.bottom.equalTo(walkShareButton.snp.top).offset(-8)
-                $0.leading.trailing.equalToSuperview().inset(2)
+                $0.leading.trailing.equalToSuperview().inset(33)
             }
         } else {
             mapImageView.snp.makeConstraints {
