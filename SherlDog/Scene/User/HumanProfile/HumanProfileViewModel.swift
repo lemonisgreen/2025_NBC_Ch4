@@ -56,6 +56,14 @@ final class HumanProfileViewModel {
         }
     }
     
+    var isSaveEnabled: Observable<Bool> {
+        return Observable
+            .combineLatest(nickname, introduce, image)
+            .map { nickname, introduce, image in
+                return !nickname.isEmpty && !introduce.isEmpty && image != nil
+            }
+    }
+    
     var nextButtonTitle: Observable<String> {
         return isEditMode.asObservable().map { isEdit in
             return isEdit ? "수정 완료" : "다음"
