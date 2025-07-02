@@ -118,7 +118,7 @@ class MyPageViewModel {
             },
             onFailure: { [weak self] error in
                 self?.output.errorMessage.onNext("HumanProfile 로드 실패: \(error.localizedDescription)")
-                let defaultProfile = HumanProfileModel(nickname: "똥봉투 조수", image: "", introduce: "")
+                let defaultProfile = HumanProfileModel(nickname: "똥봉투조수", image: "", introduce: "")
                 self?.output.humanProfile.accept(defaultProfile)
             }
         )
