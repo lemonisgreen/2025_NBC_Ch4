@@ -246,6 +246,18 @@ extension CreateAssistantProfileViewController {
             .bind(to: viewModel.image)
             .disposed(by: disposeBag)
         
+        // 뷰모델 이미지 변경을 profileImageView에 바인딩
+        viewModel.image
+            .asObservable()
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] image in
+                if let image = image {
+                    self?.profileImageView.image = image
+                    self?.profileImageView.contentMode = .scaleAspectFill
+                }
+            })
+            .disposed(by: disposeBag)
+        
         // 로딩 상태 처리
         viewModel.isLoading
             .subscribe(onNext: { [weak self] isLoading in
@@ -289,6 +301,10 @@ extension CreateAssistantProfileViewController {
         //수정모드일 때 다음 버튼 타이틀 변경
         viewModel.nextButtonTitle
             .bind(to: nextButton.rx.title(for: .normal))
+            .disposed(by: disposeBag)
+        
+        viewModel.isSaveEnabled
+            .bind(to: nextButton.rx.isEnabled)
             .disposed(by: disposeBag)
     }
     
