@@ -156,10 +156,10 @@
 				};
 			};
 			buildConfigurationList = 39BA2DA72DF03A030008A54D /* Build configuration list for PBXProject "SherlDog" */;
-			developmentRegion = en;
+			developmentRegion = ko;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				ko,
 				Base,
 			);
 			mainGroup = 39BA2DA32DF03A030008A54D;
