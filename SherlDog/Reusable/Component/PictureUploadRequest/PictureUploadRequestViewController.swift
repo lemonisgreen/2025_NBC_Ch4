@@ -1,5 +1,5 @@
 //
-//  PictureUploadRequestView.swift
+//  PictureUploadRequestViewController.swift
 //  SherlDog
 //
 //  Created by 최규현 on 6/10/25.
@@ -13,7 +13,7 @@ import RxDataSources
 import Differentiator
 
 // MARK: - PictureUploadView
-class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
+class PictureUploadRequestViewController: UIViewController { // 1: 240, 2: 320, 3: 400
     
     private let viewModel: PictureUploadRequestViewModel
     private let avatarViewModel: SelectAvatarViewModel
@@ -70,7 +70,7 @@ class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
 }
 
 // MARK: - Method
-extension PictureUploadRequestView {
+extension PictureUploadRequestViewController {
     
     private func outputBind() {
         self.viewModel.output.cellData
