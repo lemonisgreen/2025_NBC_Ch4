@@ -14,7 +14,7 @@ import SnapKit
 class CommunityViewController: UIViewController {
     
     private let disposeBag = DisposeBag()
-    private let testCell = BehaviorRelay(value: CommunityModel.sample)  // test
+    private let testCell = BehaviorRelay(value: MockUpData.communitySample)  // test
     
     private let titleLabel = UILabel()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
