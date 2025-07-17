@@ -100,6 +100,7 @@ final class ClueDetailViewModel {
                                                isEqualTo: userId,
                                                orderBy: "date",
                                                type: ClueModel.self)
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
             let imageSingle = clue.map { [weak self] clue in
                 guard let self else { return Single.just(UIImage()) }
