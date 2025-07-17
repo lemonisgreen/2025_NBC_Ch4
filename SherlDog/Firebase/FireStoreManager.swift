@@ -60,12 +60,14 @@ extension FirestoreManager {
         }
     }
     
-    /// 원하는 문서만 선별적으로 읽기
+    /// day 파라미터로 전송한 날의 데이터만 패치.
+    /// orderBy 파라미터로 전송할 String값은 Firebase에 등록된 Date타입의 이름.
     func fetchDocumentsForDay<T: Decodable>(
         collection: String,
         whereField field: String,
         isEqualTo value: Any,
         orderBy: String,
+        day: Date,
         descending: Bool = false,
         type: T.Type
     ) -> Single<[T]> {
@@ -75,10 +77,12 @@ extension FirestoreManager {
                 return Disposables.create()
             }
             
+            let day = self.timestampOfDay(day: day)
+            
             self.db.collection(collection)
                 .whereField(field, isEqualTo: value)
-                .whereField(orderBy, isGreaterThanOrEqualTo: self.timestampOfDay().start)
-                .whereField(orderBy, isLessThan: self.timestampOfDay().end)
+                .whereField(orderBy, isGreaterThanOrEqualTo: day.start)
+                .whereField(orderBy, isLessThan: day.end)
                 .getDocuments { snapshot, error in
                     if let error = error {
                         single(.failure(error))
@@ -93,9 +97,8 @@ extension FirestoreManager {
         }
     }
     
-    private func timestampOfDay() -> (start: Timestamp, end: Timestamp) {
-        let theDay = Date()
-        let startOfDay = Calendar.current.startOfDay(for: theDay)
+    private func timestampOfDay(day: Date) -> (start: Timestamp, end: Timestamp) {
+        let startOfDay = Calendar.current.startOfDay(for: day)
         guard let endOfday = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) else {
             return (Timestamp(), Timestamp())
         }

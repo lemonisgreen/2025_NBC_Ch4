@@ -61,7 +61,7 @@ final class ClueDetailViewModel {
     
     // 오늘 남긴 단서 표시
     init(day: Date) {
-        fetchCluesData()
+        fetchCluesData(day: day)
     }
     
     private func updateUI(with clue: ClueModel) {
@@ -91,7 +91,7 @@ final class ClueDetailViewModel {
         }
     }
     
-    private func fetchCluesData() {
+    private func fetchCluesData(day: Date) {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         self.images.removeAll()
         
@@ -99,6 +99,7 @@ final class ClueDetailViewModel {
                                                whereField: "userID",
                                                isEqualTo: userId,
                                                orderBy: "date",
+                                                     day: day,
                                                type: ClueModel.self)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
