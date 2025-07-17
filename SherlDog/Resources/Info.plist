@@ -2,14 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSMotionUsageDescription</key>
-	<string>산책 데이터를 기록하기 위해 움직임 데이터를 사용합니다.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>프로필 사진을 설정하거나 게시글 등록시 기기에 저장된 사진을 불러오기 위해 사진 보관함 접근 권한이 필요합니다.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>프로필 사진을 설정하거나 단서를 촬영하고, 게시글 등록 시 사진을 직접 찍기 위해 카메라 접근 권한이 필요합니다.</string>
-	<key>KAKAO_NATIVE_APP_KEY</key>
-	<string>88917bd32cd5a4e5e50b193984545800</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -30,6 +22,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>KAKAO_NATIVE_APP_KEY</key>
+	<string>88917bd32cd5a4e5e50b193984545800</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>kakaolink</string>
@@ -38,19 +32,6 @@
 	</array>
 	<key>NMFClientId</key>
 	<string></string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>앱이 백그라운드에 있을 때도 산책 경로를 추적하기 위해 위치 접근이 필요합니다.
-</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>앱 사용 중과 백그라운드 모두에서 산책 경로를 추적할 수 있도록 허용해 주세요.
-</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>산책 경로를 기록하기 위해 위치 접근이 필요합니다.
-</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>location</string>
-	</array>
 	<key>NMFNcpKeyId</key>
 	<string>$(CLIENT_ID)</string>
 	<key>UIAppFonts</key>
@@ -61,8 +42,6 @@
 		<string>Pretendard-Bold.otf</string>
 		<string>EF_jejudoldam(OTF).otf</string>
 	</array>
-	<key>CFBundleExecutable</key>
-	<string></string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -80,7 +59,9 @@
 			</array>
 		</dict>
 	</dict>
-	<key>CFBundleIdentifier</key>
-	<string></string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 </dict>
 </plist>
