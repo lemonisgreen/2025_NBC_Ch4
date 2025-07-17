@@ -60,7 +60,7 @@ final class ClueDetailViewModel {
     }
     
     // 오늘 남긴 단서 표시
-    init() {
+    init(day: Date) {
         fetchCluesData()
     }
     
@@ -68,7 +68,6 @@ final class ClueDetailViewModel {
         // Firebase 이미지 다운로드
         downloadImage(from: clue.image)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] image in
                 self?.data.append(ClueCellData(image: image, content: clue.content))
             })
@@ -96,28 +95,16 @@ final class ClueDetailViewModel {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         self.images.removeAll()
         
-        FirestoreManager.shared.fetchDocuments(collection: "clues",
+        FirestoreManager.shared.fetchDocumentsForDay(collection: "clues",
                                                whereField: "userID",
                                                isEqualTo: userId,
                                                orderBy: "date",
                                                type: ClueModel.self)
         .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
-            let now = Date()
-            let calendar = Calendar.current
-            
-            let start = calendar.startOfDay(for: now)
-            guard let end = calendar.date(byAdding: .day, value: 1, to: start) else { return .just(([], [])) }
-            
-            let clue = clue.filter {
-                let date = $0.date as Timestamp
-                return date.dateValue() >= start && date.dateValue() < end
-            }
-            
             let imageSingle = clue.map { [weak self] clue in
                 guard let self else { return Single.just(UIImage()) }
                 return self.downloadImage(from: clue.image)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .observe(on: MainScheduler.instance)
             }
             
             return Single.zip(imageSingle) { image in

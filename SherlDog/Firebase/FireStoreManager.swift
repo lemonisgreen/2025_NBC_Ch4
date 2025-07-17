@@ -61,7 +61,7 @@ extension FirestoreManager {
     }
     
     /// 원하는 문서만 선별적으로 읽기
-    func fetchDocuments<T: Decodable>(
+    func fetchDocumentsForDay<T: Decodable>(
         collection: String,
         whereField field: String,
         isEqualTo value: Any,
@@ -70,8 +70,15 @@ extension FirestoreManager {
         type: T.Type
     ) -> Single<[T]> {
         return Single.create { [weak self] single in
-            self?.db.collection(collection)
+            guard let self else {
+                single(.failure(FirestoreError.unknown))
+                return Disposables.create()
+            }
+            
+            self.db.collection(collection)
                 .whereField(field, isEqualTo: value)
+                .whereField(orderBy, isGreaterThanOrEqualTo: self.timestampOfDay().start)
+                .whereField(orderBy, isLessThan: self.timestampOfDay().end)
                 .getDocuments { snapshot, error in
                     if let error = error {
                         single(.failure(error))
@@ -86,8 +93,21 @@ extension FirestoreManager {
         }
     }
     
+    private func timestampOfDay() -> (start: Timestamp, end: Timestamp) {
+        let theDay = Date()
+        let startOfDay = Calendar.current.startOfDay(for: theDay)
+        guard let endOfday = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) else {
+            return (Timestamp(), Timestamp())
+        }
+        
+        let start = Timestamp(date: startOfDay)
+        let end = Timestamp(date: endOfday)
+        
+        return (start, end)
+    }
+    
     /// 원하는 문서만 선별적으로 읽기
-    func fetchDocumentsWithoutOrder<T: Decodable>(
+    func fetchDocuments<T: Decodable>(
         collection: String,
         whereField field: String,
         isEqualTo value: Any,
