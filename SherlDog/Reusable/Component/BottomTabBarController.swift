@@ -9,14 +9,14 @@ import UIKit
 
 class BottomTabBarController: UITabBarController {
     
-    let VC1 = UINavigationController(rootViewController: MainViewController())
-    //let VC2 = UINavigationController(rootViewController: CommunityViewController())
-    let VC3 = UINavigationController(rootViewController: MyPageViewController())
+    let mainVC = UINavigationController(rootViewController: MainViewController())
+    let communityVC = UINavigationController(rootViewController: CommunityViewController())
+    let myPageVC = UINavigationController(rootViewController: MyPageViewController())
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let controllers = [VC1, VC3]
+        let controllers = [mainVC, myPageVC]
         self.viewControllers = controllers
         
         self.navigationItem.hidesBackButton = true
@@ -27,17 +27,17 @@ class BottomTabBarController: UITabBarController {
     
     private func setupTabBar() {
         
-        VC1.tabBarItem = UITabBarItem(title: "홈",
+        mainVC.tabBarItem = UITabBarItem(title: "홈",
                                       image: UIImage(named: "home")?.resized(to: CGSize(width: 32, height: 32)),tag: 0)
-        VC1.tabBarItem.selectedImage = UIImage(named: "homeGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
-//        
-//        VC2.tabBarItem = UITabBarItem(title: "수사일지",
-//                                      image: UIImage(named: "community")?.resized(to: CGSize(width: 32, height: 32)),tag: 1)
-//        VC2.tabBarItem.selectedImage = UIImage(named: "communityGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
+        mainVC.tabBarItem.selectedImage = UIImage(named: "homeGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
         
-        VC3.tabBarItem = UITabBarItem(title: "마이",
+        communityVC.tabBarItem = UITabBarItem(title: "수사일지",
+                                      image: UIImage(named: "community")?.resized(to: CGSize(width: 32, height: 32)),tag: 1)
+        communityVC.tabBarItem.selectedImage = UIImage(named: "communityGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
+        
+        myPageVC.tabBarItem = UITabBarItem(title: "마이",
                                       image: UIImage(named: "myPage")?.resized(to: CGSize(width: 32, height: 32)),tag: 2)
-        VC3.tabBarItem.selectedImage = UIImage(named: "myPageGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
+        myPageVC.tabBarItem.selectedImage = UIImage(named: "myPageGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
     }
     
     private func configureTabBar() {
