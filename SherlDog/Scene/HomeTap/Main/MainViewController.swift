@@ -243,13 +243,24 @@ class MainViewController: UIViewController {
                 // If not enough path, show alert and return
                 if fullSide.isEmpty {
                     let alert = AlertManager(
-                        message: "기록된 경로가 부족해요!",
-                        subMessage: "5미터 이상 이동 시 기록이 가능해요.",
-                        buttonTitles: ["확인"],
-                        buttonActions: [nil]
+                        message: "수사를 종료하시겠습니까?",
+                        subMessage: "5미터 이하의 경로는 기록이 되지 않아요",
+                        buttonTitles: ["확인", "취소"],
+                        buttonActions: [
+                            {
+                                let confirmAlert = AlertManager(
+                                    message: "수사가 종료되었습니다.",
+                                    subMessage: nil,
+                                    buttonTitles: ["확인"],
+                                    buttonActions: [nil]
+                                )
+                                self.present(confirmAlert, animated: true)
+                                self.setInvestigation(active: false)
+                            },
+                            nil
+                        ]
                     )
                     self.present(alert, animated: true)
-                    self.setInvestigation(active: false)
                     return
                 }
 
@@ -370,8 +381,20 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.DataTrackingVM.stopTracking()
-                self?.viewModel.stopTracking.accept(())
+                guard let self = self else { return }
+                let alert = AlertManager(
+                    message: "수사를 종료하시겠습니까?",
+                    subMessage: nil,
+                    buttonTitles: ["확인", "취소"],
+                    buttonActions: [
+                        {
+                            self.DataTrackingVM.stopTracking()
+                            self.viewModel.stopTracking.accept(())
+                        },
+                        nil
+                    ]
+                )
+                self.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
         
