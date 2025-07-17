@@ -338,10 +338,8 @@ class RegistrationViewController: UIViewController {
         viewModel.selectedAge
             .map { dateOpt in
                 guard let date = dateOpt else { return "YYYY-MM-DD (n세)" }
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
                 let age = Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
-                return "\(formatter.string(from: date)) (\(age)세)"
+                return "\(DateFormatter.yyyyMMdd.string(from: date)) (\(age)세)"
             }
             .bind(to: registAgeButton.dateText)
             .disposed(by: disposeBag)

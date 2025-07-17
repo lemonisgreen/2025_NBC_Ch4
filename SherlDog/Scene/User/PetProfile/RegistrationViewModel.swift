@@ -79,15 +79,11 @@ class RegistrationViewModel {
     // 날짜 포맷 헬퍼 함수들
     private func formatDateToString(_ date: Date?) -> String {
         guard let date = date else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.string(from: date)
+        return DateFormatter.yyyyMMdd.string(from: date)
     }
     
     private func stringToDate(_ dateString: String) -> Date? {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return formatter.date(from: dateString)
+        return DateFormatter.yyyyMMdd.date(from: dateString)
     }
     
     func uploadImageAndSaveProfile(image: UIImage) {

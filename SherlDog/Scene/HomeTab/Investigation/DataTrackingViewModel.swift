@@ -41,10 +41,9 @@ class DataTrackingViewModel {
             .subscribe(onNext: { [weak self] result in
                 guard let self, let result,
                       let userId = Auth.auth().currentUser?.uid else { return }
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy-MM-dd"
-                guard let date = dateFormatter.date(from: result.date) else { return }
                 
+                guard let date = DateFormatter.yyyyMMdd.date(from: result.date) else { return }
+
                 self.numberOfSteps.accept(result.steps)
                 self.distance.accept(result.distance)
                 self.duration.accept(result.duration)
@@ -132,9 +131,7 @@ class DataTrackingViewModel {
     func saveWalkResult(selectedProfiles: [PetProfile]) {
         let dateString: String = {
             if let date = endDate.value {
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                return formatter.string(from: date)
+                return DateFormatter.yyyyMMdd.string(from: date)
             } else {
                 return ""
             }

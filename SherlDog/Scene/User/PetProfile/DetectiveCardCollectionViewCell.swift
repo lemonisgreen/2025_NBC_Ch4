@@ -32,16 +32,12 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
     }
     
     func configure(with profile: PetProfile) {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
         var age: Int = 0
         var detectiveNumber: String = "?"
         
-        if let birthDate = formatter.date(from: profile.age) {
+        if let birthDate = DateFormatter.yyyyMMdd.date(from: profile.age) {
             age = Calendar.current.dateComponents([.year], from: birthDate, to: Date()).year ?? 0
-            let detectiveNumberFormatter = DateFormatter()
-            detectiveNumberFormatter.dateFormat = "yyMMdd"
-            detectiveNumber = detectiveNumberFormatter.string(from: birthDate)
+            detectiveNumber = DateFormatter.yyMMdd.string(from: birthDate)
         }
         
         self.backgroundColor = .clear

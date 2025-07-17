@@ -178,9 +178,7 @@ class WalkEndModalViewController : UIViewController {
         DataTrackingVM.endDate
             .map {
                 guard let endDate = $0 else { return "date" }
-                let dateFormatter = DateFormatter()
-                dateFormatter.dateFormat = "yyyy/MM/dd"
-                return dateFormatter.string(from: endDate)
+                return DateFormatter.yyyyMMddSlash.string(from: endDate)
             }
             .bind(to: self.todayLabel.rx.text)
             .disposed(by: disposeBag)
