@@ -315,7 +315,7 @@ class WalkEndModalViewController : UIViewController {
         dividerLine.backgroundColor = UIColor(named: "gray300")
         
         backgroundImageView.image = .endInvestigation
-        backgroundImageView.contentMode = isIPhoneSE() ? .scaleToFill : .scaleAspectFit
+        backgroundImageView.contentMode = UIScreen.isIPhoneSE ? .scaleToFill : .scaleAspectFit
         view.insertSubview(backgroundImageView, at: 0)
         
         todayLabel.text = "2025/06/05"
@@ -497,7 +497,7 @@ class WalkEndModalViewController : UIViewController {
     }
     
     private func configureUI() {
-        if isIPhoneSE() {
+        if UIScreen.isIPhoneSE {
             backgroundImageView.snp.makeConstraints {
                 $0.leading.trailing.equalToSuperview()
                 $0.top.bottom.equalToSuperview().offset(25)
@@ -511,7 +511,7 @@ class WalkEndModalViewController : UIViewController {
         
         
         todayLabel.snp.makeConstraints {
-            $0.top.equalTo(backgroundImageView.snp.top).offset(isIPhoneSE() ? 55 : 75)
+            $0.top.equalTo(backgroundImageView.snp.top).offset(UIScreen.isIPhoneSE ? 55 : 75)
             $0.leading.equalTo(backgroundImageView.snp.leading).inset(60) // 36
             $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(199)
         }
@@ -552,7 +552,7 @@ class WalkEndModalViewController : UIViewController {
             $0.bottom.equalToSuperview().inset(20)
         }
         
-        if isIPhoneSE() {
+        if UIScreen.isIPhoneSE {
             mapImageView.snp.makeConstraints {
                 $0.top.equalTo(walkEndStack.snp.bottom).offset(45)
                 $0.bottom.equalTo(walkShareButton.snp.top).offset(-8)
@@ -566,9 +566,9 @@ class WalkEndModalViewController : UIViewController {
             }
         }
         
-        if isIPhoneSE() {
+        if UIScreen.isIPhoneSE {
             walkShareButton.snp.makeConstraints {
-                $0.top.equalTo(mapImageView.snp.bottom).offset(isIPhoneSE() ? 20 : 20)
+                $0.top.equalTo(mapImageView.snp.bottom).offset(UIScreen.isIPhoneSE ? 20 : 20)
                 $0.height.equalTo(52)
                 $0.leading.equalTo(backgroundImageView.snp.leading).inset(30)
                 $0.trailing.equalTo(backgroundImageView.snp.trailing).inset(30)
@@ -585,7 +585,7 @@ class WalkEndModalViewController : UIViewController {
         }
         
         closeButton.snp.makeConstraints {
-            $0.top.equalTo(todayLabel.snp.bottom).offset(isIPhoneSE() ? 20 : 30)
+            $0.top.equalTo(todayLabel.snp.bottom).offset(UIScreen.isIPhoneSE ? 20 : 30)
             $0.trailing.equalToSuperview().inset(30)
             $0.width.height.equalTo(24)
         }
@@ -595,10 +595,5 @@ class WalkEndModalViewController : UIViewController {
         super.viewDidLayoutSubviews()
         infoBox.layer.sublayers?.removeAll(where: { $0.name == "vLine" })
         addVerticalSeparators()
-    }
-    
-    private func isIPhoneSE() -> Bool {
-        let screenHeight = UIScreen.main.bounds.height
-        return screenHeight <= 667 // SE 1세대(568), SE 2/3세대(667)
     }
 }

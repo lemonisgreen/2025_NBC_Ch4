@@ -101,7 +101,7 @@ class ClueInputViewController: UIViewController {
     private func setupConstraints() {
         clueLabel.snp.makeConstraints {
             $0.leading.equalToSuperview().inset(16)
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(isIPhoneSE() ? 12 : 26)
+            $0.top.equalTo(view.safeAreaLayoutGuide).offset(UIScreen.isIPhoneSE ? 12 : 26)
         }
         
         cancelButton.snp.makeConstraints {
@@ -110,7 +110,7 @@ class ClueInputViewController: UIViewController {
         }
         
         imageView.snp.makeConstraints {
-            $0.top.equalTo(clueLabel.snp.bottom).offset(isIPhoneSE() ? 26 : 12)
+            $0.top.equalTo(clueLabel.snp.bottom).offset(UIScreen.isIPhoneSE ? 26 : 12)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(imageView.snp.width).multipliedBy(1.1).priority(.low)
             $0.height.greaterThanOrEqualTo(100).priority(.low)
@@ -128,16 +128,11 @@ class ClueInputViewController: UIViewController {
         }
         
         registerButton.snp.makeConstraints {
-            $0.top.equalTo(textView.snp.bottom).offset(isIPhoneSE() ? 12 : 32)
+            $0.top.equalTo(textView.snp.bottom).offset(UIScreen.isIPhoneSE ? 12 : 32)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(52)
         }
-    }
-    
-    private func isIPhoneSE() -> Bool {
-        let screenHeight = UIScreen.main.bounds.height
-        return screenHeight <= 667 // SE 1세대(568), SE 2/3세대(667)
     }
     
     private func bindRegisterAction() {

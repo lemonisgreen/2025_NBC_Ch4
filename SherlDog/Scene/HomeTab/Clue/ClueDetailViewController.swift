@@ -80,7 +80,7 @@ final class ClueDetailViewController: UIViewController {
         }
         
         pageControl.snp.makeConstraints {
-            $0.bottom.equalToSuperview().inset(isIPhoneSE() ? 8 : 24)
+            $0.bottom.equalToSuperview().inset(UIScreen.isIPhoneSE ? 8 : 24)
             $0.centerX.equalToSuperview()
         }
         
@@ -91,11 +91,6 @@ final class ClueDetailViewController: UIViewController {
     
     @objc private func backButtonTapped() {
         dismiss(animated: true)
-    }
-    
-    private func isIPhoneSE() -> Bool {
-        let screenHeight = UIScreen.main.bounds.height
-        return screenHeight <= 667 // SE 1세대(568), SE 2/3세대(667)
     }
     
     private func bindViewModel() {

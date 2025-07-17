@@ -315,10 +315,7 @@ class RegistrationViewController: UIViewController {
                     .disposed(by: birthSelectVC.disposeBag)
                 
                 if let sheet = birthSelectVC.sheetPresentationController {
-                    let screenHeight = UIScreen.main.bounds.height
-                    let isIPhoneSE = screenHeight <= 667
-                    
-                    if isIPhoneSE {
+                    if UIScreen.isIPhoneSE {
                         sheet.detents = [.medium()]
                         sheet.selectedDetentIdentifier = .medium
                     } else {
@@ -331,7 +328,7 @@ class RegistrationViewController: UIViewController {
                     sheet.preferredCornerRadius = 20
                 }
                 owner.present(birthSelectVC, animated: true)
-
+                
             })
             .disposed(by: disposeBag)
         
