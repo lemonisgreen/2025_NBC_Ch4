@@ -16,15 +16,7 @@ final class ClueDetailViewController: UIViewController {
     private let viewModel: ClueDetailViewModel
     private let disposeBag = DisposeBag()
     
-    private let dataSource = RxCollectionViewSectionedReloadDataSource<ClueDetailViewModel.ClueDataSource>(
-        configureCell: { dataSource, collectionView, indexPath, item  in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ClueDetailCell.identifier, for: indexPath) as? ClueDetailCell else { return .init() }
-            
-            cell.settingCell(image: item.image, content: item.content)
-            
-            return cell
-        }
-    )
+    private lazy var dataSource = self.setDataSource()
     
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout())
     private let pageControl = UIPageControl()
@@ -142,6 +134,18 @@ final class ClueDetailViewController: UIViewController {
                 self?.loadingIndicator.stopAnimating()
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<ClueDetailViewModel.ClueDataSource> {
+        return RxCollectionViewSectionedReloadDataSource<ClueDetailViewModel.ClueDataSource>(
+            configureCell: { dataSource, collectionView, indexPath, item  in
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ClueDetailCell.identifier, for: indexPath) as? ClueDetailCell else { return .init() }
+                
+                cell.settingCell(image: item.image, content: item.content)
+                
+                return cell
+            }
+        )
     }
     
     private func collectionViewLayout() -> UICollectionViewCompositionalLayout {

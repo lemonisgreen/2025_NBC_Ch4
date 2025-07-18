@@ -7,12 +7,12 @@
 
 import UIKit
 import RxSwift
+import RxCocoa
 
 class InvLogListCell: UICollectionViewCell {
     static let identifier: String = "InvLogListCell"
     
-    private let disposeBag = DisposeBag()
-    weak var delegate: InvLogListCellEventDelegate?
+    var disposeBag = DisposeBag()
     
     // MARK: - UI Property
     private let dateLabel = UILabel()
@@ -30,33 +30,20 @@ class InvLogListCell: UICollectionViewCell {
         
         setup()
         configureUI()
-        inputBind()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        self.disposeBag = DisposeBag()
+    }
 }
 
 extension InvLogListCell {
-    
-    private func inputBind() {
-        self.deleteButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                
-                self.delegate?.deleteButtonTapEvent(self)
-            })
-            .disposed(by: disposeBag)
-        
-        self.showButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                
-                self.delegate?.showButtonTapEvent(self)
-            })
-            .disposed(by: disposeBag)
-    }
     
     func settingCell(data: WalkResultToList) {
         self.dateLabel.text = data.date
@@ -149,4 +136,24 @@ extension InvLogListCell {
         }
     }
     
+}
+
+extension InvLogListCell {
+    fileprivate var deleteButtonTapEvent: ControlEvent<Void> {
+        deleteButton.rx.tap
+    }
+    
+    fileprivate var showButtonTapEvent: ControlEvent<Void> {
+        showButton.rx.tap
+    }
+}
+
+extension Reactive where Base: InvLogListCell {
+    var deleteButtonTap: ControlEvent<Void> {
+        base.deleteButtonTapEvent
+    }
+    
+    var showButtonTap: ControlEvent<Void> {
+        base.showButtonTapEvent
+    }
 }
