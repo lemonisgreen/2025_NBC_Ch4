@@ -126,11 +126,11 @@ class MyPageViewController : UIViewController {
         archiveButton.backgroundColor = .gray100
         archiveButton.setImage(UIImage(named: "note"), for: .normal)
         archiveButton.contentHorizontalAlignment = .left
-        archiveButton.contentEdgeInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        archiveButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         archiveButton.layer.cornerRadius = 12
         //archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
-        archiveButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
+        archiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
         
         findMateButton.setTitle("탐정메이트 찾기", for: .normal)
         findMateButton.titleLabel?.font = .body3
@@ -138,11 +138,11 @@ class MyPageViewController : UIViewController {
         findMateButton.backgroundColor = .gray100
         findMateButton.setImage(UIImage(named: "search"), for: .normal)
         findMateButton.contentHorizontalAlignment = .left
-        findMateButton.contentEdgeInsets = UIEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        findMateButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         findMateButton.layer.cornerRadius = 12
         findMateButton.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         findMateButton.clipsToBounds = true
-        findMateButton.titleEdgeInsets = UIEdgeInsets(top: 0, left: 8, bottom: 0, right: -8)
+        findMateButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
     }
     
     private func configureUI() {
@@ -249,12 +249,15 @@ class MyPageViewController : UIViewController {
             .bind(to: collectionView.rx.items) { collectionView, index, item in
                 switch item {
                 case .profile(let profile):
-                    let cell = collectionView.dequeueReusableCell(
+                    if let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: DetectiveCardCell.identifier,
                         for: IndexPath(item: index, section: 0)
-                    ) as! DetectiveCardCell
-                    cell.configure(with: profile)
-                    return cell
+                    ) as? DetectiveCardCell {
+                        cell.configure(with: profile)
+                        return cell
+                    } else {
+                        return UICollectionViewCell()
+                    }
                     
                 case .addProfile:
                     let cell = collectionView.dequeueReusableCell(
@@ -420,5 +423,41 @@ class MyPageViewController : UIViewController {
             
             return Disposables.create()
         }
+    }
+}
+extension UIButton {
+    
+    private func applyEdgeInsets( // 내부적으로 contentInsets 와 titleEdgeInsets 를 설정하는 함수
+        content: NSDirectionalEdgeInsets? = nil,
+        title: UIEdgeInsets? = nil
+    ) {
+        if #available(iOS 15.0, *) {
+            if let content = content {
+                var config = self.configuration ?? .plain()
+                config.contentInsets = content
+                self.configuration = config
+            }
+            // iOS15 이상에서는 titleEdgeInsets는 의미 없음
+        } else {
+            if let content = content {
+                self.contentEdgeInsets = UIEdgeInsets(
+                    top: content.top,
+                    left: content.leading,
+                    bottom: content.bottom,
+                    right: content.trailing
+                )
+            }
+            if let title = title {
+                self.titleEdgeInsets = title
+            }
+        }
+    }
+    
+    func setContentInsets(_ insets: NSDirectionalEdgeInsets) {
+        applyEdgeInsets(content: insets, title: nil)
+    }
+    
+    func setTitleInsets(_ insets: UIEdgeInsets) {
+        applyEdgeInsets(content: nil, title: insets)
     }
 }

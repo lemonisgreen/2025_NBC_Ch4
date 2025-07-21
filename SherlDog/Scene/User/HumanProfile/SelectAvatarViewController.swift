@@ -33,8 +33,8 @@ class SelectAvatarViewController: UIViewController {
             return header
         })
     
-    private let backButton = SubButtonManager(title: "이전")
-    private let choiceButton = ButtonManager(title: "선택하기")
+    private let backButton = ComponentSubButton(title: "이전")
+    private let choiceButton = ComponentButton(title: "선택하기")
     private let horizontalStackView = UIStackView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     

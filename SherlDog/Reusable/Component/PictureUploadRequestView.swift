@@ -39,7 +39,7 @@ class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
     
     private let imagePickerController = UIImagePickerController()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
-    private let setButton = ButtonManager(title: "")
+    private let setButton = ComponentButton(title: "")
     
     // MARK: - Lifecycle
     init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel = CameraViewModel(), avatarViewModel: SelectAvatarViewModel = SelectAvatarViewModel()) {
@@ -131,7 +131,16 @@ extension PictureUploadRequestView {
                             self.present(cameraView, animated: true)
                             
                         case false:
-                            let alert = AlertManager(message: "카메라 권한이 필요합니다.", subMessage: "설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            let alert = CustomAlertViewController(
+                                message: "카메라 권한이 필요합니다.",
+                                subMessage: "설정에서 변경해주세요.",
+                                buttons: [
+                                    CustomAlertViewController.AlertButton(
+                                        title: "확인",
+                                        action: nil
+                                    )
+                                ]
+                            )
                             
                             self.present(alert, animated: true)
                         }
@@ -146,7 +155,16 @@ extension PictureUploadRequestView {
                             self.present(albumView, animated: true)
                             
                         case false:
-                            let alert = AlertManager(message: "앨범 권한이 필요합니다.", subMessage: "설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                            let alert = CustomAlertViewController(
+                                message: "앨범 권한이 필요합니다.",
+                                subMessage: "설정에서 변경해주세요.",
+                                buttons: [
+                                    CustomAlertViewController.AlertButton(
+                                        title: "확인",
+                                        action: nil
+                                    )
+                                ]
+                            )
                             
                             self.present(alert, animated: true)
                         }

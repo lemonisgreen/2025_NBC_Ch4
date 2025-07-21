@@ -12,46 +12,53 @@ import NMapsMap
 
 class WalkEndModalViewController : UIViewController {
     
-    private let DataTrackingVM: DataTrackingViewModel
-    private let requestViewModel = PictureUploadRequestViewModel()
-    private let invLogListVM = InvLogListViewModel()
+    private let dataTrackingViewModel: DataTrackingViewModel
+    private let requestViewModel : PictureUploadRequestViewModel
+    private let invLogListViewModel : InvLogListViewModel
     private let disposeBag = DisposeBag()
-    var selectedPetProfiles: [PetProfile] = []
+    private var selectedPetProfiles: [PetProfile] = []
     
-    let stepLabelWrapper = UIView()
-    let backgroundImageView = UIImageView()
-    let todayLabel = UILabel()
-    let distanceLabel = UILabel()
-    let timeLabel = UILabel()
-    let stepCountLabel = UILabel()
-    let distanceContentLabel = UILabel()
-    let timeContentLabel = UILabel()
-    let stepCountContentLabel = UILabel()
-    let dogImages: [UIImage] = [
+    private let stepLabelWrapper = UIView()
+    private let backgroundImageView = UIImageView()
+    private let todayLabel = UILabel()
+    private let distanceLabel = UILabel()
+    private let timeLabel = UILabel()
+    private let stepCountLabel = UILabel()
+    private let distanceContentLabel = UILabel()
+    private let timeContentLabel = UILabel()
+    private let stepCountContentLabel = UILabel()
+    private let dogImages: [UIImage] = [
         .sampleDog,
         .sampleDog,
         .sampleDog
     ]
-    let walkEndLabel = UILabel()
-    let showProfileButton = UIButton()
-    let walkShareButton = ButtonManager(title: "멍탐정과 남긴 단서")
-    let mapImageView = UIImageView()
-    let closeButton = UIButton()
+    private let walkEndLabel = UILabel()
+    private let showProfileButton = UIButton()
+    private let walkShareButton = ComponentButton(title: "멍탐정과 남긴 단서")
+    private let mapImageView = UIImageView()
+    private let closeButton = UIButton()
     
-    let dogImagesStack = UIStackView()
-    let walkEndStack = UIStackView()
-    let infoStack = UIStackView()
-    let timeStack = UIStackView()
-    let distanceStack = UIStackView()
-    let stepCountStack = UIStackView()
-    let labelAndButtonStack = UIStackView()
+    private let dogImagesStack = UIStackView()
+    private let walkEndStack = UIStackView()
+    private let infoStack = UIStackView()
+    private let timeStack = UIStackView()
+    private let distanceStack = UIStackView()
+    private let stepCountStack = UIStackView()
+    private let labelAndButtonStack = UIStackView()
     
-    let infoBox = UIView()
-    let walkEndBox = UIView()
-    let dividerLine = UIView()
+    private let infoBox = UIView()
+    private let walkEndBox = UIView()
+    private let dividerLine = UIView()
     
-    init(viewModel: DataTrackingViewModel, selectedProfiles: [PetProfile] = []) {
-        self.DataTrackingVM = viewModel
+    init(
+        dataTrackingViewModel: DataTrackingViewModel,
+        requestViewModel: PictureUploadRequestViewModel = PictureUploadRequestViewModel(),
+        invLogListViewModel: InvLogListViewModel = InvLogListViewModel(),
+        selectedProfiles: [PetProfile] = []
+    ) {
+        self.dataTrackingViewModel = dataTrackingViewModel
+        self.requestViewModel = requestViewModel
+        self.invLogListViewModel = invLogListViewModel
         self.selectedPetProfiles = selectedProfiles
         super.init(nibName: nil, bundle: nil)
     }
@@ -70,45 +77,51 @@ class WalkEndModalViewController : UIViewController {
     
     private func bind() {
         
-        self.DataTrackingVM.fullScreenImage
+        self.dataTrackingViewModel.fullScreenImage
             .bind(onNext: { [weak self] image in
                 guard let self,
-                      self.DataTrackingVM.fetchResult.value == nil else { return }
+                      self.dataTrackingViewModel.fetchResult.value == nil else { return }
                 
                 DispatchQueue.main.async {
                     self.mapImageView.image = image
                     self.isLoading(isLoading: true)
                     
-                    self.DataTrackingVM.capturedImage.accept(self.mapImageView.viewCapture())
+                    self.dataTrackingViewModel.capturedImage.accept(self.mapImageView.viewCapture())
                 }
             })
             .disposed(by: disposeBag)
         
-        self.DataTrackingVM.capturedImage
+        self.dataTrackingViewModel.capturedImage
             .bind(onNext: { [weak self] image in
                 guard let self,
-                      self.DataTrackingVM.fetchResult.value == nil else { return }
+                      self.dataTrackingViewModel.fetchResult.value == nil else { return }
                 
-                self.DataTrackingVM.saveWalkResultCapturedImage(
+                self.dataTrackingViewModel.saveWalkResultCapturedImage(
                     image: image,
                     selectedProfiles: self.selectedPetProfiles
                 )
             })
             .disposed(by: disposeBag)
         
-        self.DataTrackingVM.saveResult
+        self.dataTrackingViewModel.saveResult
             .subscribe(onNext: { [weak self] result in
                 guard let self,
-                      self.DataTrackingVM.fetchResult.value == nil else { return }
+                      self.dataTrackingViewModel.fetchResult.value == nil else { return }
                 
                 switch result {
                 case .success():
                     self.isLoading(isLoading: false)
                     
-                    let alert = AlertManager(message: "산책이 기록되었습니다.",
-                                             subMessage: "마이페이지에서 확인하실 수 있습니다.",
-                                             buttonTitles: ["닫기"],
-                                             buttonActions: [nil])
+                    let alert = CustomAlertViewController(
+                          message: "산책이 기록되었습니다.",
+                          subMessage: "마이페이지에서 확인하실 수 있습니다.",
+                          buttons: [
+                              CustomAlertViewController.AlertButton(
+                                  title: "닫기",
+                                  action: nil
+                              )
+                          ]
+                      )
                     self.present(alert, animated: true)
                     
                 case .failure(let error):
@@ -118,7 +131,7 @@ class WalkEndModalViewController : UIViewController {
                 }
             })
             .disposed(by: disposeBag)
-        self.DataTrackingVM.fetchResult
+        self.dataTrackingViewModel.fetchResult
             .bind(onNext: { [weak self] result in
                 guard let self, let result else { return }
                 
@@ -126,10 +139,10 @@ class WalkEndModalViewController : UIViewController {
             })
             .disposed(by: disposeBag)
         
-        self.DataTrackingVM.invLogListViewSendImage
+        self.dataTrackingViewModel.invLogListViewSendImage
             .bind(onNext: { [weak self] image in
                 guard let self,
-                      self.DataTrackingVM.fetchResult.value != nil else { return }
+                      self.dataTrackingViewModel.fetchResult.value != nil else { return }
                 
                 self.mapImageView.image = image
             })
@@ -138,19 +151,6 @@ class WalkEndModalViewController : UIViewController {
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
-                //                let requestViewModel = PictureUploadRequestViewModel()
-                //                requestViewModel.input.accept(.sender(.pictureRequest))
-                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
-                //
-                //                if let sheet = requestView.sheetPresentationController {
-                //                    sheet.detents = [.custom { _ in 320 }]
-                //                    sheet.selectedDetentIdentifier = .medium
-                //                    sheet.prefersGrabberVisible = true
-                //                    sheet.preferredCornerRadius = 20
-                //                }
-                //
-                //                self?.present(requestView, animated: true)
-                
                 let viewModel = ClueDetailViewModel()
                 let detailVC = ClueDetailViewController(viewModel: viewModel)
                 let nav = UINavigationController(rootViewController: detailVC)
@@ -165,17 +165,17 @@ class WalkEndModalViewController : UIViewController {
             })
             .disposed(by: disposeBag)
         
-        DataTrackingVM.numberOfSteps
+        dataTrackingViewModel.numberOfSteps
             .map { "\($0)"}
             .bind(to: stepCountContentLabel.rx.text)
             .disposed(by: disposeBag)
         
-        DataTrackingVM.distance
+        dataTrackingViewModel.distance
             .map { String(format: "%.2f km", $0 / 1000.0) }
             .bind(to: distanceContentLabel.rx.text)
             .disposed(by: disposeBag)
         
-        DataTrackingVM.endDate
+        dataTrackingViewModel.endDate
             .map {
                 guard let endDate = $0 else { return "date" }
                 let dateFormatter = DateFormatter()
@@ -185,7 +185,7 @@ class WalkEndModalViewController : UIViewController {
             .bind(to: self.todayLabel.rx.text)
             .disposed(by: disposeBag)
         
-        DataTrackingVM.duration
+        dataTrackingViewModel.duration
             .bind(to: self.timeContentLabel.rx.text)
             .disposed(by: disposeBag)
         
@@ -338,24 +338,21 @@ class WalkEndModalViewController : UIViewController {
         timeLabel.font = UIFont.body6
         timeLabel.backgroundColor = .clear
         
-        stepCountLabel.text = "걸음수"
+        stepCountLabel.text = "걸음 수"
         stepCountLabel.textColor = UIColor(named: "textTertiary")
         stepCountLabel.textAlignment = .right
         stepCountLabel.font = UIFont.body6
         stepCountLabel.backgroundColor = .clear
         
-        //        distanceContentLabel.text = "11.23km"
         distanceContentLabel.textColor = UIColor(named: "textSecondary")
         distanceContentLabel.font = UIFont.highlight3
         distanceContentLabel.backgroundColor = .clear
         
-        //        timeContentLabel.text = "10:11:12"
         timeContentLabel.textColor = UIColor(named: "textSecondary")
         timeContentLabel.font = UIFont.highlight3
         timeContentLabel.backgroundColor = .clear
         timeContentLabel.textAlignment = .left
         
-        //        stepCountContentLabel.text = "12345"
         stepCountContentLabel.textColor = UIColor(named: "textSecondary")
         stepCountContentLabel.font = UIFont.highlight3
         stepCountContentLabel.backgroundColor = .clear
@@ -389,17 +386,7 @@ class WalkEndModalViewController : UIViewController {
         showProfileButton.setImage(UIImage(named: "showProfile"), for: .normal)
         showProfileButton.contentMode = .scaleAspectFit
         showProfileButton.snp.makeConstraints { $0.size.equalTo(CGSize(width: 75, height: 28)) }
-        
-        //        for dogImage in dogImages {
-        //            let imageView = UIImageView(image: dogImage)
-        //            imageView.contentMode = .scaleAspectFill
-        //            imageView.clipsToBounds = true
-        //            imageView.snp.makeConstraints {
-        //                $0.width.height.equalTo(32)
-        //            }
-        //            dogImagesStack.addArrangedSubview(imageView)
-        //        }
-        //
+
         dogImagesStack.axis = .horizontal
         dogImagesStack.spacing = -20
         dogImagesStack.alignment = .center
@@ -411,13 +398,7 @@ class WalkEndModalViewController : UIViewController {
         mapImageView.contentMode = .scaleAspectFill
         mapImageView.clipsToBounds = true
         mapImageView.backgroundColor = .clear
-        
-        //        walkShareButton.setTitle("멍탐정과 남긴 단서", for: .normal)
-        //        walkShareButton.titleLabel?.font = UIFont.highlight4
-        //        walkShareButton.setTitleColor(UIColor(named: "textInverse"), for: .normal)
-        //        walkShareButton.backgroundColor = UIColor(named: "keycolorPrimary3")
-        //        walkShareButton.layer.cornerRadius = 6
-        
+
         distanceStack.axis = .vertical
         distanceStack.spacing = 4
         distanceStack.alignment = .leading

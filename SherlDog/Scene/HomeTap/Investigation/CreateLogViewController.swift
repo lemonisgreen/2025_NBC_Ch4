@@ -32,8 +32,8 @@ class CreateLogViewController: UIViewController {
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
-    private let cancelButton = SubButtonManager(title: "취소")
-    private let shareButton = ButtonManager(title: "등록하기")
+    private let cancelButton = ComponentSubButton(title: "취소")
+    private let shareButton = ComponentButton(title: "등록하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -80,15 +80,21 @@ extension CreateLogViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
                 
-                let alert = AlertManager(message: "등록되었습니다.",
-                                         subMessage: nil,
-                                         buttonTitles: ["확인"],
-                                         buttonActions: [{ [weak self] in
-                    guard let self,
-                          let mainView = self.view.window?.rootViewController as? BottomTabBarController else { return }
-                    mainView.dismiss(animated: true)
-                    mainView.selectedIndex = 1
-                }])
+                let alert = CustomAlertViewController(
+                    message: "등록되었습니다.",
+                    subMessage: nil,
+                    buttons: [
+                        CustomAlertViewController.AlertButton(
+                            title: "확인",
+                            action: { [weak self] in
+                                guard let self,
+                                      let mainView = self.view.window?.rootViewController as? BottomTabBarController else { return }
+                                mainView.dismiss(animated: true)
+                                mainView.selectedIndex = 1
+                            }
+                        )
+                    ]
+                )
                 
                 self.present(alert, animated: true)
             })
@@ -117,17 +123,26 @@ extension CreateLogViewController {
         
         self.cancelButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                let alert = AlertManager(message: "작성을 취소하시겠습니까?", subMessage: nil,
-                                         buttonTitles: ["취소", "확인"],
-                                         buttonActions: [
-                                            nil,
-                                            { [weak self] in
-                                                guard let self,
-                                                      let cameraView = self.presentingViewController,
-                                                      let requestView = cameraView.presentingViewController,
-                                                      let walkEndView = requestView.presentingViewController else { return }
-                                                walkEndView.dismiss(animated: true)
-                                            }])
+                let alert = CustomAlertViewController(
+                    message: "작성을 취소하시겠습니까?",
+                    subMessage: nil,
+                    buttons: [
+                        CustomAlertViewController.AlertButton(
+                            title: "취소",
+                            action: nil
+                        ),
+                        CustomAlertViewController.AlertButton(
+                            title: "확인",
+                            action: { [weak self] in
+                                guard let self,
+                                      let cameraView = self.presentingViewController,
+                                      let requestView = cameraView.presentingViewController,
+                                      let walkEndView = requestView.presentingViewController else { return }
+                                walkEndView.dismiss(animated: true)
+                            }
+                        )
+                    ]
+                )
                 self?.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
@@ -202,7 +217,7 @@ extension CreateLogViewController {
         durationTitleLabel.text = "시간"
         durationTitleLabel.textColor = .textInverse
         
-        stepsTitleLabel.text = "걸음수"
+        stepsTitleLabel.text = "걸음 수"
         stepsTitleLabel.textColor = .gray50
         
         clueTitleLabel.text = "남긴 단서"
