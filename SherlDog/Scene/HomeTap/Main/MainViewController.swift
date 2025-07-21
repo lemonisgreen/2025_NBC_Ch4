@@ -62,7 +62,7 @@ class MainViewController: UIViewController {
     private let locationButton = UIButton()
     
     // 거리 측정 함수 뷰모델
-    private let TrackingViewModel = DataTrackingViewModel()
+    private let trackingViewModel = DataTrackingViewModel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -208,23 +208,23 @@ class MainViewController: UIViewController {
     }
     
     private func trackingBind() {
-        TrackingViewModel.numberOfSteps
+        trackingViewModel.numberOfSteps
             .map { "\($0)" }
             .bind(to: stepCountLabel
 .rx.text)
             .disposed(by: disposeBag)
         
-        TrackingViewModel.distance
+        trackingViewModel.distance
             .map { String(format: "%.2f", $0 / 1000.0) }
             .bind(to: distanceValueLabel.rx.text)
             .disposed(by: disposeBag)
         
-        TrackingViewModel.trackingActive
+        trackingViewModel.trackingActive
             .filter { $0 }
             .flatMapLatest { _ in
                 Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
-                    .take(until: self.TrackingViewModel.trackingActive.filter { !$0 })
-                    .withLatestFrom(self.TrackingViewModel.startDate)
+                    .take(until: self.trackingViewModel.trackingActive.filter { !$0 })
+                    .withLatestFrom(self.trackingViewModel.startDate)
                     .compactMap { $0 }
                     .map { start in
                         let interval = Int(Date().timeIntervalSince(start))
@@ -282,11 +282,11 @@ class MainViewController: UIViewController {
                         }
                         
                         let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
-                        let walkEndModal = WalkEndModalViewController(viewModel: self.TrackingViewModel, selectedProfiles: selectedProfiles)
+                        let walkEndModal = WalkEndModalViewController(viewModel: self.trackingViewModel, selectedProfiles: selectedProfiles)
                         let nav = UINavigationController(rootViewController: walkEndModal)
                         nav.modalPresentationStyle = .overFullScreen
                         self.present(nav, animated: true) {
-                            self.TrackingViewModel.fullScreenImage.accept(image)
+                            self.trackingViewModel.fullScreenImage.accept(image)
                         }
                     }
                     
@@ -318,7 +318,7 @@ class MainViewController: UIViewController {
         
         requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
             self?.viewModel.startTracking.accept(())
-            self?.TrackingViewModel.startTracking()
+            self?.trackingViewModel.startTracking()
             self?.setInvestigation(active: true)
         })
         .disposed(by: disposeBag)
@@ -375,7 +375,7 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.TrackingViewModel.stopTracking()
+                self?.trackingViewModel.stopTracking()
                 self?.viewModel.stopTracking.accept(())
             })
             .disposed(by: disposeBag)
@@ -468,7 +468,7 @@ class MainViewController: UIViewController {
     
 //    private func showWalkEndModal() {
 //        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
-//        let walkEndModal = WalkEndModalViewController(viewModel: TrackingViewModel, selectedProfiles: selectedProfiles)
+//        let walkEndModal = WalkEndModalViewController(viewModel: trackingViewModel, selectedProfiles: selectedProfiles)
 //        let nav = UINavigationController(rootViewController: walkEndModal)
 //        nav.modalPresentationStyle = .overFullScreen
 //        present(nav, animated: true)
