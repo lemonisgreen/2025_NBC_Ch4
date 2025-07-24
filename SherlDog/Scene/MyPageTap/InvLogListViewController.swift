@@ -16,19 +16,7 @@ class InvLogListViewController: UIViewController {
     private let viewModel = InvLogListViewModel()
     private let disposeBag = DisposeBag()
     
-    private lazy var dataSource = RxCollectionViewSectionedReloadDataSource<InvLogListViewModel.InvLogListDataSource>(
-        configureCell:{ dataSource, collectionView, indexPath, items in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
-            
-            cell.delegate = self
-            // 역순으로 케이스 번호 계산
-            let totalCount = dataSource.sectionModels.first?.items.count ?? 0
-            let reversedIndex = totalCount - indexPath.row
-            
-            cell.settingCell(data: items)
-
-            return cell
-        })
+    private lazy var dataSource = self.setDataSource()
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
@@ -62,7 +50,7 @@ extension InvLogListViewController {
             .disposed(by: disposeBag)
         
         self.viewModel.output.deleteCompleted
-            .bind(onNext: { [weak self] in
+            .bind(onNext: {
                 print("삭제 완료") // todo: 완료 처리
             })
             .disposed(by: disposeBag)
@@ -122,6 +110,52 @@ extension InvLogListViewController {
         }
     }
     
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<InvLogListViewModel.InvLogListDataSource> {
+        return RxCollectionViewSectionedReloadDataSource<InvLogListViewModel.InvLogListDataSource>(
+            configureCell:{ dataSource, collectionView, indexPath, items in
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
+                
+                // 역순으로 케이스 번호 계산
+                let totalCount = dataSource.sectionModels.first?.items.count ?? 0
+                let reversedIndex = totalCount - indexPath.row
+                
+                cell.settingCell(data: items)
+                
+                cell.rx.deleteButtonTap
+                    .subscribe(onNext: { [weak self] in
+                        guard let self else { return }
+                        
+                        let alert = AlertManager(message: "수사일지를 삭제하시겠습니까?",
+                                                 buttonTitles: ["취소", "확인"],
+                                                 buttonActions: [nil, { [weak self] in
+                            self?.viewModel.input.accept(.delete(indexPath))
+                        }])
+                        
+                        self.present(alert, animated: true)
+                    })
+                    .disposed(by: cell.disposeBag)
+                
+                cell.rx.showButtonTap
+                    .subscribe(onNext: { [weak self] in
+                        guard let self else { return }
+                        
+                        let originalData = self.viewModel.originalData[indexPath.row]
+                        
+                        let walkResultViewModel = DataTrackingViewModel()
+                        let walkEndView = WalkEndModalViewController(viewModel: walkResultViewModel)
+                        let nav = UINavigationController(rootViewController: walkEndView)
+                        nav.modalPresentationStyle = .overFullScreen
+                        
+                        walkResultViewModel.fetchResult.accept(originalData)
+                        
+                        self.present(nav, animated: true)
+                    })
+                    .disposed(by: cell.disposeBag)
+
+                return cell
+            })
+    }
+    
     private func configureCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { index, environment in
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
@@ -136,36 +170,4 @@ extension InvLogListViewController {
             return section
         }
     }
-}
-
-// MARK: - CellEventDelegate
-extension InvLogListViewController: InvLogListCellEventDelegate {
-    func deleteButtonTapEvent(_ cell: UICollectionViewCell) {
-        guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
-        
-        let alert = AlertManager(message: "수사일지를 삭제하시겠습니까?",
-                                 buttonTitles: ["취소", "확인"],
-                                 buttonActions: [nil, { [weak self] in
-            self?.viewModel.input.accept(.delete(indexPath))
-        }])
-        
-        self.present(alert, animated: true)
-    }
-    
-    func showButtonTapEvent(_ cell: UICollectionViewCell) {
-        guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
-        
-        let originalData = self.viewModel.originalData[indexPath.row]
-        
-        let walkResultViewModel = DataTrackingViewModel()
-        let walkEndView = WalkEndModalViewController(viewModel: walkResultViewModel)
-        let nav = UINavigationController(rootViewController: walkEndView)
-        nav.modalPresentationStyle = .overFullScreen
-        
-        walkResultViewModel.fetchResult.accept(originalData)
-        
-        self.present(nav, animated: true)
-    }
-    
-    
 }
