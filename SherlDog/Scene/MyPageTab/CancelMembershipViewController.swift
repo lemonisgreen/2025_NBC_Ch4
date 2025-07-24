@@ -21,8 +21,8 @@ class CancelMembershipViewController: UIViewController {
     let mainLabel = UILabel()
     let contentLabel = UILabel()
     let finalLabel = UILabel()
-    let cancelButton = ButtonManager(title: "취소할게요")
-    let continueButton = ButtonManager(title: "그래도 탈퇴할래요")
+    let cancelButton = ComponentButton(title: "취소할게요")
+    let continueButton = ComponentButton(title: "그래도 탈퇴할래요")
     let buttonStackView = UIStackView()
     let separator = UIView()
     let backLabel = UILabel()
@@ -201,15 +201,20 @@ class CancelMembershipViewController: UIViewController {
     
     // MARK: - 회원탈퇴 관련 메서드들
     private func showFinalConfirmationAlert() {
-        let alert = AlertManager(
+        let alert = CustomAlertViewController(
             message: "정말로 탈퇴하시겠습니까?",
             subMessage: "탈퇴 후에는 모든 데이터가 복구되지 않습니다",
-            buttonTitles: ["아니오", "탈퇴하기"],
-            buttonActions: [
-                nil,
-                { [weak self] in
-                    self?.performDeleteAccount()
-                }
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "아니오",
+                    action: nil
+                ),
+                CustomAlertViewController.AlertButton(
+                    title: "탈퇴하기",
+                    action: { [weak self] in
+                        self?.performDeleteAccount()
+                    }
+                )
             ]
         )
         present(alert, animated: true)
@@ -228,25 +233,31 @@ class CancelMembershipViewController: UIViewController {
     }
     
     private func showSuccessAndNavigate() {
-        let alert = AlertManager(
+        let alert = CustomAlertViewController(
             message: "회원탈퇴가 완료되었습니다",
             subMessage: "그동안 멍탐정을 이용해주셔서 감사했습니다",
-            buttonTitles: ["확인"],
-            buttonActions: [
-                { [weak self] in
-                    self?.navigateToLoginScreen()
-                }
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "확인",
+                    action: { [weak self] in
+                        self?.navigateToLoginScreen()
+                    }
+                )
             ]
         )
         present(alert, animated: true)
     }
     
     private func showErrorAlert() {
-        let alert = AlertManager(
+        let alert = CustomAlertViewController(
             message: "회원탈퇴에 실패했습니다",
             subMessage: "잠시 후 다시 시도해주세요",
-            buttonTitles: ["확인"],
-            buttonActions: [nil]
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "확인",
+                    action: nil
+                )
+            ]
         )
         present(alert, animated: true)
     }

@@ -8,7 +8,7 @@
 import UIKit
 import SnapKit
 
-class ButtonManager: UIButton {
+class ComponentButton: UIButton {
     
     init(title: String) {
         super.init(frame: .zero)

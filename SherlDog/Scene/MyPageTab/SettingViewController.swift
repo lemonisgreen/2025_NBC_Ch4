@@ -222,14 +222,14 @@ class SettingViewController : UIViewController {
             .disposed(by: disposeBag)
         
         clauseWholeButton.rx.tap
-            .bind { [weak self] in
+            .bind {
                 guard let url = URL(string: "https://www.notion.so/2185ef6f2e0480c5816cc3a2608c8de6") else { return }
                 UIApplication.shared.open(url, options: [:], completionHandler: nil)
             }
             .disposed(by: disposeBag)
 
         privacyPolicyWholeButton.rx.tap
-            .bind { [weak self] in
+            .bind {
                 guard let url = URL(string: "https://www.notion.so/2185ef6f2e048048a7cdea9899b037b3") else { return }
                 UIApplication.shared.open(url, options: [:], completionHandler: nil)
             }
@@ -245,15 +245,20 @@ class SettingViewController : UIViewController {
 
     // MARK: - 로그아웃 관련 메서드들
     private func showLogoutAlert() {
-        let alert = AlertManager(
+        let alert = CustomAlertViewController(
             message: "정말 로그아웃 하시겠습니까?",
             subMessage: nil,
-            buttonTitles: ["취소", "로그아웃"],
-            buttonActions: [
-                nil, // 취소 버튼 - 아무것도 안함
-                { [weak self] in // 로그아웃 버튼
-                    self?.performLogout()
-                }
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "취소",
+                    action: nil
+                ),
+                CustomAlertViewController.AlertButton(
+                    title: "로그아웃",
+                    action: { [weak self] in
+                        self?.performLogout()
+                    }
+                )
             ]
         )
         present(alert, animated: true)
@@ -274,25 +279,31 @@ class SettingViewController : UIViewController {
 
     private func showLogoutSuccessAndNavigate() {
         // 성공 알럿 표시 후 로그인 화면으로 이동
-        let successAlert = AlertManager(
+        let successAlert = CustomAlertViewController(
             message: "로그아웃되었습니다",
             subMessage: nil,
-            buttonTitles: ["확인"],
-            buttonActions: [
-                { [weak self] in
-                    self?.navigateToLoginScreen()
-                }
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "확인",
+                    action: { [weak self] in
+                        self?.navigateToLoginScreen()
+                    }
+                )
             ]
         )
         present(successAlert, animated: true)
     }
 
     private func showLogoutErrorAlert() {
-        let errorAlert = AlertManager(
+        let errorAlert = CustomAlertViewController(
             message: "로그아웃에 실패했습니다",
             subMessage: "다시 시도해주세요",
-            buttonTitles: ["확인"],
-            buttonActions: [nil]
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "확인",
+                    action: nil
+                )
+            ]
         )
         present(errorAlert, animated: true)
     }

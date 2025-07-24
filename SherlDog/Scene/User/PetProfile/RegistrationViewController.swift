@@ -70,7 +70,7 @@ class RegistrationViewController: UIViewController {
     private let registIntroduceLabel = UILabel()
     private let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
     private let registIntroduceCountLabel = UILabel()
-    private let registCompletButton = ButtonManager(title: "다음")
+    private let registCompletButton = ComponentButton(title: "다음")
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -207,15 +207,16 @@ class RegistrationViewController: UIViewController {
         
         self.registrationButton.rx.tap
             .subscribe(onNext: { [weak self]  _ in
-                let alert = AlertManager(message: "작성을 종료하시겠습니까?",
-                                         subMessage: "작성한 정보는 저장되지 않습니다.",
-                                         buttonTitles: ["취소", "확인"],
-                                         buttonActions: [
-                                            nil,
-                                            { [weak self] in
-                                                self?.dismiss(animated: true)
-                                            }
-                                         ])
+                let alert = CustomAlertViewController(
+                    message: "작성을 종료하시겠습니까?",
+                    subMessage: "작성한 정보는 저장되지 않습니다.",
+                    buttons: [
+                        CustomAlertViewController.AlertButton(title: "취소", action: nil),
+                        CustomAlertViewController.AlertButton(title: "확인", action: { [weak self] in
+                            self?.dismiss(animated: true)
+                        })
+                    ]
+                )
                 
                 self?.present(alert, animated: true)
             })
