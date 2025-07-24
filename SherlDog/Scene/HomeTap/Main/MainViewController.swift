@@ -380,7 +380,7 @@ class MainViewController: UIViewController {
                 guard let self = self else { return }
                 self.requestViewModel.fetchPetProfiles()
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
-                let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
+                let requestView = PictureUploadRequestViewController(viewModel: self.requestViewModel)
                 requestView.modalPresentationStyle = .pageSheet
                 if let sheet = requestView.sheetPresentationController {
                     sheet.selectedDetentIdentifier = .medium

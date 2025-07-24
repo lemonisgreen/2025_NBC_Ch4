@@ -31,12 +31,10 @@ class PictureUploadRequestViewModel {
     struct CellList {
         let title: String
         let image: String
-        let imageView: UIImageView?
         
-        init(title: String, image: String, imageView: UIImageView? = nil) {
+        init(title: String, image: String) {
             self.title = title
             self.image = image
-            self.imageView = imageView
         }
     }
     

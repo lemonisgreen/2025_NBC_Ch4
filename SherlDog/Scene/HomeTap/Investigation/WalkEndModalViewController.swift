@@ -141,7 +141,7 @@ class WalkEndModalViewController : UIViewController {
                 guard let self, let day = self.DataTrackingVM.endDate.value else { return }
                 //                let requestViewModel = PictureUploadRequestViewModel()
                 //                requestViewModel.input.accept(.sender(.pictureRequest))
-                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
                 //
                 //                if let sheet = requestView.sheetPresentationController {
                 //                    sheet.detents = [.custom { _ in 320 }]
@@ -208,7 +208,7 @@ class WalkEndModalViewController : UIViewController {
                 requestViewModel.fetchPetProfiles() // 전체 프로필도 로드
                 
                 requestViewModel.input.accept(.sender(.sherlDogResult))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
                 
                 if let sheet = requestView.sheetPresentationController {
                     sheet.selectedDetentIdentifier = .medium

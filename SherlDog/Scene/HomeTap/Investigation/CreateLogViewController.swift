@@ -137,7 +137,7 @@ extension CreateLogViewController {
                 guard let self,
                       let text = self.textView.text else { return }
                 let image = photoImageView.viewCapture()
-                let data = InvLogViewModel.UploadData(imageString: image,
+                let data = InvLogViewModel.UploadData(invImage: image,
                                                       content: text)
                 
                 self.viewModel.input.accept(.didFinishedWrite(data))
