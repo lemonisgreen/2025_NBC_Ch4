@@ -9,6 +9,10 @@ import PhotosUI
 
 class PermissionManager {
     
+    enum PermissionType {
+        case camera, album
+    }
+    
     static func requestPermission(type: PermissionType, completion: @escaping (Bool) -> ()) {
         switch type {
         case .camera:
@@ -40,8 +44,4 @@ class PermissionManager {
             }
         }
     }
-}
-
-enum PermissionType {
-    case camera, album
 }

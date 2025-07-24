@@ -19,7 +19,9 @@ class MainViewController: UIViewController {
     private let requestViewModel = PictureUploadRequestViewModel()
     private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
-    private let viewModel = MainViewModel()
+    private lazy var viewModel = MainViewModel(locationManager: locationManager)
+    private var input: MainViewModel.Input { viewModel.input }
+    private var output: MainViewModel.Output { viewModel.output }
     private var hasSetInitialCamera = false
     
     // 경로 배열
@@ -241,20 +243,31 @@ class MainViewController: UIViewController {
     }
     
     private func bind() {
-        viewModel.fullSideOfCourse
+        output.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
 
                 // If not enough path, show alert and return
                 if fullSide.isEmpty {
                     let alert = AlertManager(
-                        message: "기록된 경로가 부족해요!",
-                        subMessage: "5미터 이상 이동 시 기록이 가능해요.",
-                        buttonTitles: ["확인"],
-                        buttonActions: [nil]
+                        message: "수사를 종료하시겠습니까?",
+                        subMessage: "5미터 이하의 경로는 기록이 되지 않아요",
+                        buttonTitles: ["확인", "취소"],
+                        buttonActions: [
+                            {
+                                let confirmAlert = AlertManager(
+                                    message: "수사가 종료되었습니다.",
+                                    subMessage: nil,
+                                    buttonTitles: ["확인"],
+                                    buttonActions: [nil]
+                                )
+                                self.present(confirmAlert, animated: true)
+                                self.setInvestigation(active: false)
+                            },
+                            nil
+                        ]
                     )
                     self.present(alert, animated: true)
-                    self.setInvestigation(active: false)
                     return
                 }
 
@@ -293,12 +306,12 @@ class MainViewController: UIViewController {
                     self.pathOverlays.forEach { $0.mapView = nil }
                     self.pathOverlays.removeAll()
                     self.setInvestigation(active: false)
-                    self.viewModel.coordinates.accept([])
+                    self.output.coordinates.accept([])
                 }
             })
             .disposed(by: disposeBag)
         
-        viewModel.coordinates
+        output.coordinates
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
                 guard let self = self else { return }
@@ -375,8 +388,20 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.trackingViewModel.stopTracking()
-                self?.viewModel.stopTracking.accept(())
+                guard let self = self else { return }
+                let alert = AlertManager(
+                    message: "수사를 종료하시겠습니까?",
+                    subMessage: nil,
+                    buttonTitles: ["확인", "취소"],
+                    buttonActions: [
+                        {
+                            self?.trackingViewModel.stopTracking()
+                            self?.viewModel.stopTracking.accept(())
+                        },
+                        nil
+                    ]
+                )
+                self.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -385,7 +410,7 @@ class MainViewController: UIViewController {
                 guard let self = self else { return }
                 self.requestViewModel.fetchPetProfiles()
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
-                let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
+                let requestView = PictureUploadRequestViewController(viewModel: self.requestViewModel)
                 requestView.modalPresentationStyle = .pageSheet
                 if let sheet = requestView.sheetPresentationController {
                     sheet.selectedDetentIdentifier = .medium

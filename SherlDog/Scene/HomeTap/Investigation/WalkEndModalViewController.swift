@@ -127,6 +127,7 @@ class WalkEndModalViewController : UIViewController {
             .disposed(by: disposeBag)
         
         self.DataTrackingVM.invLogListViewSendImage
+            .observe(on: MainScheduler.instance)
             .bind(onNext: { [weak self] image in
                 guard let self,
                       self.DataTrackingVM.fetchResult.value != nil else { return }
@@ -137,10 +138,10 @@ class WalkEndModalViewController : UIViewController {
         
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
+                guard let self, let day = self.DataTrackingVM.endDate.value else { return }
                 //                let requestViewModel = PictureUploadRequestViewModel()
                 //                requestViewModel.input.accept(.sender(.pictureRequest))
-                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
                 //
                 //                if let sheet = requestView.sheetPresentationController {
                 //                    sheet.detents = [.custom { _ in 320 }]
@@ -151,7 +152,7 @@ class WalkEndModalViewController : UIViewController {
                 //
                 //                self?.present(requestView, animated: true)
                 
-                let viewModel = ClueDetailViewModel()
+                let viewModel = ClueDetailViewModel(day: day)
                 let detailVC = ClueDetailViewController(viewModel: viewModel)
                 let nav = UINavigationController(rootViewController: detailVC)
                 nav.modalPresentationStyle = .pageSheet
@@ -207,7 +208,7 @@ class WalkEndModalViewController : UIViewController {
                 requestViewModel.fetchPetProfiles() // 전체 프로필도 로드
                 
                 requestViewModel.input.accept(.sender(.sherlDogResult))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: requestViewModel))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
                 
                 if let sheet = requestView.sheetPresentationController {
                     sheet.selectedDetentIdentifier = .medium
