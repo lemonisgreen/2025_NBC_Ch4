@@ -14,9 +14,7 @@ import RxCocoa
 class CommunityCell: UICollectionViewCell {
     static let identifier = "CommunityCell"
     
-    private let disposeBag = DisposeBag()
-    
-//    weak var delegate: CommunityCellDelegate?
+    private var disposeBag = DisposeBag()
     
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
@@ -35,11 +33,12 @@ class CommunityCell: UICollectionViewCell {
         
         setupUI()
         configureUI()
-//        bind()
     }
     
     override func prepareForReuse() {
         super.prepareForReuse()
+        
+        disposeBag = DisposeBag()
         
         profileImageView.image = nil
         nameLabel.text = nil
@@ -65,15 +64,6 @@ class CommunityCell: UICollectionViewCell {
 //        contentLabel.numberOfLines = data.isExpanded ? 0 : 2
 //        moreShowButton.setTitle(data.isExpanded ? "닫기" : "더보기", for: .normal)
     }
-    
-//    private func bind() {
-//        self.moreShowButton.rx.tap
-//            .subscribe(onNext: { [weak self] _ in
-//                guard let self else { return }
-//                self.delegate?.didTapMoreShowButton(in: self)
-//            })
-//            .disposed(by: disposeBag)
-//    }
     
     private func setupUI() {
         [nameLabel, infoLabel].forEach {
@@ -158,3 +148,15 @@ class CommunityCell: UICollectionViewCell {
 //        }
     }
 }
+
+//extension CommunityCell {
+//        fileprivate var moreShowbuttonTap: ControlEvent<Void> {
+//            moreShowButton.rx.tap
+//        }
+//}
+
+//extension Reactive where Base: CommunityCell {
+//    var moreShowButtonTap: ControlEvent<Void> {
+//        base.moreShowbuttonTap
+//    }
+//}

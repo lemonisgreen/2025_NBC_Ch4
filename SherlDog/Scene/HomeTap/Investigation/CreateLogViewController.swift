@@ -29,6 +29,8 @@ class CreateLogViewController: UIViewController {
     private let durationLabel = UILabel()
     private let stepsLabel = UILabel()
     private let clueLabel = UILabel()
+    private let distanceStepView = UIView()
+    private let durationClueView = UIView()
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
@@ -152,7 +154,7 @@ extension CreateLogViewController {
                 guard let self,
                       let text = self.textView.text else { return }
                 let image = photoImageView.viewCapture()
-                let data = InvLogViewModel.UploadData(imageString: image,
+                let data = InvLogViewModel.UploadData(invImage: image,
                                                       content: text)
                 
                 self.viewModel.input.accept(.didFinishedWrite(data))
@@ -168,17 +170,25 @@ extension CreateLogViewController {
         [cancelButton, shareButton]
             .forEach { horizontalStackView.addArrangedSubview($0) }
         
+        distanceStepView.addSubviews([
+            distanceTitleLabel,
+            distanceLabel,
+            stepsTitleLabel,
+            stepsLabel
+        ])
+        
+        durationClueView.addSubviews([
+            durationTitleLabel,
+            durationLabel,
+            clueTitleLabel,
+            clueLabel
+        ])
+        
         photoImageView.layer.addSublayer(gradientLayer)
         photoImageView.addSubviews([
             dateLabel,
-            distanceTitleLabel,
-            durationTitleLabel,
-            stepsTitleLabel,
-            clueTitleLabel,
-            distanceLabel,
-            durationLabel,
-            stepsLabel,
-            clueLabel
+            distanceStepView,
+            durationClueView
         ])
         
         view.addSubviews([
@@ -227,8 +237,12 @@ extension CreateLogViewController {
             .forEach {
                 $0.font = .body1
                 $0.textColor = .textInverse
-                $0.text = "12332"   // test
             }
+        
+        distanceLabel.text = "11.23km"
+        durationLabel.text = "01:12:23"
+        stepsLabel.text = "99999"
+        clueLabel.text = "12개"
         
         textView.font = .body3
         textView.textColor = .textPrimary
@@ -261,49 +275,63 @@ extension CreateLogViewController {
             $0.bottom.equalTo(textView.snp.top).offset(-16)
         }
         
-        stepsTitleLabel.snp.makeConstraints {
+        distanceStepView.snp.makeConstraints {
             $0.bottom.equalToSuperview().inset(16)
             $0.leading.equalToSuperview().inset(16)
+            $0.width.equalTo(100)
+        }
+        
+        stepsTitleLabel.snp.makeConstraints {
+            $0.bottom.equalToSuperview()
+            $0.leading.equalToSuperview()
+        }
+        
+        stepsLabel.snp.makeConstraints {
+            $0.trailing.equalToSuperview()
+            $0.centerY.equalTo(stepsTitleLabel)
         }
         
         distanceTitleLabel.snp.makeConstraints {
             $0.bottom.equalTo(stepsTitleLabel.snp.top).offset(-8)
+            $0.top.equalToSuperview()
             $0.leading.equalTo(stepsTitleLabel)
         }
         
-        durationTitleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(127.5)
-            $0.bottom.equalTo(distanceTitleLabel)
-        }
-        
-        clueTitleLabel.snp.makeConstraints {
-            $0.bottom.equalTo(stepsTitleLabel)
-            $0.leading.equalTo(durationTitleLabel)
-        }
-        
         distanceLabel.snp.makeConstraints {
-            $0.trailing.equalTo(durationTitleLabel.snp.leading).offset(-10)
+            $0.trailing.equalToSuperview()
             $0.centerY.equalTo(distanceTitleLabel)
         }
         
-        stepsLabel.snp.makeConstraints {
-            $0.trailing.equalTo(distanceLabel)
-            $0.centerY.equalTo(stepsTitleLabel)
+        durationClueView.snp.makeConstraints {
+            $0.leading.equalTo(distanceStepView.snp.trailing).offset(10)
+            $0.bottom.equalTo(distanceStepView)
+            $0.width.equalTo(100)
+        }
+        
+        clueTitleLabel.snp.makeConstraints {
+            $0.bottom.equalToSuperview()
+            $0.leading.equalToSuperview()
+        }
+        
+        durationTitleLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview()
+            $0.bottom.equalTo(clueTitleLabel.snp.top).offset(-8)
+            $0.top.equalToSuperview()
         }
         
         durationLabel.snp.makeConstraints {
-            $0.leading.equalTo(durationTitleLabel.snp.trailing).offset(12)
+            $0.trailing.equalToSuperview()
             $0.centerY.equalTo(durationTitleLabel)
         }
         
         clueLabel.snp.makeConstraints {
-            $0.leading.equalTo(clueTitleLabel.snp.trailing).offset(12)
+            $0.trailing.equalToSuperview()
             $0.centerY.equalTo(clueTitleLabel)
         }
         
         dateLabel.snp.makeConstraints {
-            $0.bottom.equalTo(distanceTitleLabel.snp.top).offset(-6)
-            $0.leading.equalTo(distanceTitleLabel)
+            $0.bottom.equalTo(distanceStepView.snp.top).offset(-6)
+            $0.leading.equalTo(distanceStepView)
         }
         
         textView.snp.makeConstraints {

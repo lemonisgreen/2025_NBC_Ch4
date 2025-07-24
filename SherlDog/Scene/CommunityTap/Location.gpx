@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="SherlDog">
+  <trk>
+    <name>DogWalk</name>
+    <trkseg>
+      <trkpt lat="37.5665" lon="126.9779"><time>2025-07-01T13:13:21Z</time></trkpt>
+      <trkpt lat="37.5666" lon="126.97800000000001"><time>2025-07-01T13:13:22Z</time></trkpt>
+      <trkpt lat="37.5667" lon="126.97810000000001"><time>2025-07-01T13:13:23Z</time></trkpt>
+      <trkpt lat="37.5668" lon="126.9782"><time>2025-07-01T13:13:24Z</time></trkpt>
+      <trkpt lat="37.5669" lon="126.9783"><time>2025-07-01T13:13:25Z</time></trkpt>
+      <trkpt lat="37.567" lon="126.97840000000001"><time>2025-07-01T13:13:26Z</time></trkpt>
+      <trkpt lat="37.567099999999996" lon="126.97850000000001"><time>2025-07-01T13:13:27Z</time></trkpt>
+      <trkpt lat="37.5672" lon="126.9786"><time>2025-07-01T13:13:28Z</time></trkpt>
+      <trkpt lat="37.567299999999996" lon="126.9787"><time>2025-07-01T13:13:29Z</time></trkpt>
+      <trkpt lat="37.5674" lon="126.9788"><time>2025-07-01T13:13:30Z</time></trkpt>
+    </trkseg>
+  </trk>
+</gpx>

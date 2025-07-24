@@ -19,7 +19,9 @@ class MainViewController: UIViewController {
     private let requestViewModel = PictureUploadRequestViewModel()
     private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
-    private let viewModel = MainViewModel()
+    private lazy var viewModel = MainViewModel(locationManager: locationManager)
+    private var input: MainViewModel.Input { viewModel.input }
+    private var output: MainViewModel.Output { viewModel.output }
     private var hasSetInitialCamera = false
     
     // 경로 배열
@@ -38,13 +40,16 @@ class MainViewController: UIViewController {
     private let distanceLabel = UILabel()
     private let timeLabel = UILabel()
     private let stepsLabel = UILabel()
-    private var image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
+    private var selectedPetImage
+: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
     private let statusLabel = UILabel()
     
     // distance, time, steps
-    private let distance = UILabel()
-    private let time = UILabel()
-    private let steps = UILabel()
+    private let distanceValueLabel = UILabel()
+    private let trackingTimeLabel
+ = UILabel()
+    private let stepCountLabel
+ = UILabel()
     
     // 스택 뷰
     private let titleStack = UIStackView()
@@ -223,12 +228,13 @@ class MainViewController: UIViewController {
     private func trackingBind() {
         dataTrackingViewModel.numberOfSteps
             .map { "\($0)" }
-            .bind(to: steps.rx.text)
+            .bind(to: stepCountLabel
+.rx.text)
             .disposed(by: disposeBag)
         
         dataTrackingViewModel.distance
             .map { String(format: "%.2f", $0 / 1000.0) }
-            .bind(to: distance.rx.text)
+            .bind(to: distanceValueLabel.rx.text)
             .disposed(by: disposeBag)
         
         dataTrackingViewModel.trackingActive
@@ -247,29 +253,37 @@ class MainViewController: UIViewController {
                         return text
                     }
             }
-            .bind(to: time.rx.text)
+            .bind(to: trackingTimeLabel
+.rx.text)
             .disposed(by: disposeBag)
     }
     
     private func bind() {
-        viewModel.fullSideOfCourse
+        output.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
 
                 // If not enough path, show alert and return
                 if fullSide.isEmpty {
-                    let alert = CustomAlertViewController(
-                        message: "기록된 경로가 부족해요!",
-                        subMessage: "5미터 이상 이동 시 기록이 가능해요.",
-                        buttons: [
-                            CustomAlertViewController.AlertButton(
-                                title: "확인",
-                                action: nil
-                            )
+                    let alert = AlertManager(
+                        message: "수사를 종료하시겠습니까?",
+                        subMessage: "5미터 이하의 경로는 기록이 되지 않아요",
+                        buttonTitles: ["확인", "취소"],
+                        buttonActions: [
+                            {
+                                let confirmAlert = AlertManager(
+                                    message: "수사가 종료되었습니다.",
+                                    subMessage: nil,
+                                    buttonTitles: ["확인"],
+                                    buttonActions: [nil]
+                                )
+                                self.present(confirmAlert, animated: true)
+                                self.setInvestigation(active: false)
+                            },
+                            nil
                         ]
                     )
                     self.present(alert, animated: true)
-                    self.setInvestigation(active: false)
                     return
                 }
 
@@ -308,12 +322,12 @@ class MainViewController: UIViewController {
                     self.pathOverlays.forEach { $0.mapView = nil }
                     self.pathOverlays.removeAll()
                     self.setInvestigation(active: false)
-                    self.viewModel.coordinates.accept([])
+                    self.output.coordinates.accept([])
                 }
             })
             .disposed(by: disposeBag)
         
-        viewModel.coordinates
+        output.coordinates
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
                 guard let self = self else { return }
@@ -399,8 +413,20 @@ class MainViewController: UIViewController {
         
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                self?.dataTrackingViewModel.stopTracking()
-                self?.viewModel.stopTracking.accept(())
+                guard let self = self else { return }
+                let alert = AlertManager(
+                    message: "수사를 종료하시겠습니까?",
+                    subMessage: nil,
+                    buttonTitles: ["확인", "취소"],
+                    buttonActions: [
+                        {
+                            self?.dataTrackingViewModel.stopTracking()
+                            self?.viewModel.stopTracking.accept(())
+                        },
+                        nil
+                    ]
+                )
+                self.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -409,7 +435,7 @@ class MainViewController: UIViewController {
                 guard let self = self else { return }
                 self.requestViewModel.fetchPetProfiles()
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
-                let requestView = PictureUploadRequestView(viewModel: self.requestViewModel)
+                let requestView = PictureUploadRequestViewController(viewModel: self.requestViewModel)
                 requestView.modalPresentationStyle = .pageSheet
                 if let sheet = requestView.sheetPresentationController {
                     sheet.selectedDetentIdentifier = .medium
@@ -444,7 +470,8 @@ class MainViewController: UIViewController {
                 
                 // 선택된 강아지들의 이미지로 배열 업데이트
                 if !selectedProfiles.isEmpty {
-                    self.image = selectedProfiles.map { $0.image }
+                    self.selectedPetImage
+ = selectedProfiles.map { $0.image }
                     self.updateDetectiveImageStack()
                 }
             })
@@ -454,9 +481,11 @@ class MainViewController: UIViewController {
     private func updateDetectiveImageStack() {
         // 기존 이미지뷰들 제거
         detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        detectiveImageStack.spacing = image.count > 1 ? -8 : 0
+        detectiveImageStack.spacing = selectedPetImage
+.count > 1 ? -8 : 0
         
-        image.forEach { imageName in
+        selectedPetImage
+.forEach { imageName in
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
@@ -483,12 +512,13 @@ class MainViewController: UIViewController {
             detectiveImageStack.addArrangedSubview(imageView)
         }
         // 텍스트도 업데이트
-        statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
+        statusLabel.text = selectedPetImage
+.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
     }
     
 //    private func showWalkEndModal() {
 //        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
-//        let walkEndModal = WalkEndModalViewController(viewModel: DataTrackingVM, selectedProfiles: selectedProfiles)
+//        let walkEndModal = WalkEndModalViewController(viewModel: trackingViewModel, selectedProfiles: selectedProfiles)
 //        let nav = UINavigationController(rootViewController: walkEndModal)
 //        nav.modalPresentationStyle = .overFullScreen
 //        present(nav, animated: true)
@@ -509,9 +539,11 @@ class MainViewController: UIViewController {
         walkStartButton.isHidden = active
         
         if !active {
-            distance.text = "0.00"
-            time.text = "00:00:00"
-            steps.text = "0"
+            distanceValueLabel.text = "0.00"
+            trackingTimeLabel
+.text = "00:00:00"
+            stepCountLabel
+.text = "0"
         }
     }
     
@@ -545,7 +577,9 @@ class MainViewController: UIViewController {
         titleStack.distribution = .fillEqually
         
         // ValueStack 설정
-        [distance, time, steps].forEach {
+        [distanceValueLabel, trackingTimeLabel
+, stepCountLabel
+].forEach {
             $0.textAlignment = .center
             $0.font = .highlight3
             $0.textColor = .textPrimary
@@ -592,7 +626,9 @@ class MainViewController: UIViewController {
         
         locationButton.setImage(UIImage(named: "locationButton"), for: .normal)
         
-        [distance, time, steps].forEach { valueStack.addArrangedSubview($0) }
+        [distanceValueLabel, trackingTimeLabel
+, stepCountLabel
+].forEach { valueStack.addArrangedSubview($0) }
         
         [distanceLabel, timeLabel, stepsLabel].forEach { titleStack.addArrangedSubview($0) }
         
