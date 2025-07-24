@@ -70,7 +70,7 @@ extension InvLogListViewModel {
         self.data = []
         self.originalData = []
         
-        FirestoreManager.shared.fetchDocumentsWithoutOrder(collection: "WalkResult",
+        FirestoreManager.shared.fetchDocuments(collection: "WalkResult",
                                                            whereField: "userId",
                                                            isEqualTo: userId,
                                                            type: WalkResult.self)
@@ -95,6 +95,7 @@ extension InvLogListViewModel {
         FirestoreManager.shared.findDocumentId(collection: "WalkResult",
                                                whereField: "walkingPathImage",
                                                isEqualTo: self.originalData[indexPath.row].walkingPathImage)
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .flatMapCompletable { documentId in
             guard let id = documentId.first else { return Completable.error(FirestoreError.noData) }
             

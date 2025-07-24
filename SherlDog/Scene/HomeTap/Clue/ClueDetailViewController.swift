@@ -113,11 +113,13 @@ final class ClueDetailViewController: UIViewController {
         
         // 단서 데이터 바인딩
         viewModel.output.cellData
+            .observe(on: MainScheduler.instance)
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
         
         viewModel.output.cellData
             .map { $0.flatMap { $0.items }.count }
+            .observe(on: MainScheduler.instance)
             .bind(to: self.pageControl.rx.numberOfPages)
             .disposed(by: disposeBag)
         
