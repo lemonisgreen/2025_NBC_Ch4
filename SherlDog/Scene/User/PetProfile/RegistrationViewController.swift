@@ -15,59 +15,62 @@ import FirebaseStorage
 class RegistrationViewController: UIViewController {
     
     private let cameraViewModel = CameraViewModel()
-    private var selectedImage: UIImage?
-    let disposeBag = DisposeBag()
-    let viewModel = RegistrationViewModel()
+    private let viewModel = RegistrationViewModel()
+    
     var onProfileAdded: ((String) -> Void)?
     let profileUpdateSubject = PublishSubject<PetProfile>()
+    let disposeBag = DisposeBag()
     
-    let registrationLabel = UILabel()
-    let registrationButton = UIButton()
-    let registrationStackView = UIStackView()
-    let topUnderLine = UIView()
-    let scrollView = UIScrollView()
-    let contentView = UIView()
-    let registImage = UIButton()
-    let registImageStamp = UIImageView()
-    let registedProfileImage = UIImageView()
-    let registNameLabel = UILabel()
-    let registNameCountLabel = UILabel()
-    let registNameAlertStackView = UIStackView()
-    let registNameAlertImage = UIImageView()
-    let registNameAlertLabel = UILabel()
-    let registName = RegistrationTextField(text: "이름을 입력하세요")
-    let registBreedLabel = UILabel()
-    let registBreed = registBreedButton()
-    let underLine = UIView()
-    let registSizeLabel = UILabel()
-    let registSizeSmallIcon = UIImageView()
-    let registSizeSmallLabel = UILabel()
-    let registSizeSmallStackView = UIStackView()
-    let registSizeSmallButton = RegistrationSelectButton(title: nil)
-    let registSizeMediumIcon = UIImageView()
-    let registSizeMediumLabel = UILabel()
-    let registSizeMediumStackView = UIStackView()
-    let registSizeMediumButton = RegistrationSelectButton(title: nil)
-    let registSizeLargeIcon = UIImageView()
-    let registSizeLargeLabel = UILabel()
-    let registSizeLargeStackView = UIStackView()
-    let registSizeLargeButton = RegistrationSelectButton(title: nil)
-    let registSizeStackButtonView = UIStackView()
-    let registAgeLabel = UILabel()
-    let registAgeButton = registBirthdayButton(title: "YYYY-MM-DD (n세)")
-    let registedAgeLabel = UILabel()
-    let registGenderLabel = UILabel()
-    let registGenderStackView = UIStackView()
-    let registGenderFemale = RegistrationSelectButton(title: "여아")
-    let registGenderMale = RegistrationSelectButton(title: "남아")
-    let registNeuteredLabel = UILabel()
-    let registNeuteredStackView = UIStackView()
-    let registNeuteredTrue = RegistrationSelectButton(title: "중성화 했어요")
-    let registNeuteredFalse = RegistrationSelectButton(title: "중성화 안 했어요")
-    let registIntroduceLabel = UILabel()
-    let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
-    let registIntroduceCountLabel = UILabel()
-    let registCompletButton = ButtonManager(title: "다음")
+    private var selectedImage: UIImage?
+
+    private let registrationLabel = UILabel()
+    private let registrationButton = UIButton()
+    private let registrationStackView = UIStackView()
+    private let topUnderLine = UIView()
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
+    private let registImage = UIButton()
+    private let registImageStamp = UIImageView()
+    private let registedProfileImage = UIImageView()
+    private let registImageShadow = UIImageView()
+    private let registNameLabel = UILabel()
+    private let registNameCountLabel = UILabel()
+    private let registNameAlertStackView = UIStackView()
+    private let registNameAlertImage = UIImageView()
+    private let registNameAlertLabel = UILabel()
+    private let registName = RegistrationTextField(text: "이름을 입력하세요")
+    private let registBreedLabel = UILabel()
+    private let registBreed = registBreedButton()
+    private let underLine = UIView()
+    private let registSizeLabel = UILabel()
+    private let registSizeSmallIcon = UIImageView()
+    private let registSizeSmallLabel = UILabel()
+    private let registSizeSmallStackView = UIStackView()
+    private let registSizeSmallButton = RegistrationSelectButton(title: nil)
+    private let registSizeMediumIcon = UIImageView()
+    private let registSizeMediumLabel = UILabel()
+    private let registSizeMediumStackView = UIStackView()
+    private let registSizeMediumButton = RegistrationSelectButton(title: nil)
+    private let registSizeLargeIcon = UIImageView()
+    private let registSizeLargeLabel = UILabel()
+    private let registSizeLargeStackView = UIStackView()
+    private let registSizeLargeButton = RegistrationSelectButton(title: nil)
+    private let registSizeStackButtonView = UIStackView()
+    private let registAgeLabel = UILabel()
+    private let registAgeButton = registBirthdayButton(title: "YYYY-MM-DD (n세)")
+    private let registedAgeLabel = UILabel()
+    private let registGenderLabel = UILabel()
+    private let registGenderStackView = UIStackView()
+    private let registGenderFemale = RegistrationSelectButton(title: "여아")
+    private let registGenderMale = RegistrationSelectButton(title: "남아")
+    private let registNeuteredLabel = UILabel()
+    private let registNeuteredStackView = UIStackView()
+    private let registNeuteredTrue = RegistrationSelectButton(title: "중성화 했어요")
+    private let registNeuteredFalse = RegistrationSelectButton(title: "중성화 안 했어요")
+    private let registIntroduceLabel = UILabel()
+    private let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
+    private let registIntroduceCountLabel = UILabel()
+    private let registCompletButton = ButtonManager(title: "다음")
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -96,31 +99,31 @@ class RegistrationViewController: UIViewController {
         guard viewModel.isEditMode() else { return }
         
         // 크기 버튼 상태
-        let selectedSize = viewModel.selectedSize.value
+        let selectedSize = viewModel.input.selectedSize.value
         registSizeSmallButton.isSelected = (selectedSize == "small")
         registSizeMediumButton.isSelected = (selectedSize == "medium")
         registSizeLargeButton.isSelected = (selectedSize == "large")
         
         // 성별 버튼 상태
-        let selectedGender = viewModel.selectedGender.value
+        let selectedGender = viewModel.input.selectedGender.value
         registGenderFemale.isSelected = (selectedGender == "female")
         registGenderMale.isSelected = (selectedGender == "male")
         
         // 중성화 버튼 상태
-        if let isNeutered = viewModel.isNeutered.value {
+        if let isNeutered = viewModel.input.isNeutered.value {
             registNeuteredTrue.isSelected = isNeutered
             registNeuteredFalse.isSelected = !isNeutered
         }
         
         // 이름 텍스트필드
-        registName.text = viewModel.name.value
+        registName.text = viewModel.input.name.value
         registName.sendActions(for: .editingChanged)
-        registNameCountLabel.text = "\(viewModel.name.value.count) / 10 자"
+        registNameCountLabel.text = "\(viewModel.input.name.value.count) / 10 자"
         
         // 성격 및 특성 텍스트필드
-        registIntroduce.text = viewModel.introduce.value
+        registIntroduce.text = viewModel.input.introduce.value
         registIntroduce.sendActions(for: .editingChanged)
-        registIntroduceCountLabel.text = "\(viewModel.introduce.value.count) / 18 자"
+        registIntroduceCountLabel.text = "\(viewModel.input.introduce.value.count) / 18 자"
         
         // 프로필 이미지 로드
         loadProfileImage()
@@ -143,16 +146,37 @@ class RegistrationViewController: UIViewController {
         }
     }
     
+    func updateSizeSelectionButtons(selected: String) {
+        // 아이콘 이미지 교체
+        registSizeSmallIcon.image = selected == "small" ?
+            UIImage(named: "smallDogActive") :
+            UIImage(named: "smallDogInactive")
+        registSizeSmallLabel.textColor = selected == "small" ?
+            .textPrimary : .textTertiary
+
+        registSizeMediumIcon.image = selected == "medium" ?
+            UIImage(named: "mediumDogActive") :
+            UIImage(named: "mediumDogInactive")
+        registSizeMediumLabel.textColor = selected == "medium" ?
+            .textPrimary : .textTertiary
+
+        registSizeLargeIcon.image = selected == "large" ?
+            UIImage(named: "largeDogActive") :
+            UIImage(named: "largeDogInactive")
+        registSizeLargeLabel.textColor = selected == "large" ?
+            .textPrimary : .textTertiary
+    }
+    
     func bind() {
         Observable.combineLatest(
             self.cameraViewModel.output.capturedImage,
-            self.viewModel.name,
-            self.viewModel.breed,
-            self.viewModel.selectedSize,
-            self.viewModel.selectedGender,
-            self.viewModel.isNeutered,
-            self.viewModel.introduce,
-            self.viewModel.selectedAge
+            self.viewModel.input.name,
+            self.viewModel.input.breed,
+            self.viewModel.input.selectedSize,
+            self.viewModel.input.selectedGender,
+            self.viewModel.input.isNeutered,
+            self.viewModel.input.introduce,
+            self.viewModel.input.selectedAge
         )
         .subscribe(onNext: { [weak self] image, name, breed, size, gender, isNeutered, introduce, age in
             if image != nil,
@@ -170,7 +194,7 @@ class RegistrationViewController: UIViewController {
         })
         .disposed(by: disposeBag)
         
-        viewModel.isLoading
+        viewModel.output.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.registCompletButton.isEnabled = !isLoading
                 // 인디케이터 활성, 비활성은 여기서 진행
@@ -244,7 +268,7 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         registName.rx.text.orEmpty
-            .bind(to: viewModel.name)
+            .bind(to: viewModel.input.name)
             .disposed(by: disposeBag)
         
         self.registBreed.rx.tap
@@ -253,7 +277,7 @@ class RegistrationViewController: UIViewController {
                 let breedSearchVC = BreedSearchViewController()
                 breedSearchVC.selectedBreed
                     .subscribe(onNext: { [weak owner] breed in
-                        owner?.viewModel.breed.accept(breed)
+                        owner?.viewModel.input.breed.accept(breed)
                     })
                     .disposed(by: breedSearchVC.disposeBag)
                 
@@ -267,7 +291,7 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
-        viewModel.breed
+        viewModel.input.breed
             .bind(to: registBreed.breedText)
             .disposed(by: disposeBag)
         
@@ -277,7 +301,7 @@ class RegistrationViewController: UIViewController {
             registSizeMediumButton.rx.tap.map { "medium" },
             registSizeLargeButton.rx.tap.map { "large" }
         )
-        .bind(to: viewModel.selectedSize)
+        .bind(to: viewModel.input.selectedSize)
         .disposed(by: disposeBag)
         
         self.registSizeSmallButton.rx.tap
@@ -285,6 +309,8 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = true
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = false
+                self?.updateSizeSelectionButtons(selected: "small")
+                self?.viewModel.input.selectedSize.accept("small")
             })
             .disposed(by: disposeBag)
         
@@ -293,6 +319,8 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = false
                 self?.registSizeMediumButton.isSelected = true
                 self?.registSizeLargeButton.isSelected = false
+                self?.updateSizeSelectionButtons(selected: "medium")
+                self?.viewModel.input.selectedSize.accept("medium")
             })
             .disposed(by: disposeBag)
         
@@ -301,6 +329,8 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeSmallButton.isSelected = false
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = true
+                self?.updateSizeSelectionButtons(selected: "large")
+                self?.viewModel.input.selectedSize.accept("large")
             })
             .disposed(by: disposeBag)
         
@@ -310,7 +340,7 @@ class RegistrationViewController: UIViewController {
                 let birthSelectVC = BirthSelectViewController()
                 birthSelectVC.selectedDate
                     .subscribe(onNext: { [weak owner] date in
-                        owner?.viewModel.selectedAge.accept(date)
+                        owner?.viewModel.input.selectedAge.accept(date)
                     })
                     .disposed(by: birthSelectVC.disposeBag)
                 
@@ -335,7 +365,7 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
-        viewModel.selectedAge
+        viewModel.input.selectedAge
             .map { dateOpt in
                 guard let date = dateOpt else { return "YYYY-MM-DD (n세)" }
                 let formatter = DateFormatter()
@@ -351,7 +381,7 @@ class RegistrationViewController: UIViewController {
             registGenderFemale.rx.tap.map { "female" },
             registGenderMale.rx.tap.map { "male" }
         )
-        .bind(to: viewModel.selectedGender)
+        .bind(to: viewModel.input.selectedGender)
         .disposed(by: disposeBag)
         
         self.registGenderFemale.rx.tap
@@ -373,7 +403,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredTrue.rx.tap.map { true },
             registNeuteredFalse.rx.tap.map { false }
         )
-        .bind(to: viewModel.isNeutered)
+        .bind(to: viewModel.input.isNeutered)
         .disposed(by: disposeBag)
         
         self.registNeuteredTrue.rx.tap
@@ -406,7 +436,7 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         registIntroduce.rx.text.orEmpty
-            .bind(to: viewModel.introduce)
+            .bind(to: viewModel.input.introduce)
             .disposed(by: disposeBag)
         
         self.registCompletButton.rx.tap
@@ -424,7 +454,7 @@ class RegistrationViewController: UIViewController {
                     self.viewModel.uploadImageAndSaveProfile(image: selectedImage)
                 }
                 
-                self.viewModel.saveResult
+                self.viewModel.output.saveResult
                     .take(1)
                     .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] result in
@@ -507,6 +537,7 @@ class RegistrationViewController: UIViewController {
         registImage.addSubviews([registImageStamp, registedProfileImage])
         
         contentView.addSubviews([
+            registImageShadow,
             registImage,
             registNameLabel,
             registName,
@@ -557,6 +588,7 @@ class RegistrationViewController: UIViewController {
         sheetPresentationController?.prefersScrollingExpandsWhenScrolledToEdge = false
         
         //MARK: 사진 --
+        registImageShadow.image = UIImage(named: "petProfileImageShadow")
         
         registImage.setImage(UIImage(named: "smallPolaroid"), for: .normal)
         
@@ -569,7 +601,7 @@ class RegistrationViewController: UIViewController {
         registedProfileImage.layer.cornerRadius = 4
         registedProfileImage.clipsToBounds = true
         registedProfileImage.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
-        
+                
         //MARK: 이름 --
         registNameLabel.text = "이름"
         registNameLabel.textColor = .textPrimary
@@ -602,7 +634,7 @@ class RegistrationViewController: UIViewController {
         registSizeLabel.textColor = .textPrimary
         registSizeLabel.font = .body1
         
-        registSizeSmallIcon.image = UIImage(named: "smallDog")
+        registSizeSmallIcon.image = UIImage(named: "smallDogInactive")
         registSizeSmallIcon.isUserInteractionEnabled = false
         registSizeSmallLabel.text = "소형견"
         registSizeSmallLabel.textColor = .textTertiary
@@ -615,7 +647,7 @@ class RegistrationViewController: UIViewController {
         registSizeSmallStackView.alignment = .center
         registSizeSmallStackView.isUserInteractionEnabled = false
         
-        registSizeMediumIcon.image = UIImage(named: "mediumDog")
+        registSizeMediumIcon.image = UIImage(named: "mediumDogInactive")
         registSizeMediumIcon.isUserInteractionEnabled = false
         registSizeMediumLabel.text = "중형견"
         registSizeMediumLabel.textColor = .textTertiary
@@ -628,7 +660,7 @@ class RegistrationViewController: UIViewController {
         registSizeMediumStackView.alignment = .center
         registSizeMediumStackView.isUserInteractionEnabled = false
         
-        registSizeLargeIcon.image = UIImage(named: "largeDog")
+        registSizeLargeIcon.image = UIImage(named: "largeDogInactive")
         registSizeLargeIcon.isUserInteractionEnabled = false
         registSizeLargeLabel.text = "대형견"
         registSizeLargeLabel.textColor = .textTertiary
@@ -733,6 +765,11 @@ class RegistrationViewController: UIViewController {
             $0.width.equalTo(104)
             $0.centerX.equalToSuperview().offset(1) // 이게
             $0.centerY.equalToSuperview().offset(2) // 최선입니다.
+        }
+        
+        registImageShadow.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(16)
+            $0.leading.equalToSuperview().offset(-16)
         }
         
         registImageStamp.snp.makeConstraints {
