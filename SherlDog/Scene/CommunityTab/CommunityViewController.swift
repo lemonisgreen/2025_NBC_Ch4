@@ -14,7 +14,7 @@ import SnapKit
 class CommunityViewController: UIViewController {
     
     private let disposeBag = DisposeBag()
-    private let testCell = BehaviorRelay(value: CommunityModel.sample)  // test
+    private let testCell = BehaviorRelay(value: MockUpData.communitySample)  // test
     
     private let titleLabel = UILabel()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
@@ -36,8 +36,16 @@ extension CommunityViewController {
         testCell.bind(to: self.collectionView.rx.items) { collectionView, row, item in
             guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommunityCell.identifier, for: IndexPath(row: row, section: 0)) as? CommunityCell else { return .init() }
             
-//            cell.delegate = self
             cell.settingCell(data: item)
+            
+            // 추후 작업 예정
+//            cell.rx.moreShowButtonTap
+//                .subscribe(onNext: { [weak self] in
+//                    var current = testCell.value
+//                    current[row].isExpanded.toggle()
+//                    testCell.accept(current)
+//                })
+//                .disposed(by: cell.disposeBag)
             
             return cell
         }
@@ -89,13 +97,3 @@ extension CommunityViewController {
     }
     
 }
-
-// 추후 작업 예정
-//extension CommunityViewController: CommunityCellDelegate {
-//    func didTapMoreShowButton(in cell: CommunityCell) {
-//        guard let indexPath = self.collectionView.indexPath(for: cell) else { return }
-//        var current = testCell.value
-//        current[indexPath.row].isExpanded.toggle()
-//        testCell.accept(current)
-//    }
-//}

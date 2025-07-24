@@ -14,17 +14,33 @@ import FirebaseAuth
 class RegistrationViewModel {
     let disposeBag = DisposeBag()
     
+    struct Input {
+            let selectedImage = PublishRelay<UIImage?>()
+            let name = BehaviorRelay<String>(value: "")
+            let breed = BehaviorRelay<String>(value: "")
+            let selectedSize = BehaviorRelay<String>(value: "")
+            let selectedAge = BehaviorRelay<Date?>(value: nil)
+            let selectedGender = BehaviorRelay<String>(value: "")
+            let isNeutered = BehaviorRelay<Bool?>(value: nil)
+            let introduce = BehaviorRelay<String>(value: "")
+            let saveTrigger = PublishRelay<Void>() // 등록/수정 완료 버튼 탭
+            
+            // 편집 모드 설정
+            let setEditProfile = PublishRelay<PetProfile>()
+        }
+    
+    struct Output {
+           let isLoading = BehaviorRelay<Bool>(value: false)
+           let saveResult = PublishSubject<Result<Void, Error>>()
+           let newPetProfileId = BehaviorSubject<String?>(value: nil)
+           let editingProfile = PublishSubject<PetProfile>()
+       }
+    
     let imageURL = BehaviorRelay<String>(value: "")
     var imageDocumentId: String = ""
-    
-    let name = BehaviorRelay<String>(value: "")
-    let breed = BehaviorRelay<String>(value: "")
-    let selectedSize = BehaviorRelay<String>(value: "")
-    let selectedAge = BehaviorRelay<Date?>(value: nil)
-    let selectedGender = BehaviorRelay<String>(value: "")
-    let isNeutered = BehaviorRelay<Bool?>(value: nil)
-    let introduce = BehaviorRelay<String>(value: "")
-    let isLoading = PublishRelay<Bool>()
+    // 편집 모드 관련 추가
+    var currentMode: Mode = .create
+    var editingProfileId: String?
     
     var buttonTitle: Observable<String> {
         return Observable.just(isEditMode() ? "수정완료" : "등록완료")
@@ -33,19 +49,14 @@ class RegistrationViewModel {
     var titleText: Observable<String> {
         return Observable.just(isEditMode() ? "멍탐정 프로필 수정하기" : "멍탐정 프로필 등록하기")
     }
-    
-    let saveResult = PublishSubject<Result<Void, Error>>()
-    let newPetProfileId = BehaviorSubject<String?>(value: nil)
-    let editingProfile = PublishSubject<PetProfile>()
-    
-    // 편집 모드 관련 추가
-    var currentMode: Mode = .create
-    var editingProfileId: String?
-    
+
     enum Mode {
         case create
         case edit(PetProfile)
     }
+    
+    let input = Input()
+    let output = Output()
     
     // 편집 모드 설정 함수
     func setEditMode(with profile: PetProfile) {
@@ -53,16 +64,16 @@ class RegistrationViewModel {
         editingProfileId = profile.petProfileId
         
         // 기존 데이터로 ViewModel 상태 설정
-        name.accept(profile.name)
-        breed.accept(profile.breed)
-        selectedSize.accept(profile.size)
-        selectedGender.accept(profile.gender)
-        isNeutered.accept(profile.neutered)
-        introduce.accept(profile.introduce)
+        input.name.accept(profile.name)
+        input.breed.accept(profile.breed)
+        input.selectedSize.accept(profile.size)
+        input.selectedGender.accept(profile.gender)
+        input.isNeutered.accept(profile.neutered)
+        input.introduce.accept(profile.introduce)
         
         // 생년월일 설정 (날짜 포맷 헬퍼 사용)
         if let birthDate = stringToDate(profile.age) {
-            selectedAge.accept(birthDate)
+            input.selectedAge.accept(birthDate)
         }
     }
     
@@ -87,7 +98,7 @@ class RegistrationViewModel {
     }
     
     func uploadImageAndSaveProfile(image: UIImage) {
-        self.isLoading.accept(true)
+        self.output.isLoading.accept(true)
         
         let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
         let petProfileID = newDocRef.documentID
@@ -96,19 +107,19 @@ class RegistrationViewModel {
         FirebaseImageManager.shared.uploadPetImage(image, petId: petProfileID) { [weak self] result in
             switch result {
             case .success(let urlString):
-                self?.newPetProfileId.onNext(petProfileID)
+                self?.output.newPetProfileId.onNext(petProfileID)
                 self?.imageURL.accept(urlString)
                 self?.savePetProfile(petProfileID: petProfileID)
             case .failure(let error):
-                self?.saveResult.onNext(.failure(error))
-                self?.isLoading.accept(false)
+                self?.output.saveResult.onNext(.failure(error))
+                self?.output.isLoading.accept(false)
             }
         }
     }
     
     // 편집 모드용 이미지 업로드 및 프로필 업데이트
     func updateProfileWithImage(image: UIImage, originalProfile: PetProfile) {
-        self.isLoading.accept(true)
+        self.output.isLoading.accept(true)
         
         // 기존 프로필 ID 사용
         let petProfileID = originalProfile.petProfileId
@@ -120,31 +131,31 @@ class RegistrationViewModel {
                 self?.imageURL.accept(urlString)
                 self?.updatePetProfile(petProfileID: petProfileID, originalProfile: originalProfile)
             case .failure(let error):
-                self?.saveResult.onNext(.failure(error))
-                self?.isLoading.accept(false)
+                self?.output.saveResult.onNext(.failure(error))
+                self?.output.isLoading.accept(false)
             }
         }
     }
     
     func savePetProfile(petProfileID: String) {
-        guard let isNeutered = isNeutered.value else { return }
+        guard let isNeutered = input.isNeutered.value else { return }
         
         // 날짜 포맷 헬퍼 사용
-        let dateString = formatDateToString(selectedAge.value)
+        let dateString = formatDateToString(input.selectedAge.value)
         
         let userId = Auth.auth().currentUser?.uid ?? "anonymous"
         
         let newProfile = PetProfile(
             petProfileId: petProfileID,
             userId: userId,
-            name: name.value,
+            name: input.name.value,
             age: dateString,
-            size: selectedSize.value,
+            size: input.selectedSize.value,
             image: imageURL.value,
-            gender: selectedGender.value,
+            gender: input.selectedGender.value,
             neutered: isNeutered,
-            breed: breed.value,
-            introduce: introduce.value,
+            breed: input.breed.value,
+            introduce: input.introduce.value,
             createdAt: Timestamp(date: Date())
         )
         
@@ -155,13 +166,13 @@ class RegistrationViewModel {
         )
         .subscribe(
             onCompleted: { [weak self] in
-                self?.newPetProfileId.onNext(petProfileID)
-                self?.saveResult.onNext(.success(()))
-                self?.isLoading.accept(false)
+                self?.output.newPetProfileId.onNext(petProfileID)
+                self?.output.saveResult.onNext(.success(()))
+                self?.output.isLoading.accept(false)
             },
             onError: { [weak self] error in
-                self?.saveResult.onNext(.failure(error))
-                self?.isLoading.accept(false)
+                self?.output.saveResult.onNext(.failure(error))
+                self?.output.isLoading.accept(false)
             }
         )
         .disposed(by: disposeBag)
@@ -169,22 +180,22 @@ class RegistrationViewModel {
     
     // 기존 프로필 업데이트 함수
     func updatePetProfile(petProfileID: String, originalProfile: PetProfile) {
-        guard let isNeutered = isNeutered.value else { return }
+        guard let isNeutered = input.isNeutered.value else { return }
         
         // 날짜 포맷 헬퍼 사용
-        let dateString = formatDateToString(selectedAge.value)
+        let dateString = formatDateToString(input.selectedAge.value)
         
         let updatedProfile = PetProfile(
             petProfileId: petProfileID,
             userId: originalProfile.userId,
-            name: name.value,
+            name: input.name.value,
             age: dateString,
-            size: selectedSize.value,
+            size: input.selectedSize.value,
             image: imageURL.value,
-            gender: selectedGender.value,
+            gender: input.selectedGender.value,
             neutered: isNeutered,
-            breed: breed.value,
-            introduce: introduce.value,
+            breed: input.breed.value,
+            introduce: input.introduce.value,
             createdAt: originalProfile.createdAt
         )
         
@@ -195,13 +206,13 @@ class RegistrationViewModel {
         )
         .subscribe(
             onCompleted: { [weak self] in
-                self?.editingProfile.onNext(updatedProfile)
-                self?.saveResult.onNext(.success(()))
-                self?.isLoading.accept(false)
+                self?.output.editingProfile.onNext(updatedProfile)
+                self?.output.saveResult.onNext(.success(()))
+                self?.output.isLoading.accept(false)
             },
             onError: { [weak self] error in
-                self?.saveResult.onNext(.failure(error))
-                self?.isLoading.accept(false)
+                self?.output.saveResult.onNext(.failure(error))
+                self?.output.isLoading.accept(false)
             }
         )
         .disposed(by: disposeBag)

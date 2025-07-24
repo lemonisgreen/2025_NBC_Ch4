@@ -13,37 +13,54 @@ import NMapsMap
 
 final class MainViewModel {
     
-    let startTracking = PublishRelay<Void>()
-    let stopTracking = PublishRelay<Void>()
-    let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
-    let isTracking = BehaviorRelay<Bool>(value: false)
+    struct Input {
+        let startTracking: PublishRelay<Void>
+        let stopTracking: PublishRelay<Void>
+    }
 
-    let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])
+    struct Output {
+        let fullSideOfCourse: PublishRelay<NMGLatLngBounds>
+        let isTracking: BehaviorRelay<Bool>
+        let coordinates: BehaviorRelay<[CLLocationCoordinate2D]>
+    }
 
-    private let locationManager = CLLocationManager()
+    let input: Input
+    let output: Output
+
+    private let startTracking = PublishRelay<Void>()
+    private let stopTracking = PublishRelay<Void>()
+    private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
+    private let isTracking = BehaviorRelay<Bool>(value: false)
+    private let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])
+
+    private let locationManager: CLLocationManager
     private let disposeBag = DisposeBag()
 
-    init() {
+    init(locationManager: CLLocationManager) {
+        self.locationManager = locationManager
+        self.input = Input(startTracking: startTracking, stopTracking: stopTracking)
+        self.output = Output(fullSideOfCourse: fullSideOfCourse, isTracking: isTracking, coordinates: coordinates)
+
         setupLocationUpdates()
         bindInputs()
     }
     
     private func bindInputs() {
-        startTracking
+        input.startTracking
             .subscribe(onNext: { [weak self] in
-                self?.isTracking.accept(true)
+                self?.output.isTracking.accept(true)
             })
             .disposed(by: disposeBag)
         
-        stopTracking
+        input.stopTracking
             .subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                self.isTracking.accept(false)
-                let coords = self.coordinates.value
+                guard let self = self else { return }
+                self.output.isTracking.accept(false)
+                let coords = self.output.coordinates.value
                 if coords.count < 2 {
-                    self.fullSideOfCourse.accept(NMGLatLngBounds())
+                    self.output.fullSideOfCourse.accept(NMGLatLngBounds())
                 } else {
-                    self.fullSideOfCourse.accept(self.fetchFullSide())
+                    self.output.fullSideOfCourse.accept(self.fetchFullSide())
                 }
             })
             .disposed(by: disposeBag)
@@ -61,17 +78,17 @@ final class MainViewModel {
             .subscribe(onNext: { [weak self] newLocation in
                 guard let self = self else { return }
                 let current = newLocation.coordinate
-                let previous = self.coordinates.value.last
+                let previous = self.output.coordinates.value.last
 
                 if let prev = previous {
                     let distance = CLLocation(latitude: prev.latitude, longitude: prev.longitude)
                         .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude))
                     
-                    if self.isTracking.value && distance >= 5 && distance < 50 {
-                        self.coordinates.accept(self.coordinates.value + [current])
+                    if self.output.isTracking.value && distance >= 5 && distance < 50 {
+                        self.output.coordinates.accept(self.output.coordinates.value + [current])
                     }
-                } else if self.isTracking.value {
-                    self.coordinates.accept(self.coordinates.value + [current])
+                } else if self.output.isTracking.value {
+                    self.output.coordinates.accept(self.output.coordinates.value + [current])
                 }
             })
             .disposed(by: disposeBag)
@@ -80,7 +97,7 @@ final class MainViewModel {
     private func fetchFullSide() -> NMGLatLngBounds {
         var latLng = [NMGLatLng]()
         
-        self.coordinates.value.forEach {
+        self.output.coordinates.value.forEach {
             latLng.append(NMGLatLng(lat: $0.latitude, lng: $0.longitude))
         }
         

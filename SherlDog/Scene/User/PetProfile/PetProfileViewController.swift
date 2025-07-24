@@ -218,7 +218,7 @@ final class PetProfileViewController: UIViewController {
     }
     
     private func bindViewModel() {
-            viewModel.newPetProfileId
+        viewModel.output.newPetProfileId
                 .subscribe(onNext: { [weak self] id in
                     self?.addNewProfile(with: id ?? "")
                 })

@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "smallDog.png",
+      "filename" : "icon=small dog, oppacity=default.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "icon=small dog, oppacity=default@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "icon=small dog, oppacity=default@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

@@ -34,11 +34,12 @@ class PictureUploadRequestViewHeader: UICollectionReusableView {
 
         titleLabel.font = .title1
         titleLabel.textColor = .textPrimary
+        titleLabel.textAlignment = .left
     }
 
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview()
+            $0.leading.trailing.equalToSuperview()
             $0.centerY.equalToSuperview()
         }
     }

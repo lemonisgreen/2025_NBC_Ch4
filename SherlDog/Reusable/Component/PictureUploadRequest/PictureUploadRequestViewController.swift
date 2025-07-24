@@ -1,5 +1,5 @@
 //
-//  PictureUploadRequestView.swift
+//  PictureUploadRequestViewController.swift
 //  SherlDog
 //
 //  Created by 최규현 on 6/10/25.
@@ -13,29 +13,13 @@ import RxDataSources
 import Differentiator
 
 // MARK: - PictureUploadView
-class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
+class PictureUploadRequestViewController: UIViewController { // 1: 240, 2: 320, 3: 400
     
     private let viewModel: PictureUploadRequestViewModel
     private let avatarViewModel: SelectAvatarViewModel
     private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
-    private let dataSource = RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource>(
-        configureCell: { dataSource, collectionView, indexPath, section in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PictureUploadRequestViewCell.identifier, for: indexPath) as? PictureUploadRequestViewCell else { return UICollectionViewCell() }
-            
-            cell.settingCell(text: section.title, imageName: section.image)
-
-            return cell
-        }, configureSupplementaryView: { dataSource, collectionView, title, indexPath in
-            guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader,
-                                                                               withReuseIdentifier: PictureUploadRequestViewHeader.identifier,
-                                                                               for: indexPath) as? PictureUploadRequestViewHeader else { return UICollectionReusableView() }
-            let title = dataSource.sectionModels[indexPath.section].model
-            header.setTitle(title: title)
-
-            return header
-        }
-    )
+    private lazy var dataSource = self.setDataSource()
     
     private let imagePickerController = UIImagePickerController()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
@@ -70,7 +54,7 @@ class PictureUploadRequestView: UIViewController { // 1: 240, 2: 320, 3: 400
 }
 
 // MARK: - Method
-extension PictureUploadRequestView {
+extension PictureUploadRequestViewController {
     
     private func outputBind() {
         self.viewModel.output.cellData
@@ -238,6 +222,26 @@ extension PictureUploadRequestView {
             $0.leading.trailing.equalToSuperview().inset(21.5)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
         }
+    }
+    
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource> {
+        return RxCollectionViewSectionedReloadDataSource<PictureUploadRequestViewModel.RequestDataSource>(
+            configureCell: { dataSource, collectionView, indexPath, section in
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PictureUploadRequestViewCell.identifier, for: indexPath) as? PictureUploadRequestViewCell else { return UICollectionViewCell() }
+                
+                cell.settingCell(text: section.title, imageName: section.image)
+
+                return cell
+            }, configureSupplementaryView: { dataSource, collectionView, title, indexPath in
+                guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader,
+                                                                                   withReuseIdentifier: PictureUploadRequestViewHeader.identifier,
+                                                                                   for: indexPath) as? PictureUploadRequestViewHeader else { return UICollectionReusableView() }
+                let title = dataSource.sectionModels[indexPath.section].model
+                header.setTitle(title: title)
+
+                return header
+            }
+        )
     }
     
     private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {

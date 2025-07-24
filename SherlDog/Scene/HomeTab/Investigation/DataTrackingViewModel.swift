@@ -51,7 +51,6 @@ class DataTrackingViewModel {
                 
                 self.downloadImage(from: result.walkingPathImage)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .observe(on: MainScheduler.instance)
                     .subscribe(onSuccess: { [weak self] image in
                         guard let self else { return }
                         
