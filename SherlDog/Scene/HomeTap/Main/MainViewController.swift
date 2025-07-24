@@ -265,24 +265,21 @@ class MainViewController: UIViewController {
 
                 // If not enough path, show alert and return
                 if fullSide.isEmpty {
-                    let alert = AlertManager(
+                    let alert = CustomAlertViewController(
                         message: "수사를 종료하시겠습니까?",
                         subMessage: "5미터 이하의 경로는 기록이 되지 않아요",
-                        buttonTitles: ["확인", "취소"],
-                        buttonActions: [
-                            {
-                                let confirmAlert = AlertManager(
-                                    message: "수사가 종료되었습니다.",
-                                    subMessage: nil,
-                                    buttonTitles: ["확인"],
-                                    buttonActions: [nil]
-                                )
-                                self.present(confirmAlert, animated: true)
-                                self.setInvestigation(active: false)
-                            },
-                            nil
-                        ]
-                    )
+                        buttons: [CustomAlertViewController.AlertButton(title: "확인", action:
+                                                                            {
+                            let confirmAlert = CustomAlertViewController(
+                                message: "수사가 종료되었습니다.",
+                                subMessage: nil,
+                                buttons: [CustomAlertViewController.AlertButton(title: "확인", action: nil)]
+                                
+                            )
+                            self.present(confirmAlert, animated: true)
+                            self.setInvestigation(active: false)
+                        }),CustomAlertViewController.AlertButton(title: "취소", action: nil)])
+                   
                     self.present(alert, animated: true)
                     return
                 }
