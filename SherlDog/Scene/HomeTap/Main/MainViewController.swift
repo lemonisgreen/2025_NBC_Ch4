@@ -19,7 +19,9 @@ class MainViewController: UIViewController {
     private let requestViewModel = PictureUploadRequestViewModel()
     private let locationManager = CLLocationManager()
     private let disposeBag = DisposeBag()
-    private let viewModel = MainViewModel()
+    private lazy var viewModel = MainViewModel(locationManager: locationManager)
+    private var input: MainViewModel.Input { viewModel.input }
+    private var output: MainViewModel.Output { viewModel.output }
     private var hasSetInitialCamera = false
     
     // 경로 배열
@@ -236,7 +238,7 @@ class MainViewController: UIViewController {
     }
     
     private func bind() {
-        viewModel.fullSideOfCourse
+        output.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
 
@@ -299,12 +301,12 @@ class MainViewController: UIViewController {
                     self.pathOverlays.forEach { $0.mapView = nil }
                     self.pathOverlays.removeAll()
                     self.setInvestigation(active: false)
-                    self.viewModel.coordinates.accept([])
+                    self.output.coordinates.accept([])
                 }
             })
             .disposed(by: disposeBag)
         
-        viewModel.coordinates
+        output.coordinates
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
                 guard let self = self else { return }
@@ -323,7 +325,7 @@ class MainViewController: UIViewController {
             .disposed(by: disposeBag)
         
         requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
-            self?.viewModel.startTracking.accept(())
+            self?.input.startTracking.accept(())
             self?.DataTrackingVM.startTracking()
             self?.setInvestigation(active: true)
         })
