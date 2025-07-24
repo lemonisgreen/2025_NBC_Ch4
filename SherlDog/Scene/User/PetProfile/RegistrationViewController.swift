@@ -211,7 +211,7 @@ class RegistrationViewController: UIViewController {
                 guard let self else { return }
                 let pictureViewModel = PictureUploadRequestViewModel()
                 pictureViewModel.input.accept(.sender(.pictureRequestForPet))
-                let requestView = UINavigationController(rootViewController: PictureUploadRequestView(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
+                let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
