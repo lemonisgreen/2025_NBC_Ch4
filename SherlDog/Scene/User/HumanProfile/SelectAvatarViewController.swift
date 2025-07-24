@@ -17,21 +17,7 @@ class SelectAvatarViewController: UIViewController {
     
     private let viewModel: SelectAvatarViewModel
     private let disposeBag = DisposeBag()
-    private let dataSource = RxCollectionViewSectionedReloadDataSource<SelectAvatarViewModel.SelectAvatarDataSource>(
-        configureCell: { dataSource, collectionView, IndexPath, section in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SelectAvatarCell.identifier, for: IndexPath) as? SelectAvatarCell else { return .init() }
-            
-            cell.settingCell(imageName: section)
-            
-            return cell
-        }, configureSupplementaryView: { dataSource, collectionView, title, indexPath in
-            guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PictureUploadRequestViewHeader.identifier, for: indexPath) as? PictureUploadRequestViewHeader else { return .init() }
-            
-            let title = dataSource.sectionModels[indexPath.section].model
-            header.setTitle(title: title)
-            
-            return header
-        })
+    private lazy var dataSource = self.setDataSource()
     
     private let backButton = SubButtonManager(title: "이전")
     private let choiceButton = ButtonManager(title: "선택하기")
@@ -148,6 +134,24 @@ extension SelectAvatarViewController {
         backButton.snp.makeConstraints {
             $0.width.equalTo(choiceButton).multipliedBy(1.0 / 2.0)
         }
+    }
+    
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<SelectAvatarViewModel.SelectAvatarDataSource> {
+        return RxCollectionViewSectionedReloadDataSource<SelectAvatarViewModel.SelectAvatarDataSource>(
+            configureCell: { dataSource, collectionView, IndexPath, section in
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: SelectAvatarCell.identifier, for: IndexPath) as? SelectAvatarCell else { return .init() }
+                
+                cell.settingCell(imageName: section)
+                
+                return cell
+            }, configureSupplementaryView: { dataSource, collectionView, title, indexPath in
+                guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PictureUploadRequestViewHeader.identifier, for: indexPath) as? PictureUploadRequestViewHeader else { return .init() }
+                
+                let title = dataSource.sectionModels[indexPath.section].model
+                header.setTitle(title: title)
+                
+                return header
+            })
     }
     
     private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {

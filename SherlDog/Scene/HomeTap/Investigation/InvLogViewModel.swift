@@ -12,7 +12,7 @@ import UIKit
 class InvLogViewModel {
     
     struct UploadData {
-        let imageString: UIImage
+        let invImage: UIImage
         let content: String
     }
     
@@ -58,7 +58,7 @@ class InvLogViewModel {
     }
     
     private func imageToString(data: UploadData) {
-        FirebaseImageManager.shared.uploadInvLogImage(data.imageString) { [weak self] result in
+        FirebaseImageManager.shared.uploadInvLogImage(data.invImage) { [weak self] result in
             switch result {
             case .success(let value):
                 self?.upload(image: value, content: data.content)
