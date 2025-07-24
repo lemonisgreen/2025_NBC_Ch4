@@ -99,31 +99,31 @@ class RegistrationViewController: UIViewController {
         guard viewModel.isEditMode() else { return }
         
         // 크기 버튼 상태
-        let selectedSize = viewModel.selectedSize.value
+        let selectedSize = viewModel.input.selectedSize.value
         registSizeSmallButton.isSelected = (selectedSize == "small")
         registSizeMediumButton.isSelected = (selectedSize == "medium")
         registSizeLargeButton.isSelected = (selectedSize == "large")
         
         // 성별 버튼 상태
-        let selectedGender = viewModel.selectedGender.value
+        let selectedGender = viewModel.input.selectedGender.value
         registGenderFemale.isSelected = (selectedGender == "female")
         registGenderMale.isSelected = (selectedGender == "male")
         
         // 중성화 버튼 상태
-        if let isNeutered = viewModel.isNeutered.value {
+        if let isNeutered = viewModel.input.isNeutered.value {
             registNeuteredTrue.isSelected = isNeutered
             registNeuteredFalse.isSelected = !isNeutered
         }
         
         // 이름 텍스트필드
-        registName.text = viewModel.name.value
+        registName.text = viewModel.input.name.value
         registName.sendActions(for: .editingChanged)
-        registNameCountLabel.text = "\(viewModel.name.value.count) / 10 자"
+        registNameCountLabel.text = "\(viewModel.input.name.value.count) / 10 자"
         
         // 성격 및 특성 텍스트필드
-        registIntroduce.text = viewModel.introduce.value
+        registIntroduce.text = viewModel.input.introduce.value
         registIntroduce.sendActions(for: .editingChanged)
-        registIntroduceCountLabel.text = "\(viewModel.introduce.value.count) / 18 자"
+        registIntroduceCountLabel.text = "\(viewModel.input.introduce.value.count) / 18 자"
         
         // 프로필 이미지 로드
         loadProfileImage()
@@ -170,13 +170,13 @@ class RegistrationViewController: UIViewController {
     func bind() {
         Observable.combineLatest(
             self.cameraViewModel.output.capturedImage,
-            self.viewModel.name,
-            self.viewModel.breed,
-            self.viewModel.selectedSize,
-            self.viewModel.selectedGender,
-            self.viewModel.isNeutered,
-            self.viewModel.introduce,
-            self.viewModel.selectedAge
+            self.viewModel.input.name,
+            self.viewModel.input.breed,
+            self.viewModel.input.selectedSize,
+            self.viewModel.input.selectedGender,
+            self.viewModel.input.isNeutered,
+            self.viewModel.input.introduce,
+            self.viewModel.input.selectedAge
         )
         .subscribe(onNext: { [weak self] image, name, breed, size, gender, isNeutered, introduce, age in
             if image != nil,
@@ -194,7 +194,7 @@ class RegistrationViewController: UIViewController {
         })
         .disposed(by: disposeBag)
         
-        viewModel.isLoading
+        viewModel.output.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.registCompletButton.isEnabled = !isLoading
                 // 인디케이터 활성, 비활성은 여기서 진행
@@ -268,7 +268,7 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         registName.rx.text.orEmpty
-            .bind(to: viewModel.name)
+            .bind(to: viewModel.input.name)
             .disposed(by: disposeBag)
         
         self.registBreed.rx.tap
@@ -277,7 +277,7 @@ class RegistrationViewController: UIViewController {
                 let breedSearchVC = BreedSearchViewController()
                 breedSearchVC.selectedBreed
                     .subscribe(onNext: { [weak owner] breed in
-                        owner?.viewModel.breed.accept(breed)
+                        owner?.viewModel.input.breed.accept(breed)
                     })
                     .disposed(by: breedSearchVC.disposeBag)
                 
@@ -291,7 +291,7 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
-        viewModel.breed
+        viewModel.input.breed
             .bind(to: registBreed.breedText)
             .disposed(by: disposeBag)
         
@@ -301,7 +301,7 @@ class RegistrationViewController: UIViewController {
             registSizeMediumButton.rx.tap.map { "medium" },
             registSizeLargeButton.rx.tap.map { "large" }
         )
-        .bind(to: viewModel.selectedSize)
+        .bind(to: viewModel.input.selectedSize)
         .disposed(by: disposeBag)
         
         self.registSizeSmallButton.rx.tap
@@ -310,7 +310,7 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = false
                 self?.updateSizeSelectionButtons(selected: "small")
-                self?.viewModel.selectedSize.accept("small")
+                self?.viewModel.input.selectedSize.accept("small")
             })
             .disposed(by: disposeBag)
         
@@ -320,7 +320,7 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeMediumButton.isSelected = true
                 self?.registSizeLargeButton.isSelected = false
                 self?.updateSizeSelectionButtons(selected: "medium")
-                self?.viewModel.selectedSize.accept("medium")
+                self?.viewModel.input.selectedSize.accept("medium")
             })
             .disposed(by: disposeBag)
         
@@ -330,7 +330,7 @@ class RegistrationViewController: UIViewController {
                 self?.registSizeMediumButton.isSelected = false
                 self?.registSizeLargeButton.isSelected = true
                 self?.updateSizeSelectionButtons(selected: "large")
-                self?.viewModel.selectedSize.accept("large")
+                self?.viewModel.input.selectedSize.accept("large")
             })
             .disposed(by: disposeBag)
         
@@ -340,7 +340,7 @@ class RegistrationViewController: UIViewController {
                 let birthSelectVC = BirthSelectViewController()
                 birthSelectVC.selectedDate
                     .subscribe(onNext: { [weak owner] date in
-                        owner?.viewModel.selectedAge.accept(date)
+                        owner?.viewModel.input.selectedAge.accept(date)
                     })
                     .disposed(by: birthSelectVC.disposeBag)
                 
@@ -365,7 +365,7 @@ class RegistrationViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
-        viewModel.selectedAge
+        viewModel.input.selectedAge
             .map { dateOpt in
                 guard let date = dateOpt else { return "YYYY-MM-DD (n세)" }
                 let formatter = DateFormatter()
@@ -381,7 +381,7 @@ class RegistrationViewController: UIViewController {
             registGenderFemale.rx.tap.map { "female" },
             registGenderMale.rx.tap.map { "male" }
         )
-        .bind(to: viewModel.selectedGender)
+        .bind(to: viewModel.input.selectedGender)
         .disposed(by: disposeBag)
         
         self.registGenderFemale.rx.tap
@@ -403,7 +403,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredTrue.rx.tap.map { true },
             registNeuteredFalse.rx.tap.map { false }
         )
-        .bind(to: viewModel.isNeutered)
+        .bind(to: viewModel.input.isNeutered)
         .disposed(by: disposeBag)
         
         self.registNeuteredTrue.rx.tap
@@ -436,7 +436,7 @@ class RegistrationViewController: UIViewController {
             .disposed(by: disposeBag)
         
         registIntroduce.rx.text.orEmpty
-            .bind(to: viewModel.introduce)
+            .bind(to: viewModel.input.introduce)
             .disposed(by: disposeBag)
         
         self.registCompletButton.rx.tap
@@ -454,7 +454,7 @@ class RegistrationViewController: UIViewController {
                     self.viewModel.uploadImageAndSaveProfile(image: selectedImage)
                 }
                 
-                self.viewModel.saveResult
+                self.viewModel.output.saveResult
                     .take(1)
                     .observe(on: MainScheduler.instance)
                     .subscribe(onNext: { [weak self] result in
