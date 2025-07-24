@@ -345,10 +345,7 @@ class RegistrationViewController: UIViewController {
                     .disposed(by: birthSelectVC.disposeBag)
                 
                 if let sheet = birthSelectVC.sheetPresentationController {
-                    let screenHeight = UIScreen.main.bounds.height
-                    let isIPhoneSE = screenHeight <= 667
-                    
-                    if isIPhoneSE {
+                    if UIScreen.isIPhoneSE {
                         sheet.detents = [.medium()]
                         sheet.selectedDetentIdentifier = .medium
                     } else {
@@ -361,17 +358,15 @@ class RegistrationViewController: UIViewController {
                     sheet.preferredCornerRadius = 20
                 }
                 owner.present(birthSelectVC, animated: true)
-
+                
             })
             .disposed(by: disposeBag)
         
         viewModel.input.selectedAge
             .map { dateOpt in
                 guard let date = dateOpt else { return "YYYY-MM-DD (n세)" }
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
                 let age = Calendar.current.dateComponents([.year], from: date, to: Date()).year ?? 0
-                return "\(formatter.string(from: date)) (\(age)세)"
+                return "\(DateFormatter.yyyyMMdd.string(from: date)) (\(age)세)"
             }
             .bind(to: registAgeButton.dateText)
             .disposed(by: disposeBag)
