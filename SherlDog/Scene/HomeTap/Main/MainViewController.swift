@@ -142,6 +142,7 @@ class MainViewController: UIViewController {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(true, animated: false)
         loadSavedClues()
+        requestViewModel.fetchPetProfiles()
     }
     
     // 저장된 단서들을 Firebase에서 불러와서 마커로 표시

@@ -11,7 +11,7 @@ import RxSwift
 import RxCocoa
 import FirebaseAuth
 
-class MyPageViewController : UIViewController {
+class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrollViewDelegate {
     private let viewModel = MyPageViewModel()
     private let disposeBag = DisposeBag()
     private let maxProfileCount = 3
@@ -47,6 +47,11 @@ class MyPageViewController : UIViewController {
         viewModel.refresh()
         viewModel.refreshHumanProfile()
         navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
     
     override func viewDidLayoutSubviews() {
@@ -108,6 +113,7 @@ class MyPageViewController : UIViewController {
         collectionView.backgroundColor = .keycolorInverse
         collectionView.isUserInteractionEnabled = true
         collectionView.allowsSelection = true
+        collectionView.delegate = self
         
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
@@ -363,6 +369,28 @@ class MyPageViewController : UIViewController {
             
             // 페이지 컨트롤도 업데이트
             pageControl.currentPage = lastIndex
+        }
+    }
+    
+    func scrollViewWillEndDragging(_ scrollView: UIScrollView,
+                                   withVelocity velocity: CGPoint,
+                                   targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        guard let collectionView = scrollView as? UICollectionView else { return }
+        
+        let cellWidth: CGFloat = 336
+        let cellSpacing: CGFloat = 12
+        let totalCellWidth = cellWidth + cellSpacing
+        let leftInset = collectionView.contentInset.left
+        
+        let proposedOffsetX = targetContentOffset.pointee.x
+        let index = round((proposedOffsetX + leftInset) / totalCellWidth)
+        
+        let maxIdx = max(0, collectionView.numberOfItems(inSection: 0) - 1)
+        let targetIndex = Int(max(0, min(index, CGFloat(maxIdx))))
+        
+        DispatchQueue.main.async {
+            let indexPath = IndexPath(item: targetIndex, section: 0)
+            collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         }
     }
     
