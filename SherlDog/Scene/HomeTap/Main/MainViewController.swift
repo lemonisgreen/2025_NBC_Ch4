@@ -40,13 +40,16 @@ class MainViewController: UIViewController {
     private let distanceLabel = UILabel()
     private let timeLabel = UILabel()
     private let stepsLabel = UILabel()
-    private var image: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
+    private var selectedPetImage
+: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
     private let statusLabel = UILabel()
     
     // distance, time, steps
-    private let distance = UILabel()
-    private let time = UILabel()
-    private let steps = UILabel()
+    private let distanceValueLabel = UILabel()
+    private let trackingTimeLabel
+ = UILabel()
+    private let stepCountLabel
+ = UILabel()
     
     // 스택 뷰
     private let titleStack = UIStackView()
@@ -61,7 +64,7 @@ class MainViewController: UIViewController {
     private let locationButton = UIButton()
     
     // 거리 측정 함수 뷰모델
-    private let DataTrackingVM = DataTrackingViewModel()
+    private let trackingViewModel = DataTrackingViewModel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -207,22 +210,23 @@ class MainViewController: UIViewController {
     }
     
     private func trackingBind() {
-        DataTrackingVM.numberOfSteps
+        trackingViewModel.numberOfSteps
             .map { "\($0)" }
-            .bind(to: steps.rx.text)
+            .bind(to: stepCountLabel
+.rx.text)
             .disposed(by: disposeBag)
         
-        DataTrackingVM.distance
+        trackingViewModel.distance
             .map { String(format: "%.2f", $0 / 1000.0) }
-            .bind(to: distance.rx.text)
+            .bind(to: distanceValueLabel.rx.text)
             .disposed(by: disposeBag)
         
-        DataTrackingVM.trackingActive
+        trackingViewModel.trackingActive
             .filter { $0 }
             .flatMapLatest { _ in
                 Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
-                    .take(until: self.DataTrackingVM.trackingActive.filter { !$0 })
-                    .withLatestFrom(self.DataTrackingVM.startDate)
+                    .take(until: self.trackingViewModel.trackingActive.filter { !$0 })
+                    .withLatestFrom(self.trackingViewModel.startDate)
                     .compactMap { $0 }
                     .map { start in
                         let interval = Int(Date().timeIntervalSince(start))
@@ -233,7 +237,8 @@ class MainViewController: UIViewController {
                         return text
                     }
             }
-            .bind(to: time.rx.text)
+            .bind(to: trackingTimeLabel
+.rx.text)
             .disposed(by: disposeBag)
     }
     
@@ -290,11 +295,11 @@ class MainViewController: UIViewController {
                         }
                         
                         let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
-                        let walkEndModal = WalkEndModalViewController(viewModel: self.DataTrackingVM, selectedProfiles: selectedProfiles)
+                        let walkEndModal = WalkEndModalViewController(viewModel: self.trackingViewModel, selectedProfiles: selectedProfiles)
                         let nav = UINavigationController(rootViewController: walkEndModal)
                         nav.modalPresentationStyle = .overFullScreen
                         self.present(nav, animated: true) {
-                            self.DataTrackingVM.fullScreenImage.accept(image)
+                            self.trackingViewModel.fullScreenImage.accept(image)
                         }
                     }
                     
@@ -325,8 +330,8 @@ class MainViewController: UIViewController {
             .disposed(by: disposeBag)
         
         requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
-            self?.input.startTracking.accept(())
-            self?.DataTrackingVM.startTracking()
+            self?.viewModel.startTracking.accept(())
+            self?.trackingViewModel.startTracking()
             self?.setInvestigation(active: true)
         })
         .disposed(by: disposeBag)
@@ -390,8 +395,8 @@ class MainViewController: UIViewController {
                     buttonTitles: ["확인", "취소"],
                     buttonActions: [
                         {
-                            self.DataTrackingVM.stopTracking()
-                            self.viewModel.stopTracking.accept(())
+                            self?.trackingViewModel.stopTracking()
+                            self?.viewModel.stopTracking.accept(())
                         },
                         nil
                     ]
@@ -440,7 +445,8 @@ class MainViewController: UIViewController {
                 
                 // 선택된 강아지들의 이미지로 배열 업데이트
                 if !selectedProfiles.isEmpty {
-                    self.image = selectedProfiles.map { $0.image }
+                    self.selectedPetImage
+ = selectedProfiles.map { $0.image }
                     self.updateDetectiveImageStack()
                 }
             })
@@ -450,9 +456,11 @@ class MainViewController: UIViewController {
     private func updateDetectiveImageStack() {
         // 기존 이미지뷰들 제거
         detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
-        detectiveImageStack.spacing = image.count > 1 ? -8 : 0
+        detectiveImageStack.spacing = selectedPetImage
+.count > 1 ? -8 : 0
         
-        image.forEach { imageName in
+        selectedPetImage
+.forEach { imageName in
             let imageView = UIImageView()
             imageView.contentMode = .scaleAspectFill
             imageView.clipsToBounds = true
@@ -479,12 +487,13 @@ class MainViewController: UIViewController {
             detectiveImageStack.addArrangedSubview(imageView)
         }
         // 텍스트도 업데이트
-        statusLabel.text = image.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
+        statusLabel.text = selectedPetImage
+.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
     }
     
 //    private func showWalkEndModal() {
 //        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
-//        let walkEndModal = WalkEndModalViewController(viewModel: DataTrackingVM, selectedProfiles: selectedProfiles)
+//        let walkEndModal = WalkEndModalViewController(viewModel: trackingViewModel, selectedProfiles: selectedProfiles)
 //        let nav = UINavigationController(rootViewController: walkEndModal)
 //        nav.modalPresentationStyle = .overFullScreen
 //        present(nav, animated: true)
@@ -505,9 +514,11 @@ class MainViewController: UIViewController {
         walkStartButton.isHidden = active
         
         if !active {
-            distance.text = "0.00"
-            time.text = "00:00:00"
-            steps.text = "0"
+            distanceValueLabel.text = "0.00"
+            trackingTimeLabel
+.text = "00:00:00"
+            stepCountLabel
+.text = "0"
         }
     }
     
@@ -541,7 +552,9 @@ class MainViewController: UIViewController {
         titleStack.distribution = .fillEqually
         
         // ValueStack 설정
-        [distance, time, steps].forEach {
+        [distanceValueLabel, trackingTimeLabel
+, stepCountLabel
+].forEach {
             $0.textAlignment = .center
             $0.font = .highlight3
             $0.textColor = .textPrimary
@@ -588,7 +601,9 @@ class MainViewController: UIViewController {
         
         locationButton.setImage(UIImage(named: "locationButton"), for: .normal)
         
-        [distance, time, steps].forEach { valueStack.addArrangedSubview($0) }
+        [distanceValueLabel, trackingTimeLabel
+, stepCountLabel
+].forEach { valueStack.addArrangedSubview($0) }
         
         [distanceLabel, timeLabel, stepsLabel].forEach { titleStack.addArrangedSubview($0) }
         
