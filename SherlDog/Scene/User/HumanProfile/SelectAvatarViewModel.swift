@@ -21,8 +21,9 @@ class SelectAvatarViewModel {
     struct Output {
         let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
         let moveToBack = PublishRelay<Void>()
-        let selectedAvatar = BehaviorRelay<AvatarModel?>(value: nil)
-        let completeSelect = PublishRelay<String>()
+        let selectedAvatar = PublishRelay<AvatarModel>()
+        let icon = BehaviorRelay(value: "")
+        let completeSelect = PublishRelay<Void>()
     }
     
     typealias SelectAvatarDataSource = SectionModel<String, String>
@@ -44,11 +45,11 @@ class SelectAvatarViewModel {
                 switch input {
                 case .avatarSelect(let index):
                     self.output.selectedAvatar.accept(self.data[index])
+                    self.output.icon.accept(self.data[index].icon)
                 case .goBack:
                     self.output.moveToBack.accept(())
                 case .completeSelect:
-                    guard let imageName = self.output.selectedAvatar.value?.icon else { return }
-                    self.output.completeSelect.accept(imageName)
+                    self.output.completeSelect.accept(())
                 }
             }
             .disposed(by: disposeBag)

@@ -138,8 +138,10 @@ extension CreateAssistantProfileViewController {
             .disposed(by: disposeBag)
         
         self.avatarViewModel.output.completeSelect
-            .subscribe(onNext: { [weak self] imageName in
+            .subscribe(onNext: { [weak self] in
                 guard let self else { return }
+                let imageName = self.avatarViewModel.output.icon.value
+                
                 self.profileImageView.image = UIImage(named: imageName)
                 self.profileImageView.contentMode = .scaleAspectFit
             })
@@ -242,7 +244,12 @@ extension CreateAssistantProfileViewController {
         
         // 아바타 선택한 이미지 바인딩
         avatarViewModel.output.completeSelect
-            .compactMap { imageName in UIImage(named: imageName) }
+            .compactMap { [weak self] in
+                guard let self else { return nil }
+                
+                let imageName = self.avatarViewModel.output.icon.value
+                return UIImage(named: imageName)
+            }
             .bind(to: viewModel.image)
             .disposed(by: disposeBag)
         

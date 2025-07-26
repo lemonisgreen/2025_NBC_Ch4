@@ -77,8 +77,7 @@ extension SelectAvatarViewController {
             .disposed(by: disposeBag)
         
         self.viewModel.output.selectedAvatar
-            .asSignal(onErrorJustReturn: nil)
-            .compactMap { $0 }
+            .asSignal()
             .emit(onNext: { [weak self] data in
                 guard let self else { return }
                 
@@ -180,7 +179,8 @@ extension SelectAvatarViewController {
     
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview().inset(28)
+            $0.top.equalToSuperview().inset(28)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
         avatarImageView.snp.makeConstraints {
@@ -198,7 +198,6 @@ extension SelectAvatarViewController {
             $0.top.equalTo(avatarImageView.snp.bottom).offset(36)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(collectionView.snp.top).offset(-16)
-//            $0.height.equalTo(141)
         }
         
         detailTitleLabel.snp.makeConstraints {
