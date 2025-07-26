@@ -138,7 +138,10 @@ extension PictureUploadRequestViewController {
                     
                 case .avatar:
                     if sender == .pictureRequestForAssistant {
-                        self.navigationController?.pushViewController(SelectAvatarViewController(viewModel: avatarViewModel), animated: true)
+                        let selectView = SelectAvatarViewController(viewModel: avatarViewModel)
+                        selectView.sheetPresentationController?.prefersGrabberVisible = true
+                        self.present(selectView, animated: true)
+                        
                     } else {
                         self.cameraViewModel.input.accept(.captureImage(.petAvatar))
                         self.dismiss(animated: true)

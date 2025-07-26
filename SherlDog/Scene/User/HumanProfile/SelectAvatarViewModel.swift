@@ -13,13 +13,14 @@ import Differentiator
 class SelectAvatarViewModel {
     
     enum Input {
-        case goNext(Int)
+        case avatarSelect(Int)
+        case goBack
         case completeSelect
     }
     
     struct Output {
         let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
-        let moveToDetailView = PublishRelay<Void>()
+        let moveToBack = PublishRelay<Void>()
         let selectedAvatar = BehaviorRelay<AvatarModel?>(value: nil)
         let completeSelect = PublishRelay<String>()
     }
@@ -38,22 +39,24 @@ class SelectAvatarViewModel {
     }
     
     private func transform() {
-        self.input.bind { input in
-            switch input {
-            case .goNext(let index):
-                self.output.moveToDetailView.accept(())
-                self.output.selectedAvatar.accept(self.data[index])
-            case .completeSelect:
-                guard let imageName = self.output.selectedAvatar.value?.icon else { return }
-                self.output.completeSelect.accept(imageName)
+        self.input
+            .bind { input in
+                switch input {
+                case .avatarSelect(let index):
+                    self.output.selectedAvatar.accept(self.data[index])
+                case .goBack:
+                    self.output.moveToBack.accept(())
+                case .completeSelect:
+                    guard let imageName = self.output.selectedAvatar.value?.icon else { return }
+                    self.output.completeSelect.accept(imageName)
+                }
             }
-        }
-        .disposed(by: disposeBag)
+            .disposed(by: disposeBag)
     }
     
     private func fetchCellData() {
         self.output.cellData.accept([
-            SelectAvatarDataSource(model: "탐정님과 함께할 조수를 선택해주세요!",
+            SelectAvatarDataSource(model: "",
                                    items: self.data.map { $0.icon })
         ])
     }

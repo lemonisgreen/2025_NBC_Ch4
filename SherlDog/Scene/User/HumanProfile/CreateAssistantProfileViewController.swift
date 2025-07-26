@@ -355,7 +355,7 @@ extension CreateAssistantProfileViewController {
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
         profileImageView.image = .petProfile
-        profileImageView.contentMode = .scaleAspectFill
+        profileImageView.contentMode = .scaleAspectFit
         profileImageView.layer.borderColor = UIColor.gray100.cgColor
         profileImageView.layer.borderWidth = 1
         profileImageView.clipsToBounds = true

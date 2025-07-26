@@ -395,7 +395,7 @@ class MainViewController: UIViewController {
                     subMessage: nil,
                     buttonTitles: ["확인", "취소"],
                     buttonActions: [
-                        {
+                        { [weak self] in
                             self?.trackingViewModel.stopTracking()
                             self?.viewModel.stopTracking.accept(())
                         },
