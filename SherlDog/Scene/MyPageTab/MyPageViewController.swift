@@ -11,7 +11,6 @@ import RxSwift
 import RxCocoa
 import FirebaseAuth
 import Kingfisher
-import os.signpost
 
 class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrollViewDelegate {
     private let viewModel = MyPageViewModel()
@@ -341,10 +340,6 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     private func loadImage(from url: URL) {
         let processor = DownsamplingImageProcessor(size: self.assistantImage.bounds.size) // 크기 지정 다운 샘플링
         
-        let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-        let signpostID = OSSignpostID(log: log)
-        os_signpost(.begin, log: log, name: "MyPageViewController 펫 이미지 다운로드", signpostID: signpostID)
-        
         self.assistantImage.kf.indicatorType = .activity
         KF.url(url)
             .placeholder(UIImage.petProfile)
@@ -352,9 +347,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             .cacheOriginalImage()
             .fade(duration: 0.25)
             .onFailureImage(UIImage.petProfile)
-            .onSuccess { result in
-                os_signpost(.end, log: log, name: "MyPageViewController 펫 이미지 다운로드", signpostID: signpostID)
-            }
+            .onSuccess { result in }
             .onFailure { error in }
             .set(to: self.assistantImage)
     }

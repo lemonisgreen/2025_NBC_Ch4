@@ -14,7 +14,6 @@ import RxCoreLocation
 import CoreLocation
 import FirebaseAuth
 import Kingfisher
-import os.signpost
 
 class MainViewController: UIViewController {
     
@@ -497,10 +496,6 @@ class MainViewController: UIViewController {
             if imageName.hasPrefix("http"), let url = URL(string: imageName) {
                 let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
                 
-                let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-                let signpostID = OSSignpostID(log: log)
-                os_signpost(.begin, log: log, name: "MainViewController 펫 이미지 다운로드", signpostID: signpostID)
-                
                 imageView.kf.indicatorType = .activity
                 KF.url(url)
                     .placeholder(UIImage.petAvatar)
@@ -508,9 +503,7 @@ class MainViewController: UIViewController {
                     .cacheOriginalImage()
                     .fade(duration: 0.25)
                     .onFailureImage(UIImage.petAvatar)
-                    .onSuccess { result in
-                        os_signpost(.end, log: log, name: "MainViewController 펫 이미지 다운로드", signpostID: signpostID)
-                    }
+                    .onSuccess { result in }
                     .onFailure { error in }
                     .set(to: imageView)
             } else {

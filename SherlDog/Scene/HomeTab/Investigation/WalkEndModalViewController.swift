@@ -10,7 +10,6 @@ import RxSwift
 import RxCocoa
 import NMapsMap
 import Kingfisher
-import os.signpost
 
 class WalkEndModalViewController : UIViewController {
     
@@ -468,10 +467,6 @@ class WalkEndModalViewController : UIViewController {
                 if let url = URL(string: profile.image) {
                     let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
                     
-                    let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-                    let signpostID = OSSignpostID(log: log)
-                    os_signpost(.begin, log: log, name: "WalkEndModalViewController 펫 이미지 다운로드", signpostID: signpostID)
-                    
                     imageView.kf.indicatorType = .activity
                     KF.url(url)
                         .placeholder(UIImage.petAvatar)
@@ -479,9 +474,7 @@ class WalkEndModalViewController : UIViewController {
                         .cacheOriginalImage()
                         .fade(duration: 0.25)
                         .onFailureImage(UIImage.petAvatar)
-                        .onSuccess { result in
-                            os_signpost(.end, log: log, name: "WalkEndModalViewController 펫 이미지 다운로드", signpostID: signpostID)
-                        }
+                        .onSuccess { result in }
                         .onFailure { error in }
                         .set(to: imageView)
                 }

@@ -3,8 +3,6 @@ import Firebase
 import FirebaseStorage
 import FirebaseAuth
 import RxSwift
-import os.signpost
-import Kingfisher
 
 class FirebaseImageManager {
     static let shared = FirebaseImageManager()

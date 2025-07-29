@@ -9,7 +9,6 @@ import UIKit
 import RxSwift
 import RxCocoa
 import Kingfisher
-import os.signpost
 
 class DetectiveCardCollectionViewCell: UICollectionViewCell {
     
@@ -53,10 +52,6 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
             
             let processor = DownsamplingImageProcessor(size: self.detectiveCardView.detectivePhotoImageView.bounds.size) // 크기 지정 다운 샘플링
             
-            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-            let signpostID = OSSignpostID(log: log)
-            os_signpost(.begin, log: log, name: "DetectiveCardCollectionViewCell 펫 이미지 다운로드", signpostID: signpostID)
-            
             self.detectiveCardView.detectivePhotoImageView.kf.indicatorType = .activity
             KF.url(url)
                 .placeholder(UIImage.petAvatar)
@@ -64,9 +59,7 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
                 .cacheOriginalImage()
                 .fade(duration: 0.25)
                 .onFailureImage(UIImage.petAvatar)
-                .onSuccess { result in
-                    os_signpost(.end, log: log, name: "DetectiveCardCollectionViewCell 펫 이미지 다운로드", signpostID: signpostID)
-                }
+                .onSuccess { result in }
                 .onFailure { error in }
                 .set(to: self.detectiveCardView.detectivePhotoImageView)
         }

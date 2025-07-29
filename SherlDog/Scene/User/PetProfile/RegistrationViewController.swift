@@ -12,7 +12,6 @@ import RxCocoa
 import Firebase
 import FirebaseStorage
 import Kingfisher
-import os.signpost
 
 class RegistrationViewController: UIViewController {
     
@@ -142,10 +141,6 @@ class RegistrationViewController: UIViewController {
             
             let processor = DownsamplingImageProcessor(size: self.registedProfileImage.bounds.size) // 크기 지정 다운 샘플링
             
-            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-            let signpostID = OSSignpostID(log: log)
-            os_signpost(.begin, log: log, name: "RegistrationViewController 펫 이미지 다운로드", signpostID: signpostID)
-            
             self.registedProfileImage.kf.indicatorType = .activity
             KF.url(url)
                 .placeholder(UIImage.petAvatar)
@@ -154,7 +149,6 @@ class RegistrationViewController: UIViewController {
                 .fade(duration: 0.25)
                 .onFailureImage(UIImage.petAvatar)
                 .onSuccess { result in
-                    os_signpost(.end, log: log, name: "RegistrationViewController 펫 이미지 다운로드", signpostID: signpostID)
                     self.selectedImage = result.image
                     self.cameraViewModel.output.capturedImage.accept(result.image)
                 }

@@ -10,7 +10,6 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import Kingfisher
-import os.signpost
 
 // MARK: - AssistantProfileViewController
 class CreateAssistantProfileViewController: UIViewController {
@@ -241,10 +240,6 @@ extension CreateAssistantProfileViewController {
                     
                     let processor = DownsamplingImageProcessor(size: self.profileImageView.bounds.size) // 크기 지정 다운 샘플링
                     
-                    let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-                    let signpostID = OSSignpostID(log: log)
-                    os_signpost(.begin, log: log, name: "CreateAssistantProfileViewController 수정 조수 이미지 다운로드", signpostID: signpostID)
-                    
                     self.profileImageView.kf.indicatorType = .activity
                     KF.url(imageUrl)
                         .placeholder(UIImage.petProfile)
@@ -252,9 +247,7 @@ extension CreateAssistantProfileViewController {
                         .cacheOriginalImage()
                         .fade(duration: 0.25)
                         .onFailureImage(UIImage.petProfile)
-                        .onSuccess { result in
-                            os_signpost(.end, log: log, name: "CreateAssistantProfileViewController 수정 조수 이미지 다운로드", signpostID: signpostID)
-                        }
+                        .onSuccess { result in }
                         .onFailure { error in }
                         .set(to: self.profileImageView) 
                 }
