@@ -9,25 +9,31 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class AlertManager: UIViewController {
+class CustomAlertViewController: UIViewController {
 
-    private let backgroundImageView = UIImageView()
+    private let backgroundView = UIView()
     private let messageLabel = UILabel()
     private let subMessageLabel = UILabel()
     private let buttonStackView = UIStackView()
 
     private let message: String
     private let subMessage: String?
-    private let buttonTitles: [String]
-    private let buttonActions: [(() -> Void)?]
+    private let buttons: [AlertButton]
+    
+    private let horizontalLine = UIView()
+    private let verticalLine = UIView()
 
     private let disposeBag = DisposeBag()
+    
+    struct AlertButton {
+        let title: String
+        let action: (() -> Void)?
+    }
 
-    init(message: String, subMessage: String? = nil, buttonTitles: [String], buttonActions: [(() -> Void)?]) {
+    init(message: String, subMessage: String? = nil, buttons: [AlertButton]) {
         self.message = message
         self.subMessage = subMessage
-        self.buttonTitles = buttonTitles
-        self.buttonActions = buttonActions
+        self.buttons = buttons
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         modalTransitionStyle = .crossDissolve
@@ -46,16 +52,19 @@ class AlertManager: UIViewController {
         view.backgroundColor = UIColor.black.withAlphaComponent(0.6)
 
         if message.contains("항상 허용") {
-            backgroundImageView.image = UIImage(named: "alertBackgroundPermission")
-        } else if buttonTitles.count == 1 {
-            backgroundImageView.image = UIImage(named: "alertBackgroundSingleSmall")
+            horizontalLine.isHidden = false
+            verticalLine.isHidden = false
+        } else if buttons.count == 1 {
+            horizontalLine.isHidden = false
+            verticalLine.isHidden = true
         } else {
-            backgroundImageView.image = UIImage(named: "alertBackgroundDouble")
+            horizontalLine.isHidden = false
+            verticalLine.isHidden = false
         }
-        backgroundImageView.isUserInteractionEnabled = true
-        backgroundImageView.contentMode = .scaleAspectFill
-        backgroundImageView.clipsToBounds = true
-        backgroundImageView.layer.cornerRadius = 6
+        backgroundView.isUserInteractionEnabled = true
+        backgroundView.backgroundColor = .white
+        backgroundView.layer.cornerRadius = 12
+        backgroundView.clipsToBounds = true
 
         messageLabel.text = message
         messageLabel.textAlignment = .center
@@ -67,9 +76,9 @@ class AlertManager: UIViewController {
         buttonStackView.spacing = 12
         buttonStackView.distribution = .fillEqually
 
-        for (index, title) in buttonTitles.enumerated() {
+        for (index, buttonData) in buttons.enumerated() {
             let button = UIButton()
-            button.setTitle(title, for: .normal)
+            button.setTitle(buttonData.title, for: .normal)
             button.setTitleColor(UIColor(named: "textPrimary"), for: .normal)
             button.titleLabel?.font = UIFont.title3
             button.tag = index
@@ -78,16 +87,15 @@ class AlertManager: UIViewController {
                 .bind { [weak self] in
                     guard let self else { return }
                     self.dismiss(animated: true) {
-                        let action = self.buttonActions[button.tag]
-                        action?()
+                        buttonData.action?()
                     }
                 }
                 .disposed(by: disposeBag)
 
             buttonStackView.addArrangedSubview(button)
         }
-        backgroundImageView.addSubview(messageLabel)
-        backgroundImageView.addSubview(buttonStackView)
+        backgroundView.addSubview(messageLabel)
+        backgroundView.addSubview(buttonStackView)
         
         if let subMessage = subMessage {
             subMessageLabel.text = subMessage
@@ -95,20 +103,20 @@ class AlertManager: UIViewController {
             subMessageLabel.numberOfLines = 0
             subMessageLabel.font = .body5
             subMessageLabel.textColor = .textPrimary
-            backgroundImageView.addSubview(subMessageLabel)
+            backgroundView.addSubview(subMessageLabel)
             subMessageLabel.snp.makeConstraints {
                 $0.centerX.equalToSuperview()
                 $0.leading.trailing.equalToSuperview().inset(16)
                 $0.bottom.equalTo(buttonStackView.snp.top).offset(-16)
             }
         }
-        view.addSubview(backgroundImageView)
+        view.addSubview(backgroundView)
         
         let originHeight: CGFloat = 124
         let setHeight: CGFloat = 160
         let scale: CGFloat = setHeight / originHeight
         
-        backgroundImageView.snp.makeConstraints {
+        backgroundView.snp.makeConstraints {
             $0.center.equalToSuperview()
             $0.width.equalTo(276)
         }
@@ -129,6 +137,25 @@ class AlertManager: UIViewController {
             $0.bottom.equalToSuperview()
             $0.width.equalToSuperview()
             $0.height.equalTo(40 * scale)
+        }
+        
+        horizontalLine.backgroundColor = UIColor(named: "gray200")
+        backgroundView.addSubview(horizontalLine)
+        
+        horizontalLine.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview()
+            $0.height.equalTo(1)
+            $0.bottom.equalTo(buttonStackView.snp.top)
+        }
+        
+        verticalLine.backgroundColor = UIColor(named: "gray200")
+        backgroundView.addSubview(verticalLine)
+        
+        verticalLine.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.top.equalTo(buttonStackView.snp.top)
+            $0.bottom.equalTo(buttonStackView.snp.bottom)
+            $0.width.equalTo(1)
         }
     }
 }

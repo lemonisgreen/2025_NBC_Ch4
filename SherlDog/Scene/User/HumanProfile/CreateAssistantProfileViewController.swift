@@ -33,7 +33,7 @@ class CreateAssistantProfileViewController: UIViewController {
     private let introduceLabel = UILabel()
     private let introduceTextView = UITextView()
     private let introduceConstraintsLabel = UILabel()
-    private let nextButton = ButtonManager(title: "다음")
+    private let nextButton = ComponentButton(title: "다음")
     private let textViewPlaceholder = UILabel()
     
     // MARK: - Lifecycle
