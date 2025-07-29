@@ -11,6 +11,8 @@ import RxSwift
 import RxCocoa
 import Firebase
 import FirebaseStorage
+import Kingfisher
+import os.signpost
 
 class RegistrationViewController: UIViewController {
     
@@ -135,14 +137,29 @@ class RegistrationViewController: UIViewController {
         FirebaseImageManager.shared.downloadPetImage(
             petId: profile.petProfileId,
             userId: profile.userId
-        ) { [weak self] image in
-            DispatchQueue.main.async {
-                if let image = image {
-                    self?.selectedImage = image
-                    self?.registedProfileImage.image = image
-                    self?.cameraViewModel.output.capturedImage.accept(image)
+        ) { [weak self] url in
+            guard let self else { return }
+            
+            let processor = DownsamplingImageProcessor(size: self.registedProfileImage.bounds.size) // 크기 지정 다운 샘플링
+            
+            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
+            let signpostID = OSSignpostID(log: log)
+            os_signpost(.begin, log: log, name: "RegistrationViewController 펫 이미지 다운로드", signpostID: signpostID)
+            
+            self.registedProfileImage.kf.indicatorType = .activity
+            KF.url(url)
+                .placeholder(UIImage.petAvatar)
+                .setProcessor(processor)
+                .cacheOriginalImage()
+                .fade(duration: 0.25)
+                .onFailureImage(UIImage.petAvatar)
+                .onSuccess { result in
+                    os_signpost(.end, log: log, name: "RegistrationViewController 펫 이미지 다운로드", signpostID: signpostID)
+                    self.selectedImage = result.image
+                    self.cameraViewModel.output.capturedImage.accept(result.image)
                 }
-            }
+                .onFailure { error in }
+                .set(to: self.registedProfileImage)
         }
     }
     

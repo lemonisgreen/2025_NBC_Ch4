@@ -10,6 +10,8 @@ import SnapKit
 import RxSwift
 import RxCocoa
 import FirebaseAuth
+import Kingfisher
+import os.signpost
 
 class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrollViewDelegate {
     private let viewModel = MyPageViewModel()
@@ -337,13 +339,24 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     }
     
     private func loadImage(from url: URL) {
-        DispatchQueue.global().async { [weak self] in
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self?.assistantImage.image = image
-                }
+        let processor = DownsamplingImageProcessor(size: self.assistantImage.bounds.size) // 크기 지정 다운 샘플링
+        
+        let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
+        let signpostID = OSSignpostID(log: log)
+        os_signpost(.begin, log: log, name: "MyPageViewController 펫 이미지 다운로드", signpostID: signpostID)
+        
+        self.assistantImage.kf.indicatorType = .activity
+        KF.url(url)
+            .placeholder(UIImage.petProfile)
+            .setProcessor(processor)
+            .cacheOriginalImage()
+            .fade(duration: 0.25)
+            .onFailureImage(UIImage.petProfile)
+            .onSuccess { result in
+                os_signpost(.end, log: log, name: "MyPageViewController 펫 이미지 다운로드", signpostID: signpostID)
             }
-        }
+            .onFailure { error in }
+            .set(to: self.assistantImage)
     }
     
     // 인덱스 닷 누르면 해당 순서의 멍카드 화면 중앙으로 이동
