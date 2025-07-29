@@ -125,11 +125,21 @@ extension InvLogListViewController {
                     .subscribe(onNext: { [weak self] in
                         guard let self else { return }
                         
-                        let alert = AlertManager(message: "수사일지를 삭제하시겠습니까?",
-                                                 buttonTitles: ["취소", "확인"],
-                                                 buttonActions: [nil, { [weak self] in
-                            self?.viewModel.input.accept(.delete(indexPath))
-                        }])
+                        let alert = CustomAlertViewController(
+                             message: "수사일지를 삭제하시겠습니까?",
+                             buttons: [
+                                 CustomAlertViewController.AlertButton(
+                                     title: "취소",
+                                     action: nil
+                                 ),
+                                 CustomAlertViewController.AlertButton(
+                                     title: "확인",
+                                     action: { [weak self] in
+                                         self?.viewModel.input.accept(.delete(indexPath))
+                                     }
+                                 )
+                             ]
+                         )
                         
                         self.present(alert, animated: true)
                     })
@@ -142,7 +152,7 @@ extension InvLogListViewController {
                         let originalData = self.viewModel.originalData[indexPath.row]
                         
                         let walkResultViewModel = DataTrackingViewModel()
-                        let walkEndView = WalkEndModalViewController(viewModel: walkResultViewModel)
+                        let walkEndView = WalkEndModalViewController(dataTrackingViewModel: walkResultViewModel)
                         let nav = UINavigationController(rootViewController: walkEndView)
                         nav.modalPresentationStyle = .overFullScreen
                         

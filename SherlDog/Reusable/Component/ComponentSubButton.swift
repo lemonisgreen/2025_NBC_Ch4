@@ -7,7 +7,7 @@
 
 import UIKit
 
-class SubButtonManager: UIButton {
+class ComponentSubButton: UIButton {
     
     enum ColorForState {
         case enabled

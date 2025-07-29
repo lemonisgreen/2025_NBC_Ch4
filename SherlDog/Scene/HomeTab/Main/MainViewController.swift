@@ -64,7 +64,7 @@ class MainViewController: UIViewController {
     private let locationButton = UIButton()
     
     // 거리 측정 함수 뷰모델
-    private let trackingViewModel = DataTrackingViewModel()
+    private let dataTrackingViewModel = DataTrackingViewModel()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -86,16 +86,24 @@ class MainViewController: UIViewController {
     }
     // 위치권한을 거부 했을때
     private func showLocationSettingsAlert() {
-        let alert = AlertManager(
+        let alert = CustomAlertViewController(
             message: "위치 권한을 '항상 허용'으로\n설정해주세요",
             subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
-            buttonTitles: ["취소", "설정으로 이동"],
-            buttonActions: [nil, {
-                if let settingsURL = URL(string: UIApplication.openSettingsURLString),
-                   UIApplication.shared.canOpenURL(settingsURL) {
-                    UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
-                }
-            }]
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: "취소",
+                    action: nil
+                ),
+                CustomAlertViewController.AlertButton(
+                    title: "설정으로 이동",
+                    action: {
+                        if let settingsURL = URL(string: UIApplication.openSettingsURLString),
+                           UIApplication.shared.canOpenURL(settingsURL) {
+                            UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                        }
+                    }
+                )
+            ]
         )
         self.present(alert, animated: true)
     }
@@ -110,16 +118,24 @@ class MainViewController: UIViewController {
         // 사용 중 허용인 경우만 항상 허용을 유도
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self = self else { return }
-            let alert = AlertManager(
+            let alert = CustomAlertViewController(
                 message: "위치 권한을 '항상 허용'으로\n설정해주세요",
                 subMessage: "화면이 꺼져도 산책 경로를 기록 할 수 있어요.\n경로 기록 이외의 목적으로는\n사용되지 않아요",
-                buttonTitles: ["취소", "설정으로 이동"],
-                buttonActions: [nil, {
-                    if let settingsURL = URL(string: UIApplication.openSettingsURLString),
-                       UIApplication.shared.canOpenURL(settingsURL) {
-                        UIApplication.shared.open(settingsURL)
-                    }
-                }]
+                buttons: [
+                    CustomAlertViewController.AlertButton(
+                        title: "취소",
+                        action: nil
+                    ),
+                    CustomAlertViewController.AlertButton(
+                        title: "설정으로 이동",
+                        action: {
+                            if let settingsURL = URL(string: UIApplication.openSettingsURLString),
+                               UIApplication.shared.canOpenURL(settingsURL) {
+                                UIApplication.shared.open(settingsURL)
+                            }
+                        }
+                    )
+                ]
             )
             self.present(alert, animated: true)
         }
@@ -211,23 +227,23 @@ class MainViewController: UIViewController {
     }
     
     private func trackingBind() {
-        trackingViewModel.numberOfSteps
+        dataTrackingViewModel.numberOfSteps
             .map { "\($0)" }
             .bind(to: stepCountLabel
 .rx.text)
             .disposed(by: disposeBag)
         
-        trackingViewModel.distance
+        dataTrackingViewModel.distance
             .map { String(format: "%.2f", $0 / 1000.0) }
             .bind(to: distanceValueLabel.rx.text)
             .disposed(by: disposeBag)
         
-        trackingViewModel.trackingActive
+        dataTrackingViewModel.trackingActive
             .filter { $0 }
             .flatMapLatest { _ in
                 Observable<Int>.interval(.seconds(1), scheduler: MainScheduler.instance)
-                    .take(until: self.trackingViewModel.trackingActive.filter { !$0 })
-                    .withLatestFrom(self.trackingViewModel.startDate)
+                    .take(until: self.dataTrackingViewModel.trackingActive.filter { !$0 })
+                    .withLatestFrom(self.dataTrackingViewModel.startDate)
                     .compactMap { $0 }
                     .map { start in
                         let interval = Int(Date().timeIntervalSince(start))
@@ -250,24 +266,21 @@ class MainViewController: UIViewController {
 
                 // If not enough path, show alert and return
                 if fullSide.isEmpty {
-                    let alert = AlertManager(
+                    let alert = CustomAlertViewController(
                         message: "수사를 종료하시겠습니까?",
                         subMessage: "5미터 이하의 경로는 기록이 되지 않아요",
-                        buttonTitles: ["확인", "취소"],
-                        buttonActions: [
-                            {
-                                let confirmAlert = AlertManager(
-                                    message: "수사가 종료되었습니다.",
-                                    subMessage: nil,
-                                    buttonTitles: ["확인"],
-                                    buttonActions: [nil]
-                                )
-                                self.present(confirmAlert, animated: true)
-                                self.setInvestigation(active: false)
-                            },
-                            nil
-                        ]
-                    )
+                        buttons: [CustomAlertViewController.AlertButton(title: "확인", action:
+                                                                            {
+                            let confirmAlert = CustomAlertViewController(
+                                message: "수사가 종료되었습니다.",
+                                subMessage: nil,
+                                buttons: [CustomAlertViewController.AlertButton(title: "확인", action: nil)]
+                                
+                            )
+                            self.present(confirmAlert, animated: true)
+                            self.setInvestigation(active: false)
+                        }),CustomAlertViewController.AlertButton(title: "취소", action: nil)])
+                   
                     self.present(alert, animated: true)
                     return
                 }
@@ -296,11 +309,11 @@ class MainViewController: UIViewController {
                         }
                         
                         let selectedProfiles = self.requestViewModel.output.selectedPetProfiles.value
-                        let walkEndModal = WalkEndModalViewController(viewModel: self.trackingViewModel, selectedProfiles: selectedProfiles)
+                        let walkEndModal = WalkEndModalViewController(dataTrackingViewModel: self.dataTrackingViewModel, selectedProfiles: selectedProfiles)
                         let nav = UINavigationController(rootViewController: walkEndModal)
                         nav.modalPresentationStyle = .overFullScreen
                         self.present(nav, animated: true) {
-                            self.trackingViewModel.fullScreenImage.accept(image)
+                            self.dataTrackingViewModel.fullScreenImage.accept(image)
                         }
                     }
                     
@@ -331,8 +344,8 @@ class MainViewController: UIViewController {
             .disposed(by: disposeBag)
         
         requestViewModel.output.petIndex.subscribe(onNext: { [ weak self ] index in
-            self?.viewModel.startTracking.accept(())
-            self?.trackingViewModel.startTracking()
+            self?.viewModel.input.startTracking.accept(())
+            self?.dataTrackingViewModel.startTracking()
             self?.setInvestigation(active: true)
         })
         .disposed(by: disposeBag)
@@ -379,7 +392,16 @@ class MainViewController: UIViewController {
                         self.present(cameraView, animated: true)
                         
                     case false:
-                        let alert = AlertManager(message: "카메라 권한이 필요합니다.", subMessage: "설정에서 변경해주세요.", buttonTitles: ["확인"], buttonActions: [nil])
+                        let alert = CustomAlertViewController(
+                            message: "카메라 권한이 필요합니다.",
+                            subMessage: "설정에서 변경해주세요.",
+                            buttons: [
+                                CustomAlertViewController.AlertButton(
+                                    title: "확인",
+                                    action: nil
+                                )
+                            ]
+                        )
                         
                         self.present(alert, animated: true)
                     }
@@ -390,16 +412,15 @@ class MainViewController: UIViewController {
         self.endButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self = self else { return }
-                let alert = AlertManager(
+                let alert = CustomAlertViewController(
                     message: "수사를 종료하시겠습니까?",
                     subMessage: nil,
-                    buttonTitles: ["확인", "취소"],
-                    buttonActions: [
-                        { [weak self] in
-                            self?.trackingViewModel.stopTracking()
-                            self?.viewModel.stopTracking.accept(())
-                        },
-                        nil
+                    buttons: [
+                        CustomAlertViewController.AlertButton(title: "확인", action: {
+                            self.dataTrackingViewModel.stopTracking()
+                            self.viewModel.input.stopTracking.accept(())
+                        }),
+                        CustomAlertViewController.AlertButton(title: "취소", action: nil)
                     ]
                 )
                 self.present(alert, animated: true)

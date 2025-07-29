@@ -9,6 +9,7 @@ import Firebase
 import RxSwift
 import RxRelay
 import UIKit
+import os.signpost
 
 final class HumanProfileViewModel {
     
@@ -78,10 +79,14 @@ final class HumanProfileViewModel {
     
     private func loadExistingImage(from imageUrl: String) {
         guard !imageUrl.isEmpty, let url = URL(string: imageUrl) else { return }
+        let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
+        let signpostID = OSSignpostID(log: log)
+        os_signpost(.begin, log: log, name: "조수 프로필 이미지 다운로드", signpostID: signpostID)
         
         URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
             if let data = data, let loadedImage = UIImage(data: data) {
                 DispatchQueue.main.async {
+                    os_signpost(.end, log: log, name: "조수 프로필 이미지 다운로드", signpostID: signpostID)
                     self?.image.accept(loadedImage)
                 }
             }
