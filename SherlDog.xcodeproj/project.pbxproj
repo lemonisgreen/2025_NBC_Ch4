@@ -21,6 +21,8 @@
 		39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E542DF0455C0008A54D /* FirebaseFirestore */; };
 		39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E562DF0455C0008A54D /* FirebaseStorage */; };
 		39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 39EF106F2DFAD67200646675 /* GoogleSignIn */; };
+		3A3896122E38ADFA003D9C9A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 3A3896112E38ADFA003D9C9A /* Kingfisher */; };
+		3A3896152E38AEA9003D9C9A /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 3A3896142E38AEA9003D9C9A /* Lottie */; };
 		3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BECE2DF7FAF700397F6C /* Differentiator */; };
 		3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BED02DF7FAF700397F6C /* RxDataSources */; };
 		938AE7972E0450920005C73D /* RxCoreLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 938AE7962E0450920005C73D /* RxCoreLocation */; };
@@ -72,8 +74,10 @@
 				3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */,
 				39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */,
 				938AE7972E0450920005C73D /* RxCoreLocation in Frameworks */,
+				3A3896152E38AEA9003D9C9A /* Lottie in Frameworks */,
 				3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */,
 				39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */,
+				3A3896122E38ADFA003D9C9A /* Kingfisher in Frameworks */,
 				39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -135,6 +139,8 @@
 				39EF106F2DFAD67200646675 /* GoogleSignIn */,
 				F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */,
 				938AE7962E0450920005C73D /* RxCoreLocation */,
+				3A3896112E38ADFA003D9C9A /* Kingfisher */,
+				3A3896142E38AEA9003D9C9A /* Lottie */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -174,6 +180,8 @@
 				39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 				F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 				938AE7952E0450920005C73D /* XCRemoteSwiftPackageReference "RxCoreLocation" */,
+				3A3896102E38ADFA003D9C9A /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				3A3896132E38AEA9003D9C9A /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -495,6 +503,22 @@
 				minimumVersion = 8.0.0;
 			};
 		};
+		3A3896102E38ADFA003D9C9A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
+		3A3896132E38AEA9003D9C9A /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
 		3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources.git";
@@ -586,6 +610,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignIn;
+		};
+		3A3896112E38ADFA003D9C9A /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3A3896102E38ADFA003D9C9A /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		3A3896142E38AEA9003D9C9A /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3A3896132E38AEA9003D9C9A /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
 		};
 		3B40BECE2DF7FAF700397F6C /* Differentiator */ = {
 			isa = XCSwiftPackageProductDependency;

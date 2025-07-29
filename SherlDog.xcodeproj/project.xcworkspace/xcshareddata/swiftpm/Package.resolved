@@ -1,5 +1,5 @@
 {
-  "originHash" : "cb579f6a3b50f7b4ad6609ec2aa6900b9fd378331eb368d06cad8cbbe42b87b5",
+  "originHash" : "cc7dbe0fcf95be40b5d1e9f3be18d878e5ec128817aea6e7844517f1b35991da",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -209,12 +209,30 @@
       }
     },
     {
+      "identity" : "kingfisher",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/onevcat/Kingfisher.git",
+      "state" : {
+        "revision" : "2015fda791daa72c8058619545a593bf8c1dd59f",
+        "version" : "8.5.0"
+      }
+    },
+    {
       "identity" : "leveldb",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/leveldb.git",
       "state" : {
         "revision" : "a0bc79961d7be727d258d33d5a6b2f1023270ba1",
         "version" : "1.22.5"
+      }
+    },
+    {
+      "identity" : "lottie-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/airbnb/lottie-ios",
+      "state" : {
+        "revision" : "a004050748dc197c56256a14dca49a035d74726c",
+        "version" : "4.5.2"
       }
     },
     {
@@ -238,7 +256,7 @@
     {
       "identity" : "rxcorelocation",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RxSwiftCommunity/RxCoreLocation.git",
+      "location" : "https://github.com/RxSwiftCommunity/RxCoreLocation",
       "state" : {
         "revision" : "8b26b77851c09689c2fb6ba9cd875c203ff79797",
         "version" : "1.5.1"
