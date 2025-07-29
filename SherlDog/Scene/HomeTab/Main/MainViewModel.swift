@@ -27,8 +27,8 @@ final class MainViewModel {
     let input: Input
     let output: Output
 
-    private let startTracking = PublishRelay<Void>()
-    private let stopTracking = PublishRelay<Void>()
+    let startTracking = PublishRelay<Void>()
+    let stopTracking = PublishRelay<Void>()
     private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
     private let isTracking = BehaviorRelay<Bool>(value: false)
     private let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])

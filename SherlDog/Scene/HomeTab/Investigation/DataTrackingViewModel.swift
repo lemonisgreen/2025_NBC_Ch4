@@ -10,6 +10,7 @@ import RxCocoa
 import CoreMotion
 import FirebaseFirestore
 import FirebaseAuth
+import os.signpost
 
 class DataTrackingViewModel {
     let disposeBag = DisposeBag()
@@ -115,8 +116,13 @@ class DataTrackingViewModel {
             return .just(UIImage())
         }
         return Single<UIImage>.create { single in
+            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
+            let signpostID = OSSignpostID(log: log)
+            os_signpost(.begin, log: log, name: "경로 이미지 다운로드", signpostID: signpostID)
+            
             URLSession.shared.dataTask(with: url) { data, response, error in
                 if let data = data, let image = UIImage(data: data) {
+                    os_signpost(.end, log: log, name: "경로 이미지 다운로드", signpostID: signpostID)
                     single(.success(image))
                 } else {
                     single(.success(UIImage()))

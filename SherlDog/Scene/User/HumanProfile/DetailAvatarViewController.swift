@@ -63,7 +63,7 @@ extension DetailAvatarViewController {
     private func bind() {
         self.viewModel.output.selectedAvatar
             .subscribe(onNext: { [weak self] data in
-                guard let self, let data else { return }
+                guard let self else { return }
                 
                 self.avatarImageView.image = UIImage(named: data.avatar)
                 self.detailTitleLabel.text = data.title
