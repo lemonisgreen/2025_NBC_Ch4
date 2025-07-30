@@ -256,7 +256,7 @@ extension SelectAvatarViewController {
         section.orthogonalScrollingBehavior = .paging
         section.visibleItemsInvalidationHandler = { [weak self] items, offset, environment in
             let viewWidth = environment.container.contentSize.width
-            self?.pageControl.currentPage = Int((offset.x + (viewWidth / 2)) / viewWidth)
+            self?.pageControl.currentPage = Int(round(offset.x / viewWidth))
         }
         
         return UICollectionViewCompositionalLayout(section: section)
