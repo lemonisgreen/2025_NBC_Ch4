@@ -21,8 +21,8 @@ class CancelMembershipViewController: UIViewController {
     let mainLabel = UILabel()
     let contentLabel = UILabel()
     let finalLabel = UILabel()
-    let cancelButton = ComponentButton(title: "취소할게요")
-    let continueButton = ComponentButton(title: "그래도 탈퇴할래요")
+    let cancelButton = ButtonFactory.makeButton(type: .sub, title: "취소할게요")
+    let continueButton = ButtonFactory.makeButton(type: .main, title: "그래도 탈퇴할래요")
     let buttonStackView = UIStackView()
     let separator = UIView()
     let backLabel = UILabel()
@@ -78,11 +78,6 @@ class CancelMembershipViewController: UIViewController {
         finalLabel.textColor = .textPrimary
         finalLabel.numberOfLines = 0
         finalLabel.textAlignment = .center
-        
-        cancelButton.setBackgroundColor(UIColor(named: "textInverse")!, for: .normal)
-        cancelButton.setTitleColor(UIColor(named: "keycolorPrimary3"), for: .normal)
-        cancelButton.layer.borderWidth = 1
-        cancelButton.layer.borderColor = UIColor(named: "keycolorPrimary3")?.cgColor
         
         separator.backgroundColor = UIColor(named: "gray200")
         

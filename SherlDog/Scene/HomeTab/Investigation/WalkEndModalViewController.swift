@@ -34,7 +34,7 @@ class WalkEndModalViewController : UIViewController {
     ]
     private let walkEndLabel = UILabel()
     private let showProfileButton = UIButton()
-    private let walkShareButton = ComponentButton(title: "멍탐정과 남긴 단서")
+    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "멍탐정과 남긴 단서")
     private let mapImageView = UIImageView()
     private let closeButton = UIButton()
     

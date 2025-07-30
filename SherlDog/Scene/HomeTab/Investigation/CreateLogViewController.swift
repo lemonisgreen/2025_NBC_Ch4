@@ -34,8 +34,8 @@ class CreateLogViewController: UIViewController {
     private let textView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let textViewConstraintsLabel = UILabel()
-    private let cancelButton = ComponentSubButton(title: "취소")
-    private let shareButton = ComponentButton(title: "등록하기")
+    private let cancelButton = ButtonFactory.makeButton(type: .sub, title: "취소")
+    private let shareButton = ButtonFactory.makeButton(type: .main, title: "등록하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle

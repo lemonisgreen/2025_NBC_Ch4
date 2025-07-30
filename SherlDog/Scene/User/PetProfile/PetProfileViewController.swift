@@ -36,7 +36,7 @@ final class PetProfileViewController: UIViewController {
     
     private let dogImageView = UIImageView()
     private let infoLabel = UILabel()
-    private let nextButton = ComponentButton(title: "다음")
+    private let nextButton = ButtonFactory.makeButton(type: .main, title: "다음")
     
     let navigationBackButton = UIButton()
     let navigationTitleLabel = UILabel()

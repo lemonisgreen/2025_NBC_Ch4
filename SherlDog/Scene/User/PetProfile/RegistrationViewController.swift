@@ -70,7 +70,7 @@ class RegistrationViewController: UIViewController {
     private let registIntroduceLabel = UILabel()
     private let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
     private let registIntroduceCountLabel = UILabel()
-    private let registCompletButton = ComponentButton(title: "다음")
+    private let registCompletButton = ButtonFactory.makeButton(type: .main, title: "다음")
     
     override func viewDidLoad() {
         super.viewDidLoad()
