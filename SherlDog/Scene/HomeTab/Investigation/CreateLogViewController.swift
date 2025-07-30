@@ -37,6 +37,7 @@ class CreateLogViewController: UIViewController {
     private let cancelButton = ComponentSubButton(title: "취소")
     private let shareButton = ComponentButton(title: "등록하기")
     private let horizontalStackView = UIStackView()
+    private let loadingIndicator = CustomLoadingIndicator()
     
     // MARK: - Lifecycle
     init(viewModel: CameraViewModel) {
@@ -78,6 +79,12 @@ extension CreateLogViewController {
             .bind(to: self.photoImageView.rx.image)
             .disposed(by: disposeBag)
         
+        self.viewModel.output.isLoading
+            .asDriver(onErrorJustReturn: false)
+            .map { !$0 }
+            .drive(self.loadingIndicator.rx.isHidden)
+            .disposed(by: disposeBag)
+        
         self.viewModel.output.uploadComplete
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
@@ -95,6 +102,23 @@ extension CreateLogViewController {
                                 mainView.selectedIndex = 1
                             }
                         )
+                    ]
+                )
+                
+                self.present(alert, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        self.viewModel.output.uploadError
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] in
+                guard let self else { return }
+                
+                let alert = CustomAlertViewController(
+                    message: "에러",
+                    subMessage: "업로드 중 에러가 발생했습니다. 다시 시도해주세요.",
+                    buttons: [
+                        CustomAlertViewController.AlertButton(title: "확인", action: nil)
                     ]
                 )
                 
@@ -196,7 +220,8 @@ extension CreateLogViewController {
             photoImageView,
             textView,
             textViewConstraintsLabel,
-            horizontalStackView
+            horizontalStackView,
+            loadingIndicator
         ])
         
         titleLabel.text = "수사일지"
@@ -261,6 +286,8 @@ extension CreateLogViewController {
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
         horizontalStackView.distribution = .fillEqually
+        
+        loadingIndicator.isHidden = true
     }
     
     private func configureUI() {
@@ -353,6 +380,10 @@ extension CreateLogViewController {
             $0.height.equalTo(52)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     

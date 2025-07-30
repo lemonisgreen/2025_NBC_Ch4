@@ -35,6 +35,7 @@ class CreateAssistantProfileViewController: UIViewController {
     private let introduceConstraintsLabel = UILabel()
     private let nextButton = ComponentButton(title: "다음")
     private let textViewPlaceholder = UILabel()
+    private let loadingIndicator = CustomLoadingIndicator()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -269,7 +270,7 @@ extension CreateAssistantProfileViewController {
         viewModel.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.nextButton.isEnabled = !isLoading
-                // 로딩 인디케이터가 있다면 여기서 처리
+                self?.loadingIndicator.isHidden = !isLoading
             })
             .disposed(by: disposeBag)
         
@@ -339,6 +340,7 @@ extension CreateAssistantProfileViewController {
             introduceTextView,
             introduceConstraintsLabel,
             nextButton,
+            loadingIndicator
         ])
         
         navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
@@ -415,6 +417,8 @@ extension CreateAssistantProfileViewController {
         introduceConstraintsLabel.textColor = .gray400
         
         self.nextButton.isEnabled = false
+        
+        loadingIndicator.isHidden = true
     }
     
     private func configureUI() {
@@ -495,6 +499,10 @@ extension CreateAssistantProfileViewController {
         nextButton.snp.makeConstraints {
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     
