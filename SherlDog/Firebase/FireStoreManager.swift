@@ -19,7 +19,7 @@ final class FirestoreManager {
     let db = Firestore.firestore()
     private init() {}
 }
-// MARK: - 기본(generic) 쿼리 및 CRUD 메서드
+// MARK: - 기본 쿼리 및 CRUD 메서드
 extension FirestoreManager {
     
     //단일 문서 가져오기
@@ -225,6 +225,7 @@ extension FirestoreManager {
     }
 }
 
+// MARK: - 특정 목적별 메서드
 extension FirestoreManager {
 
     //오늘의 내 단서 목록 가져오기
