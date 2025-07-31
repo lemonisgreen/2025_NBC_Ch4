@@ -13,6 +13,13 @@ import Firebase
 import FirebaseStorage
 
 class RegistrationViewController: UIViewController {
+
+    enum Mode {
+        case add
+        case edit(PetProfile)
+    }
+
+    private var mode: Mode = .add
     
     private let cameraViewModel = CameraViewModel()
     private let viewModel = RegistrationViewModel()
@@ -83,11 +90,11 @@ class RegistrationViewController: UIViewController {
         bind()
     }
     
-    func configure(for mode: RegistrationViewModel.Mode, with profile: PetProfile? = nil) {
-        if let profile = profile {
-            viewModel.setEditMode(with: profile)
-        }
-        // 뷰가 로드된 후에 UI 업데이트 보장
+    func configure(for mode: Mode, with profile: PetProfile) {
+        self.mode = mode
+        // 여기에 전달된 profile 정보를 뷰에 적용하는 코드 추가
+        // 기존 방식과 호환 위해 아래 코드도 호출
+        viewModel.setEditMode(with: profile)
         DispatchQueue.main.async { [weak self] in
             if self?.isViewLoaded == true {
                 self?.updateButtonStates()
@@ -480,6 +487,34 @@ class RegistrationViewController: UIViewController {
             .bind(to: registCompletButton.rx.title(for: .normal))
             .disposed(by: disposeBag)
         
+    }
+    
+    // MARK: - Present Edit View for Profile
+    /// Presents the edit view for a given pet profile ID.
+    private func presentEditView(for profileId: String) {
+        FirestoreManager.shared.fetchDocument(
+            collection: "PetProfile",
+            documentId: profileId,
+            type: PetProfile.self
+        )
+        .subscribe(onSuccess: { [weak self] profile in
+            guard let self = self else { return }
+
+            let registrationVC = RegistrationViewController()
+            registrationVC.configure(for: .edit(profile), with: profile)
+
+            registrationVC.profileUpdateSubject
+                .take(1)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.viewModel.profileDidUpdate.onNext(())
+                })
+                .disposed(by: registrationVC.disposeBag)
+
+            // NOTE: Present or push registrationVC from the calling context as needed
+        }, onFailure: { error in
+            print("❌ Firestore에서 프로필 로딩 실패: \(error.localizedDescription)")
+        })
+        .disposed(by: disposeBag)
     }
     
     private func setupUI() {

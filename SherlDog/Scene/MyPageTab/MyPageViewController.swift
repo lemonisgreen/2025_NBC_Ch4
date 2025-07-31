@@ -252,7 +252,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 }
                 return items
             }
-            .bind(to: collectionView.rx.items) { collectionView, index, item in
+            .bind(to: collectionView.rx.items) { [weak self] collectionView, index, item in
                 switch item {
                 case .profile(let profile):
                     if let cell = collectionView.dequeueReusableCell(
@@ -260,11 +260,22 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                         for: IndexPath(item: index, section: 0)
                     ) as? DetectiveCardCell {
                         cell.configure(with: profile)
+                        
+                        cell.onEditTapped = { [weak self] in
+                            guard let self = self else { return }
+                            self.presentRegistrationViewController(with: profile)
+                                .subscribe()
+                                .disposed(by: self.disposeBag)
+                        }
+                        cell.onDeleteTapped = { [weak self] in
+                            guard let self = self else { return }
+                            self.viewModel.deleteProfile(profile)
+                        }
+                        
                         return cell
                     } else {
                         return UICollectionViewCell()
                     }
-                    
                 case .addProfile:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: ProfileAddCollectionViewCell.identifier,

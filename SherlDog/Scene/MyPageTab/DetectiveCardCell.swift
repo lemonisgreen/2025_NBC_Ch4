@@ -11,6 +11,9 @@ class DetectiveCardCell: UICollectionViewCell {
     static let identifier = "DetectiveCardCell"
     let cardView = DetectiveCardView()
     
+    var onEditTapped: (() -> Void)?
+    var onDeleteTapped: (() -> Void)?
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -26,6 +29,13 @@ class DetectiveCardCell: UICollectionViewCell {
         backgroundColor = .clear
         cardView.snp.makeConstraints {
             $0.edges.equalToSuperview()
+        }
+        cardView.onEditTapped = { [weak self] in
+            self?.onEditTapped?()
+        }
+
+        cardView.onDeleteTapped = { [weak self] in
+            self?.onDeleteTapped?()
         }
     }
     
