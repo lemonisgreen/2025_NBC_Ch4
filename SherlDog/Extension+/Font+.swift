@@ -109,6 +109,14 @@ extension UIFont {
         return UIFont(name: "EF_jejudoldam", size: 40) ?? UIFont.systemFont(ofSize: 40, weight: .bold)
     }
     
+    static var recordTitle: UIFont {
+        return UIFont(name: "ChosunCentennial", size: 20) ?? UIFont.systemFont(ofSize: 20, weight: .regular)
+    }
+    
+    static var recordTitleIsSE: UIFont {
+        return UIFont(name: "ChosunCentennial", size: 16) ?? UIFont.systemFont(ofSize: 20, weight: .regular)
+    }
+    
     /* 사용 예시:
      
      label.font = UIFont.highlight1
