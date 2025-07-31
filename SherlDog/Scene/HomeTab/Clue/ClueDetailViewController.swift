@@ -53,9 +53,6 @@ final class ClueDetailViewController: UIViewController {
             loadingIndicator
         ])
         
-        // 로딩 인디케이터 설정
-        loadingIndicator.isHidden = true
-        
         collectionView.backgroundColor = .keycolorInverse
         collectionView.register(ClueDetailCell.self, forCellWithReuseIdentifier: ClueDetailCell.identifier)
         

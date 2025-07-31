@@ -98,8 +98,6 @@ class ClueInputViewController: UIViewController {
         countLabel.font = .alert2
         countLabel.textColor = .gray400
         
-        loadingIndicator.isHidden = true
-        
         [clueLabel, cancelButton, imageView, textView, registerButton, countLabel, loadingIndicator].forEach { view.addSubview($0) }
     }
     

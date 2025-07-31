@@ -35,6 +35,7 @@ class CustomLoadingIndicator: UIView {
         addSubview(lottieAnimation)
         
         backgroundColor = .keycolorTertiaryBG
+        isHidden = true
         
         lottieAnimation.contentMode = .scaleAspectFit
         lottieAnimation.loopMode = .loop

@@ -444,8 +444,6 @@ class WalkEndModalViewController : UIViewController {
         
         closeButton.setImage(UIImage(named: "modalExit"), for: .normal)
         closeButton.contentMode = .scaleAspectFit
-        
-        loadingIndicator.isHidden = true
     }
     
     private func setPetImages() {

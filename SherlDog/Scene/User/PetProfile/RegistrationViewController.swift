@@ -714,9 +714,6 @@ class RegistrationViewController: UIViewController {
         
         // MARK: 다음 버튼 --
         registCompletButton.isEnabled = false
-        
-        // MARK: CustomLoadingIndicator -
-        loadingIndicator.isHidden = true
     }
     
     private func configureUI() {

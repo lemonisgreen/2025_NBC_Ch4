@@ -286,8 +286,6 @@ extension CreateLogViewController {
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 16
         horizontalStackView.distribution = .fillEqually
-        
-        loadingIndicator.isHidden = true
     }
     
     private func configureUI() {

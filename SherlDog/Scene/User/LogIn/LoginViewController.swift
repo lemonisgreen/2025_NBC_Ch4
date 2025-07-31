@@ -64,8 +64,6 @@ class LoginViewController: UIViewController {
         kakaoButton.setImage(.kakao, for: .normal)
         googleButton.setImage(.google, for: .normal)
         appleButton.setImage(.apple, for: .normal)
-
-        loadingIndicator.isHidden = true
     }
 
     private func setupUI() {

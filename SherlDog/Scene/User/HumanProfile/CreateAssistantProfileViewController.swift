@@ -417,8 +417,6 @@ extension CreateAssistantProfileViewController {
         introduceConstraintsLabel.textColor = .gray400
         
         self.nextButton.isEnabled = false
-        
-        loadingIndicator.isHidden = true
     }
     
     private func configureUI() {
