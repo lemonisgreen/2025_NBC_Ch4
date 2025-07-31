@@ -228,11 +228,7 @@ final class PetProfileViewController: UIViewController {
     private func addNewProfile(with petProfileID: String) {
         guard petProfiles.count < maxProfileCount else { return }
         
-        FirestoreManager.shared.fetchDocument(
-            collection: "PetProfile",
-            documentId: petProfileID,
-            type: PetProfile.self
-        )
+        FirestoreManager.shared.fetchPetProfileById(petProfileId: petProfileID)
         .subscribe(onSuccess: { [weak self] newProfile in
             guard let self = self else { return }
             self.petProfiles.append(newProfile)

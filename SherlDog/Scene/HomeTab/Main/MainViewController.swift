@@ -172,22 +172,21 @@ class MainViewController: UIViewController {
         clueMarkers.removeAll()
         
         // Firestore에서 내 단서들 가져오기
-        FirestoreManager.shared.fetchCollection(collection: "clues", type: ClueModel.self)
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { [weak self] allClues in
-                    let myClues = allClues.filter { $0.userID == userId }
-                    if myClues.isEmpty {
-                        print("저장된 단서가 없습니다")
-                    } else {
-                        self?.addClueMarkers(clues: myClues)
-                    }
-                },
-                onFailure: { error in
-                    print("단서 불러오기 실패: \(error.localizedDescription)")
+        FirestoreManager.shared.fetchCluesForUser(userId: userId)
+        .observe(on: MainScheduler.instance)
+        .subscribe(
+            onSuccess: { [weak self] myClues in
+                if myClues.isEmpty {
+                    print("저장된 단서가 없습니다")
+                } else {
+                    self?.addClueMarkers(clues: myClues)
                 }
-            )
-            .disposed(by: disposeBag)
+            },
+            onFailure: { error in
+                print("단서 불러오기 실패: \(error.localizedDescription)")
+            }
+        )
+        .disposed(by: disposeBag)
     }
     
     private func addClueMarkers(clues: [ClueModel]) {
