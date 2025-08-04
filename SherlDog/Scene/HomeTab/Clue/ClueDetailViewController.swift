@@ -138,7 +138,7 @@ final class ClueDetailViewController: UIViewController {
             configureCell: { dataSource, collectionView, indexPath, item  in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ClueDetailCell.identifier, for: indexPath) as? ClueDetailCell else { return .init() }
                 
-                cell.settingCell(image: item.image, content: item.content)
+                cell.settingCell(imageURL: item.imageURL, content: item.content)
                 
                 return cell
             }

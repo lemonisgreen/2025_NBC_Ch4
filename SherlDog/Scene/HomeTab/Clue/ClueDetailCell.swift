@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import Kingfisher
 
 class ClueDetailCell: UICollectionViewCell {
     static let identifier: String = "ClueDetailCell"
@@ -27,9 +28,14 @@ class ClueDetailCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func settingCell(image: UIImage, content: String) {
-        self.clueImageView.image = image
-        self.clueTextView.text = content
+    func settingCell(imageURL: String, content: String) {
+        if let url = URL(string: imageURL) {
+            clueImageView.kf.setImage(with: url,
+                                      placeholder: UIImage(named:"placeholder"),
+                                      options: [.transition(.fade(0.2)),
+                                                .cacheOriginalImage])
+        }
+        clueTextView.text = content
     }
     
     private func setupUI() {

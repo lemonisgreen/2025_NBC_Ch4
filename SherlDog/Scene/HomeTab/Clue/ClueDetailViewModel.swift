@@ -21,7 +21,7 @@ final class ClueDetailViewModel {
     private let disposeBag = DisposeBag()
     
     struct ClueCellData {
-        let image: UIImage
+        let imageURL: String
         let content: String
     }
     
@@ -32,15 +32,16 @@ final class ClueDetailViewModel {
     
     // MARK: - Outputs
     struct Output {
-        let cellData = BehaviorRelay<[ClueDataSource]>(value: [ClueDataSource(model: "",
-                                                                              items: [ClueCellData(image: UIImage(),
-                                                                                                   content: "")])])
+        let cellData = BehaviorRelay<[ClueDataSource]>(value: [
+            ClueDataSource(model: "",
+                           items: [ClueCellData(imageURL: "",        
+                                                content: "")])
+        ])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let errorMessage = PublishRelay<String>()
     }
     
     typealias ClueDataSource = SectionModel<String, ClueCellData>
-    private var images = [UIImage]()
     private var data = [ClueCellData]() {
         didSet {
             self.output.cellData.accept([ClueDataSource(model: "", items: self.data)])
@@ -66,41 +67,11 @@ final class ClueDetailViewModel {
     }
     
     private func updateUI(with clue: ClueModel) {
-        // Firebase 이미지 다운로드
-        downloadImage(from: clue.image)
-            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] image in
-                self?.data.append(ClueCellData(image: image, content: clue.content))
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    private func downloadImage(from urlString: String) -> Single<UIImage> {
-        guard let url = URL(string: urlString) else {
-            return .just(UIImage())
-        }
-        return Single<UIImage>.create { single in
-            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-            let signpostID = OSSignpostID(log: log)
-            os_signpost(.begin, log: log, name: "단서 이미지 다운로드", signpostID: signpostID)
-            
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                if let data = data, let image = UIImage(data: data) {
-                    os_signpost(.end, log: log, name: "단서 이미지 다운로드", signpostID: signpostID)
-                    single(.success(image))
-                } else {
-                    single(.success(UIImage()))
-                }
-            }.resume()
-            
-            return Disposables.create()
-        }
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        data.append(ClueCellData(imageURL: clue.image, content: clue.content))
     }
     
     private func fetchCluesData(day: Date) {
         guard let userId = Auth.auth().currentUser?.uid else { return }
-        self.images.removeAll()
         
         FirestoreManager.shared.fetchDocumentsForDay(collection: "clues",
                                                whereField: "userID",
@@ -109,21 +80,9 @@ final class ClueDetailViewModel {
                                                      day: day,
                                                type: ClueModel.self)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
-            let imageSingle = clue.map { [weak self] clue in
-                guard let self else { return Single.just(UIImage()) }
-                return self.downloadImage(from: clue.image)
-            }
-            
-            return Single.zip(imageSingle) { image in
-                return (clue, image)
-            }
-        }
-        .subscribe(onSuccess: { [weak self] clues, images in
-            guard let self else { return }
-            
-            for (clue, image) in zip(clues, images) {
-                self.data.append(ClueCellData(image: image, content: clue.content))
+        .subscribe(onSuccess: { [weak self] clues in
+            clues.forEach {
+                self?.data.append(ClueCellData(imageURL: $0.image, content: $0.content))
             }
         })
         .disposed(by: disposeBag)
