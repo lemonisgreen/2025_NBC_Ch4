@@ -294,7 +294,7 @@ final class PetProfileViewController: UIViewController {
             print("✅ 성공적으로 불러옴: \(profile.name)")
 
             let registrationVC = RegistrationViewController()
-            registrationVC.configure(for: .edit(profile), with: profile)
+            registrationVC.configure(for: .edit(profile))
 
             registrationVC.profileUpdateSubject
                 .take(1)
@@ -333,10 +333,10 @@ extension PetProfileViewController: UICollectionViewDataSource {
         if indexPath.item < petProfiles.count {
             // 기존 프로필 카드
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DetectiveCardCollectionViewCell.identifier, for: indexPath) as! DetectiveCardCollectionViewCell
-            cell.configure(with: petProfiles[indexPath.item])
+            let profile = petProfiles[indexPath.item]
+            cell.configure(with: profile)
             cell.onEditTapped = { [weak self] in
                 guard let self = self else { return }
-                let profile = self.petProfiles[indexPath.item]
                 self.presentEditView(for: profile.petProfileId ?? "")
             }
             cell.onDeleteTapped = { [weak self] in

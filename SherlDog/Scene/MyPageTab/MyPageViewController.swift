@@ -438,7 +438,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             }
             
             let registrationVC = RegistrationViewController()
-            registrationVC.configure(for: .edit(profile), with: profile)
+            registrationVC.configure(for: .edit(profile))
             
             // 수정 완료 시 데이터 새로고침을 위한 Observable 구독
             registrationVC.profileUpdateSubject

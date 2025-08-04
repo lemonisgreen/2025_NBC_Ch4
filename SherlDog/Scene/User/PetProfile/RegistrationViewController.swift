@@ -90,11 +90,14 @@ class RegistrationViewController: UIViewController {
         bind()
     }
     
-    func configure(for mode: Mode, with profile: PetProfile) {
+    /// Configures the view for the specified mode. If mode is .edit, sets up the viewModel with the profile.
+    func configure(for mode: Mode) {
         self.mode = mode
-        // 여기에 전달된 profile 정보를 뷰에 적용하는 코드 추가
-        // 기존 방식과 호환 위해 아래 코드도 호출
-        viewModel.setEditMode(with: profile)
+
+        if case .edit(let profile) = mode {
+            viewModel.setEditMode(with: profile)
+        }
+
         DispatchQueue.main.async { [weak self] in
             if self?.isViewLoaded == true {
                 self?.updateButtonStates()
@@ -501,7 +504,7 @@ class RegistrationViewController: UIViewController {
             guard let self = self else { return }
 
             let registrationVC = RegistrationViewController()
-            registrationVC.configure(for: .edit(profile), with: profile)
+            registrationVC.configure(for: .edit(profile))
 
             registrationVC.profileUpdateSubject
                 .take(1)
