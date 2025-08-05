@@ -338,7 +338,7 @@ class WalkEndModalViewController : UIViewController {
         
         todayLabel.text = "2025/06/05"
         todayLabel.textColor = UIColor(named: "keycolorPrimary2")
-        todayLabel.font = UIFont.title3
+        todayLabel.font = UIScreen.isIPhoneSE ? .recordTitleIsSE : .recordTitle
         todayLabel.textAlignment = .left
         todayLabel.backgroundColor = .clear
         
@@ -511,7 +511,6 @@ class WalkEndModalViewController : UIViewController {
                 $0.top.bottom.equalToSuperview().offset(40)
             }
         }
-        
         
         todayLabel.snp.makeConstraints {
             $0.top.equalTo(backgroundImageView.snp.top).offset(UIScreen.isIPhoneSE ? 55 : 75)
