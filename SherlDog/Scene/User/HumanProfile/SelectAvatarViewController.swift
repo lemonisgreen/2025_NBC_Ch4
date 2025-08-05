@@ -19,6 +19,8 @@ class SelectAvatarViewController: UIViewController {
     private let disposeBag = DisposeBag()
     private lazy var dataSource = self.setDataSource()
     
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
     private let titleLabel = UILabel()
     private let avatarImageView = UIImageView()
     private let avatarBackground = UIImageView()
@@ -132,13 +134,19 @@ extension SelectAvatarViewController {
         [backButton, choiceButton]
             .forEach { horizontalStackView.addArrangedSubview($0) }
         
-        view.addSubviews([
+        contentView.addSubviews([
             titleLabel,
             avatarBackground,
             avatarImageView,
             detailView,
             collectionView,
-            pageControl,
+            pageControl
+        ])
+        
+        scrollView.addSubview(contentView)
+        
+        view.addSubviews([
+            scrollView,
             horizontalStackView
         ])
         
@@ -178,8 +186,18 @@ extension SelectAvatarViewController {
     }
     
     private func configureUI() {
+        scrollView.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(16)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(horizontalStackView.snp.top).offset(-20)
+        }
+        
+        contentView.snp.makeConstraints {
+            $0.width.edges.equalToSuperview()
+        }
+        
         titleLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(28)
+            $0.top.equalToSuperview().inset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
@@ -212,9 +230,10 @@ extension SelectAvatarViewController {
         }
         
         collectionView.snp.makeConstraints {
+            $0.height.equalTo(116)
             $0.top.equalTo(detailView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(horizontalStackView.snp.top).offset(-42)
+            $0.bottom.equalToSuperview().inset(22)
         }
         
         pageControl.snp.makeConstraints {

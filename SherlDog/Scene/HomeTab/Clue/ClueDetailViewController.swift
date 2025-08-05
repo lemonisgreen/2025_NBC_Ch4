@@ -20,7 +20,7 @@ final class ClueDetailViewController: UIViewController {
     
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout())
     private let pageControl = UIPageControl()
-    private let loadingIndicator = UIActivityIndicatorView(style: .medium)
+    private let loadingIndicator = CustomLoadingIndicator()
 
     init(viewModel: ClueDetailViewModel) {
         self.viewModel = viewModel
@@ -53,10 +53,6 @@ final class ClueDetailViewController: UIViewController {
             loadingIndicator
         ])
         
-        // 로딩 인디케이터 설정
-        loadingIndicator.color = .gray
-        loadingIndicator.hidesWhenStopped = true
-        
         collectionView.backgroundColor = .keycolorInverse
         collectionView.register(ClueDetailCell.self, forCellWithReuseIdentifier: ClueDetailCell.identifier)
         
@@ -77,7 +73,7 @@ final class ClueDetailViewController: UIViewController {
         }
         
         loadingIndicator.snp.makeConstraints {
-            $0.center.equalTo(collectionView)
+            $0.edges.equalToSuperview()
         }
     }
     
@@ -88,14 +84,9 @@ final class ClueDetailViewController: UIViewController {
     private func bindViewModel() {
         // 로딩 상태 바인딩
         viewModel.output.isLoading
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] isLoading in
-                if isLoading {
-                    self?.loadingIndicator.startAnimating()
-                } else {
-                    self?.loadingIndicator.stopAnimating()
-                }
-            })
+            .asDriver(onErrorJustReturn: false)
+            .map { !$0 }
+            .drive(self.loadingIndicator.rx.isHidden)
             .disposed(by: disposeBag)
         
         // 단서 데이터 바인딩
@@ -128,7 +119,7 @@ final class ClueDetailViewController: UIViewController {
         viewModel.output.errorMessage
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] message in
-                self?.loadingIndicator.stopAnimating()
+                self?.loadingIndicator.isHidden = true
             })
             .disposed(by: disposeBag)
     }
