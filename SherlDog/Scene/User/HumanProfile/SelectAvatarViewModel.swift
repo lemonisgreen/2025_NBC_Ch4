@@ -45,7 +45,9 @@ class SelectAvatarViewModel {
                 switch input {
                 case .avatarSelect(let index):
                     self.output.selectedAvatar.accept(self.data[index])
-                    self.output.icon.accept(self.data[index].icon)
+                    let icon = self.data[index].icon
+                    let selectedIcon = "selected" + icon.prefix(1).capitalized + icon.dropFirst()
+                    self.output.icon.accept(selectedIcon)
                 case .goBack:
                     self.output.moveToBack.accept(())
                 case .completeSelect:
