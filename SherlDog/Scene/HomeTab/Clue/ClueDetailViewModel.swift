@@ -105,12 +105,7 @@ final class ClueDetailViewModel {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         self.images.removeAll()
         
-        FirestoreManager.shared.fetchDocumentsForDay(collection: "clues",
-                                               whereField: "userID",
-                                               isEqualTo: userId,
-                                               orderBy: "date",
-                                                     day: day,
-                                               type: ClueModel.self)
+        FirestoreManager.shared.fetchCluesForDay(userId: userId, day: day)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
             let imageSingle = clue.map { [weak self] clue in
