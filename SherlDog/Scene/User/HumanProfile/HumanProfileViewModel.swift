@@ -9,13 +9,13 @@ import Firebase
 import RxSwift
 import RxRelay
 import UIKit
-import os.signpost
 
 final class HumanProfileViewModel {
     
     let nickname = BehaviorRelay<String>(value: "")
     let introduce = BehaviorRelay<String>(value: "")
-    let image = BehaviorRelay<UIImage?>(value: nil)
+    let imageString = BehaviorRelay<String>(value: "")
+    let imageForUpload = BehaviorRelay<UIImage?>(value: nil)
     let saveResult = PublishSubject<Result<Void, Error>>()
     let isLoading = PublishRelay<Bool>()
 
@@ -36,7 +36,7 @@ final class HumanProfileViewModel {
         nickname.accept(profile.nickname)
         introduce.accept(profile.introduce)
         
-        loadExistingImage(from: profile.image)
+        self.imageString.accept(profile.image)
     }
     
     func setCreateMode() {
@@ -45,7 +45,7 @@ final class HumanProfileViewModel {
         
         nickname.accept("")
         introduce.accept("")
-        image.accept(nil)
+        imageString.accept("")
     }
     
     func saveProfile() {
@@ -59,7 +59,7 @@ final class HumanProfileViewModel {
     
     var isSaveEnabled: Observable<Bool> {
         return Observable
-            .combineLatest(nickname, introduce, image)
+            .combineLatest(nickname, introduce, imageForUpload)
             .map { nickname, introduce, image in
                 return !nickname.isEmpty && !introduce.isEmpty && image != nil
             }
@@ -77,24 +77,8 @@ final class HumanProfileViewModel {
         }
     }
     
-    private func loadExistingImage(from imageUrl: String) {
-        guard !imageUrl.isEmpty, let url = URL(string: imageUrl) else { return }
-        let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-        let signpostID = OSSignpostID(log: log)
-        os_signpost(.begin, log: log, name: "조수 프로필 이미지 다운로드", signpostID: signpostID)
-        
-        URLSession.shared.dataTask(with: url) { [weak self] data, response, error in
-            if let data = data, let loadedImage = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    os_signpost(.end, log: log, name: "조수 프로필 이미지 다운로드", signpostID: signpostID)
-                    self?.image.accept(loadedImage)
-                }
-            }
-        }.resume()
-    }
-    
     func uploadAndSaveProfile() {
-        guard let image = image.value,
+        guard let image = imageForUpload.value,
               !nickname.value.isEmpty,
               !introduce.value.isEmpty,
               let userId = Auth.auth().currentUser?.uid else {
@@ -143,7 +127,7 @@ final class HumanProfileViewModel {
     
     func updateProfile() {
         guard case .edit(let originalProfile) = currentMode,
-              let image = image.value,
+              let image = imageForUpload.value,
               !nickname.value.isEmpty,
               !introduce.value.isEmpty,
               let userId = Auth.auth().currentUser?.uid else {

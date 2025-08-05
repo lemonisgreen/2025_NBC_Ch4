@@ -9,6 +9,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 import NMapsMap
+import Kingfisher
 
 class WalkEndModalViewController : UIViewController {
     
@@ -34,9 +35,10 @@ class WalkEndModalViewController : UIViewController {
     ]
     private let walkEndLabel = UILabel()
     private let showProfileButton = UIButton()
-    private let walkShareButton = ComponentButton(title: "멍탐정과 남긴 단서")
+    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "멍탐정과 남긴 단서")
     private let mapImageView = UIImageView()
     private let closeButton = UIButton()
+    private let loadingIndicator = CustomLoadingIndicator()
     
     private let dogImagesStack = UIStackView()
     private let walkEndStack = UIStackView()
@@ -243,6 +245,7 @@ class WalkEndModalViewController : UIViewController {
         self.walkShareButton.isEnabled = !isLoading
         self.closeButton.isEnabled = !isLoading
         self.showProfileButton.isEnabled = !isLoading
+        self.loadingIndicator.isHidden = !isLoading
     }
     
     private func fetchSelectedPetProfiles(petProfileIds: [String]) {
@@ -307,7 +310,8 @@ class WalkEndModalViewController : UIViewController {
             infoBox,
             walkEndBox,
             dividerLine,
-            closeButton
+            closeButton,
+            loadingIndicator
         ].forEach {
             view.addSubview($0)
         }
@@ -464,14 +468,18 @@ class WalkEndModalViewController : UIViewController {
                 
                 // URL에서 이미지 로드
                 if let url = URL(string: profile.image) {
-                    DispatchQueue.global().async {
-                        if let data = try? Data(contentsOf: url),
-                           let image = UIImage(data: data) {
-                            DispatchQueue.main.async {
-                                imageView.image = image
-                            }
-                        }
-                    }
+                    let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
+                    
+                    imageView.kf.indicatorType = .activity
+                    KF.url(url)
+                        .placeholder(UIImage.petAvatar)
+                        .setProcessor(processor)
+                        .cacheOriginalImage()
+                        .fade(duration: 0.25)
+                        .onFailureImage(UIImage.petAvatar)
+                        .onSuccess { result in }
+                        .onFailure { error in }
+                        .set(to: imageView)
                 }
                 
                 dogImagesStack.addArrangedSubview(imageView)
@@ -583,6 +591,10 @@ class WalkEndModalViewController : UIViewController {
             $0.top.equalTo(todayLabel.snp.bottom).offset(UIScreen.isIPhoneSE ? 20 : 30)
             $0.trailing.equalToSuperview().inset(30)
             $0.width.height.equalTo(24)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     

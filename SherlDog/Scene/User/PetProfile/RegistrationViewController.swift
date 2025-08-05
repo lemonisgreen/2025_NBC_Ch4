@@ -11,6 +11,7 @@ import RxSwift
 import RxCocoa
 import Firebase
 import FirebaseStorage
+import Kingfisher
 
 class RegistrationViewController: UIViewController {
     
@@ -70,7 +71,8 @@ class RegistrationViewController: UIViewController {
     private let registIntroduceLabel = UILabel()
     private let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
     private let registIntroduceCountLabel = UILabel()
-    private let registCompletButton = ComponentButton(title: "다음")
+    private let registCompletButton = ButtonFactory.makeButton(type: .main, title: "다음")
+    private let loadingIndicator = CustomLoadingIndicator()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -135,14 +137,24 @@ class RegistrationViewController: UIViewController {
         FirebaseImageManager.shared.downloadPetImage(
             petId: profile.petProfileId,
             userId: profile.userId
-        ) { [weak self] image in
-            DispatchQueue.main.async {
-                if let image = image {
-                    self?.selectedImage = image
-                    self?.registedProfileImage.image = image
-                    self?.cameraViewModel.output.capturedImage.accept(image)
+        ) { [weak self] url in
+            guard let self else { return }
+            
+            let processor = DownsamplingImageProcessor(size: self.registedProfileImage.bounds.size) // 크기 지정 다운 샘플링
+            
+            self.registedProfileImage.kf.indicatorType = .activity
+            KF.url(url)
+                .placeholder(UIImage.petAvatar)
+                .setProcessor(processor)
+                .cacheOriginalImage()
+                .fade(duration: 0.25)
+                .onFailureImage(UIImage.petAvatar)
+                .onSuccess { result in
+                    self.selectedImage = result.image
+                    self.cameraViewModel.output.capturedImage.accept(result.image)
                 }
-            }
+                .onFailure { error in }
+                .set(to: self.registedProfileImage)
         }
     }
     
@@ -197,7 +209,7 @@ class RegistrationViewController: UIViewController {
         viewModel.output.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.registCompletButton.isEnabled = !isLoading
-                // 인디케이터 활성, 비활성은 여기서 진행
+                self?.loadingIndicator.isHidden = !isLoading
             })
             .disposed(by: disposeBag)
         
@@ -561,7 +573,8 @@ class RegistrationViewController: UIViewController {
             registrationStackView,
             topUnderLine,
             scrollView,
-            registCompletButton
+            registCompletButton,
+            loadingIndicator
         ])
         
         //MARK: 배경 --
@@ -915,6 +928,10 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(52)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
 }

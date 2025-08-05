@@ -21,6 +21,9 @@ class ClueInputViewController: UIViewController {
     private let registerButton = UIButton()
     private let countLabel = UILabel()
     private let placeholderLabel = UILabel()
+    private let loadingIndicator = CustomLoadingIndicator()
+    
+    private let isLoading = BehaviorRelay<Bool>(value: false)
     
     private let cameraViewModel: CameraViewModel
     private let disposeBag = DisposeBag()
@@ -95,7 +98,7 @@ class ClueInputViewController: UIViewController {
         countLabel.font = .alert2
         countLabel.textColor = .gray400
         
-        [clueLabel, cancelButton, imageView, textView, registerButton, countLabel].forEach { view.addSubview($0) }
+        [clueLabel, cancelButton, imageView, textView, registerButton, countLabel, loadingIndicator].forEach { view.addSubview($0) }
     }
     
     private func setupConstraints() {
@@ -132,6 +135,10 @@ class ClueInputViewController: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
             $0.height.equalTo(52)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     
@@ -173,6 +180,12 @@ class ClueInputViewController: UIViewController {
                 self?.imageView.image = image
             })
             .disposed(by: disposeBag)
+        
+        self.isLoading
+            .asDriver(onErrorJustReturn: false)
+            .map { !$0 }
+            .drive(self.loadingIndicator.rx.isHidden)
+            .disposed(by: disposeBag)
     }
     
     // 단서저장
@@ -184,6 +197,8 @@ class ClueInputViewController: UIViewController {
             return
         }
         
+        self.isLoading.accept(true)
+        
         registerButton.isEnabled = false
         registerButton.setTitle("저장 중...", for: .normal)
         
@@ -192,6 +207,7 @@ class ClueInputViewController: UIViewController {
             case .success(let imageUrl):
                 self?.saveToFirestore(userId: userId, text: text, imageUrl: imageUrl)
             case .failure(let error):
+                self?.isLoading.accept(false)
                 self?.showSimpleAlert("이미지 업로드 실패: \(error.localizedDescription)")
                 self?.resetButton()
             }
@@ -217,6 +233,7 @@ class ClueInputViewController: UIViewController {
                 },
                 onError: { [weak self] error in
                     DispatchQueue.main.async {
+                        self?.isLoading.accept(false)
                         self?.showSimpleAlert("저장 실패: \(error.localizedDescription)")
                         self?.resetButton()
                     }
@@ -231,6 +248,8 @@ class ClueInputViewController: UIViewController {
     }
     
     private func showSuccessAndClose() {
+        self.isLoading.accept(false)
+        
         let alert = UIAlertController(title: "성공", message: "단서가 등록되었습니다!", preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self] _ in
             guard let self = self,

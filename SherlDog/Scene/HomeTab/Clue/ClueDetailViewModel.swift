@@ -49,6 +49,7 @@ final class ClueDetailViewModel {
     let output = Output()
     
     init(clue: ClueModel) {
+        self.output.isLoading.accept(true)
         updateUI(with: clue)
     }
     
@@ -60,6 +61,7 @@ final class ClueDetailViewModel {
     
     // 오늘 남긴 단서 표시
     init(day: Date) {
+        self.output.isLoading.accept(true)
         fetchCluesData(day: day)
     }
     
@@ -69,6 +71,7 @@ final class ClueDetailViewModel {
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             .subscribe(onSuccess: { [weak self] image in
                 self?.data.append(ClueCellData(image: image, content: clue.content))
+                self?.output.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
     }
@@ -100,12 +103,7 @@ final class ClueDetailViewModel {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         self.images.removeAll()
         
-        FirestoreManager.shared.fetchDocumentsForDay(collection: "clues",
-                                                     whereField: "userID",
-                                                     isEqualTo: userId,
-                                                     orderBy: "date",
-                                                     day: day,
-                                                     type: ClueModel.self)
+        FirestoreManager.shared.fetchCluesForDay(userId: userId, day: day)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .flatMap { clues -> Single<[ClueCellData]> in
             let imageSingles = clues.map { clue in

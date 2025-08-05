@@ -178,12 +178,7 @@ class PictureUploadRequestViewModel {
     func fetchPetProfiles() {
         let userId = Auth.auth().currentUser?.uid ?? ""
         
-        FirestoreManager.shared.fetchDocuments(
-            collection: "PetProfile",
-            whereField: "userId",
-            isEqualTo: userId,
-            type: PetProfile.self
-        )
+        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
         .subscribe(onSuccess: { [weak self] profiles in
             self?.output.petProfiles.accept(profiles)
         }, onFailure: { error in

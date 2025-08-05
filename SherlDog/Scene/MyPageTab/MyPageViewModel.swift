@@ -85,12 +85,7 @@ class MyPageViewModel {
     private func fetchUserPetProfiles() {
         output.isLoading.accept(true)
         
-        FirestoreManager.shared.fetchDocuments(
-            collection: "PetProfile",
-            whereField: "userId",
-            isEqualTo: userId,
-            type: PetProfile.self
-        )
+        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
         .subscribe(
             onSuccess: { [weak self] profiles in
                 self?.output.petProfiles.accept(profiles)
@@ -106,11 +101,7 @@ class MyPageViewModel {
     }
     
     private func fetchHumanProfile() {
-        FirestoreManager.shared.fetchDocument(
-            collection: "HumanProfile",
-            documentId: userId,
-            type: HumanProfileModel.self
-        )
+        FirestoreManager.shared.fetchHumanProfile(userId: userId)
         .subscribe(
             onSuccess: { [weak self] humanProfile in
                 self?.output.humanProfile.accept(humanProfile)
@@ -127,11 +118,7 @@ class MyPageViewModel {
     private func addNewProfile(with petProfileID: String) {
         guard !petProfileID.isEmpty else { return }
         
-        FirestoreManager.shared.fetchDocument(
-            collection: "PetProfile",
-            documentId: petProfileID,
-            type: PetProfile.self
-        )
+        FirestoreManager.shared.fetchPetProfileById(petProfileId: petProfileID)
         .subscribe(onSuccess: { [weak self] newProfile in
             guard let self = self else { return }
             
