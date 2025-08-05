@@ -21,7 +21,7 @@ final class ClueDetailViewModel {
     private let disposeBag = DisposeBag()
     
     struct ClueCellData {
-        let image: UIImage
+        let imageURL: String
         let content: String
     }
     
@@ -38,7 +38,6 @@ final class ClueDetailViewModel {
     }
     
     typealias ClueDataSource = SectionModel<String, ClueCellData>
-    private var images = [UIImage]()
     private var data = [ClueCellData]() {
         didSet {
             self.output.cellData.accept([ClueDataSource(model: "", items: self.data)])
@@ -66,56 +65,18 @@ final class ClueDetailViewModel {
     }
     
     private func updateUI(with clue: ClueModel) {
-        // Firebase 이미지 다운로드
-        downloadImage(from: clue.image)
-            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] image in
-                self?.data.append(ClueCellData(image: image, content: clue.content))
-                self?.output.isLoading.accept(false)
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    private func downloadImage(from urlString: String) -> Single<UIImage> {
-        guard let url = URL(string: urlString) else {
-            return .just(UIImage())
-        }
-        return Single<UIImage>.create { single in
-            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-            let signpostID = OSSignpostID(log: log)
-            os_signpost(.begin, log: log, name: "단서 이미지 다운로드", signpostID: signpostID)
-            
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                if let data = data, let image = UIImage(data: data) {
-                    os_signpost(.end, log: log, name: "단서 이미지 다운로드", signpostID: signpostID)
-                    single(.success(image))
-                } else {
-                    single(.success(UIImage()))
-                }
-            }.resume()
-            
-            return Disposables.create()
-        }
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        data.append(ClueCellData(imageURL: clue.image, content: clue.content))
     }
     
     private func fetchCluesData(day: Date) {
         guard let userId = Auth.auth().currentUser?.uid else { return }
-        self.images.removeAll()
         
         FirestoreManager.shared.fetchCluesForDay(userId: userId, day: day)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .flatMap { clues -> Single<[ClueCellData]> in
-            let imageSingles = clues.map { clue in
-                self.downloadImage(from: clue.image)
-                    .map { ClueCellData(image: $0, content: clue.content) }
+        .subscribe(onSuccess: { [weak self] clues in
+            clues.forEach {
+                self?.data.append(ClueCellData(imageURL: $0.image, content: $0.content))
             }
-            return Single.zip(imageSingles)
-        }
-        .subscribe(onSuccess: { [weak self] cellDatas in
-            guard let self else { return }
-            let section = ClueDataSource(model: "", items: cellDatas)
-            self.output.cellData.accept(cellDatas.isEmpty ? [] : [section])
         })
         .disposed(by: disposeBag)
     }
