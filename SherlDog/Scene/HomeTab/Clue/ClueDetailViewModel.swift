@@ -32,9 +32,7 @@ final class ClueDetailViewModel {
     
     // MARK: - Outputs
     struct Output {
-        let cellData = BehaviorRelay<[ClueDataSource]>(value: [ClueDataSource(model: "",
-                                                                              items: [ClueCellData(image: UIImage(),
-                                                                                                   content: "")])])
+        let cellData = BehaviorRelay<[ClueDataSource]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let errorMessage = PublishRelay<String>()
     }
@@ -107,23 +105,17 @@ final class ClueDetailViewModel {
         
         FirestoreManager.shared.fetchCluesForDay(userId: userId, day: day)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .flatMap { [weak self] clue -> Single<([ClueModel], [UIImage])> in
-            let imageSingle = clue.map { [weak self] clue in
-                guard let self else { return Single.just(UIImage()) }
-                return self.downloadImage(from: clue.image)
+        .flatMap { clues -> Single<[ClueCellData]> in
+            let imageSingles = clues.map { clue in
+                self.downloadImage(from: clue.image)
+                    .map { ClueCellData(image: $0, content: clue.content) }
             }
-            
-            return Single.zip(imageSingle) { image in
-                return (clue, image)
-            }
+            return Single.zip(imageSingles)
         }
-        .subscribe(onSuccess: { [weak self] clues, images in
+        .subscribe(onSuccess: { [weak self] cellDatas in
             guard let self else { return }
-            
-            for (clue, image) in zip(clues, images) {
-                self.data.append(ClueCellData(image: image, content: clue.content))
-                self.output.isLoading.accept(false)
-            }
+            let section = ClueDataSource(model: "", items: cellDatas)
+            self.output.cellData.accept(cellDatas.isEmpty ? [] : [section])
         })
         .disposed(by: disposeBag)
     }
