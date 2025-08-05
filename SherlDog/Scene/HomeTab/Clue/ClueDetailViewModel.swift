@@ -32,11 +32,7 @@ final class ClueDetailViewModel {
     
     // MARK: - Outputs
     struct Output {
-        let cellData = BehaviorRelay<[ClueDataSource]>(value: [
-            ClueDataSource(model: "",
-                           items: [ClueCellData(imageURL: "",        
-                                                content: "")])
-        ])
+        let cellData = BehaviorRelay<[ClueDataSource]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let errorMessage = PublishRelay<String>()
     }
@@ -52,6 +48,7 @@ final class ClueDetailViewModel {
     let output = Output()
     
     init(clue: ClueModel) {
+        self.output.isLoading.accept(true)
         updateUI(with: clue)
     }
     
@@ -63,6 +60,7 @@ final class ClueDetailViewModel {
     
     // 오늘 남긴 단서 표시
     init(day: Date) {
+        self.output.isLoading.accept(true)
         fetchCluesData(day: day)
     }
     
@@ -73,12 +71,7 @@ final class ClueDetailViewModel {
     private func fetchCluesData(day: Date) {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        FirestoreManager.shared.fetchDocumentsForDay(collection: "clues",
-                                               whereField: "userID",
-                                               isEqualTo: userId,
-                                               orderBy: "date",
-                                                     day: day,
-                                               type: ClueModel.self)
+        FirestoreManager.shared.fetchCluesForDay(userId: userId, day: day)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .subscribe(onSuccess: { [weak self] clues in
             clues.forEach {

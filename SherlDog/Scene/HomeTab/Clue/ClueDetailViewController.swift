@@ -20,17 +20,18 @@ final class ClueDetailViewController: UIViewController {
     
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout())
     private let pageControl = UIPageControl()
-    private let loadingIndicator = UIActivityIndicatorView(style: .medium)
+    private let emptyView = EmptyClueView()
+    private let loadingIndicator = CustomLoadingIndicator()
 
     init(viewModel: ClueDetailViewModel) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -43,20 +44,22 @@ final class ClueDetailViewController: UIViewController {
         
         self.navigationController?.navigationBar.isHidden = true
     }
-
+    
     private func setupUI() {
         view.backgroundColor = .keycolorInverse
         
         view.addSubviews([
             collectionView,
             pageControl,
-            loadingIndicator
+            loadingIndicator,
+            emptyView
         ])
         
-        // 로딩 인디케이터 설정
-        loadingIndicator.color = .gray
-        loadingIndicator.hidesWhenStopped = true
+        emptyView.isHidden = true
         
+        // 로딩 인디케이터 설정
+        loadingIndicator.isHidden = true
+      
         collectionView.backgroundColor = .keycolorInverse
         collectionView.register(ClueDetailCell.self, forCellWithReuseIdentifier: ClueDetailCell.identifier)
         
@@ -65,7 +68,7 @@ final class ClueDetailViewController: UIViewController {
         pageControl.pageIndicatorTintColor = .keycolorPrimary5
         pageControl.currentPageIndicatorTintColor = .keycolorPrimary2
     }
-
+    
     private func setupConstraints() {
         collectionView.snp.makeConstraints {
             $0.edges.equalToSuperview()
@@ -77,7 +80,11 @@ final class ClueDetailViewController: UIViewController {
         }
         
         loadingIndicator.snp.makeConstraints {
-            $0.center.equalTo(collectionView)
+            $0.edges.equalToSuperview()
+        }
+        
+        emptyView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     
@@ -88,14 +95,9 @@ final class ClueDetailViewController: UIViewController {
     private func bindViewModel() {
         // 로딩 상태 바인딩
         viewModel.output.isLoading
-            .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] isLoading in
-                if isLoading {
-                    self?.loadingIndicator.startAnimating()
-                } else {
-                    self?.loadingIndicator.stopAnimating()
-                }
-            })
+            .asDriver(onErrorJustReturn: false)
+            .map { !$0 }
+            .drive(self.loadingIndicator.rx.isHidden)
             .disposed(by: disposeBag)
         
         // 단서 데이터 바인딩
@@ -107,7 +109,14 @@ final class ClueDetailViewController: UIViewController {
         viewModel.output.cellData
             .map { $0.flatMap { $0.items }.count }
             .observe(on: MainScheduler.instance)
-            .bind(to: self.pageControl.rx.numberOfPages)
+            .subscribe(onNext: { [weak self] count in
+                guard let self = self else { return }
+                let isEmpty = (count == 0)
+                self.emptyView.isHidden = !isEmpty
+                self.collectionView.isHidden = isEmpty
+                self.pageControl.isHidden = isEmpty
+                self.pageControl.numberOfPages = count
+            })
             .disposed(by: disposeBag)
         
         // 인덱스닷 누르면 해당 순서의 카드로 넘어가는 스크롤 설정
@@ -128,7 +137,7 @@ final class ClueDetailViewController: UIViewController {
         viewModel.output.errorMessage
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] message in
-                self?.loadingIndicator.stopAnimating()
+                self?.loadingIndicator.isHidden = true
             })
             .disposed(by: disposeBag)
     }
@@ -160,7 +169,7 @@ final class ClueDetailViewController: UIViewController {
             
             section.visibleItemsInvalidationHandler = { [weak self] items, offset, environment in
                   let pageWidth = environment.container.contentSize.width
-                  let page = Int((offset.x + (pageWidth / 2)) / pageWidth)
+                  let page = Int(round(offset.x / pageWidth))
                   self?.pageControl.currentPage = page
               }
             

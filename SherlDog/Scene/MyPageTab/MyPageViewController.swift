@@ -10,6 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 import FirebaseAuth
+import Kingfisher
 
 class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrollViewDelegate {
     private let viewModel = MyPageViewModel()
@@ -252,7 +253,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 }
                 return items
             }
-            .bind(to: collectionView.rx.items) { collectionView, index, item in
+            .bind(to: collectionView.rx.items) { [weak self] collectionView, index, item in
                 switch item {
                 case .profile(let profile):
                     if let cell = collectionView.dequeueReusableCell(
@@ -260,11 +261,22 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                         for: IndexPath(item: index, section: 0)
                     ) as? DetectiveCardCell {
                         cell.configure(with: profile)
+                        
+                        cell.onEditTapped = { [weak self] in
+                            guard let self = self else { return }
+                            self.presentRegistrationViewController(with: profile)
+                                .subscribe()
+                                .disposed(by: self.disposeBag)
+                        }
+                        cell.onDeleteTapped = { [weak self] in
+                            guard let self = self else { return }
+                            self.viewModel.deleteProfile(profile)
+                        }
+                        
                         return cell
                     } else {
                         return UICollectionViewCell()
                     }
-                    
                 case .addProfile:
                     let cell = collectionView.dequeueReusableCell(
                         withReuseIdentifier: ProfileAddCollectionViewCell.identifier,
@@ -337,13 +349,18 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     }
     
     private func loadImage(from url: URL) {
-        DispatchQueue.global().async { [weak self] in
-            if let data = try? Data(contentsOf: url), let image = UIImage(data: data) {
-                DispatchQueue.main.async {
-                    self?.assistantImage.image = image
-                }
-            }
-        }
+        let processor = DownsamplingImageProcessor(size: self.assistantImage.bounds.size) // 크기 지정 다운 샘플링
+        
+        self.assistantImage.kf.indicatorType = .activity
+        KF.url(url)
+            .placeholder(UIImage.petProfile)
+            .setProcessor(processor)
+            .cacheOriginalImage()
+            .fade(duration: 0.25)
+            .onFailureImage(UIImage.petProfile)
+            .onSuccess { result in }
+            .onFailure { error in }
+            .set(to: self.assistantImage)
     }
     
     // 인덱스 닷 누르면 해당 순서의 멍카드 화면 중앙으로 이동
@@ -427,7 +444,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             }
             
             let registrationVC = RegistrationViewController()
-            registrationVC.configure(for: .edit(profile), with: profile)
+            registrationVC.configure(for: .edit(profile))
             
             // 수정 완료 시 데이터 새로고침을 위한 Observable 구독
             registrationVC.profileUpdateSubject

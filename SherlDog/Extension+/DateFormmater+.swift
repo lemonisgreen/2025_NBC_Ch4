@@ -16,7 +16,7 @@ extension DateFormatter {
 
     static let yyyyMMddSlash: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy/MM/dd"
+        formatter.dateFormat = "yyyy / MM / dd"
         return formatter
     }()
     

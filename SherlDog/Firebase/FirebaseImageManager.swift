@@ -3,7 +3,6 @@ import Firebase
 import FirebaseStorage
 import FirebaseAuth
 import RxSwift
-import os.signpost
 
 class FirebaseImageManager {
     static let shared = FirebaseImageManager()
@@ -199,44 +198,20 @@ class FirebaseImageManager {
             }
         }
     }
-    
-    // MARK: - 이미지 다운로드
-    func downloadImage(userId: String, type: UploadImageFor, completion: @escaping (UIImage?) -> Void) {
-        let imagePath = "\(type)/\(userId)/\(type).jpg"
-        let imageRef = storageRef.child(imagePath)
-    
-        imageRef.getData(maxSize: 5 * 1024 * 1024) { data, error in
-            if let _ = error {
-                completion(nil)
-                return
-            }
-
-            if let data = data, let image = UIImage(data: data) {
-                completion(image)
-            } else {
-                completion(nil)
-            }
-        }
-    }
 
     // MARK: - 펫 이미지 다운로드
-    func downloadPetImage(petId: String, userId: String, completion: @escaping (UIImage?) -> Void) {
+    func downloadPetImage(petId: String, userId: String, completion: @escaping (URL?) -> Void) {
         let imagePath = "pets/\(userId)/\(petId)/profile.jpg"
         let imageRef = storageRef.child(imagePath)
         
-        let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-        let signpostID = OSSignpostID(log: log)
-        os_signpost(.begin, log: log, name: "펫 이미지 다운로드", signpostID: signpostID)
-    
-        imageRef.getData(maxSize: 5 * 1024 * 1024) { data, error in
-            if let error = error {
+        imageRef.downloadURL { url, error in
+            guard error == nil else {
                 completion(nil)
                 return
             }
-
-            if let data = data, let image = UIImage(data: data) {
-                os_signpost(.end, log: log, name: "펫 이미지 다운로드", signpostID: signpostID)
-                completion(image)
+            
+            if let url {
+                completion(url)
             } else {
                 completion(nil)
             }

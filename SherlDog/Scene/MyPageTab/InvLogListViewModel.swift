@@ -70,10 +70,7 @@ extension InvLogListViewModel {
         self.data = []
         self.originalData = []
         
-        FirestoreManager.shared.fetchDocuments(collection: "WalkResult",
-                                                           whereField: "userId",
-                                                           isEqualTo: userId,
-                                                           type: WalkResult.self)
+        FirestoreManager.shared.fetchWalkResults(userId: userId)
         .subscribe(onSuccess: { [weak self] result in
             guard let self else { return }
             
