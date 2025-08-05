@@ -72,6 +72,7 @@ class RegistrationViewController: UIViewController {
     private let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
     private let registIntroduceCountLabel = UILabel()
     private let registCompletButton = ComponentButton(title: "다음")
+    private let loadingIndicator = CustomLoadingIndicator()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -208,7 +209,7 @@ class RegistrationViewController: UIViewController {
         viewModel.output.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.registCompletButton.isEnabled = !isLoading
-                // 인디케이터 활성, 비활성은 여기서 진행
+                self?.loadingIndicator.isHidden = !isLoading
             })
             .disposed(by: disposeBag)
         
@@ -572,7 +573,8 @@ class RegistrationViewController: UIViewController {
             registrationStackView,
             topUnderLine,
             scrollView,
-            registCompletButton
+            registCompletButton,
+            loadingIndicator
         ])
         
         //MARK: 배경 --
@@ -926,6 +928,10 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(52)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
 }

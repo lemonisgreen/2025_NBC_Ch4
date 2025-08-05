@@ -38,6 +38,7 @@ class WalkEndModalViewController : UIViewController {
     private let walkShareButton = ComponentButton(title: "멍탐정과 남긴 단서")
     private let mapImageView = UIImageView()
     private let closeButton = UIButton()
+    private let loadingIndicator = CustomLoadingIndicator()
     
     private let dogImagesStack = UIStackView()
     private let walkEndStack = UIStackView()
@@ -244,6 +245,7 @@ class WalkEndModalViewController : UIViewController {
         self.walkShareButton.isEnabled = !isLoading
         self.closeButton.isEnabled = !isLoading
         self.showProfileButton.isEnabled = !isLoading
+        self.loadingIndicator.isHidden = !isLoading
     }
     
     private func fetchSelectedPetProfiles(petProfileIds: [String]) {
@@ -308,7 +310,8 @@ class WalkEndModalViewController : UIViewController {
             infoBox,
             walkEndBox,
             dividerLine,
-            closeButton
+            closeButton,
+            loadingIndicator
         ].forEach {
             view.addSubview($0)
         }
@@ -588,6 +591,10 @@ class WalkEndModalViewController : UIViewController {
             $0.top.equalTo(todayLabel.snp.bottom).offset(UIScreen.isIPhoneSE ? 20 : 30)
             $0.trailing.equalToSuperview().inset(30)
             $0.width.height.equalTo(24)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     

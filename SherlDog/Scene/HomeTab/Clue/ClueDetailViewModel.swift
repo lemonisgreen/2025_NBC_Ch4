@@ -51,6 +51,7 @@ final class ClueDetailViewModel {
     let output = Output()
     
     init(clue: ClueModel) {
+        self.output.isLoading.accept(true)
         updateUI(with: clue)
     }
     
@@ -62,6 +63,7 @@ final class ClueDetailViewModel {
     
     // 오늘 남긴 단서 표시
     init(day: Date) {
+        self.output.isLoading.accept(true)
         fetchCluesData(day: day)
     }
     
@@ -71,6 +73,7 @@ final class ClueDetailViewModel {
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             .subscribe(onSuccess: { [weak self] image in
                 self?.data.append(ClueCellData(image: image, content: clue.content))
+                self?.output.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
     }
@@ -124,6 +127,7 @@ final class ClueDetailViewModel {
             
             for (clue, image) in zip(clues, images) {
                 self.data.append(ClueCellData(image: image, content: clue.content))
+                self.output.isLoading.accept(false)
             }
         })
         .disposed(by: disposeBag)
