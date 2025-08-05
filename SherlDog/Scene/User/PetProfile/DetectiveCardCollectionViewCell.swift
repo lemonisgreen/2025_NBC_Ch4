@@ -8,6 +8,7 @@ import SnapKit
 import UIKit
 import RxSwift
 import RxCocoa
+import Kingfisher
 
 class DetectiveCardCollectionViewCell: UICollectionViewCell {
     
@@ -46,10 +47,21 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
         detectiveCardView.detectiveBreed.text = profile.breed
         detectiveCardView.detectiveAge.text = "\(age)세"
         detectiveCardView.detectiveIntroduce.text = "# \(profile.introduce)"
-        FirebaseImageManager.shared.downloadPetImage(petId: profile.petProfileId, userId: profile.userId) { [weak self] image in
-            DispatchQueue.main.async {
-                self?.detectiveCardView.detectivePhotoImageView.image = image
-            }
+        FirebaseImageManager.shared.downloadPetImage(petId: profile.petProfileId, userId: profile.userId) { [weak self] url in
+            guard let self else { return }
+            
+            let processor = DownsamplingImageProcessor(size: self.detectiveCardView.detectivePhotoImageView.bounds.size) // 크기 지정 다운 샘플링
+            
+            self.detectiveCardView.detectivePhotoImageView.kf.indicatorType = .activity
+            KF.url(url)
+                .placeholder(UIImage.petAvatar)
+                .setProcessor(processor)
+                .cacheOriginalImage()
+                .fade(duration: 0.25)
+                .onFailureImage(UIImage.petAvatar)
+                .onSuccess { result in }
+                .onFailure { error in }
+                .set(to: self.detectiveCardView.detectivePhotoImageView)
         }
     }
 }

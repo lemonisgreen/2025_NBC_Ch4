@@ -9,6 +9,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 import SnapKit
+import Kingfisher
 
 // MARK: - AssistantProfileViewController
 class CreateAssistantProfileViewController: UIViewController {
@@ -74,47 +75,23 @@ extension CreateAssistantProfileViewController {
         // 글자 수 업데이트
         nickNameConstraintsLabel.text = "\(viewModel.nickname.value.count) / 12자"
         introduceConstraintsLabel.text = "\(viewModel.introduce.value.count) / 150자"
-        
-        // 이미지 설정
-        if let image = viewModel.image.value {
-            profileImageView.image = image
-        }
     
         nicknameTextField.sendActions(for: .editingChanged)
         
         if let delegate = introduceTextView.delegate {
             delegate.textViewDidChange?(introduceTextView)
         }
-        
-        loadProfileImage()
-    }
-    
-    private func loadProfileImage() {
-        guard case .edit(let profile) = viewModel.currentMode else { return }
-        
-        FirebaseImageManager.shared.downloadImage(
-            userId: viewModel.userId ?? "",
-            type: .assistant
-        ) { [weak self] image in
-            DispatchQueue.main.async {
-                if let image = image {
-                    self?.selectedImage = image
-                    self?.profileImageView.image = image
-                    self?.cameraViewModel.output.capturedImage.accept(image)
-                }
-            }
-        }
     }
     
     private func bind() {
         Observable.combineLatest(
             self.cameraViewModel.output.capturedImage,
-            self.avatarViewModel.output.selectedAvatar,
+            self.avatarViewModel.output.icon,
             self.nicknameTextField.rx.text,
             self.introduceTextView.rx.text
         )
         .subscribe(onNext: { [weak self] image, avatar, nickName, introduce in
-            if image != nil || avatar != nil,
+            if image != nil || avatar != "",
                nickName != "",
                introduce != "" {
                 if let nickName, nickName.contains(" ") {
@@ -239,7 +216,7 @@ extension CreateAssistantProfileViewController {
         // 카메라로 촬영한 이미지 바인딩
         cameraViewModel.output.capturedImage
             .compactMap { $0 }
-            .bind(to: viewModel.image)
+            .bind(to: viewModel.imageForUpload)
             .disposed(by: disposeBag)
         
         // 아바타 선택한 이미지 바인딩
@@ -250,17 +227,29 @@ extension CreateAssistantProfileViewController {
                 let imageName = self.avatarViewModel.output.icon.value
                 return UIImage(named: imageName)
             }
-            .bind(to: viewModel.image)
+            .bind(to: viewModel.imageForUpload)
             .disposed(by: disposeBag)
         
         // 뷰모델 이미지 변경을 profileImageView에 바인딩
-        viewModel.image
+        viewModel.imageString
             .asObservable()
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] image in
-                if let image = image {
-                    self?.profileImageView.image = image
-                    self?.profileImageView.contentMode = .scaleAspectFill
+            .subscribe(onNext: { [weak self] imageString in
+                if let self, let imageUrl = URL(string: imageString) {
+                    self.profileImageView.contentMode = .scaleAspectFill
+                    
+                    let processor = DownsamplingImageProcessor(size: self.profileImageView.bounds.size) // 크기 지정 다운 샘플링
+                    
+                    self.profileImageView.kf.indicatorType = .activity
+                    KF.url(imageUrl)
+                        .placeholder(UIImage.petProfile)
+                        .setProcessor(processor)
+                        .cacheOriginalImage()
+                        .fade(duration: 0.25)
+                        .onFailureImage(UIImage.petProfile)
+                        .onSuccess { result in }
+                        .onFailure { error in }
+                        .set(to: self.profileImageView) 
                 }
             })
             .disposed(by: disposeBag)
