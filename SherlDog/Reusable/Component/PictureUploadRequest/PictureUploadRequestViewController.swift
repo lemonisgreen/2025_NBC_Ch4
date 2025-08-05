@@ -23,7 +23,7 @@ class PictureUploadRequestViewController: UIViewController { // 1: 240, 2: 320, 
     
     private let imagePickerController = UIImagePickerController()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
-    private let setButton = ComponentButton(title: "")
+    private let setButton = ButtonFactory.makeButton(type: .main, title: "")
     
     // MARK: - Lifecycle
     init(viewModel: PictureUploadRequestViewModel, cameraViewModel: CameraViewModel = CameraViewModel(), avatarViewModel: SelectAvatarViewModel = SelectAvatarViewModel()) {

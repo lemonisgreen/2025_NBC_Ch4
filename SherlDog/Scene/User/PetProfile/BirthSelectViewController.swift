@@ -18,7 +18,7 @@ class BirthSelectViewController: UIViewController {
     let birthSelectLabel = UILabel()
     let underLine = UIView()
     let datePicker = UIDatePicker()
-    let completeButton = ComponentButton(title: "선택 완료")
+    let completeButton = ButtonFactory.makeButton(type: .main, title: "선택 완료")
     
     override func viewDidLoad() {
         super.viewDidLoad()

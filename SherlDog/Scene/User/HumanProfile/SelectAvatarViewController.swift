@@ -29,8 +29,8 @@ class SelectAvatarViewController: UIViewController {
     private let detailLabel = UILabel()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let pageControl = UIPageControl()
-    private let backButton = ComponentSubButton(title: "이전")
-    private let choiceButton = ComponentButton(title: "선택하기")
+    private let backButton = ButtonFactory.makeButton(type: .sub, title: "이전")
+    private let choiceButton = ButtonFactory.makeButton(type: .main, title: "선택하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -275,7 +275,7 @@ extension SelectAvatarViewController {
         section.orthogonalScrollingBehavior = .paging
         section.visibleItemsInvalidationHandler = { [weak self] items, offset, environment in
             let viewWidth = environment.container.contentSize.width
-            self?.pageControl.currentPage = Int((offset.x + (viewWidth / 2)) / viewWidth)
+            self?.pageControl.currentPage = Int(round(offset.x / viewWidth))
         }
         
         return UICollectionViewCompositionalLayout(section: section)

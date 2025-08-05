@@ -151,7 +151,7 @@ final class ClueDetailViewController: UIViewController {
             
             section.visibleItemsInvalidationHandler = { [weak self] items, offset, environment in
                   let pageWidth = environment.container.contentSize.width
-                  let page = Int((offset.x + (pageWidth / 2)) / pageWidth)
+                  let page = Int(round(offset.x / pageWidth))
                   self?.pageControl.currentPage = page
               }
             
