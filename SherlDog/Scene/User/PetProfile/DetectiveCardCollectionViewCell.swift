@@ -14,6 +14,9 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
     
     static let identifier = "DetectiveCardCollectionViewCell"
     
+    var onEditTapped: (() -> Void)?
+    var onDeleteTapped: (() -> Void)?
+    private let disposeBag = DisposeBag()
     private let detectiveCardView = DetectiveCardView()
     
     override init(frame: CGRect) {
@@ -29,6 +32,15 @@ class DetectiveCardCollectionViewCell: UICollectionViewCell {
         contentView.addSubview(detectiveCardView)
         detectiveCardView.snp.makeConstraints {
             $0.edges.equalToSuperview()
+        }
+        detectiveCardView.onEditTapped = { [weak self] in
+            self?.onEditTapped?()
+        }
+        detectiveCardView.onDeleteTapped = { [weak self] in
+            guard let self = self else { return }
+            print("🗑️ 삭제하기 버튼 눌림")
+            // 실제 삭제 로직은 외부에서 onDeleteTapped 클로저를 통해 주입받도록 구성
+            self.onDeleteTapped?()
         }
     }
     

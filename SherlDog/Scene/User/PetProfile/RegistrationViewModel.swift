@@ -14,6 +14,8 @@ import FirebaseAuth
 class RegistrationViewModel {
     let disposeBag = DisposeBag()
     
+    let profileDidUpdate = PublishSubject<Void>()
+    
     struct Input {
             let selectedImage = PublishRelay<UIImage?>()
             let name = BehaviorRelay<String>(value: "")
@@ -208,6 +210,7 @@ class RegistrationViewModel {
             onCompleted: { [weak self] in
                 self?.output.editingProfile.onNext(updatedProfile)
                 self?.output.saveResult.onNext(.success(()))
+                self?.profileDidUpdate.onNext(())
                 self?.output.isLoading.accept(false)
             },
             onError: { [weak self] error in

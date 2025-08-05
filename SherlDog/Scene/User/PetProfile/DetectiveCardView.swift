@@ -7,8 +7,13 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 class DetectiveCardView: UIView {
+    
+    var onEditTapped: (() -> Void)?
+    var onDeleteTapped: (() -> Void)?
     
     let detectiveHeaderBackgroundView = UIView()
     let detectiveCardLabel = UILabel()
@@ -24,6 +29,16 @@ class DetectiveCardView: UIView {
     let detectiveIntroduceLabel = VerticalAlignedLabel()
     let detectiveIntroduceBackgroundView = UIView()
     let detectiveIntroduce = UILabel()
+    
+    private let menuButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "ellipsis"), for: .normal)
+        button.tintColor = .white
+        button.backgroundColor = UIColor.black.withAlphaComponent(0.3)
+        button.layer.cornerRadius = 16
+        button.clipsToBounds = true
+        return button
+    }()
         
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -55,6 +70,9 @@ class DetectiveCardView: UIView {
             detectiveIntroduceLabel,
             detectiveIntroduceBackgroundView,
         ])
+        
+        self.addSubview(menuButton)
+        setupMenu()
             
         self.layer.cornerRadius = 16
         self.layer.masksToBounds = true
@@ -115,6 +133,21 @@ class DetectiveCardView: UIView {
 
         detectiveIntroduce.font = UIFont.title5
         detectiveIntroduce.textColor = .textSecondary
+    }
+    
+    // 메뉴 버튼 설정
+    private func setupMenu() {
+        let editAction = UIAction(title: "수정하기", image: UIImage(systemName: "pencil")) { [weak self] _ in
+            self?.onEditTapped?()
+            print("✅ 수정하기 눌림") // 테스트 로그 출력
+        }
+        
+        let deleteAction = UIAction(title: "삭제하기", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
+            self?.onDeleteTapped?()
+        }
+        
+        menuButton.menu = UIMenu(children: [editAction, deleteAction])
+        menuButton.showsMenuAsPrimaryAction = true
     }
     
     private func configureUI() {
@@ -208,6 +241,11 @@ class DetectiveCardView: UIView {
             $0.horizontalEdges.equalToSuperview().inset(8)
             $0.verticalEdges.equalToSuperview().inset(4)
             $0.height.equalTo(16)
+        }
+        
+        menuButton.snp.makeConstraints {
+            $0.bottom.trailing.equalToSuperview().inset(12)
+            $0.width.height.equalTo(32)
         }
     }
 }

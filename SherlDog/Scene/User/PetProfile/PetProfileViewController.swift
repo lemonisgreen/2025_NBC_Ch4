@@ -242,6 +242,28 @@ final class PetProfileViewController: UIViewController {
         .disposed(by: disposeBag)
     }
     
+    private func deleteProfile(at index: Int) {
+        guard index < petProfiles.count else { return }
+
+        let profileToDelete = petProfiles[index]
+
+        FirestoreManager.shared.deleteDocument(
+            collection: "PetProfile",
+            documentId: profileToDelete.petProfileId ?? ""
+        )
+        .subscribe(onCompleted: { [weak self] in
+            guard let self = self else { return }
+            self.petProfiles.remove(at: index)
+            DispatchQueue.main.async {
+                self.collectionView.deleteItems(at: [IndexPath(item: index, section: 0)])
+                self.updateNextButtonState()
+            }
+        }, onError: { error in
+            print("❌ 삭제 실패: \(error)")
+        })
+        .disposed(by: disposeBag)
+    }
+    
     // MARK: - Navigation
     private func presentRegistrationView() {
         let registrationVC = RegistrationViewController()
@@ -256,6 +278,40 @@ final class PetProfileViewController: UIViewController {
             self.present(registrationVC, animated: true)
         }
         registrationVC.isModalInPresentation = true
+    }
+    
+    private func presentEditView(for profileId: String) {
+        FirestoreManager.shared.fetchDocument(
+            collection: "PetProfile",
+            documentId: profileId,
+            type: PetProfile.self
+        )
+        .subscribe(onSuccess: { [weak self] profile in
+            print("✅ 성공적으로 불러옴: \(profile.name)")
+
+            let registrationVC = RegistrationViewController()
+            registrationVC.configure(for: .edit(profile))
+
+            registrationVC.profileUpdateSubject
+                .take(1)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.loadSampleData()
+                })
+                .disposed(by: registrationVC.disposeBag)
+
+            if let sheet = registrationVC.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.selectedDetentIdentifier = .large
+                sheet.prefersGrabberVisible = false
+                sheet.preferredCornerRadius = 20
+            }
+            registrationVC.isModalInPresentation = true
+
+            self?.present(registrationVC, animated: true)
+        }, onFailure: { error in
+            print("❌ 에러 발생: \(error)")
+        })
+        .disposed(by: disposeBag)
     }
 }
 
@@ -273,7 +329,16 @@ extension PetProfileViewController: UICollectionViewDataSource {
         if indexPath.item < petProfiles.count {
             // 기존 프로필 카드
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: DetectiveCardCollectionViewCell.identifier, for: indexPath) as! DetectiveCardCollectionViewCell
-            cell.configure(with: petProfiles[indexPath.item])
+            let profile = petProfiles[indexPath.item]
+            cell.configure(with: profile)
+            cell.onEditTapped = { [weak self] in
+                guard let self = self else { return }
+                self.presentEditView(for: profile.petProfileId ?? "")
+            }
+            cell.onDeleteTapped = { [weak self] in
+                guard let self = self else { return }
+                self.deleteProfile(at: indexPath.item)
+            }
             return cell
         } else {
             // 프로필 추가 버튼 (최대 개수 미만일 때만)
