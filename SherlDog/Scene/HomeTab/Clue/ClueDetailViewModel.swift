@@ -66,6 +66,7 @@ final class ClueDetailViewModel {
     
     private func updateUI(with clue: ClueModel) {
         data.append(ClueCellData(imageURL: clue.image, content: clue.content))
+        self.output.isLoading.accept(false)
     }
     
     private func fetchCluesData(day: Date) {
@@ -77,6 +78,7 @@ final class ClueDetailViewModel {
             clues.forEach {
                 self?.data.append(ClueCellData(imageURL: $0.image, content: $0.content))
             }
+            self?.output.isLoading.accept(false)
         })
         .disposed(by: disposeBag)
     }
