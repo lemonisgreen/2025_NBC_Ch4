@@ -9,14 +9,18 @@ import UIKit
 import RxSwift
 import RxCocoa
 import SnapKit
+import RxDataSources
 
 // MARK: - CommunityViewController
 class CommunityViewController: UIViewController {
     
+    private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
-    private let testCell = BehaviorRelay(value: MockUpData.communitySample)  // test
     
-    private let titleLabel = UILabel()
+    private lazy var dataSource = setDataSource()
+    
+    // MARK: - UIProperty
+    private lazy var segmentedControl = CommunitySegmentedControl(items: self.viewModel.output.sectionName.value)
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     
     // MARK: - Lifecycle
@@ -26,6 +30,13 @@ class CommunityViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
+        inputBind()
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.navigationBar.isHidden = true
     }
 }
 
@@ -33,51 +44,55 @@ class CommunityViewController: UIViewController {
 extension CommunityViewController {
     
     private func bind() {
-        testCell.bind(to: self.collectionView.rx.items) { collectionView, row, item in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommunityCell.identifier, for: IndexPath(row: row, section: 0)) as? CommunityCell else { return .init() }
-            
-            cell.settingCell(data: item)
-            
-            // 추후 작업 예정
-//            cell.rx.moreShowButtonTap
-//                .subscribe(onNext: { [weak self] in
-//                    var current = testCell.value
-//                    current[row].isExpanded.toggle()
-//                    testCell.accept(current)
-//                })
-//                .disposed(by: cell.disposeBag)
-            
-            return cell
-        }
-        .disposed(by: disposeBag)
+        viewModel.output.currentCellData
+            .asDriver(onErrorJustReturn: [])
+            .drive(self.collectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+    }
+    
+    private func inputBind() {
+        self.segmentedControl.rx.selectedSegmentIndex
+            .map { .segmentedControlChanged($0) }
+            .bind(to: viewModel.input)
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
         view.backgroundColor = .textInverse
         view.addSubviews([
-            titleLabel,
+            segmentedControl,
             collectionView
         ])
         
-        titleLabel.text = "수사일지"
-        titleLabel.font = .title1
-        titleLabel.textColor = .textPrimary
+        
+        segmentedControl.selectedSegmentIndex = 0
         
         collectionView.backgroundColor = .textInverse
         collectionView.register(CommunityCell.self, forCellWithReuseIdentifier: CommunityCell.identifier)
     }
     
     private func configureUI() {
-        titleLabel.snp.makeConstraints {
+        segmentedControl.snp.makeConstraints {
+            $0.height.equalTo(50)
             $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-            $0.leading.equalToSuperview().inset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
         collectionView.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(16)
+            $0.top.equalTo(segmentedControl.snp.bottom).offset(16)
             $0.horizontalEdges.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
+    }
+    
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunityData> {
+        return RxCollectionViewSectionedReloadDataSource(configureCell: { dataSource, collectionView, indexPath, item in
+            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommunityCell.identifier, for: indexPath) as? CommunityCell else { return .init() }
+            
+            cell.settingCell(data: item)
+            
+            return cell
+        })
     }
     
     private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {

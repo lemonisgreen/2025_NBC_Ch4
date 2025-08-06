@@ -16,7 +16,7 @@ class BottomTabBarController: UITabBarController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let controllers = [mainVC, myPageVC]
+        let controllers = [mainVC, communityVC, myPageVC]
         self.viewControllers = controllers
         
         self.navigationItem.hidesBackButton = true
