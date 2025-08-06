@@ -14,7 +14,6 @@ import CoreLocation
 import FirebaseAuth
 import FirebaseFirestore
 import UIKit
-import os.signpost
 
 final class ClueDetailViewModel {
     
