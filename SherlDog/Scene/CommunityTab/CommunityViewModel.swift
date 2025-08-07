@@ -28,15 +28,17 @@ class CommunityViewModel {
     
     enum Input {
         case segmentedControlChanged(Int)
+        case upToRefresh
+        case fetchMoreData
     }
     
     struct Output {
         let sectionName = BehaviorRelay<[String]>(value: [])
-        let currentCellData = BehaviorRelay<[CommunityData]>(value: [])
+        let selectedCategory = BehaviorRelay<CommunitySectionType>(value: .invLogBoard)
+        let currentCellData = BehaviorRelay<[CommunitySectionType: [CommunityData]]>(value: [:])
     }
     
     typealias CommunityData = SectionModel<String, CommunityModel>
-    private var cellDataCache = [CommunitySectionType: [CommunityData]]()
     
     private let disposeBag = DisposeBag()
     
@@ -55,7 +57,7 @@ class CommunityViewModel {
                 
                 switch input {
                 case .segmentedControlChanged(let index):
-                    let section: CommunitySectionType = {
+                    let category: CommunitySectionType = {
                         switch index {
                         case 0: return .invLogBoard
                         case 1: return .detectiveMateBoard
@@ -63,40 +65,56 @@ class CommunityViewModel {
                         }
                     }()
                     
-                    self.setCellData(section: section)
+                    self.output.selectedCategory.accept(category)
+                    self.setCellData(category: category)
+                    
+                case .upToRefresh:
+                    self.upToRefresh(category: self.output.selectedCategory.value)
+                    
+                case .fetchMoreData:
+                    self.fetchMoreData(category: self.output.selectedCategory.value)
+                    
                 }
             })
             .disposed(by: disposeBag)
     }
     
-    private func setCellData(section: CommunitySectionType) {
-        guard let cache = self.cellDataCache[section], cache.count != 0 else {
-            fetchData(section: section)
-            return
+    // 초기 커뮤니티 데이터 불러오기
+    private func setCellData(category: CommunitySectionType) {
+        guard self.output.currentCellData.value[category]?.isEmpty ?? true else { return }
+        
+        var cache = [CommunityModel]()
+        
+        // todo: fetch 기능 구현
+        cache = MockUpData.communitySample
+        if category == .detectiveMateBoard {
+            cache.removeLast(2)
         }
         
-        self.output.currentCellData.accept(cache)
+        let result = [CommunityData(model: "", items: cache)]
+        self.output.currentCellData.accept([category: result])
     }
     
     // todo: upToRefresh 기능 구현
-    private func upToRefresh(section: CommunitySectionType) {
-        var cache = [CommunityData]()
+    private func upToRefresh(category: CommunitySectionType) {
+        guard var cache = self.output.currentCellData.value[category]?[0].items else { return }
         
-        cache = [CommunityData(model: "",
-                               items: MockUpData.communitySample)]
+        cache = MockUpData.communitySample // test
         
-        self.cellDataCache[section] = cache
-        self.output.currentCellData.accept(cache)
+        let result = [CommunityData(model: "", items: cache)]
+        self.output.currentCellData.accept([category: result])
     }
     
     // todo: 무한스크롤 기능 구현
-    private func fetchMoreData(section: CommunitySectionType) {
-        var cache = self.cellDataCache[section] ?? []
+    private func fetchMoreData(category: CommunitySectionType) {
+        guard var cache = self.output.currentCellData.value[category]?[0].items else { return }
         
-        cache.append(contentsOf: [CommunityData(model: "",
-                                                items: MockUpData.communitySample)])
+        MockUpData.communitySample.forEach { // test
+            cache.append($0)
+        }
         
-        self.cellDataCache[section] = cache
+        let result = [CommunityData(model: "", items: cache)]
+        self.output.currentCellData.accept([category: result])
     }
     
     private func setup() {
@@ -107,18 +125,7 @@ class CommunityViewModel {
         }
         
         self.output.sectionName.accept(names)
-    }
-    
-    private func fetchData(section: CommunitySectionType) {
-        var cache = [CommunityData(model: "",
-                                   items: MockUpData.communitySample)]
-        
-        // todo: 데이터 불러오기 로직 구현
-        if section == .detectiveMateBoard {
-            cache[0].items.removeLast(2)
-        }
-        
-        self.cellDataCache[section] = cache
-        self.output.currentCellData.accept(cache)
+        self.output.currentCellData.accept([.invLogBoard: []])
+        self.output.currentCellData.accept([.detectiveMateBoard: []])
     }
 }

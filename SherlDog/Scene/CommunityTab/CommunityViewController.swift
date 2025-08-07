@@ -44,10 +44,18 @@ class CommunityViewController: UIViewController {
 extension CommunityViewController {
     
     private func bind() {
-        viewModel.output.currentCellData
-            .asDriver(onErrorJustReturn: [])
-            .drive(self.collectionView.rx.items(dataSource: dataSource))
-            .disposed(by: disposeBag)
+        Observable.combineLatest(
+            viewModel.output.selectedCategory,
+            viewModel.output.currentCellData
+        )
+        .map { category, data in
+            guard let result = data[category] else { return [] }
+            
+            return result
+        }
+        .asDriver(onErrorJustReturn: [])
+        .drive(self.collectionView.rx.items(dataSource: dataSource))
+        .disposed(by: disposeBag)
     }
     
     private func inputBind() {

@@ -9,6 +9,8 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
+import Kingfisher
+import FirebaseFirestore
 
 // MARK: - CommunityCell
 class CommunityCell: UICollectionViewCell {
@@ -54,15 +56,50 @@ class CommunityCell: UICollectionViewCell {
     
     // MARK: - Method
     func settingCell(data: CommunityModel) {
-        profileImageView.image = data.profileImage
         nameLabel.text = data.name
         infoLabel.text = data.info
-        postDateLabel.text = data.postDate
-        contentImageView.image = data.contentImage
+        postDateLabel.text = self.timestampToDate(data.postDate)
         contentLabel.text = data.content
+        
+        self.setImage(data: data)
         
 //        contentLabel.numberOfLines = data.isExpanded ? 0 : 2
 //        moreShowButton.setTitle(data.isExpanded ? "닫기" : "더보기", for: .normal)
+    }
+    
+    private func setImage(data: CommunityModel) {
+        let profileProcessor = DownsamplingImageProcessor(size: self.profileImageView.bounds.size)
+        
+        self.profileImageView.kf.indicatorType = .activity
+        KF.url(URL(string: data.profileImage))
+            .placeholder(UIImage.petAvatar)
+            .setProcessor(profileProcessor)
+            .cacheOriginalImage()
+            .fade(duration: 0.25)
+            .onFailureImage(UIImage.petAvatar)
+            .onSuccess { result in }
+            .onFailure { error in }
+            .set(to: self.profileImageView)
+        
+        let contentProcessor = DownsamplingImageProcessor(size: self.contentImageView.bounds.size)
+        
+        self.contentImageView.kf.indicatorType = .activity
+        KF.url(URL(string: data.contentImage))
+            .placeholder(UIImage.petAvatar)
+            .setProcessor(contentProcessor)
+            .cacheOriginalImage()
+            .fade(duration: 0.25)
+            .onFailureImage(UIImage.petAvatar)
+            .onSuccess { result in }
+            .onFailure { error in }
+            .set(to: self.contentImageView)
+    }
+    
+    private func timestampToDate(_ time: Timestamp) -> String {
+        let date = time.dateValue()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M월 d일"
+        return formatter.string(from: date)
     }
     
     private func setupUI() {
