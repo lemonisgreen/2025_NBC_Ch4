@@ -22,6 +22,7 @@ class CommunityViewController: UIViewController {
     // MARK: - UIProperty
     private lazy var segmentedControl = CommunitySegmentedControl(items: self.viewModel.output.sectionName.value)
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
+    private let addButton = UIButton()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -63,20 +64,32 @@ extension CommunityViewController {
             .map { .segmentedControlChanged($0) }
             .bind(to: viewModel.input)
             .disposed(by: disposeBag)
+        
+        self.addButton.rx.tap
+            .asSignal()
+            .emit(onNext: { [weak self] in
+                self?.navigationController?.pushViewController(AddNewContentViewController(), animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
     private func setupUI() {
         view.backgroundColor = .textInverse
         view.addSubviews([
             segmentedControl,
-            collectionView
+            collectionView,
+            addButton
         ])
-        
         
         segmentedControl.selectedSegmentIndex = 0
         
         collectionView.backgroundColor = .textInverse
         collectionView.register(CommunityCell.self, forCellWithReuseIdentifier: CommunityCell.identifier)
+        
+        let config = UIImage.SymbolConfiguration(pointSize: 64, weight: .bold)
+        let image = UIImage(systemName: "plus.circle.fill", withConfiguration: config)
+        addButton.setImage(image, for: .normal)
+        addButton.tintColor = .keycolorPrimary2
     }
     
     private func configureUI() {
@@ -90,6 +103,10 @@ extension CommunityViewController {
             $0.top.equalTo(segmentedControl.snp.bottom).offset(16)
             $0.horizontalEdges.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        
+        addButton.snp.makeConstraints {
+            $0.trailing.bottom.equalTo(collectionView).offset(-16)
         }
     }
     
