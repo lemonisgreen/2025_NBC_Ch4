@@ -36,6 +36,7 @@
 	<string>$(CLIENT_ID)</string>
 	<key>UIAppFonts</key>
 	<array>
+		<string>ChosunCentennial_ttf.ttf</string>
 		<string>Pretendard-Medium.otf</string>
 		<string>Pretendard-Regular.otf</string>
 		<string>Pretendard-SemiBold.otf</string>

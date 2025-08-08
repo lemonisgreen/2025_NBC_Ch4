@@ -21,7 +21,9 @@ class InvLogViewModel {
     }
     
     struct Output {
+        let isLoading = BehaviorRelay<Bool>(value: false)
         let uploadComplete = PublishRelay<Void>()
+        let uploadError = PublishRelay<Void>()
     }
     
     private let collection: String = "InvLog"
@@ -41,6 +43,7 @@ class InvLogViewModel {
                 
                 switch input {
                 case .didFinishedWrite(let data):
+                    self.output.isLoading.accept(true)
                     self.imageToString(data: data)
                     
                 }
@@ -51,8 +54,12 @@ class InvLogViewModel {
     private func upload(image: String, content: String) {
         FirestoreManager.shared.createDocument(collection: self.collection,
                                                data: InvLogModel(userId: "unknown", image: image, content: content)) // todo: Insert userId
-        .subscribe(onCompleted: {
-            self.output.uploadComplete.accept(())
+        .subscribe(onCompleted: { [weak self] in
+            self?.output.isLoading.accept(false)
+            self?.output.uploadComplete.accept(())
+        }, onError: { [weak self] _ in
+            self?.output.isLoading.accept(false)
+            self?.output.uploadError.accept(())
         })
         .disposed(by: disposeBag)
     }
@@ -64,7 +71,8 @@ class InvLogViewModel {
                 self?.upload(image: value, content: data.content)
                 
             case .failure(let error):
-                print(error) // todo: Error 처리
+                self?.output.isLoading.accept(false)
+                self?.output.uploadError.accept(())
                 return
             }
         }

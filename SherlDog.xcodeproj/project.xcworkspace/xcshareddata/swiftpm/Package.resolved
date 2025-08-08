@@ -256,7 +256,7 @@
     {
       "identity" : "rxcorelocation",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/RxSwiftCommunity/RxCoreLocation",
+      "location" : "https://github.com/RxSwiftCommunity/RxCoreLocation.git",
       "state" : {
         "revision" : "8b26b77851c09689c2fb6ba9cd875c203ff79797",
         "version" : "1.5.1"

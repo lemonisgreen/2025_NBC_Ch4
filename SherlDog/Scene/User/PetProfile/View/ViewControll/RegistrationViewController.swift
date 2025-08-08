@@ -11,8 +11,16 @@ import RxSwift
 import RxCocoa
 import Firebase
 import FirebaseStorage
+import Kingfisher
 
 class RegistrationViewController: UIViewController {
+
+    enum Mode {
+        case add
+        case edit(PetProfile)
+    }
+
+    private var mode: Mode = .add
     
     private let cameraViewModel = CameraViewModel()
     private let viewModel = RegistrationViewModel()
@@ -70,7 +78,8 @@ class RegistrationViewController: UIViewController {
     private let registIntroduceLabel = UILabel()
     private let registIntroduce = RegistrationTextField(text: "성격을 입력하세요")
     private let registIntroduceCountLabel = UILabel()
-    private let registCompletButton = ComponentButton(title: "다음")
+    private let registCompletButton = ButtonFactory.makeButton(type: .main, title: "다음")
+    private let loadingIndicator = CustomLoadingIndicator()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -83,11 +92,14 @@ class RegistrationViewController: UIViewController {
         bind()
     }
     
-    func configure(for mode: RegistrationViewModel.Mode, with profile: PetProfile? = nil) {
-        if let profile = profile {
+    /// Configures the view for the specified mode. If mode is .edit, sets up the viewModel with the profile.
+    func configure(for mode: Mode) {
+        self.mode = mode
+
+        if case .edit(let profile) = mode {
             viewModel.setEditMode(with: profile)
         }
-        // 뷰가 로드된 후에 UI 업데이트 보장
+
         DispatchQueue.main.async { [weak self] in
             if self?.isViewLoaded == true {
                 self?.updateButtonStates()
@@ -135,14 +147,24 @@ class RegistrationViewController: UIViewController {
         FirebaseImageManager.shared.downloadPetImage(
             petId: profile.petProfileId,
             userId: profile.userId
-        ) { [weak self] image in
-            DispatchQueue.main.async {
-                if let image = image {
-                    self?.selectedImage = image
-                    self?.registedProfileImage.image = image
-                    self?.cameraViewModel.output.capturedImage.accept(image)
+        ) { [weak self] url in
+            guard let self else { return }
+            
+            let processor = DownsamplingImageProcessor(size: self.registedProfileImage.bounds.size) // 크기 지정 다운 샘플링
+            
+            self.registedProfileImage.kf.indicatorType = .activity
+            KF.url(url)
+                .placeholder(UIImage.petAvatar)
+                .setProcessor(processor)
+                .cacheOriginalImage()
+                .fade(duration: 0.25)
+                .onFailureImage(UIImage.petAvatar)
+                .onSuccess { result in
+                    self.selectedImage = result.image
+                    self.cameraViewModel.output.capturedImage.accept(result.image)
                 }
-            }
+                .onFailure { error in }
+                .set(to: self.registedProfileImage)
         }
     }
     
@@ -197,7 +219,7 @@ class RegistrationViewController: UIViewController {
         viewModel.output.isLoading
             .subscribe(onNext: { [weak self] isLoading in
                 self?.registCompletButton.isEnabled = !isLoading
-                // 인디케이터 활성, 비활성은 여기서 진행
+                self?.loadingIndicator.isHidden = !isLoading
             })
             .disposed(by: disposeBag)
         
@@ -482,6 +504,34 @@ class RegistrationViewController: UIViewController {
         
     }
     
+    // MARK: - Present Edit View for Profile
+    /// Presents the edit view for a given pet profile ID.
+    private func presentEditView(for profileId: String) {
+        FirestoreManager.shared.fetchDocument(
+            collection: "PetProfile",
+            documentId: profileId,
+            type: PetProfile.self
+        )
+        .subscribe(onSuccess: { [weak self] profile in
+            guard let self = self else { return }
+
+            let registrationVC = RegistrationViewController()
+            registrationVC.configure(for: .edit(profile))
+
+            registrationVC.profileUpdateSubject
+                .take(1)
+                .subscribe(onNext: { [weak self] _ in
+                    self?.viewModel.profileDidUpdate.onNext(())
+                })
+                .disposed(by: registrationVC.disposeBag)
+
+            // NOTE: Present or push registrationVC from the calling context as needed
+        }, onFailure: { error in
+            print("❌ Firestore에서 프로필 로딩 실패: \(error.localizedDescription)")
+        })
+        .disposed(by: disposeBag)
+    }
+    
     private func setupUI() {
         [
             registrationLabel,
@@ -561,7 +611,8 @@ class RegistrationViewController: UIViewController {
             registrationStackView,
             topUnderLine,
             scrollView,
-            registCompletButton
+            registCompletButton,
+            loadingIndicator
         ])
         
         //MARK: 배경 --
@@ -915,6 +966,10 @@ class RegistrationViewController: UIViewController {
             $0.height.equalTo(52)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(16)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
 }

@@ -19,6 +19,8 @@ class SelectAvatarViewController: UIViewController {
     private let disposeBag = DisposeBag()
     private lazy var dataSource = self.setDataSource()
     
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
     private let titleLabel = UILabel()
     private let avatarImageView = UIImageView()
     private let avatarBackground = UIImageView()
@@ -27,8 +29,8 @@ class SelectAvatarViewController: UIViewController {
     private let detailLabel = UILabel()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let pageControl = UIPageControl()
-    private let backButton = ComponentSubButton(title: "이전")
-    private let choiceButton = ComponentButton(title: "선택하기")
+    private let backButton = ButtonFactory.makeButton(type: .sub, title: "이전")
+    private let choiceButton = ButtonFactory.makeButton(type: .main, title: "선택하기")
     private let horizontalStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -132,13 +134,19 @@ extension SelectAvatarViewController {
         [backButton, choiceButton]
             .forEach { horizontalStackView.addArrangedSubview($0) }
         
-        view.addSubviews([
+        contentView.addSubviews([
             titleLabel,
             avatarBackground,
             avatarImageView,
             detailView,
             collectionView,
-            pageControl,
+            pageControl
+        ])
+        
+        scrollView.addSubview(contentView)
+        
+        view.addSubviews([
+            scrollView,
             horizontalStackView
         ])
         
@@ -178,8 +186,18 @@ extension SelectAvatarViewController {
     }
     
     private func configureUI() {
+        scrollView.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(16)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(horizontalStackView.snp.top).offset(-20)
+        }
+        
+        contentView.snp.makeConstraints {
+            $0.width.edges.equalToSuperview()
+        }
+        
         titleLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(28)
+            $0.top.equalToSuperview().inset(12)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
@@ -212,9 +230,10 @@ extension SelectAvatarViewController {
         }
         
         collectionView.snp.makeConstraints {
+            $0.height.equalTo(116)
             $0.top.equalTo(detailView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(20)
-            $0.bottom.equalTo(horizontalStackView.snp.top).offset(-42)
+            $0.bottom.equalToSuperview().inset(22)
         }
         
         pageControl.snp.makeConstraints {
@@ -256,7 +275,7 @@ extension SelectAvatarViewController {
         section.orthogonalScrollingBehavior = .paging
         section.visibleItemsInvalidationHandler = { [weak self] items, offset, environment in
             let viewWidth = environment.container.contentSize.width
-            self?.pageControl.currentPage = Int((offset.x + (viewWidth / 2)) / viewWidth)
+            self?.pageControl.currentPage = Int(round(offset.x / viewWidth))
         }
         
         return UICollectionViewCompositionalLayout(section: section)

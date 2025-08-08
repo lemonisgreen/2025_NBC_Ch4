@@ -28,7 +28,7 @@ class LoginViewController: UIViewController {
     private let kakaoButton = UIButton()
     private let googleButton = UIButton()
     private let appleButton = UIButton()
-    private let loadingIndicator = UIActivityIndicatorView(style: .large)
+    private let loadingIndicator = CustomLoadingIndicator()
 
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -64,9 +64,6 @@ class LoginViewController: UIViewController {
         kakaoButton.setImage(.kakao, for: .normal)
         googleButton.setImage(.google, for: .normal)
         appleButton.setImage(.apple, for: .normal)
-
-        loadingIndicator.color = .systemBlue
-        loadingIndicator.hidesWhenStopped = true
     }
 
     private func setupUI() {
@@ -119,7 +116,7 @@ class LoginViewController: UIViewController {
         }
         
         loadingIndicator.snp.makeConstraints {
-            $0.center.equalToSuperview()
+            $0.edges.equalToSuperview()
         }
     }
 
@@ -158,7 +155,8 @@ class LoginViewController: UIViewController {
 
         // Output - ViewModel의 상태를 UI에 반영
         viewModel.output.isLoading
-            .drive(loadingIndicator.rx.isAnimating)
+            .map { !$0 }
+            .drive(loadingIndicator.rx.isHidden)
             .disposed(by: disposeBag)
 
         viewModel.output.navigate

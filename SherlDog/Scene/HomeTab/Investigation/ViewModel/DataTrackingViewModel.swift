@@ -26,7 +26,7 @@ class DataTrackingViewModel {
     let trackingActive = BehaviorRelay<Bool>(value: false)
     let fullScreenImage = PublishRelay<UIImage>()
     let capturedImage = PublishRelay<UIImage>()
-    let invLogListViewSendImage = BehaviorRelay(value: UIImage())
+    let walkingPathImageURL = BehaviorRelay<String>(value: "")
     
     let fetchResult = BehaviorRelay<WalkResult?>(value: nil)
     let saveResult = PublishSubject<Result<Void, Error>>()
@@ -40,25 +40,17 @@ class DataTrackingViewModel {
     private func transform() {
         self.fetchResult
             .subscribe(onNext: { [weak self] result in
-                guard let self, let result,
-                      let userId = Auth.auth().currentUser?.uid else { return }
-                
-                guard let date = DateFormatter.yyyyMMdd.date(from: result.date) else { return }
+                guard let self,
+                      let result,
+                      let date = DateFormatter.yyyyMMdd.date(from: result.date) else { return }
 
                 self.numberOfSteps.accept(result.steps)
                 self.distance.accept(result.distance)
                 self.duration.accept(result.duration)
                 self.endDate.accept(date)
                 
-                self.downloadImage(from: result.walkingPathImage)
-                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .subscribe(onSuccess: { [weak self] image in
-                        guard let self else { return }
-                        
-                        self.invLogListViewSendImage.accept(image)
-                    })
-                    .disposed(by: disposeBag)
-                
+                // 경로 이미지 URL 전달
+                self.walkingPathImageURL.accept(result.walkingPathImage)
             })
             .disposed(by: disposeBag)
         
@@ -111,27 +103,7 @@ class DataTrackingViewModel {
         }
     }
     
-    private func downloadImage(from urlString: String) -> Single<UIImage> {
-        guard let url = URL(string: urlString) else {
-            return .just(UIImage())
-        }
-        return Single<UIImage>.create { single in
-            let log = OSLog(subsystem: "com.rak.SherlDog.imageLoading", category: .pointsOfInterest)
-            let signpostID = OSSignpostID(log: log)
-            os_signpost(.begin, log: log, name: "경로 이미지 다운로드", signpostID: signpostID)
-            
-            URLSession.shared.dataTask(with: url) { data, response, error in
-                if let data = data, let image = UIImage(data: data) {
-                    os_signpost(.end, log: log, name: "경로 이미지 다운로드", signpostID: signpostID)
-                    single(.success(image))
-                } else {
-                    single(.success(UIImage()))
-                }
-            }.resume()
-            
-            return Disposables.create()
-        }
-    }
+
     
     func saveWalkResult(selectedProfiles: [PetProfile]) {
         let dateString: String = {

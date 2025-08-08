@@ -7,7 +7,7 @@
 
 import UIKit
 
-class ComponentSubButton: UIButton {
+class ComponentSubButton: ComponentButtonBase {
     
     enum ColorForState {
         case enabled
@@ -38,23 +38,19 @@ class ComponentSubButton: UIButton {
         }
     }
     
-    init(title: String) {
-        super.init(frame: .zero)
-        configureUI(title: title)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func configureUI(title: String) {
+    override func configureUI(title: String) {
+        super.configureUI(title: title)
         
-        setTitle(title, for: .normal)
-        titleLabel?.font = UIFont.highlight4
         layer.borderColor = ColorForState.enabled.getColor().cgColor
         layer.borderWidth = 1
-        layer.cornerRadius = 6
-        clipsToBounds = true
         
         setTitleColor(ColorForState.enabled.getColor(), for: .normal)
         setTitleColor(ColorForState.highlighted.getColor(), for: .highlighted)
@@ -62,10 +58,6 @@ class ComponentSubButton: UIButton {
         
         setBackgroundColor(.textInverse, for: .normal)
         setBackgroundColor(.gray100, for: .highlighted)
-        
-        self.snp.makeConstraints {
-            $0.height.equalTo(52)
-        }
     }
     
     private func setBorderColor() {

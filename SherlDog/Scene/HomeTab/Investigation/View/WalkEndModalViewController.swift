@@ -9,6 +9,7 @@ import UIKit
 import RxSwift
 import RxCocoa
 import NMapsMap
+import Kingfisher
 
 class WalkEndModalViewController : UIViewController {
     
@@ -34,9 +35,10 @@ class WalkEndModalViewController : UIViewController {
     ]
     private let walkEndLabel = UILabel()
     private let showProfileButton = UIButton()
-    private let walkShareButton = ComponentButton(title: "멍탐정과 남긴 단서")
+    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "멍탐정과 남긴 단서")
     private let mapImageView = UIImageView()
     private let closeButton = UIButton()
+    private let loadingIndicator = CustomLoadingIndicator()
     
     private let dogImagesStack = UIStackView()
     private let walkEndStack = UIStackView()
@@ -79,7 +81,7 @@ class WalkEndModalViewController : UIViewController {
         
         self.dataTrackingViewModel.fullScreenImage
             .bind(onNext: { [weak self] image in
-                guard let self,
+                guard let self = self,
                       self.dataTrackingViewModel.fetchResult.value == nil else { return }
                 
                 DispatchQueue.main.async {
@@ -93,7 +95,7 @@ class WalkEndModalViewController : UIViewController {
         
         self.dataTrackingViewModel.capturedImage
             .bind(onNext: { [weak self] image in
-                guard let self,
+                guard let self = self,
                       self.dataTrackingViewModel.fetchResult.value == nil else { return }
                 
                 self.dataTrackingViewModel.saveWalkResultCapturedImage(
@@ -105,7 +107,7 @@ class WalkEndModalViewController : UIViewController {
         
         self.dataTrackingViewModel.saveResult
             .subscribe(onNext: { [weak self] result in
-                guard let self,
+                guard let self = self,
                       self.dataTrackingViewModel.fetchResult.value == nil else { return }
                 
                 switch result {
@@ -133,21 +135,28 @@ class WalkEndModalViewController : UIViewController {
             .disposed(by: disposeBag)
         self.dataTrackingViewModel.fetchResult
             .bind(onNext: { [weak self] result in
-                guard let self, let result else { return }
+                guard let self = self, let result = result else { return }
                 
                 self.fetchSelectedPetProfiles(petProfileIds: result.petProfileId)
             })
             .disposed(by: disposeBag)
         
-        self.dataTrackingViewModel.invLogListViewSendImage
+        self.dataTrackingViewModel.walkingPathImageURL
             .observe(on: MainScheduler.instance)
-            .bind(onNext: { [weak self] image in
+            .bind(onNext: { [weak self] urlString in
                 guard let self,
-                      self.dataTrackingViewModel.fetchResult.value != nil else { return }
-                
-                self.mapImageView.image = image
+                      let url = URL(string: urlString),
+                      !urlString.isEmpty else { return }
+
+                self.mapImageView.kf.setImage(
+                    with: url,
+                    placeholder: UIImage(named: "mapPolaroid"),
+                    options: [.transition(.fade(0.25)),
+                              .cacheOriginalImage]
+                )
             })
             .disposed(by: disposeBag)
+        
         
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
@@ -243,6 +252,7 @@ class WalkEndModalViewController : UIViewController {
         self.walkShareButton.isEnabled = !isLoading
         self.closeButton.isEnabled = !isLoading
         self.showProfileButton.isEnabled = !isLoading
+        self.loadingIndicator.isHidden = !isLoading
     }
     
     private func fetchSelectedPetProfiles(petProfileIds: [String]) {
@@ -307,7 +317,8 @@ class WalkEndModalViewController : UIViewController {
             infoBox,
             walkEndBox,
             dividerLine,
-            closeButton
+            closeButton,
+            loadingIndicator
         ].forEach {
             view.addSubview($0)
         }
@@ -334,7 +345,7 @@ class WalkEndModalViewController : UIViewController {
         
         todayLabel.text = "2025/06/05"
         todayLabel.textColor = UIColor(named: "keycolorPrimary2")
-        todayLabel.font = UIFont.title3
+        todayLabel.font = UIScreen.isIPhoneSE ? .recordTitleIsSE : .recordTitle
         todayLabel.textAlignment = .left
         todayLabel.backgroundColor = .clear
         
@@ -464,14 +475,18 @@ class WalkEndModalViewController : UIViewController {
                 
                 // URL에서 이미지 로드
                 if let url = URL(string: profile.image) {
-                    DispatchQueue.global().async {
-                        if let data = try? Data(contentsOf: url),
-                           let image = UIImage(data: data) {
-                            DispatchQueue.main.async {
-                                imageView.image = image
-                            }
-                        }
-                    }
+                    let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
+                    
+                    imageView.kf.indicatorType = .activity
+                    KF.url(url)
+                        .placeholder(UIImage.petAvatar)
+                        .setProcessor(processor)
+                        .cacheOriginalImage()
+                        .fade(duration: 0.25)
+                        .onFailureImage(UIImage.petAvatar)
+                        .onSuccess { result in }
+                        .onFailure { error in }
+                        .set(to: imageView)
                 }
                 
                 dogImagesStack.addArrangedSubview(imageView)
@@ -503,7 +518,6 @@ class WalkEndModalViewController : UIViewController {
                 $0.top.bottom.equalToSuperview().offset(40)
             }
         }
-        
         
         todayLabel.snp.makeConstraints {
             $0.top.equalTo(backgroundImageView.snp.top).offset(UIScreen.isIPhoneSE ? 55 : 75)
@@ -583,6 +597,10 @@ class WalkEndModalViewController : UIViewController {
             $0.top.equalTo(todayLabel.snp.bottom).offset(UIScreen.isIPhoneSE ? 20 : 30)
             $0.trailing.equalToSuperview().inset(30)
             $0.width.height.equalTo(24)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     

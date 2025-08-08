@@ -13,6 +13,7 @@ import RxSwift
 import RxCoreLocation
 import CoreLocation
 import FirebaseAuth
+import Kingfisher
 
 class MainViewController: UIViewController {
     
@@ -172,22 +173,21 @@ class MainViewController: UIViewController {
         clueMarkers.removeAll()
         
         // Firestore에서 내 단서들 가져오기
-        FirestoreManager.shared.fetchCollection(collection: "clues", type: ClueModel.self)
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { [weak self] allClues in
-                    let myClues = allClues.filter { $0.userID == userId }
-                    if myClues.isEmpty {
-                        print("저장된 단서가 없습니다")
-                    } else {
-                        self?.addClueMarkers(clues: myClues)
-                    }
-                },
-                onFailure: { error in
-                    print("단서 불러오기 실패: \(error.localizedDescription)")
+        FirestoreManager.shared.fetchCluesForUser(userId: userId)
+        .observe(on: MainScheduler.instance)
+        .subscribe(
+            onSuccess: { [weak self] myClues in
+                if myClues.isEmpty {
+                    print("저장된 단서가 없습니다")
+                } else {
+                    self?.addClueMarkers(clues: myClues)
                 }
-            )
-            .disposed(by: disposeBag)
+            },
+            onFailure: { error in
+                print("단서 불러오기 실패: \(error.localizedDescription)")
+            }
+        )
+        .disposed(by: disposeBag)
     }
     
     private func addClueMarkers(clues: [ClueModel]) {
@@ -492,17 +492,19 @@ class MainViewController: UIViewController {
             imageView.snp.makeConstraints { $0.size.equalTo(36) }
             
             // URL인지 확인해서 이미지 로드
-            if imageName.hasPrefix("http") {
-                if let url = URL(string: imageName) {
-                    DispatchQueue.global().async {
-                        if let data = try? Data(contentsOf: url),
-                           let image = UIImage(data: data) {
-                            DispatchQueue.main.async {
-                                imageView.image = image
-                            }
-                        }
-                    }
-                }
+            if imageName.hasPrefix("http"), let url = URL(string: imageName) {
+                let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
+                
+                imageView.kf.indicatorType = .activity
+                KF.url(url)
+                    .placeholder(UIImage.petAvatar)
+                    .setProcessor(processor)
+                    .cacheOriginalImage()
+                    .fade(duration: 0.25)
+                    .onFailureImage(UIImage.petAvatar)
+                    .onSuccess { result in }
+                    .onFailure { error in }
+                    .set(to: imageView)
             } else {
                 imageView.image = UIImage(named: imageName)
             }

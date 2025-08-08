@@ -22,6 +22,7 @@ class InvLogListViewController: UIViewController {
     private let navigationTitleLabel = UILabel()
     private let separatorView = UIView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: configureCollectionViewLayout())
+    private let emptyView = EmptyInvLogView()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -46,6 +47,18 @@ extension InvLogListViewController {
     
     private func bind() {
         self.viewModel.output.cellData
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self] sections in
+                    guard let self = self else { return }
+                    let itemCount = sections.first?.items.count ?? 0
+                    let isEmpty = (itemCount == 0)
+
+                    self.emptyView.isHidden = !isEmpty
+                    self.collectionView.isHidden = isEmpty
+                })
+                .disposed(by: disposeBag)
+        
+        self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
         
@@ -69,7 +82,8 @@ extension InvLogListViewController {
         
         view.addSubviews([
             separatorView,
-            collectionView
+            collectionView,
+            emptyView
         ])
         
         navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
@@ -95,6 +109,8 @@ extension InvLogListViewController {
         
         collectionView.backgroundColor = .gray50
         collectionView.register(InvLogListCell.self, forCellWithReuseIdentifier: InvLogListCell.identifier)
+        
+        emptyView.isHidden = true
     }
     
     private func configureUI() {
@@ -107,6 +123,10 @@ extension InvLogListViewController {
         collectionView.snp.makeConstraints {
             $0.top.equalTo(separatorView.snp.bottom)
             $0.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        
+        emptyView.snp.makeConstraints {
+            $0.edges.equalTo(collectionView.snp.edges)
         }
     }
     
