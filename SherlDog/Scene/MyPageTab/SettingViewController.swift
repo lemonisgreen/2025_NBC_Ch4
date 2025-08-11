@@ -23,16 +23,16 @@ class SettingViewController : UIViewController {
     let privacyPolicyStack = UIStackView()
     let privacyPolicyLabel = UILabel()
     let privacyPolicyButton = UIButton()
-    let cancelMembershipStack = UIStackView()
-    let cancelMembershipLabel = UILabel()
-    let cancelmembershipButton = UIButton()
+    let withdrawStack = UIStackView()
+    let withdrawLabel = UILabel()
+    let withdrawButton = UIButton()
     let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
     let settingBackStack = UIStackView()
     let settingBackButton = UIButton()
     let settingTitleLabel = UILabel()
     let clauseWholeButton = UIButton()
     let privacyPolicyWholeButton = UIButton()
-    let cancelMembershipWholeButton = UIButton()
+    let withdrawWholeButton = UIButton()
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -63,9 +63,9 @@ class SettingViewController : UIViewController {
             privacyPolicyStack,
             privacyPolicyLabel,
             privacyPolicyButton,
-            cancelMembershipStack,
-            cancelMembershipLabel,
-            cancelmembershipButton,
+            withdrawStack,
+            withdrawLabel,
+            withdrawButton,
         ].forEach {
             view.addSubview($0)
         }
@@ -115,16 +115,16 @@ class SettingViewController : UIViewController {
         privacyPolicyStack.addArrangedSubview(privacyPolicyLabel)
         privacyPolicyStack.addArrangedSubview(privacyPolicyButton)
         
-        cancelMembershipLabel.text = "회원탈퇴"
-        cancelMembershipLabel.font = .body1
-        cancelMembershipLabel.textColor = .textPrimary
-        cancelmembershipButton.setImage(UIImage(named: "rightChevron"), for: .normal)
+        withdrawLabel.text = "회원탈퇴"
+        withdrawLabel.font = .body1
+        withdrawLabel.textColor = .textPrimary
+        withdrawButton.setImage(UIImage(named: "rightChevron"), for: .normal)
         
-        cancelMembershipStack.axis = .horizontal
-        cancelMembershipStack.spacing = 50
-        cancelMembershipStack.alignment = .leading
-        cancelMembershipStack.addArrangedSubview(cancelMembershipLabel)
-        cancelMembershipStack.addArrangedSubview(cancelmembershipButton)
+        withdrawStack.axis = .horizontal
+        withdrawStack.spacing = 50
+        withdrawStack.alignment = .leading
+        withdrawStack.addArrangedSubview(withdrawLabel)
+        withdrawStack.addArrangedSubview(withdrawButton)
         
         spacer.width = -8
         
@@ -143,7 +143,7 @@ class SettingViewController : UIViewController {
         
         privacyPolicyStack.addSubview(privacyPolicyWholeButton)
         
-        cancelMembershipStack.addSubview(cancelMembershipWholeButton)
+        withdrawStack.addSubview(withdrawWholeButton)
         
     }
     
@@ -168,7 +168,7 @@ class SettingViewController : UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
-        cancelMembershipStack.snp.makeConstraints {
+        withdrawStack.snp.makeConstraints {
             $0.top.equalTo(privacyPolicyStack.snp.bottom).offset(34)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
@@ -181,7 +181,7 @@ class SettingViewController : UIViewController {
             $0.edges.equalToSuperview()
         }
 
-        cancelMembershipWholeButton.snp.makeConstraints {
+        withdrawWholeButton.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
     }
@@ -208,10 +208,10 @@ class SettingViewController : UIViewController {
             }
             .disposed(by: disposeBag)
         
-        cancelmembershipButton.rx.tap
+        withdrawButton.rx.tap
             .bind { [weak self] in
-                let cancelMembershipVC = CancelMembershipViewController()
-                self?.navigationController?.pushViewController(cancelMembershipVC, animated: true)
+                let withdrawViewController = WithdrawViewController()
+                self?.navigationController?.pushViewController(withdrawViewController, animated: true)
             }
             .disposed(by: disposeBag)
         
@@ -235,10 +235,10 @@ class SettingViewController : UIViewController {
             }
             .disposed(by: disposeBag)
 
-        cancelMembershipWholeButton.rx.tap
+        withdrawWholeButton.rx.tap
             .bind { [weak self] in
-                let vc = CancelMembershipViewController()
-                self?.navigationController?.pushViewController(vc, animated: true)
+                let withdrawViewController = WithdrawViewController()
+                self?.navigationController?.pushViewController(withdrawViewController, animated: true)
             }
             .disposed(by: disposeBag)
     }
