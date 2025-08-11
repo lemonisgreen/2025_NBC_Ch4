@@ -12,7 +12,8 @@ final class PostFooterView: UICollectionReusableView {
     static let identifier = "PostFooterView"
     
     private let container = UIStackView()
-    private let actionBar = UIStackView()      // 좋아요/댓글/공유 버튼 자리(예시)
+    private let actionBar = UIStackView()
+    private let pageControl = UIPageControl()
     private let likesLabel = UILabel()
     private let captionLabel = UILabel()
     private let commentPreviewLabel = UILabel()
@@ -29,6 +30,8 @@ final class PostFooterView: UICollectionReusableView {
         likesLabel.text = nil
         captionLabel.text = nil
         commentPreviewLabel.text = nil
+        pageControl.currentPage = 0
+        pageControl.numberOfPages = 0
     }
     
     func settingCell(data: CommunityModel) {
@@ -37,17 +40,32 @@ final class PostFooterView: UICollectionReusableView {
 //        commentPreviewLabel.text = data.previewComment // 없다면 숨김
 //        commentPreviewLabel.isHidden = (data.previewComment?.isEmpty ?? true)
     }
+    
+    func updatePage(total: Int, current: Int) {
+        pageControl.numberOfPages = max(total, 0)
+        pageControl.currentPage = min(max(current, 0), total - 1)
+        pageControl.isHidden = (total <= 1)
+    }
 }
 
 private extension PostFooterView {
     func setupUI() {
-        addSubview(container)
+        addSubviews([
+            container,
+            pageControl
+        ])
         
         container.axis = .vertical
         container.spacing = 8
         
         actionBar.axis = .horizontal
         actionBar.spacing = 12
+        
+        pageControl.hidesForSinglePage = true
+        pageControl.isUserInteractionEnabled = false
+        pageControl.pageIndicatorTintColor = .keycolorDisabled
+        pageControl.currentPageIndicatorTintColor = .keycolorPrimary1
+        pageControl.transform = CGAffineTransform(scaleX: 0.7, y: 0.7)
         
         captionLabel.font = .body5
         captionLabel.textColor = .textPrimary
@@ -77,9 +95,14 @@ private extension PostFooterView {
     
     func configureUI() {
         container.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(10)
+            $0.top.equalToSuperview().offset(16)
             $0.leading.trailing.equalToSuperview().inset(12)
             $0.bottom.equalToSuperview().inset(20)
+        }
+        
+        pageControl.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(-4)
+            $0.leading.trailing.equalToSuperview()
         }
     }
 }

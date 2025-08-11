@@ -28,7 +28,7 @@ final class CommunityViewModel {
     
     enum Input {
         case segmentedControlChanged(Int)
-        case upToRefresh
+        case pullToRefresh
         case fetchMoreData
     }
     
@@ -36,6 +36,7 @@ final class CommunityViewModel {
         let sectionName = BehaviorRelay<[String]>(value: [])
         let selectedCategory = BehaviorRelay<CommunitySectionType>(value: .invLogBoard)
         let currentCellData = BehaviorRelay<[CommunitySectionType: [CommunitySection]]>(value: [:])
+        let isUpdating = BehaviorRelay<Bool>(value: false)
     }
     
     typealias CommunitySection = SectionModel<CommunityModel, String>
@@ -66,10 +67,11 @@ final class CommunityViewModel {
                     }()
                     
                     self.output.selectedCategory.accept(category)
-                    self.setCellData(category: category)
+                    self.fetchData(category: category)
                     
-                case .upToRefresh:
-                    self.pullToRefresh(category: self.output.selectedCategory.value)
+                case .pullToRefresh:
+                    self.output.isUpdating.accept(true)
+                    self.fetchData(category: self.output.selectedCategory.value, refresh: true)
                     
                 case .fetchMoreData:
                     self.fetchMoreData(category: self.output.selectedCategory.value)
@@ -79,10 +81,12 @@ final class CommunityViewModel {
             .disposed(by: disposeBag)
     }
     
-    // 초기 커뮤니티 데이터 불러오기
-    private func setCellData(category: CommunitySectionType) {
+    // 커뮤니티 데이터 불러오기
+    private func fetchData(category: CommunitySectionType, refresh: Bool = false) {
         // 이미 로드돼 있으면 스킵
-        if let cached = output.currentCellData.value[category], cached.isEmpty == false { return }
+        if !refresh {
+            if let cached = output.currentCellData.value[category], cached.isEmpty == false { return }
+        }
         
         var collection: String {
             switch category {
@@ -101,19 +105,9 @@ final class CommunityViewModel {
                 
                 let sections = makeSections(from: data)
                 updateCellData(for: category, with: sections)
+                self.output.isUpdating.accept(false)
             })
             .disposed(by: disposeBag)
-    }
-    
-    // pullToRefresh
-    private func pullToRefresh(category: CommunitySectionType) {
-        var posts = MockUpData.communitySample // FIXME: 최신 데이터 fetch
-        if category == .detectiveMateBoard, posts.count >= 2 {
-            posts.removeLast(2)
-        }
-        
-        let sections = makeSections(from: posts)
-        updateCellData(for: category, with: sections)
     }
     
     // 무한스크롤
@@ -143,7 +137,7 @@ final class CommunityViewModel {
         output.currentCellData.accept(initDict)
         
         // 초기 카테고리 로드
-        setCellData(category: .invLogBoard)
+        fetchData(category: .invLogBoard)
     }
 }
 

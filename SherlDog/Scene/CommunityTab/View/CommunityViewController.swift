@@ -24,6 +24,7 @@ final class CommunityViewController: UIViewController {
     private let disposeBag = DisposeBag()
     
     private lazy var dataSource = setDataSource()
+    private let refreshControl = UIRefreshControl()
     
     // MARK: - UIProperty
     private lazy var segmentedControl = CommunitySegmentedControl(items: self.viewModel.output.sectionName.value)
@@ -74,12 +75,22 @@ extension CommunityViewController {
             .asDriver(onErrorJustReturn: true)
             .drive(self.addButton.rx.isHidden)
             .disposed(by: disposeBag)
+        
+        self.viewModel.output.isUpdating
+            .asDriver()
+            .drive(self.refreshControl.rx.isRefreshing)
+            .disposed(by: disposeBag)
     }
     
     private func inputBind() {
+        self.refreshControl.rx.controlEvent(.valueChanged)
+            .map { .pullToRefresh }
+            .bind(to: self.viewModel.input)
+            .disposed(by: disposeBag)
+        
         self.segmentedControl.rx.selectedSegmentIndex
             .map { .segmentedControlChanged($0) }
-            .bind(to: viewModel.input)
+            .bind(to: self.viewModel.input)
             .disposed(by: disposeBag)
         
         self.addButton.rx.tap
@@ -88,53 +99,6 @@ extension CommunityViewController {
                 self?.navigationController?.pushViewController(AddNewContentViewController(), animated: true)
             })
             .disposed(by: disposeBag)
-    }
-}
-
-// MARK: - UI
-extension CommunityViewController {
-    
-    private func setupUI() {
-        view.backgroundColor = .textInverse
-        view.addSubviews([
-            segmentedControl,
-            collectionView,
-            addButton
-        ])
-        
-        segmentedControl.selectedSegmentIndex = 0
-        
-        collectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
-        collectionView.register(PostHeaderView.self,
-                                forSupplementaryViewOfKind: PostElementKind.header,
-                                withReuseIdentifier: PostHeaderView.identifier)
-        collectionView.register(PostFooterView.self,
-                                forSupplementaryViewOfKind: PostElementKind.footer,
-                                withReuseIdentifier: PostFooterView.identifier)
-        collectionView.backgroundColor = .textInverse
-        
-        let config = UIImage.SymbolConfiguration(pointSize: 64, weight: .bold)
-        let image = UIImage(systemName: "plus.circle.fill", withConfiguration: config)
-        addButton.setImage(image, for: .normal)
-        addButton.tintColor = .keycolorPrimary2
-    }
-    
-    private func configureUI() {
-        segmentedControl.snp.makeConstraints {
-            $0.height.equalTo(50)
-            $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
-        
-        collectionView.snp.makeConstraints {
-            $0.top.equalTo(segmentedControl.snp.bottom).offset(16)
-            $0.horizontalEdges.equalToSuperview()
-            $0.bottom.equalTo(view.safeAreaLayoutGuide)
-        }
-        
-        addButton.snp.makeConstraints {
-            $0.trailing.bottom.equalTo(collectionView).offset(-16)
-        }
     }
 }
 
@@ -173,7 +137,10 @@ extension CommunityViewController {
                         for: indexPath
                     ) as? PostFooterView else { return .init() }
                     
+                    let count = dataSource.sectionModels[indexPath.section].items.count
+                    
                     footer.settingCell(data: sectionModel)
+                    footer.updatePage(total: count, current: 0)
                     
                     return footer
                     
@@ -188,46 +155,118 @@ extension CommunityViewController {
 // MARK: - Compositional Layout
 extension CommunityViewController {
     private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
-        let inset: CGFloat = 8
+        let inset: CGFloat = 16
         
-        // 아이템(이미지 한 장)
-        let item = NSCollectionLayoutItem(
-            layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                              heightDimension: .fractionalHeight(1.0))
-        )
-        item.contentInsets = .zero
-        
-        // 가로 페이징 그룹
-        let group = NSCollectionLayoutGroup.horizontal(
-            layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                              heightDimension: .estimated(300)),
-            subitems: [item]
-        )
-        
-        // 헤더
-        let header = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                              heightDimension: .estimated(64)),
-            elementKind: PostElementKind.header,
-            alignment: .top
-        )
-        
-        // 푸터
-        let footer = NSCollectionLayoutBoundarySupplementaryItem(
-            layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                              heightDimension: .estimated(20)),
-            elementKind: PostElementKind.footer,
-            alignment: .bottom
-        )
-        
-        // 섹션
-        let section = NSCollectionLayoutSection(group: group)
-        section.boundarySupplementaryItems = [header, footer]
-        section.orthogonalScrollingBehavior = .groupPagingCentered
-        section.interGroupSpacing = 0
-        section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
-        
-        return UICollectionViewCompositionalLayout(section: section)
+        return UICollectionViewCompositionalLayout { row, env in
+            // 아이템(이미지 한 장)
+            let item = NSCollectionLayoutItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .fractionalHeight(1.0))
+            )
+            item.contentInsets = .zero
+            
+            // 가로 페이징 그룹
+            let group = NSCollectionLayoutGroup.horizontal(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .estimated(300)),
+                subitems: [item]
+            )
+            
+            // 헤더
+            let header = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .estimated(64)),
+                elementKind: PostElementKind.header,
+                alignment: .top
+            )
+            
+            // 푸터
+            let footer = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .estimated(20)),
+                elementKind: PostElementKind.footer,
+                alignment: .bottom
+            )
+            
+            // 섹션
+            let section = NSCollectionLayoutSection(group: group)
+            section.boundarySupplementaryItems = [header, footer]
+            section.orthogonalScrollingBehavior = .groupPagingCentered
+            section.interGroupSpacing = 0
+            section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
+            
+            section.visibleItemsInvalidationHandler = { [weak self] item, offset, environment in
+                guard let self else { return }
+                
+                let pageWidth = environment.container.contentSize.width
+                guard pageWidth > 0 else { return }
+                
+                let page = Int(round(offset.x / pageWidth))
+                
+                let indexPath = IndexPath(item: 0, section: row)
+                if let footerView = self.collectionView.supplementaryView(
+                    forElementKind: PostElementKind.footer, at: indexPath
+                ) as? PostFooterView {
+                    
+                    let total = (self.dataSource.sectionModels[row].items.count)
+                    // 빠른 업데이트용 메서드 하나 만들어 두면 좋아요
+                    footerView.updatePage(total: total, current: page)
+                    // 또는 기존 API:
+                    // let model = self.dataSource.sectionModels[sectionIndex].model
+                    // footerView.settingCell(data: model, totalPages: total, currentPage: page)
+                }
+            }
+            
+            return section
+        }
     }
     
+}
+
+// MARK: - UI
+extension CommunityViewController {
+    
+    private func setupUI() {
+        view.backgroundColor = .textInverse
+        view.addSubviews([
+            segmentedControl,
+            collectionView,
+            addButton
+        ])
+        
+        segmentedControl.selectedSegmentIndex = 0
+        
+        collectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
+        collectionView.register(PostHeaderView.self,
+                                forSupplementaryViewOfKind: PostElementKind.header,
+                                withReuseIdentifier: PostHeaderView.identifier)
+        collectionView.register(PostFooterView.self,
+                                forSupplementaryViewOfKind: PostElementKind.footer,
+                                withReuseIdentifier: PostFooterView.identifier)
+        collectionView.backgroundColor = .textInverse
+        collectionView.refreshControl = refreshControl
+        
+        let config = UIImage.SymbolConfiguration(pointSize: 64, weight: .bold)
+        let image = UIImage(systemName: "plus.circle.fill", withConfiguration: config)
+        addButton.setImage(image, for: .normal)
+        addButton.tintColor = .keycolorPrimary2
+    }
+    
+    private func configureUI() {
+        segmentedControl.snp.makeConstraints {
+            $0.height.equalTo(50)
+            $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
+        
+        collectionView.snp.makeConstraints {
+            $0.top.equalTo(segmentedControl.snp.bottom).offset(16)
+            $0.horizontalEdges.equalToSuperview()
+            $0.bottom.equalTo(view.safeAreaLayoutGuide)
+        }
+        
+        addButton.snp.makeConstraints {
+            $0.trailing.bottom.equalTo(collectionView).offset(-16)
+        }
+    }
 }

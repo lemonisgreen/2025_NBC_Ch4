@@ -14,7 +14,6 @@ final class PetProfileTableViewCell: UITableViewCell {
     
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
-    private let selectedView = UIView()
     
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -45,15 +44,12 @@ final class PetProfileTableViewCell: UITableViewCell {
     }
     
     private func setupUI() {
-        contentView.backgroundColor = .keycolorBackground
+        self.backgroundColor = .keycolorBackground
         
         contentView.addSubviews([
             profileImageView,
             nameLabel
         ])
-        
-        selectedView.backgroundColor = .gray400
-        selectedBackgroundView = selectedView
         
         profileImageView.contentMode = .scaleAspectFill
         profileImageView.clipsToBounds = true

@@ -126,13 +126,14 @@ private extension PostHeaderView {
         }
         
         hStack.snp.makeConstraints {
-            $0.top.leading.bottom.equalToSuperview().inset(12)
+            $0.top.bottom.equalToSuperview().inset(12)
+            $0.leading.equalToSuperview()
             $0.trailing.lessThanOrEqualTo(dateLabel.snp.leading).offset(-8)
         }
         
         dateLabel.setContentHuggingPriority(.required, for: .horizontal)
         dateLabel.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(12)
+            $0.trailing.equalToSuperview()
             $0.centerY.equalTo(hStack)
         }
     }

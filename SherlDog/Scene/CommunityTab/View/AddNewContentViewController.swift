@@ -231,6 +231,9 @@ final class AddNewContentViewController: UIViewController {
         
         view.addSubview(scrollView)
         
+        // 키보드 숨기기 활성화
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+        
         // 제스쳐로 뒤로가기 활성화
         self.navigationController?.interactivePopGestureRecognizer?.delegate = nil
         self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
@@ -279,7 +282,7 @@ final class AddNewContentViewController: UIViewController {
         
         petListTableView.register(PetProfileTableViewCell.self, forCellReuseIdentifier: PetProfileTableViewCell.identifier)
         petListTableView.rowHeight = 44
-        petListTableView.backgroundColor = .clear
+        petListTableView.backgroundColor = .keycolorBackground
         petListTableView.separatorStyle = .singleLine
         petListTableView.separatorColor = .gray200
         

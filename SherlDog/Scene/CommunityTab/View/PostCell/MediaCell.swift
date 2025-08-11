@@ -39,11 +39,12 @@ final class MediaCell: UICollectionViewCell {
             .setProcessor(processor)
             .cacheOriginalImage()
             .fade(duration: 0.25)
-            .onFailureImage(UIImage.petAvatar)
+            .onFailureImage(UIImage(systemName: "exclamationmark.icloud"))
             .set(to: imageView)
     }
 }
 
+// MARK: - UI
 private extension MediaCell {
     func setupUI() {
         contentView.addSubview(imageView)
