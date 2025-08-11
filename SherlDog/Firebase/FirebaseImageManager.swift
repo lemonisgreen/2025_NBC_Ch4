@@ -14,7 +14,7 @@ class FirebaseImageManager {
     }
 
     // MARK: - Type지정 Upload
-    func uploadImage(_ image: UIImage, type: UploadImageFor, completion: @escaping (Result<String, Error>) -> Void) {
+    func uploadImage(_ image: UIImage, type: UploadImageType, completion: @escaping (Result<String, Error>) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             completion(.failure(ImageError.invalidImageData))
             return
@@ -239,7 +239,7 @@ class FirebaseImageManager {
 }
 
 // MARK: - UploadType
-enum UploadImageFor {
+enum UploadImageType {
     case assistant, clue, invLog, walkResult
 
     var type: String {
