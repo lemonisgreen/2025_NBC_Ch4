@@ -97,7 +97,7 @@ extension InvLogListViewModel {
             guard let id = documentId.first else { return Completable.error(FirestoreError.noData) }
             
             return FirestoreManager.shared.deleteDocument(collection: "WalkResult", documentId: id)
-                .andThen(FirebaseImageManager.shared.deleteImage(urlString: self.originalData[indexPath.row].walkingPathImage))
+                .andThen(FirebaseImageManager.shared.deleteImageByURL(self.originalData[indexPath.row].walkingPathImage))
         }
         .subscribe(onCompleted: { [weak self] in
             guard let self else { return }
