@@ -10,7 +10,6 @@ import RxCocoa
 import CoreMotion
 import FirebaseFirestore
 import FirebaseAuth
-import os.signpost
 
 class DataTrackingViewModel {
     let disposeBag = DisposeBag()
