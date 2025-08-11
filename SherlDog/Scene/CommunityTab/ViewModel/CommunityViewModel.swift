@@ -10,7 +10,7 @@ import RxRelay
 import RxDataSources
 import Differentiator
 
-class CommunityViewModel {
+final class CommunityViewModel {
     
     enum CommunitySectionType: CaseIterable {
         case invLogBoard
@@ -69,7 +69,7 @@ class CommunityViewModel {
                     self.setCellData(category: category)
                     
                 case .upToRefresh:
-                    self.upToRefresh(category: self.output.selectedCategory.value)
+                    self.pullToRefresh(category: self.output.selectedCategory.value)
                     
                 case .fetchMoreData:
                     self.fetchMoreData(category: self.output.selectedCategory.value)
@@ -84,17 +84,29 @@ class CommunityViewModel {
         // 이미 로드돼 있으면 스킵
         if let cached = output.currentCellData.value[category], cached.isEmpty == false { return }
         
-        var posts = MockUpData.communitySample // FIXME: 실제 fetch 로직으로 교체
-        if category == .detectiveMateBoard, posts.count >= 2 {
-            posts.removeLast(2)
+        var collection: String {
+            switch category {
+            case .invLogBoard: return "InvLogBoard"
+            case .detectiveMateBoard: return "DetectiveMate"
+            }
         }
         
-        let sections = makeSections(from: posts)
-        updateCellData(for: category, with: sections)
+        FirestoreManager.shared.fetchCollection(collection: collection,
+                                                sortField: "postDate",
+                                                descending: true,
+                                                type: CommunityModel.self)
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            .subscribe(onSuccess: { [weak self] data in
+                guard let self else { return }
+                
+                let sections = makeSections(from: data)
+                updateCellData(for: category, with: sections)
+            })
+            .disposed(by: disposeBag)
     }
     
-    // upToRefresh
-    private func upToRefresh(category: CommunitySectionType) {
+    // pullToRefresh
+    private func pullToRefresh(category: CommunitySectionType) {
         var posts = MockUpData.communitySample // FIXME: 최신 데이터 fetch
         if category == .detectiveMateBoard, posts.count >= 2 {
             posts.removeLast(2)

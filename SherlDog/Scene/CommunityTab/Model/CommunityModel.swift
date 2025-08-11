@@ -9,7 +9,7 @@ import UIKit
 import FirebaseFirestore
 
 // MARK: - CommunityModel
-struct CommunityModel {
+struct CommunityModel: Codable {
     let profileImage: String
     let name: String
     let info: String

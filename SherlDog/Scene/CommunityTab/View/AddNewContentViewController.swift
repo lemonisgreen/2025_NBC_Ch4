@@ -12,7 +12,7 @@ import RxCocoa
 import Kingfisher
 import PhotosUI
 
-class AddNewContentViewController: UIViewController {
+final class AddNewContentViewController: UIViewController {
 
     private let viewModel = AddNewContentViewModel()
     private let disposeBag = DisposeBag()
@@ -30,6 +30,7 @@ class AddNewContentViewController: UIViewController {
     private let contentTextView = UITextView()
     private let addPictureButton = UIButton()
     private lazy var picturesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
+    private let loadingIndicator = CustomLoadingIndicator()
     
     private var petListTableViewHeightConstraint: Constraint?
     
@@ -51,6 +52,25 @@ class AddNewContentViewController: UIViewController {
     
     // MARK: - Method
     private func bind() {
+        viewModel.output.uploadComplete
+            .asSignal()
+            .emit(onNext: { [weak self] in
+                self?.completeAlert()
+            })
+            .disposed(by: disposeBag)
+        
+        viewModel.output.isLoading
+            .map { !$0 }
+            .asDriver(onErrorJustReturn: true)
+            .drive(onNext: { [weak self] state in
+                guard let self else { return }
+                self.loadingIndicator.isHidden = state
+                self.navigationAddButton.isEnabled = state
+                self.navigationBackButton.isEnabled = state
+                self.navigationController?.interactivePopGestureRecognizer?.isEnabled = state
+            })
+            .disposed(by: disposeBag)
+        
         viewModel.output.petProfile
             .asDriver()
             .drive(self.petListTableView.rx.items) { tableView, row, item in
@@ -183,6 +203,17 @@ class AddNewContentViewController: UIViewController {
         self.present(alert, animated: true)
     }
     
+    private func completeAlert() {
+        let alert = CustomAlertViewController(message: "등록되었습니다!",
+                                              buttons: [CustomAlertViewController.AlertButton(
+                                                title: "확인",
+                                                action: { [weak self] in
+                                                    self?.navigationController?.popViewController(animated: true)
+                                                })])
+        
+        self.present(alert, animated: true)
+    }
+    
     private func setupUI() {
         view.backgroundColor = .keycolorBackground
         
@@ -194,7 +225,8 @@ class AddNewContentViewController: UIViewController {
             petListTableView,
             contentTextView,
             picturesCollectionView,
-            addPictureButton
+            addPictureButton,
+            loadingIndicator
         ])
         
         view.addSubview(scrollView)
@@ -309,6 +341,10 @@ class AddNewContentViewController: UIViewController {
             $0.top.equalTo(addPictureButton)
             $0.leading.equalTo(addPictureButton.snp.trailing).offset(8)
             $0.trailing.bottom.equalToSuperview().inset(16)
+        }
+        
+        loadingIndicator.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
     }
     

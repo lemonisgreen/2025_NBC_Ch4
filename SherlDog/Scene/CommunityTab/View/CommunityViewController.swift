@@ -18,7 +18,7 @@ enum PostElementKind {
 }
 
 // MARK: - CommunityViewController
-class CommunityViewController: UIViewController {
+final class CommunityViewController: UIViewController {
     
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
@@ -188,7 +188,7 @@ extension CommunityViewController {
 // MARK: - Compositional Layout
 extension CommunityViewController {
     private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
-        let inset: CGFloat = 16
+        let inset: CGFloat = 8
         
         // 아이템(이미지 한 장)
         let item = NSCollectionLayoutItem(
@@ -200,16 +200,9 @@ extension CommunityViewController {
         // 가로 페이징 그룹
         let group = NSCollectionLayoutGroup.horizontal(
             layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                              heightDimension: .estimated(200)),
+                              heightDimension: .estimated(300)),
             subitems: [item]
         )
-        
-        // 섹션
-        let section = NSCollectionLayoutSection(group: group)
-        section.orthogonalScrollingBehavior = .groupPagingCentered
-        section.interGroupSpacing = 0
-        section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
-        section.supplementariesFollowContentInsets = true
         
         // 헤더
         let header = NSCollectionLayoutBoundarySupplementaryItem(
@@ -227,7 +220,13 @@ extension CommunityViewController {
             alignment: .bottom
         )
         
+        // 섹션
+        let section = NSCollectionLayoutSection(group: group)
         section.boundarySupplementaryItems = [header, footer]
+        section.orthogonalScrollingBehavior = .groupPagingCentered
+        section.interGroupSpacing = 0
+        section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
+        
         return UICollectionViewCompositionalLayout(section: section)
     }
     

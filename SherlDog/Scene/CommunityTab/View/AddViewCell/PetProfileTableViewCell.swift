@@ -9,7 +9,7 @@ import UIKit
 import SnapKit
 import Kingfisher
 
-class PetProfileTableViewCell: UITableViewCell {
+final class PetProfileTableViewCell: UITableViewCell {
     static let identifier: String = "PetProfileTableViewCell"
     
     private let profileImageView = UIImageView()

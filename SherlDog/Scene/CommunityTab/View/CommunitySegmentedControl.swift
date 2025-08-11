@@ -8,7 +8,7 @@
 import UIKit
 import SnapKit
 
-class CommunitySegmentedControl: UISegmentedControl {
+final class CommunitySegmentedControl: UISegmentedControl {
     
     private enum State {
         case normal, selected

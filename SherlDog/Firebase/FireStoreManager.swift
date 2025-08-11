@@ -67,13 +67,27 @@ extension FirestoreManager {
     }
 
     // 컬렉션 가져오기
+    /// sortField에는 타임스탬프가 있는 필드의 이름을 작성하세요.
+    /// 타임스탬프가 없거나 정렬이 필요하지 않으면 작성하지 않아도 됩니다.
+    /// descending을 true로 설정하면 최신 데이터가 먼저 들어옵니다.
+    /// false는 최신 데이터가 제일 마지막으로 들어옵니다.
     func fetchCollection<T: Decodable>(
         collection: String,
+        sortField: String = "",
+        descending: Bool = true,
         type: T.Type
     ) -> Single<[T]> {
         return Single.create { [weak self] single in
-            self?.db.collection(collection)
-                .getDocuments { snapshot, error in
+            guard let self else {
+                single(.failure(FirestoreError.unknown))
+                return Disposables.create()
+            }
+            
+            let query: Query = sortField.isEmpty
+            ? self.db.collection(collection)
+            : self.db.collection(collection).order(by: sortField, descending: descending)
+            
+            query.getDocuments { snapshot, error in
                     if let error = error {
                         single(.failure(error))
                     } else if let snapshot = snapshot {
@@ -157,7 +171,7 @@ extension FirestoreManager {
             }
             let docRef: DocumentReference = documentId != nil ?
                 self.db.collection(collection).document(documentId!) :
-                self.db.collection(collection).document()
+            self.db.collection(collection).document()
             do {
                 try docRef.setData(from: data) { error in
                     if let error = error {

@@ -11,7 +11,7 @@ import UIKit
 import FirebaseFirestore
 import FirebaseAuth
 
-class AddNewContentViewModel {
+final class AddNewContentViewModel {
     
     enum Input {
         case addButtonTap
@@ -30,6 +30,7 @@ class AddNewContentViewModel {
         let maxPictureCount: Int = 10
         let addPicture = PublishRelay<Int>()
         let addedPictures = BehaviorRelay<[UIImage]>(value: [])
+        let uploadComplete = PublishRelay<Void>()
         let error = PublishRelay<String>()
     }
     
@@ -92,17 +93,30 @@ class AddNewContentViewModel {
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             .subscribe(onSuccess: { [weak self] urls in
                 guard let self else { return }
+                let ageGender = self.setAgeGenderStyle(data: profile)
                 
-                // TODO: 업로드 로직
+                let uploadData = CommunityModel(profileImage: profile.image,
+                                                name: profile.name,
+                                                info: "\(ageGender) / \(profile.breed)",
+                                                postDate: Timestamp(date: Date()),
+                                                contentImage: urls,
+                                                content: self.text.value)
+                
+                FirestoreManager.shared.createDocument(collection: "DetectiveMate", data: uploadData)
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    .subscribe(onCompleted: { [weak self] in
+                        guard let self else { return }
+                        self.output.isLoading.accept(false)
+                        self.output.uploadComplete.accept(())
+                        
+                    }, onError: { [weak self] error in
+                        self?.output.error.accept(error.localizedDescription)
+                        self?.output.isLoading.accept(false)
+                        
+                    })
+                    .disposed(by: disposeBag)
             })
             .disposed(by: disposeBag)
-        
-//        CommunityModel(profileImage: profile.image,
-//                       name: profile.name,
-//                       info: "\(profile.age) / \(profile.gender)",
-//                       postDate: Timestamp(date: Date()),
-//                       contentImage: [],
-//                       content: self.text.value)
     }
     
     private func uploadImage() -> Single<[String]> {
@@ -111,8 +125,6 @@ class AddNewContentViewModel {
         let uploads: [Single<String>] = images.map { image in
             Single<String>.create { observer in
                 FirebaseImageManager.shared.uploadImage(image, type: .detectiveMate) { [weak self] result in
-                    guard let self else { return }
-                    
                     switch result {
                     case .success(let imageUrl):
                         observer(.success(imageUrl))
@@ -136,5 +148,37 @@ class AddNewContentViewModel {
                 self?.output.petProfile.accept(profile)
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func setAgeGenderStyle(data: PetProfile) -> String {
+        let age = data.age
+        let formatter = DateFormatter.yyyyMMdd
+        guard let ageDate = formatter.date(from: age) else { return "알 수 없음" }
+        
+        return "\(ageFinder(dateOfBirth: ageDate)) \(genderFinder(gender: data.gender))"
+    }
+    
+    private func ageFinder(dateOfBirth: Date) -> String {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year], from: dateOfBirth, to: Date())
+        
+        if let year = components.year, year > 0 {
+            return "\(year)세"
+            
+        } else if let month = components.month, month > 0 {
+            return "\(month)개월"
+            
+        } else {
+            return "신생아"
+            
+        }
+    }
+    
+    private func genderFinder(gender: String) -> String {
+        switch gender {
+        case "male": return "남아"
+        case "female": return "여아"
+        default: return "알 수 없음"
+        }
     }
 }

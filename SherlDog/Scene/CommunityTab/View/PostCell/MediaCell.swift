@@ -35,7 +35,7 @@ final class MediaCell: UICollectionViewCell {
         let processor = DownsamplingImageProcessor(size: size)
         imageView.kf.indicatorType = .activity
         KF.url(URL(string: urlString))
-            .placeholder(UIImage.petAvatar)
+            .placeholder(UIImage.logo)
             .setProcessor(processor)
             .cacheOriginalImage()
             .fade(duration: 0.25)
@@ -49,7 +49,6 @@ private extension MediaCell {
         contentView.addSubview(imageView)
         
         imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 4
         imageView.clipsToBounds = true
     }
     

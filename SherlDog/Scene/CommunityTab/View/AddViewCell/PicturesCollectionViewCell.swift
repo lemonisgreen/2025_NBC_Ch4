@@ -10,7 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class PicturesCollectionViewCell: UICollectionViewCell {
+final class PicturesCollectionViewCell: UICollectionViewCell {
     static let identifier = "PicturesCollectionViewCell"
     
     var disposeBag = DisposeBag()

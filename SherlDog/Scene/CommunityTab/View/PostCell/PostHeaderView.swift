@@ -54,7 +54,41 @@ final class PostHeaderView: UICollectionReusableView {
     }
 }
 
-// MARK: - Private
+// MARK: - Data mapping helpers
+extension PostHeaderView {
+    private func timestampToDate(_ time: Timestamp) -> String {
+        let date = time.dateValue()
+        let formatter = DateFormatter()
+        
+        formatter.dateFormat = checkToday(date)
+        ? setTodayStyle(date)
+        : "M월 d일"
+        
+        return formatter.string(from: date)
+    }
+    
+    private func setTodayStyle(_ date: Date) -> String {
+        let now = Date()
+        let diff = now.timeIntervalSince(date)
+        
+        if diff < 60 {
+            return "방금 전"
+        } else if diff < 3600 {
+            return "\(Int(diff / 60))분 전"
+        } else {
+            return "\(Int(diff / 3600))시간 전"
+        }
+    }
+    
+    private func checkToday(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let otherDay = calendar.startOfDay(for: date)
+        return today == otherDay
+    }
+}
+
+// MARK: - UI
 private extension PostHeaderView {
     func setupUI() {
         nameInfoStackView.axis = .vertical
@@ -101,12 +135,5 @@ private extension PostHeaderView {
             $0.trailing.equalToSuperview().inset(12)
             $0.centerY.equalTo(hStack)
         }
-    }
-    
-    func timestampToDate(_ time: Timestamp) -> String {
-        let d = time.dateValue()
-        let f = DateFormatter()
-        f.dateFormat = "M월 d일"
-        return f.string(from: d)
     }
 }
