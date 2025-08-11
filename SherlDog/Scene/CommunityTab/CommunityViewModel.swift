@@ -35,11 +35,11 @@ class CommunityViewModel {
     struct Output {
         let sectionName = BehaviorRelay<[String]>(value: [])
         let selectedCategory = BehaviorRelay<CommunitySectionType>(value: .invLogBoard)
-        let currentCellData = BehaviorRelay<[CommunitySectionType: [CommunityData]]>(value: [:])
+        let currentCellData = BehaviorRelay<[CommunitySectionType: [CommunitySection]]>(value: [:])
     }
     
-    typealias CommunityData = SectionModel<String, CommunityModel>
-    
+    typealias CommunitySection = SectionModel<CommunityModel, String>
+
     private let disposeBag = DisposeBag()
     
     let input = PublishRelay<Input>()
@@ -81,51 +81,73 @@ class CommunityViewModel {
     
     // 초기 커뮤니티 데이터 불러오기
     private func setCellData(category: CommunitySectionType) {
-        guard self.output.currentCellData.value[category]?.isEmpty ?? true else { return }
+        // 이미 로드돼 있으면 스킵
+        if let cached = output.currentCellData.value[category], cached.isEmpty == false { return }
         
-        var cache = [CommunityModel]()
-        
-        // todo: fetch 기능 구현
-        cache = MockUpData.communitySample
-        if category == .detectiveMateBoard {
-            cache.removeLast(2)
+        var posts = MockUpData.communitySample // FIXME: 실제 fetch 로직으로 교체
+        if category == .detectiveMateBoard, posts.count >= 2 {
+            posts.removeLast(2)
         }
         
-        let result = [CommunityData(model: "", items: cache)]
-        self.output.currentCellData.accept([category: result])
+        let sections = makeSections(from: posts)
+        updateCellData(for: category, with: sections)
     }
     
-    // todo: upToRefresh 기능 구현
+    // upToRefresh
     private func upToRefresh(category: CommunitySectionType) {
-        guard var cache = self.output.currentCellData.value[category]?[0].items else { return }
-        
-        cache = MockUpData.communitySample // test
-        
-        let result = [CommunityData(model: "", items: cache)]
-        self.output.currentCellData.accept([category: result])
-    }
-    
-    // todo: 무한스크롤 기능 구현
-    private func fetchMoreData(category: CommunitySectionType) {
-        guard var cache = self.output.currentCellData.value[category]?[0].items else { return }
-        
-        MockUpData.communitySample.forEach { // test
-            cache.append($0)
+        var posts = MockUpData.communitySample // FIXME: 최신 데이터 fetch
+        if category == .detectiveMateBoard, posts.count >= 2 {
+            posts.removeLast(2)
         }
         
-        let result = [CommunityData(model: "", items: cache)]
-        self.output.currentCellData.accept([category: result])
+        let sections = makeSections(from: posts)
+        updateCellData(for: category, with: sections)
+    }
+    
+    // 무한스크롤
+    private func fetchMoreData(category: CommunitySectionType) {
+        // 기존 섹션 -> 기존 포스트 복원
+        let existingSections = output.currentCellData.value[category] ?? []
+        let existingPosts: [CommunityModel] = existingSections.map { $0.model }
+        
+        // 더 불러온 포스트(예시로 샘플 append)
+        var more = MockUpData.communitySample // FIXME: 페이지네이션 fetch
+        if category == .detectiveMateBoard, more.count >= 2 {
+            more.removeLast(2)
+        }
+        
+        let combinedPosts = existingPosts + more
+        let sections = makeSections(from: combinedPosts)
+        updateCellData(for: category, with: sections)
     }
     
     private func setup() {
-        var names = [String]()
+        // 세그 제목
+        output.sectionName.accept(CommunitySectionType.allCases.map { $0.name })
         
-        CommunitySectionType.allCases.forEach {
-            names.append($0.name)
+        // 카테고리 키만 먼저 만들어 둠(빈 섹션)
+        var initDict: [CommunitySectionType: [CommunitySection]] = [:]
+        CommunitySectionType.allCases.forEach { initDict[$0] = [] }
+        output.currentCellData.accept(initDict)
+        
+        // 초기 카테고리 로드
+        setCellData(category: .invLogBoard)
+    }
+}
+
+// MARK: - Data mapping helpers
+extension CommunityViewModel {
+    /// 딕셔너리 업데이트 시 기존 카테고리 데이터 보존
+    private func updateCellData(for category: CommunitySectionType, with sections: [CommunitySection]) {
+        var dict = output.currentCellData.value
+        dict[category] = sections
+        output.currentCellData.accept(dict)
+    }
+    
+    /// [CommunityModel] -> [CommunitySection] 로 변환
+    private func makeSections(from posts: [CommunityModel]) -> [CommunitySection] {
+        return posts.map { post in
+            CommunitySection(model: post, items: post.contentImage) // 이미지 URL 배열을 아이템으로
         }
-        
-        self.output.sectionName.accept(names)
-        self.output.currentCellData.accept([.invLogBoard: []])
-        self.output.currentCellData.accept([.detectiveMateBoard: []])
     }
 }

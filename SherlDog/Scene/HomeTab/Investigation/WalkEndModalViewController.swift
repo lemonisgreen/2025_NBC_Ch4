@@ -127,7 +127,7 @@ class WalkEndModalViewController : UIViewController {
                     self.present(alert, animated: true)
                     
                 case .failure(let error):
-                    // todo: 에러 처리
+                    // TODO: 에러 처리
                     print(error.localizedDescription)
                     return
                 }

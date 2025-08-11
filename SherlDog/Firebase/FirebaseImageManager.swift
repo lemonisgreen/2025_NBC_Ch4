@@ -240,7 +240,7 @@ class FirebaseImageManager {
 
 // MARK: - UploadType
 enum UploadImageFor {
-    case assistant, clue, invLog, walkResult
+    case assistant, clue, invLog, walkResult, detectiveMate
 
     var type: String {
         switch self {
@@ -248,6 +248,7 @@ enum UploadImageFor {
         case .clue: return "clue"
         case .invLog: return "invLog"
         case .walkResult: return "walkResult"
+        case .detectiveMate: return "detectiveMate"
         }
     }
 }

@@ -14,7 +14,7 @@ struct CommunityModel {
     let name: String
     let info: String
     let postDate: Timestamp
-    let contentImage: String
+    let contentImage: [String]
     let content: String
     var isExpanded: Bool = false
 }

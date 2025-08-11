@@ -21,7 +21,6 @@ class PictureUploadRequestViewController: UIViewController { // 1: 240, 2: 320, 
     private let disposeBag = DisposeBag()
     private lazy var dataSource = self.setDataSource()
     
-    private let imagePickerController = UIImagePickerController()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let setButton = ButtonFactory.makeButton(type: .main, title: "")
     

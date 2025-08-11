@@ -69,6 +69,11 @@ class AddNewContentViewController: UIViewController {
                 
                 cell.setImage(item)
                 
+                cell.rx.deleteButtonTap
+                    .map { .deleteButtonTap(row) }
+                    .bind(to: self.viewModel.input)
+                    .disposed(by: cell.disposeBag)
+                
                 return cell
             }
             .disposed(by: disposeBag)
@@ -88,7 +93,7 @@ class AddNewContentViewController: UIViewController {
                     case true:
                         var configuration = PHPickerConfiguration()
                         configuration.selectionLimit = count
-                        configuration.filter = .any(of: [.images, .livePhotos])
+                        configuration.filter = .images
                         
                         let imagePicker = PHPickerViewController(configuration: configuration)
                         imagePicker.delegate = self
@@ -139,6 +144,11 @@ class AddNewContentViewController: UIViewController {
     }
     
     private func inputBind() {
+        self.petListTableView.rx.itemSelected
+            .map { .profileSelect($0.row) }
+            .bind(to: self.viewModel.input)
+            .disposed(by: disposeBag)
+        
         self.addPictureButton.rx.tap
             .map { .addPicture }
             .bind(to: self.viewModel.input)
@@ -158,6 +168,10 @@ class AddNewContentViewController: UIViewController {
         self.dropDownButton.rx.tap
             .map { .dropdownTap }
             .bind(to: self.viewModel.input)
+            .disposed(by: disposeBag)
+        
+        self.contentTextView.rx.text.orEmpty
+            .bind(to: self.viewModel.text)
             .disposed(by: disposeBag)
     }
     
@@ -193,10 +207,21 @@ class AddNewContentViewController: UIViewController {
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
-        navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
         navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
         navigationBackButton.imageView?.tintColor = .textPrimary
+        
+        let navigationStack = UIStackView()
+        let containerView = UIView()
+        
+        containerView.addSubview(navigationStack)
+        
+        navigationStack.addArrangedSubview(navigationBackButton)
+        navigationStack.addArrangedSubview(navigationTitleLabel)
+        navigationStack.axis = .horizontal
+        navigationStack.alignment = .center
+        navigationStack.spacing = 8
+        navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
         
         navigationAddButton.setTitle("등록", for: .normal)
         navigationAddButton.setTitleColor(.textAlert, for: .normal)
@@ -204,11 +229,11 @@ class AddNewContentViewController: UIViewController {
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .gray50
+        navigationBarAppearance.backgroundColor = .keycolorBackground
         navigationBarAppearance.shadowColor = .clear
         
-        self.navigationItem.titleView = navigationTitleLabel
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        self.navigationItem.titleView = nil
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: containerView)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navigationAddButton)
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
@@ -265,7 +290,7 @@ class AddNewContentViewController: UIViewController {
         }
         
         contentTextView.snp.makeConstraints {
-            $0.height.equalTo(200)
+            $0.height.equalTo(400)
             $0.top.equalTo(petListTableView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
@@ -307,18 +332,16 @@ class AddNewContentViewController: UIViewController {
 }
 
 extension AddNewContentViewController: PHPickerViewControllerDelegate {
-    
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         
         results.forEach { result in
             if result.itemProvider.canLoadObject(ofClass: UIImage.self) {
-                result.itemProvider.loadObject(ofClass: UIImage.self) { item, error in
-                    guard let image = item as? UIImage else { return }
+                result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] item, error in
+                    guard let self, let image = item as? UIImage else { return }
                     self.viewModel.input.accept(.selectedPictures(image))
                 }
             }
         }
     }
-    
 }

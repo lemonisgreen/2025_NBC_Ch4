@@ -7,11 +7,16 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 class PicturesCollectionViewCell: UICollectionViewCell {
     static let identifier = "PicturesCollectionViewCell"
     
+    var disposeBag = DisposeBag()
+    
     private let imageView = UIImageView()
+    private let deleteButton = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -22,6 +27,8 @@ class PicturesCollectionViewCell: UICollectionViewCell {
     
     override func prepareForReuse() {
         imageView.image = nil
+        
+        disposeBag = DisposeBag()
     }
     
     required init?(coder: NSCoder) {
@@ -33,15 +40,36 @@ class PicturesCollectionViewCell: UICollectionViewCell {
     }
     
     private func setupUI() {
-        contentView.addSubview(imageView)
+        contentView.addSubviews([
+            imageView,
+            deleteButton
+        ])
         
         imageView.image = UIImage(systemName: "plus.circle")?.withTintColor(.gray400)
         imageView.contentMode = .scaleAspectFit
+        
+        deleteButton.setImage(UIImage(systemName: "minus.circle.fill"), for: .normal)
     }
     
     private func configureUI() {
         imageView.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
+        
+        deleteButton.snp.makeConstraints {
+            $0.top.trailing.equalToSuperview()
+        }
+    }
+}
+
+extension PicturesCollectionViewCell {
+    fileprivate var deleteButtonTap: ControlEvent<Void> {
+        self.deleteButton.rx.tap
+    }
+}
+
+extension Reactive where Base: PicturesCollectionViewCell {
+    var deleteButtonTap: ControlEvent<Void> {
+        base.deleteButtonTap
     }
 }

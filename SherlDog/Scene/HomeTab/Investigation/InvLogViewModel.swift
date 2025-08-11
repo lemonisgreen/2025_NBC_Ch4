@@ -53,7 +53,7 @@ class InvLogViewModel {
     
     private func upload(image: String, content: String) {
         FirestoreManager.shared.createDocument(collection: self.collection,
-                                               data: InvLogModel(userId: "unknown", image: image, content: content)) // todo: Insert userId
+                                               data: InvLogModel(userId: "unknown", image: image, content: content)) // TODO: Insert userId
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)
             self?.output.uploadComplete.accept(())
