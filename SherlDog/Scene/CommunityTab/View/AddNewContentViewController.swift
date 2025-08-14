@@ -165,7 +165,11 @@ final class AddNewContentViewController: UIViewController {
     
     private func inputBind() {
         self.petListTableView.rx.itemSelected
-            .map { .profileSelect($0.row) }
+            .compactMap { _ in
+                guard let indexs = self.petListTableView.indexPathsForSelectedRows else { return nil }
+                let rows = indexs.map { $0.row }
+                return .profileSelect(rows)
+            }
             .bind(to: self.viewModel.input)
             .disposed(by: disposeBag)
         
@@ -281,6 +285,7 @@ final class AddNewContentViewController: UIViewController {
         dropDownButton.tintColor = .textPrimary
         
         petListTableView.register(PetProfileTableViewCell.self, forCellReuseIdentifier: PetProfileTableViewCell.identifier)
+        petListTableView.allowsMultipleSelection = true
         petListTableView.rowHeight = 44
         petListTableView.backgroundColor = .keycolorBackground
         petListTableView.separatorStyle = .singleLine
@@ -370,6 +375,7 @@ final class AddNewContentViewController: UIViewController {
     }
 }
 
+// MARK: - PHPickerViewControllerDelegate
 extension AddNewContentViewController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)

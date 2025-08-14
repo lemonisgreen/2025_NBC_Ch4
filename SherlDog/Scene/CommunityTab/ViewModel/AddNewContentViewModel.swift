@@ -16,7 +16,7 @@ final class AddNewContentViewModel {
     enum Input {
         case addButtonTap
         case dropdownTap
-        case profileSelect(Int)
+        case profileSelect([Int])
         case addPicture
         case selectedPictures(UIImage)
         case deleteButtonTap(Int)
@@ -24,7 +24,8 @@ final class AddNewContentViewModel {
     
     struct Output {
         let petProfile = BehaviorRelay<[PetProfile]>(value: [])
-        let selectedProfileIndex = BehaviorRelay<Int>(value: 0)
+        let userProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
+        let selectedProfileIndex = BehaviorRelay<[Int]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let isExpended = BehaviorRelay<Bool?>(value: nil)
         let maxPictureCount: Int = 10
@@ -43,7 +44,7 @@ final class AddNewContentViewModel {
     
     init() {
         transform()
-        fetchPetProfile()
+        fetchProfiles()
     }
     
     private func transform() {
@@ -86,18 +87,18 @@ final class AddNewContentViewModel {
     }
     
     private func addPost() {
+        guard let userProfile = output.userProfile.value else { return }
         let selectedIndex = output.selectedProfileIndex.value
-        let profile = self.output.petProfile.value[selectedIndex]
+        let petProfiles = selectedIndex.map { self.output.petProfile.value[$0] }
         
         uploadImage()
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             .subscribe(onSuccess: { [weak self] urls in
                 guard let self else { return }
-                let ageGender = self.setAgeGenderStyle(data: profile)
                 
-                let uploadData = CommunityModel(profileImage: profile.image,
-                                                name: profile.name,
-                                                info: "\(ageGender) / \(profile.breed)",
+                let uploadData = CommunityModel(profileImage: userProfile.image,
+                                                name: userProfile.nickname,
+                                                info: petProfiles,
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
                                                 content: self.text.value)
@@ -140,8 +141,15 @@ final class AddNewContentViewModel {
         
     }
     
-    private func fetchPetProfile() {
+    private func fetchProfiles() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        FirestoreManager.shared.fetchHumanProfile(userId: userId)
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            .subscribe(onSuccess: { [weak self] profile in
+                self?.output.userProfile.accept(profile)
+            })
+            .disposed(by: disposeBag)
         
         FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
             .subscribe(onSuccess: { [weak self] profile in

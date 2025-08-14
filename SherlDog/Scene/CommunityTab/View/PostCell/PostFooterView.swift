@@ -96,7 +96,7 @@ private extension PostFooterView {
     func configureUI() {
         container.snp.makeConstraints {
             $0.top.equalToSuperview().offset(16)
-            $0.leading.trailing.equalToSuperview().inset(12)
+            $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview().inset(20)
         }
         

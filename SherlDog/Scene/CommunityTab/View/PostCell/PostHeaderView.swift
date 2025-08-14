@@ -38,7 +38,7 @@ final class PostHeaderView: UICollectionReusableView {
     // MARK: - Public
     func settingCell(data: CommunityModel) {
         nameLabel.text = data.name
-        infoLabel.text = data.info
+        infoLabel.text = self.petProfilesToNames(data.info)
         dateLabel.text = timestampToDate(data.postDate)
         
         let size = CGSize(width: 32, height: 32)
@@ -85,6 +85,10 @@ extension PostHeaderView {
         let today = calendar.startOfDay(for: Date())
         let otherDay = calendar.startOfDay(for: date)
         return today == otherDay
+    }
+    
+    private func petProfilesToNames(_ data: [PetProfile]) -> String {
+        return data.map { $0.name }.joined(separator: ", ")
     }
 }
 

@@ -12,7 +12,7 @@ import FirebaseFirestore
 struct CommunityModel: Codable {
     let profileImage: String
     let name: String
-    let info: String
+    let info: [PetProfile]
     let postDate: Timestamp
     let contentImage: [String]
     let content: String
