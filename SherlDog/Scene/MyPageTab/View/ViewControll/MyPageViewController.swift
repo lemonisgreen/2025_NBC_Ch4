@@ -85,7 +85,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         mypageSettingButton.setImage(UIImage(named: "setting"), for: .normal)
         
         assistantImage.backgroundColor = .keycolorPrimary4
-        assistantImage.layer.cornerRadius = 8
+        assistantImage.layer.cornerRadius = 10
         assistantImage.layer.masksToBounds = true
         
         assistantLabel.font = .title3
