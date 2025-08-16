@@ -100,20 +100,19 @@ final class AddNewContentViewController: UIViewController {
         
         viewModel.output.addPicture
             .asSignal()
-            .emit(onNext: { [weak self] count in
+            .emit(onNext: { [weak self] ids in
                 guard let self else { return }
-                guard count != 0 else {
-                    self.cantAddAlert()
-                    return
-                }
                 
                 PermissionManager.requestPermission(type: .album) { [weak self] isAllowed in
                     guard let self else { return }
                     switch isAllowed {
                     case true:
-                        var configuration = PHPickerConfiguration()
-                        configuration.selectionLimit = count
+                        var configuration = PHPickerConfiguration(photoLibrary: .shared())
+                        configuration.selectionLimit = 5
+                        configuration.selection = .ordered
                         configuration.filter = .images
+                        configuration.preferredAssetRepresentationMode = .current
+                        configuration.preselectedAssetIdentifiers = ids
                         
                         let imagePicker = PHPickerViewController(configuration: configuration)
                         imagePicker.delegate = self
@@ -197,14 +196,6 @@ final class AddNewContentViewController: UIViewController {
         self.contentTextView.rx.text.orEmpty
             .bind(to: self.viewModel.text)
             .disposed(by: disposeBag)
-    }
-    
-    private func cantAddAlert() {
-        let alert = CustomAlertViewController(message: "더 이상 추가할 수 없습니다",
-                                              buttons: [CustomAlertViewController.AlertButton(title: "확인",
-                                                                                              action: nil)])
-        
-        self.present(alert, animated: true)
     }
     
     private func completeAlert() {
@@ -380,13 +371,6 @@ extension AddNewContentViewController: PHPickerViewControllerDelegate {
     func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
         picker.dismiss(animated: true)
         
-        results.forEach { result in
-            if result.itemProvider.canLoadObject(ofClass: UIImage.self) {
-                result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] item, error in
-                    guard let self, let image = item as? UIImage else { return }
-                    self.viewModel.input.accept(.selectedPictures(image))
-                }
-            }
-        }
+        self.viewModel.input.accept(.selectedPictures(results))
     }
 }

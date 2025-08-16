@@ -10,6 +10,7 @@ import RxRelay
 import UIKit
 import FirebaseFirestore
 import FirebaseAuth
+import PhotosUI
 
 final class AddNewContentViewModel {
     
@@ -18,7 +19,7 @@ final class AddNewContentViewModel {
         case dropdownTap
         case profileSelect([Int])
         case addPicture
-        case selectedPictures(UIImage)
+        case selectedPictures([PHPickerResult])
         case deleteButtonTap(Int)
     }
     
@@ -26,10 +27,11 @@ final class AddNewContentViewModel {
         let petProfile = BehaviorRelay<[PetProfile]>(value: [])
         let userProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
         let selectedProfileIndex = BehaviorRelay<[Int]>(value: [])
+        let selectedImageIdentifiers = BehaviorRelay<[String]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let isExpended = BehaviorRelay<Bool?>(value: nil)
         let maxPictureCount: Int = 10
-        let addPicture = PublishRelay<Int>()
+        let addPicture = PublishRelay<[String]>()
         let addedPictures = BehaviorRelay<[UIImage]>(value: [])
         let uploadComplete = PublishRelay<Void>()
         let error = PublishRelay<String>()
@@ -64,26 +66,62 @@ final class AddNewContentViewModel {
                     self.output.selectedProfileIndex.accept(row)
                     
                 case .addPicture:
-                    let maxCount = self.output.maxPictureCount
-                    let nowCount = self.output.addedPictures.value.count
-                    let pickable = max(maxCount - nowCount, 0)
+                    let ids = self.output.selectedImageIdentifiers.value
                     
-                    self.output.addPicture.accept(pickable)
+                    self.output.addPicture.accept(ids)
                     
-                case .selectedPictures(let image):
-                    var images = self.output.addedPictures.value
-                    images.append(image)
-                    
-                    self.output.addedPictures.accept(images)
+                case .selectedPictures(let results):
+                    self.loadOrderedImages(from: results)
+                        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                        .subscribe(onSuccess: { [weak self] images in
+                            self?.output.addedPictures.accept(images)
+                        })
+                        .disposed(by: disposeBag)
                     
                 case .deleteButtonTap(let row):
                     var images = self.output.addedPictures.value
+                    var ids = self.output.selectedImageIdentifiers.value
                     images.remove(at: row)
+                    ids.remove(at: row)
                     
                     self.output.addedPictures.accept(images)
+                    self.output.selectedImageIdentifiers.accept(ids)
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func loadOrderedImages(from results: [PHPickerResult]) -> Single<[UIImage]> {
+        // 사진 고유 ID 추출
+        let ids = results.compactMap { $0.assetIdentifier }
+        guard !ids.isEmpty else { return .just([]) }
+        self.output.selectedImageIdentifiers.accept(ids)
+        
+        // ids 배열 순서대로 PHAsset을 담은 PHFetchResult 가져오기
+        let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
+        
+        // 사용자가 선택한 ID 순서대로 PHAsset 배열 복원
+        var assetsInOrder: [PHAsset] = []
+        fetched.enumerateObjects { asset, _, _ in
+            assetsInOrder.append(asset)
+        }
+        
+        // 각 PHAsset → 이미지 Single로 변환
+        let imageSingles: [Single<UIImage?>] = assetsInOrder.map { asset in
+            Single<UIImage?>.create { observer in
+                let option = PHImageRequestOptions()
+                option.isNetworkAccessAllowed = true
+                option.deliveryMode = .highQualityFormat
+
+                PHImageManager.default().requestImageDataAndOrientation(for: asset, options: option) { data, _, _, _ in
+                    observer(.success(data.flatMap { UIImage(data: $0) }))
+                }
+                return Disposables.create()
+            }
+        }
+        
+        return Single.zip(imageSingles)
+            .map { $0.compactMap { $0 } }   // nil 제거
     }
     
     private func addPost() {
@@ -93,8 +131,8 @@ final class AddNewContentViewModel {
         
         uploadImage()
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] urls in
-                guard let self else { return }
+            .flatMapCompletable { [weak self] urls in
+                guard let self else { return Completable.error(NSError(domain: "", code: 0, userInfo: nil)) }
                 
                 let uploadData = CommunityModel(profileImage: userProfile.image,
                                                 name: userProfile.nickname,
@@ -103,19 +141,17 @@ final class AddNewContentViewModel {
                                                 contentImage: urls,
                                                 content: self.text.value)
                 
-                FirestoreManager.shared.createDocument(collection: "DetectiveMate", data: uploadData)
+                return FirestoreManager.shared.createDocument(collection: "DetectiveMate", data: uploadData)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .subscribe(onCompleted: { [weak self] in
-                        guard let self else { return }
-                        self.output.isLoading.accept(false)
-                        self.output.uploadComplete.accept(())
-                        
-                    }, onError: { [weak self] error in
-                        self?.output.error.accept(error.localizedDescription)
-                        self?.output.isLoading.accept(false)
-                        
-                    })
-                    .disposed(by: disposeBag)
+            }
+            .subscribe(onCompleted: { [weak self] in
+                guard let self else { return }
+                self.output.isLoading.accept(false)
+                self.output.uploadComplete.accept(())
+                
+            }, onError: { [weak self] error in
+                self?.output.error.accept(error.localizedDescription)
+                self?.output.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
     }
