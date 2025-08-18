@@ -345,8 +345,7 @@ class WalkEndModalViewController : UIViewController {
         
         todayLabel.text = "2025/06/05"
         todayLabel.textColor = UIColor(named: "keycolorPrimary2")
-        todayLabel.font = UIScreen.isIPhoneSE ? .recordTitleIsSE : .recordTitle
-        todayLabel.textAlignment = .left
+        todayLabel.font = (UIScreen.isIPhoneSE || UIScreen.isIPhoneMini) ? .recordTitleIsSE : .recordTitle 
         todayLabel.backgroundColor = .clear
         
         distanceLabel.text = "거리"
