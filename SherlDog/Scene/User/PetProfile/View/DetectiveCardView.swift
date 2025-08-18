@@ -147,8 +147,8 @@ class DetectiveCardView: UIView {
             
             // 삭제 확인 커스텀 알럿 생성
             let alert = CustomAlertViewController(
-                message: "삭제된 프로필은 되돌릴 수 없습니다.",
-                subMessage: "정말 삭제하시겠습니까?",
+                message: "정말 삭제하시겠습니까?",
+                subMessage: "삭제된 프로필은 되돌릴 수 없습니다.",
                 buttons: [
                     CustomAlertViewController.AlertButton(
                         title: "취소",
