@@ -21,7 +21,7 @@ class SelectAvatarViewModel {
     struct Output {
         let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
         let moveToBack = PublishRelay<Void>()
-        let selectedAvatar = PublishRelay<AvatarModel>()
+        let selectedAvatar = BehaviorRelay<AvatarModel?>(value: nil)
         let icon = BehaviorRelay(value: "")
         let completeSelect = PublishRelay<Void>()
     }
@@ -37,6 +37,13 @@ class SelectAvatarViewModel {
     init() {
         transform()
         fetchCellData()
+        
+        if let firstAvatar = data.first {
+            output.selectedAvatar.accept(firstAvatar)
+            let icon = firstAvatar.icon
+            let selectedIcon = "selected" + icon.prefix(1).capitalized + icon.dropFirst()
+            output.icon.accept(selectedIcon)
+        }
     }
     
     private func transform() {
