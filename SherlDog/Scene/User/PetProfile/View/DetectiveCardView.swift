@@ -39,7 +39,7 @@ class DetectiveCardView: UIView {
         button.clipsToBounds = true
         return button
     }()
-        
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -51,13 +51,13 @@ class DetectiveCardView: UIView {
     }
     
     private func setupUI() {
-
+        
         detectiveHeaderBackgroundView.addSubviews([detectiveCardLabel,
                                                    detectiveNumberLabel,
                                                    detectiveNumber])
         
         detectiveIntroduceBackgroundView.addSubview(detectiveIntroduce)
-
+        
         self.addSubviews([
             detectiveHeaderBackgroundView,
             detectivePhotoImageView,
@@ -73,7 +73,7 @@ class DetectiveCardView: UIView {
         
         self.addSubview(menuButton)
         setupMenu()
-            
+        
         self.layer.cornerRadius = 16
         self.layer.masksToBounds = true
         self.layer.borderWidth = 1
@@ -110,18 +110,18 @@ class DetectiveCardView: UIView {
         detectiveBreedLabel.verticalAlignment = .top
         detectiveBreedLabel.font = UIFont.alert1
         detectiveBreedLabel.textColor = .textSecondary
-
+        
         detectiveBreed.font = UIFont.body4
         detectiveBreed.textColor = .textPrimary
-
+        
         detectiveAgeLabel.text = "나이"
         detectiveAgeLabel.verticalAlignment = .top
         detectiveAgeLabel.font = UIFont.alert1
         detectiveAgeLabel.textColor = .textSecondary
-
+        
         detectiveAge.font = UIFont.body4
         detectiveAge.textColor = .textPrimary
-
+        
         detectiveIntroduceLabel.text = "성격 및 특성"
         detectiveIntroduceLabel.verticalAlignment = .top
         detectiveIntroduceLabel.font = UIFont.alert1
@@ -130,7 +130,7 @@ class DetectiveCardView: UIView {
         detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
         detectiveIntroduceBackgroundView.backgroundColor = .gray50
-
+        
         detectiveIntroduce.font = UIFont.title5
         detectiveIntroduce.textColor = .textSecondary
     }
@@ -143,9 +143,27 @@ class DetectiveCardView: UIView {
         }
         
         let deleteAction = UIAction(title: "삭제하기", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
-            self?.onDeleteTapped?()
+            guard let self = self else { return }
+            
+            // 삭제 확인 커스텀 알럿 생성
+            let alert = CustomAlertViewController(
+                message: "삭제된 프로필은 되돌릴 수 없습니다.",
+                subMessage: "정말 삭제하시겠습니까?",
+                buttons: [
+                    CustomAlertViewController.AlertButton(
+                        title: "취소",
+                        action: nil
+                    ),
+                    CustomAlertViewController.AlertButton(
+                        title: "삭제",
+                        action: { [weak self] in
+                            self?.onDeleteTapped?()
+                        }
+                    )
+                ]
+            )
+            self.parentViewController?.present(alert, animated: true)
         }
-        
         menuButton.menu = UIMenu(children: [editAction, deleteAction])
         menuButton.showsMenuAsPrimaryAction = true
     }
@@ -247,5 +265,16 @@ class DetectiveCardView: UIView {
             $0.bottom.trailing.equalToSuperview().inset(12)
             $0.width.height.equalTo(32)
         }
+    }
+}
+
+extension UIView {
+    var parentViewController: UIViewController? {
+        var responder: UIResponder? = self
+        while let next = responder?.next {
+            if let vc = next as? UIViewController { return vc }
+            responder = next
+        }
+        return nil
     }
 }
