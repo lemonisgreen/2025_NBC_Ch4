@@ -345,8 +345,7 @@ class WalkEndModalViewController : UIViewController {
         
         todayLabel.text = "2025/06/05"
         todayLabel.textColor = UIColor(named: "keycolorPrimary2")
-        todayLabel.font = UIScreen.isIPhoneSE ? .recordTitleIsSE : .recordTitle
-        todayLabel.textAlignment = .left
+        todayLabel.font = (UIScreen.isIPhoneSE || UIScreen.isIPhoneMini) ? .recordTitleIsSE : .recordTitle
         todayLabel.backgroundColor = .clear
         
         distanceLabel.text = "거리"
@@ -530,8 +529,14 @@ class WalkEndModalViewController : UIViewController {
             $0.leading.trailing.equalToSuperview().inset(30)
         }
         
-        stepCountLabel.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(55)
+        if (UIScreen.isIPhoneSE || UIScreen.isIPhoneMini) {
+            stepCountLabel.snp.makeConstraints {
+                $0.trailing.equalToSuperview().inset(45)
+            }
+        } else {
+            stepCountLabel.snp.makeConstraints {
+                $0.trailing.equalToSuperview().inset(55)
+            }
         }
         
         stepCountContentLabel.snp.makeConstraints {
