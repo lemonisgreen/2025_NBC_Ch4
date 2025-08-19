@@ -19,7 +19,8 @@ final class LoginViewModel: NSObject {
     
     struct Output {
         let isLoading: Driver<Bool>
-        let navigate: Signal<Void>
+        let navigateToPetProfile: Signal<Void>
+        let navigateToMain: Signal<Void>
         let showError: Signal<String>
         let showAlert: Signal<String>
     }
@@ -36,7 +37,8 @@ final class LoginViewModel: NSObject {
     lazy var output: Output = {
         return Output(
             isLoading: isLoadingSubject.asDriver(onErrorJustReturn: false),
-            navigate: navigateSubject.asSignal(onErrorSignalWith: .empty()),
+            navigateToPetProfile: navigateToPetProfileSubject.asSignal(onErrorSignalWith: .empty()),
+            navigateToMain: navigateToMainSubject.asSignal(onErrorSignalWith: .empty()),
             showError: showErrorSubject.asSignal(onErrorSignalWith: .empty()),
             showAlert: showAlertSubject.asSignal(onErrorSignalWith: .empty())
         )
@@ -47,7 +49,8 @@ final class LoginViewModel: NSObject {
     private let appleTapSubject = PublishSubject<Void>()
     
     private let isLoadingSubject = BehaviorSubject<Bool>(value: false)
-    private let navigateSubject = PublishSubject<Void>()
+    private let navigateToPetProfileSubject = PublishSubject<Void>()
+    private let navigateToMainSubject = PublishSubject<Void>()
     private let showErrorSubject = PublishSubject<String>()
     private let showAlertSubject = PublishSubject<String>()
     
@@ -81,6 +84,27 @@ final class LoginViewModel: NSObject {
             .bind { [weak self] in
                 self?.loginWithApple()
             }
+            .disposed(by: disposeBag)
+    }
+    
+    // MARK: - 기존에 펫 프로필을 가지고 있는지 확인
+    private func checkPetProfiles() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            navigateToPetProfileSubject.onNext(())
+            return
+        }
+        
+        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] profiles in
+                if profiles.isEmpty {
+                    self?.navigateToPetProfileSubject.onNext(())
+                } else {
+                    self?.navigateToMainSubject.onNext(())
+                }
+            }, onFailure: { [weak self] _ in
+                self?.navigateToPetProfileSubject.onNext(())
+            })
             .disposed(by: disposeBag)
     }
     
@@ -151,7 +175,7 @@ final class LoginViewModel: NSObject {
             UserDefaults.standard.set(kakaoUserInfo.nickname, forKey: "userNickname")
             UserDefaults.standard.set(kakaoUserInfo.email, forKey: "userEmail")
             UserDefaults.standard.set(firebaseUser.uid, forKey: "firebaseUID")
-            self?.navigateSubject.onNext(())
+            self?.checkPetProfiles()
         }
     }
     
@@ -236,7 +260,7 @@ final class LoginViewModel: NSObject {
             UserDefaults.standard.set(firebaseUser.displayName ?? "", forKey: "userNickname")
             UserDefaults.standard.set(firebaseUser.email ?? "", forKey: "userEmail")
             UserDefaults.standard.set(firebaseUser.uid, forKey: "firebaseUID")
-            self?.navigateSubject.onNext(())
+            self?.checkPetProfiles()
         }
     }
     
@@ -284,7 +308,7 @@ final class LoginViewModel: NSObject {
             UserDefaults.standard.set(appleUserInfo.fullName ?? firebaseUser.displayName ?? "", forKey: "userNickname")
             UserDefaults.standard.set(appleUserInfo.email ?? firebaseUser.email ?? "", forKey: "userEmail")
             UserDefaults.standard.set(firebaseUser.uid, forKey: "firebaseUID")
-            self?.navigateSubject.onNext(())
+            self?.checkPetProfiles()
         }
     }
     
@@ -357,8 +381,8 @@ extension LoginViewModel: ASAuthorizationControllerDelegate {
             }
             
             let credential = OAuthProvider.credential(withProviderID: "apple.com",
-                                                    idToken: idTokenString,
-                                                    rawNonce: nonce)
+                                                      idToken: idTokenString,
+                                                      rawNonce: nonce)
             
             Auth.auth().signIn(with: credential) { [weak self] authResult, error in
                 if let error = error {

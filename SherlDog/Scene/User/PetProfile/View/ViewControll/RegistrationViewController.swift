@@ -144,7 +144,7 @@ class RegistrationViewController: UIViewController {
     private func loadProfileImage() {
         guard case .edit(let profile) = viewModel.currentMode else { return }
         
-        FirebaseImageManager.shared.downloadPetImage(
+        FirebaseImageManager.shared.getPetImageURL(
             petId: profile.petProfileId,
             userId: profile.userId
         ) { [weak self] url in
