@@ -79,15 +79,17 @@ extension SelectAvatarViewController {
             .disposed(by: disposeBag)
         
         self.viewModel.output.selectedAvatar
-            .asSignal()
-            .emit(onNext: { [weak self] data in
-                guard let self else { return }
-                
-                self.avatarImageView.image = UIImage(named: data.avatar)
-                self.detailTitleLabel.text = data.title
-                self.detailLabel.text = data.content
-            })
-            .disposed(by: disposeBag)
+            .compactMap { $0 }
+                .asSignal(onErrorSignalWith: .empty())
+                .emit(onNext: { [weak self] data in
+                    guard let self = self else { return }
+                    
+                    self.avatarImageView.image = UIImage(named: data.avatar)
+                    self.detailTitleLabel.text = data.title
+                    self.detailLabel.text = data.content
+                    self.choiceButton.isEnabled = true
+                })
+                .disposed(by: disposeBag)
         
         self.viewModel.output.moveToBack
             .asSignal()
