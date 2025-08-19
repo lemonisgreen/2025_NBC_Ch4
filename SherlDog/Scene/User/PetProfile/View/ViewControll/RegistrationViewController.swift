@@ -144,7 +144,7 @@ class RegistrationViewController: UIViewController {
     private func loadProfileImage() {
         guard case .edit(let profile) = viewModel.currentMode else { return }
         
-        FirebaseImageManager.shared.downloadPetImage(
+        FirebaseImageManager.shared.getPetImageURL(
             petId: profile.petProfileId,
             userId: profile.userId
         ) { [weak self] url in
@@ -262,7 +262,7 @@ class RegistrationViewController: UIViewController {
                 requestView.modalPresentationStyle = .pageSheet
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 400 }]
+                    sheet.detents = [.custom { _ in 340 }]
                     sheet.selectedDetentIdentifier = .medium
                     sheet.prefersGrabberVisible = true
                     sheet.preferredCornerRadius = 20

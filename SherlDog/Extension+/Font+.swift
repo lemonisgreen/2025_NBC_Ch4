@@ -110,7 +110,7 @@ extension UIFont {
     }
     
     static var recordTitle: UIFont {
-        return UIFont(name: "ChosunCentennial", size: 20) ?? UIFont.systemFont(ofSize: 20, weight: .regular)
+        return UIFont(name: "ChosunCentennial", size: 18) ?? UIFont.systemFont(ofSize: 20, weight: .regular)
     }
     
     static var recordTitleIsSE: UIFont {

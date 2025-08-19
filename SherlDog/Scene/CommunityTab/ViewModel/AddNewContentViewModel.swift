@@ -161,7 +161,7 @@ final class AddNewContentViewModel {
         
         let uploads: [Single<String>] = images.map { image in
             Single<String>.create { observer in
-                FirebaseImageManager.shared.uploadImage(image, type: .detectiveMate) { [weak self] result in
+                FirebaseImageManager.shared.uploadDetectiveMateImage(image) { [weak self] result in
                     switch result {
                     case .success(let imageUrl):
                         observer(.success(imageUrl))
