@@ -30,17 +30,17 @@ class PictureUploadRequestViewController: UIViewController { // 1: 240, 2: 320, 
         self.viewModel = viewModel
         self.cameraViewModel = cameraViewModel
         self.avatarViewModel = avatarViewModel
-
+        
         super.init(nibName: nil, bundle: nil)
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         setupUI()
         configureUI()
         outputBind()
@@ -69,15 +69,30 @@ extension PictureUploadRequestViewController {
                 case .pictureRequest, .pictureRequestForAssistant, .pictureRequestForPet:
                     self.collectionView.allowsMultipleSelection = false
                     self.setButton.isEnabled = false
+                    self.setButton.isHidden = true
                     
                 case .sherlDogRequest:
                     self.collectionView.allowsMultipleSelection = true
                     self.setButton.isEnabled = false
+                    self.setButton.isHidden = false
                     
                 case .sherlDogResult:
                     self.collectionView.allowsSelection = false
                     self.setButton.isEnabled = true
+                    self.setButton.isHidden = false
                 }
+            })
+            .disposed(by: disposeBag)
+        
+        collectionView.rx.itemSelected
+            .subscribe(onNext: { [weak self] _ in
+                self?.fetchButtonEnable()
+            })
+            .disposed(by: disposeBag)
+        
+        collectionView.rx.itemDeselected
+            .subscribe(onNext: { [weak self] _ in
+                self?.fetchButtonEnable()
             })
             .disposed(by: disposeBag)
         
@@ -171,9 +186,16 @@ extension PictureUploadRequestViewController {
     
     private func inputBind() {
         self.collectionView.rx.itemSelected
-            .subscribe(onNext: { [weak self] _ in
-                guard let self else { return }
-                self.fetchButtonEnable()
+            .subscribe(onNext: { [weak self] indexPath in
+                guard let self = self else { return }
+                guard let sender = self.viewModel.output.sender.value else { return }
+                
+                switch sender {
+                case .sherlDogRequest, .sherlDogResult:
+                    break
+                default:
+                    self.viewModel.input.accept(.setButtonTapped([indexPath.row]))
+                }
             })
             .disposed(by: disposeBag)
         
@@ -251,7 +273,7 @@ extension PictureUploadRequestViewController {
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PictureUploadRequestViewCell.identifier, for: indexPath) as? PictureUploadRequestViewCell else { return UICollectionViewCell() }
                 
                 cell.settingCell(text: section.title, imageName: section.image)
-
+                
                 return cell
             }, configureSupplementaryView: { dataSource, collectionView, title, indexPath in
                 guard let header = collectionView.dequeueReusableSupplementaryView(ofKind: UICollectionView.elementKindSectionHeader,
@@ -259,7 +281,7 @@ extension PictureUploadRequestViewController {
                                                                                    for: indexPath) as? PictureUploadRequestViewHeader else { return UICollectionReusableView() }
                 let title = dataSource.sectionModels[indexPath.section].model
                 header.setTitle(title: title)
-
+                
                 return header
             }
         )
