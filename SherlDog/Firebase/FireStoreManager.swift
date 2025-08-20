@@ -41,7 +41,7 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
-
+    
     // whereField 단일조건 쿼리
     func fetchDocuments<T: Decodable>(
         collection: String,
@@ -65,7 +65,7 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
-
+    
     // 컬렉션 가져오기
     /// sortField에는 타임스탬프가 있는 필드의 이름을 작성하세요.
     /// 타임스탬프가 없거나 정렬이 필요하지 않으면 작성하지 않아도 됩니다.
@@ -73,12 +73,12 @@ extension FirestoreManager {
     /// false는 최신 데이터가 제일 마지막으로 들어옵니다.
     func fetchCollection<T: Decodable>(
         collection: String,
-        sortField: String = "",
+        sortField: String? = nil,
         descending: Bool = true,
         type: T.Type
     ) -> Single<[T]> {
         return Single.create { [weak self] single in
-            guard let self else {
+            guard let self, let sortField else {
                 single(.failure(FirestoreError.unknown))
                 return Disposables.create()
             }
@@ -88,19 +88,19 @@ extension FirestoreManager {
             : self.db.collection(collection).order(by: sortField, descending: descending)
             
             query.getDocuments { snapshot, error in
-                    if let error = error {
-                        single(.failure(error))
-                    } else if let snapshot = snapshot {
-                        let items: [T] = snapshot.documents.compactMap { try? $0.data(as: T.self) }
-                        single(.success(items))
-                    } else {
-                        single(.failure(FirestoreError.noData))
-                    }
+                if let error = error {
+                    single(.failure(error))
+                } else if let snapshot = snapshot {
+                    let items: [T] = snapshot.documents.compactMap { try? $0.data(as: T.self) }
+                    single(.success(items))
+                } else {
+                    single(.failure(FirestoreError.noData))
                 }
+            }
             return Disposables.create()
         }
     }
-
+    
     //날짜 범위 fetch for day
     func fetchDocumentsForDay<T: Decodable>(
         collection: String,
@@ -136,28 +136,28 @@ extension FirestoreManager {
     }
     
     // 원하는 문서의 도큐멘트 아이디 가져오기
-      func findDocumentId(
-          collection: String,
-          whereField field: String,
-          isEqualTo value: Any
-      ) -> Single<[String]> {
-          return Single.create { [weak self] single in
-              self?.db.collection(collection)
-                  .whereField(field, isEqualTo: value)
-                  .getDocuments { snapshot, error in
-                      if let error = error {
-                          single(.failure(error))
-                      } else if let snapshot = snapshot {
-                          let items: [String] = snapshot.documents.compactMap { $0.documentID }
-                          single(.success(items))
-                      } else {
-                          single(.failure(FirestoreError.noData))
-                      }
-                  }
-              return Disposables.create()
-          }
-      }
-
+    func findDocumentId(
+        collection: String,
+        whereField field: String,
+        isEqualTo value: Any
+    ) -> Single<[String]> {
+        return Single.create { [weak self] single in
+            self?.db.collection(collection)
+                .whereField(field, isEqualTo: value)
+                .getDocuments { snapshot, error in
+                    if let error = error {
+                        single(.failure(error))
+                    } else if let snapshot = snapshot {
+                        let items: [String] = snapshot.documents.compactMap { $0.documentID }
+                        single(.success(items))
+                    } else {
+                        single(.failure(FirestoreError.noData))
+                    }
+                }
+            return Disposables.create()
+        }
+    }
+    
     //문서 생성
     func createDocument<T: Encodable>(
         collection: String,
@@ -170,7 +170,7 @@ extension FirestoreManager {
                 return Disposables.create()
             }
             let docRef: DocumentReference = documentId != nil ?
-                self.db.collection(collection).document(documentId!) :
+            self.db.collection(collection).document(documentId!) :
             self.db.collection(collection).document()
             do {
                 try docRef.setData(from: data) { error in
@@ -186,7 +186,7 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
-
+    
     //문서 수정
     func updateDocument<T: Codable>(
         collection: String,
@@ -211,7 +211,7 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
-
+    
     //문서 삭제
     func deleteDocument(
         collection: String,
@@ -228,7 +228,7 @@ extension FirestoreManager {
             return Disposables.create()
         }
     }
-
+    
     //내부: 날짜 day -> Timestamp (시작/끝)
     private func timestampOfDay(day: Date) -> (start: Timestamp, end: Timestamp) {
         let startOfDay = Calendar.current.startOfDay(for: day)
@@ -241,7 +241,7 @@ extension FirestoreManager {
 
 // MARK: - 특정 목적별 메서드
 extension FirestoreManager {
-
+    
     //오늘의 내 단서 목록 가져오기
     func fetchCluesForDay(userId: String, day: Date) -> Single<[ClueModel]> {
         return fetchDocumentsForDay(
@@ -253,7 +253,7 @@ extension FirestoreManager {
             type: ClueModel.self
         )
     }
-
+    
     //산책 결과 가져오기
     func fetchWalkResults(userId: String) -> Single<[WalkResult]> {
         return fetchDocuments(
@@ -263,7 +263,7 @@ extension FirestoreManager {
             type: WalkResult.self
         )
     }
-
+    
     //선택된 펫 프로필들 한 번에 가져오기
     func fetchSelectedPetProfiles(petProfileIds: [String]) -> Single<[PetProfile]> {
         // 여러개를 병렬로 fetch해서 배열로 합치기
@@ -272,7 +272,7 @@ extension FirestoreManager {
         }
         return Single.zip(singles)
     }
-
+    
     //내 펫 전체 프로필 가져오기
     func fetchUserPetProfiles(userId: String) -> Single<[PetProfile]> {
         return fetchDocuments(
@@ -282,7 +282,7 @@ extension FirestoreManager {
             type: PetProfile.self
         )
     }
-
+    
     //휴먼 프로필 가져오기
     func fetchHumanProfile(userId: String) -> Single<HumanProfileModel> {
         return fetchDocument(
@@ -291,7 +291,7 @@ extension FirestoreManager {
             type: HumanProfileModel.self
         )
     }
-
+    
     //단일 펫프로필 ID로 문서 가져오기 (ex. ID로 새 프로필 추가)
     func fetchPetProfileById(petProfileId: String) -> Single<PetProfile> {
         return fetchDocument(
