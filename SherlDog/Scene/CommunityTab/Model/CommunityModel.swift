@@ -10,6 +10,7 @@ import FirebaseFirestore
 
 // MARK: - CommunityModel
 struct CommunityModel: Codable {
+    let userId: String
     let profileImage: String
     let name: String
     let info: [PetProfile]

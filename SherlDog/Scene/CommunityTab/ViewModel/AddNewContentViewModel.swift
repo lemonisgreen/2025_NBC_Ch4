@@ -125,7 +125,8 @@ final class AddNewContentViewModel {
     }
     
     private func addPost() {
-        guard let userProfile = output.userProfile.value else { return }
+        guard let userId = Auth.auth().currentUser?.uid,
+              let userProfile = output.userProfile.value else { return }
         let selectedIndex = output.selectedProfileIndex.value
         let petProfiles = selectedIndex.map { self.output.petProfile.value[$0] }
         
@@ -134,7 +135,8 @@ final class AddNewContentViewModel {
             .flatMapCompletable { [weak self] urls in
                 guard let self else { return Completable.error(NSError(domain: "", code: 0, userInfo: nil)) }
                 
-                let uploadData = CommunityModel(profileImage: userProfile.image,
+                let uploadData = CommunityModel(userId: userId,
+                                                profileImage: userProfile.image,
                                                 name: userProfile.nickname,
                                                 info: petProfiles,
                                                 postDate: Timestamp(date: Date()),

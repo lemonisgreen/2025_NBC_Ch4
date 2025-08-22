@@ -23,6 +23,13 @@ final class CommunityViewModel {
             case .detectiveMateBoard: return "탐정 메이트"
             }
         }
+        
+        var collectionName: String {
+            switch self {
+            case .invLogBoard:        return "InvLogBoard"
+            case .detectiveMateBoard: return "DetectiveMate"
+            }
+        }
     }
     
     // 데이터 변경 Mutation
@@ -72,13 +79,16 @@ final class CommunityViewModel {
         let fetchStream = refreshTrigger
             .withLatestFrom(selectedCategory)
             .flatMapLatest { [weak self] category in
-                guard let self else { return Observable<(CommunitySectionType, Event<[CommunityModel]>)>.empty() }
+                guard let self else { return Observable<Event<[CommunityModel]>>.empty() }
+                print("fetchStream")
                 return self.fetchPosts(category: category)
                     .asObservable()
                     .materialize()
-                    .map { (category, $0) }
             }
             .share()
+        
+        let posts = fetchStream.compactMap { $0.element }
+//        let postError = fetchStream.compactMap { $0.error }
         
         // 로딩 상태
         let isUpdating = Observable.merge(refreshTrigger.map { true },
@@ -88,14 +98,12 @@ final class CommunityViewModel {
             .asDriver(onErrorJustReturn: false)
         
         // Mutation - set
-        let refreshMutation = fetchStream
-            .compactMap { category, event in
-                event.element.map { post in
-                    Mutation.set(category: category, posts: post)
-                }
+        let refreshMutation = posts
+            .withLatestFrom(selectedCategory) { posts, category in
+                print("refreshMutation.set \(posts)")
+                return Mutation.set(category: category, posts: posts)
             }
             .asObservable()
-            .catchAndReturn(.set(category: .invLogBoard, posts: []))
         
         // Mutation - append
         let appendMutation = input.fetchMore
@@ -114,8 +122,10 @@ final class CommunityViewModel {
                 switch mutation {
                 case let .set(category, posts):
                     next[category] = posts
+                    print("postsDict.set \(next)")
                 case let .append(category, posts):
                     next[category, default: []] += posts
+                    print("postsDict.append \(next)")
                 }
                 return next
             }
@@ -145,7 +155,7 @@ final class CommunityViewModel {
     
     // MARK: - Networking helper
     private func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
-        let collection = category.name
+        let collection = category.collectionName
         
         return FirestoreManager.shared.fetchCollection(
             collection: collection,
