@@ -80,7 +80,6 @@ final class CommunityViewModel {
             .withLatestFrom(selectedCategory)
             .flatMapLatest { [weak self] category in
                 guard let self else { return Observable<Event<[CommunityModel]>>.empty() }
-                print("fetchStream")
                 return self.fetchPosts(category: category)
                     .asObservable()
                     .materialize()
@@ -100,7 +99,6 @@ final class CommunityViewModel {
         // Mutation - set
         let refreshMutation = posts
             .withLatestFrom(selectedCategory) { posts, category in
-                print("refreshMutation.set \(posts)")
                 return Mutation.set(category: category, posts: posts)
             }
             .asObservable()
@@ -122,10 +120,8 @@ final class CommunityViewModel {
                 switch mutation {
                 case let .set(category, posts):
                     next[category] = posts
-                    print("postsDict.set \(next)")
                 case let .append(category, posts):
                     next[category, default: []] += posts
-                    print("postsDict.append \(next)")
                 }
                 return next
             }

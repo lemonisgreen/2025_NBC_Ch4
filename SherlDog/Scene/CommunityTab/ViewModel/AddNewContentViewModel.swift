@@ -96,15 +96,17 @@ final class AddNewContentViewModel {
         let ids = results.compactMap { $0.assetIdentifier }
         guard !ids.isEmpty else { return .just([]) }
         self.output.selectedImageIdentifiers.accept(ids)
-        
+        print(ids)
         // ids 배열 순서대로 PHAsset을 담은 PHFetchResult 가져오기
         let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
         
         // 사용자가 선택한 ID 순서대로 PHAsset 배열 복원
-        var assetsInOrder: [PHAsset] = []
-        fetched.enumerateObjects { asset, _, _ in
-            assetsInOrder.append(asset)
-        }
+        var dics: [String: PHAsset] = [:]
+          fetched.enumerateObjects { asset, _, _ in
+              dics[asset.localIdentifier] = asset
+          }
+        
+        let assetsInOrder = ids.compactMap { dics[$0] }
         
         // 각 PHAsset → 이미지 Single로 변환
         let imageSingles: [Single<UIImage?>] = assetsInOrder.map { asset in
