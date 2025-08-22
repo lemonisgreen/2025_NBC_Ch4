@@ -260,13 +260,8 @@ class RegistrationViewController: UIViewController {
                 pictureViewModel.input.accept(.sender(.pictureRequestForPet))
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: pictureViewModel, cameraViewModel: cameraViewModel))
                 requestView.modalPresentationStyle = .pageSheet
+                requestView.sheetPresentationController?.setModalSize(type: .pictureWithAvatar, grabber: true)
                 
-                if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 340 }]
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
                 self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)
@@ -304,13 +299,8 @@ class RegistrationViewController: UIViewController {
                     })
                     .disposed(by: breedSearchVC.disposeBag)
                 
-                if let sheet = breedSearchVC.sheetPresentationController {
-                    sheet.detents = [.large()]
-                    sheet.selectedDetentIdentifier = .large
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                    self.present(breedSearchVC, animated: true)
-                }
+                breedSearchVC.sheetPresentationController?.setModalSize(type: .large, grabber: true)
+                self.present(breedSearchVC, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -367,19 +357,9 @@ class RegistrationViewController: UIViewController {
                     })
                     .disposed(by: birthSelectVC.disposeBag)
                 
-                if let sheet = birthSelectVC.sheetPresentationController {
-                    if UIScreen.isIPhoneSE {
-                        sheet.detents = [.medium()]
-                        sheet.selectedDetentIdentifier = .medium
-                    } else {
-                        let customDetent = UISheetPresentationController.Detent.custom { _ in 360 }
-                        sheet.detents = [customDetent, .medium()]
-                        // 첫 번째 detent가 자동으로 선택됨
-                    }
-                    
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
+                birthSelectVC.sheetPresentationController?.setModalSize(type: .medium, grabber: true)
+                if !UIScreen.isIPhoneSE { birthSelectVC.sheetPresentationController?.detents = [.custom { _ in 360 }] }
+                
                 owner.present(birthSelectVC, animated: true)
                 
             })
