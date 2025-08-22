@@ -27,7 +27,7 @@ final class CommunityViewController: UIViewController {
     private let refreshControl = UIRefreshControl()
     
     // MARK: - UIProperty
-    private lazy var segmentedControl = CommunitySegmentedControl(items: self.viewModel.output.sectionName.value)
+    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunityViewModel.CommunitySectionType.allCases.map { $0.name })
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let addButton = UIButton()
     
@@ -38,7 +38,6 @@ final class CommunityViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
-        inputBind()
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -52,52 +51,46 @@ final class CommunityViewController: UIViewController {
 extension CommunityViewController {
     
     private func bind() {
-        Observable.combineLatest(
-            viewModel.output.selectedCategory,
-            viewModel.output.currentCellData
-        )
-        .map { category, data in
-            guard let result = data[category] else { return [] }
-            
-            return result
-        }
-        .asDriver(onErrorJustReturn: [])
-        .drive(self.collectionView.rx.items(dataSource: dataSource))
-        .disposed(by: disposeBag)
-        
-        viewModel.output.selectedCategory
-            .map {
-                switch $0 {
-                case .invLogBoard: return true
-                case .detectiveMateBoard: return false
-                }
-            }
-            .asDriver(onErrorJustReturn: true)
-            .drive(self.addButton.rx.isHidden)
-            .disposed(by: disposeBag)
-        
-        self.viewModel.output.isUpdating
-            .asDriver()
-            .drive(self.refreshControl.rx.isRefreshing)
-            .disposed(by: disposeBag)
-    }
-    
-    private func inputBind() {
-        self.refreshControl.rx.controlEvent(.valueChanged)
-            .map { .pullToRefresh }
-            .bind(to: self.viewModel.input)
-            .disposed(by: disposeBag)
-        
-        self.segmentedControl.rx.selectedSegmentIndex
-            .map { .segmentedControlChanged($0) }
-            .bind(to: self.viewModel.input)
-            .disposed(by: disposeBag)
+        // MARK: - Inputs
+        let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
+                                             pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
+                                             fetchMore: Observable.empty())
         
         self.addButton.rx.tap
             .asSignal()
             .emit(onNext: { [weak self] in
                 self?.navigationController?.pushViewController(AddNewContentViewController(), animated: true)
             })
+            .disposed(by: disposeBag)
+        
+        
+        // MARK: - Outputs
+        let output = viewModel.transform(input)
+        
+        Driver.combineLatest(
+            output.selectedCategory,
+            output.currentCellData
+        )
+        .map { category, data in
+            guard let result = data[category] else { return [] }
+            
+            return result
+        }
+        .drive(self.collectionView.rx.items(dataSource: dataSource))
+        .disposed(by: disposeBag)
+        
+        output.selectedCategory
+            .map {
+                switch $0 {
+                case .invLogBoard: return true
+                case .detectiveMateBoard: return false
+                }
+            }
+            .drive(self.addButton.rx.isHidden)
+            .disposed(by: disposeBag)
+        
+        output.isUpdating
+            .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
     }
 }
@@ -197,23 +190,14 @@ extension CommunityViewController {
             
             section.visibleItemsInvalidationHandler = { [weak self] item, offset, environment in
                 guard let self else { return }
-                
                 let pageWidth = environment.container.contentSize.width
-                guard pageWidth > 0 else { return }
-                
                 let page = Int(round(offset.x / pageWidth))
-                
                 let indexPath = IndexPath(item: 0, section: row)
-                if let footerView = self.collectionView.supplementaryView(
-                    forElementKind: PostElementKind.footer, at: indexPath
-                ) as? PostFooterView {
-                    
+                
+                if let footerView = self.collectionView.supplementaryView(forElementKind: PostElementKind.footer,
+                                                                          at: indexPath) as? PostFooterView {
                     let total = (self.dataSource.sectionModels[row].items.count)
-                    // 빠른 업데이트용 메서드 하나 만들어 두면 좋아요
                     footerView.updatePage(total: total, current: page)
-                    // 또는 기존 API:
-                    // let model = self.dataSource.sectionModels[sectionIndex].model
-                    // footerView.settingCell(data: model, totalPages: total, currentPage: page)
                 }
             }
             

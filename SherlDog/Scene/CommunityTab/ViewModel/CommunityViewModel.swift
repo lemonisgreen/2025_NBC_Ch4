@@ -6,154 +6,154 @@
 //
 
 import RxSwift
-import RxRelay
+import RxCocoa
 import RxDataSources
 import Differentiator
 
 final class CommunityViewModel {
     
+    // 게시판 종류
     enum CommunitySectionType: CaseIterable {
         case invLogBoard
         case detectiveMateBoard
         
         var name: String {
             switch self {
-            case .invLogBoard:
-                return "수사 게시판"
-            case .detectiveMateBoard:
-                return "탐정 메이트"
+            case .invLogBoard:        return "수사 게시판"
+            case .detectiveMateBoard: return "탐정 메이트"
             }
         }
     }
     
-    enum Input {
-        case segmentedControlChanged(Int)
-        case pullToRefresh
-        case fetchMoreData
+    // 데이터 변경 Mutation
+    enum Mutation {
+        case set(category: CommunitySectionType, posts: [CommunityModel])
+        case append(category: CommunitySectionType, posts: [CommunityModel])
+    }
+    
+    // MARK: - Input & Output
+    struct Input {
+        let segmentIndexChanged: Observable<Int>
+        let pullToRefresh: Observable<Void>
+        let fetchMore: Observable<Void>
     }
     
     struct Output {
-        let sectionName = BehaviorRelay<[String]>(value: [])
-        let selectedCategory = BehaviorRelay<CommunitySectionType>(value: .invLogBoard)
-        let currentCellData = BehaviorRelay<[CommunitySectionType: [CommunitySection]]>(value: [:])
-        let isUpdating = BehaviorRelay<Bool>(value: false)
+        let selectedCategory: Driver<CommunitySectionType>
+        let currentCellData: Driver<[CommunitySectionType: [CommunitySection]]>
+        let isUpdating: Driver<Bool>
     }
     
     typealias CommunitySection = SectionModel<CommunityModel, String>
-
+    
     private let disposeBag = DisposeBag()
     
-    let input = PublishRelay<Input>()
-    let output = Output()
-    
-    init() {
-        setup()
-        transform()
-    }
-    
-    private func transform() {
-        self.input
-            .bind(onNext: { [weak self] input in
-                guard let self else { return }
-                
-                switch input {
-                case .segmentedControlChanged(let index):
-                    let category: CommunitySectionType = {
-                        switch index {
-                        case 0: return .invLogBoard
-                        case 1: return .detectiveMateBoard
-                        default: return .invLogBoard
-                        }
-                    }()
-                    
-                    self.output.selectedCategory.accept(category)
-                    self.fetchData(category: category)
-                    
-                case .pullToRefresh:
-                    self.output.isUpdating.accept(true)
-                    self.fetchData(category: self.output.selectedCategory.value, refresh: true)
-                    
-                case .fetchMoreData:
-                    self.fetchMoreData(category: self.output.selectedCategory.value)
-                    
-                }
-            })
-            .disposed(by: disposeBag)
-    }
-    
-    // 커뮤니티 데이터 불러오기
-    private func fetchData(category: CommunitySectionType, refresh: Bool = false) {
-        // 이미 로드돼 있으면 스킵
-        if !refresh {
-            if let cached = output.currentCellData.value[category], cached.isEmpty == false { return }
-        }
+    // MARK: Transform
+    func transform(_ input: Input) -> Output {
         
-        var collection: String {
-            switch category {
-            case .invLogBoard: return "InvLogBoard"
-            case .detectiveMateBoard: return "DetectiveMate"
+        // 선택된 카테고리: 초기값 invLogBoard
+        let selectedCategory = input.segmentIndexChanged
+            .map { index -> CommunitySectionType in
+                // 안전 접근을 위해 한 번 확인 후 접근
+                CommunitySectionType.allCases.indices.contains(index)
+                ? CommunitySectionType.allCases[index]
+                : .invLogBoard
             }
-        }
+            .startWith(.invLogBoard)
+            .share(replay: 1)
         
-        FirestoreManager.shared.fetchCollection(collection: collection,
-                                                sortField: "postDate",
-                                                descending: true,
-                                                type: CommunityModel.self)
-            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] data in
-                guard let self else { return }
-                
-                let sections = makeSections(from: data)
-                updateCellData(for: category, with: sections)
-                self.output.isUpdating.accept(false)
-            })
-            .disposed(by: disposeBag)
+        // 새로고침 트리거: 초기 로드 + 카테고리 변경 + Pull to refresh
+        let refreshTrigger = Observable.merge(selectedCategory.map { _ in () },
+                                              input.pullToRefresh)
+            .throttle(.milliseconds(300), scheduler: MainScheduler.instance)
+            .share()
+        
+        // 트리거가 발생하면 데이터 패치
+        let fetchStream = refreshTrigger
+            .withLatestFrom(selectedCategory)
+            .flatMapLatest { [weak self] category in
+                guard let self else { return Observable<(CommunitySectionType, Event<[CommunityModel]>)>.empty() }
+                return self.fetchPosts(category: category)
+                    .asObservable()
+                    .materialize()
+                    .map { (category, $0) }
+            }
+            .share()
+        
+        // 로딩 상태
+        let isUpdating = Observable.merge(refreshTrigger.map { true },
+                                          fetchStream.map { _ in false })
+            .startWith(false)
+            .distinctUntilChanged()
+            .asDriver(onErrorJustReturn: false)
+        
+        // Mutation - set
+        let refreshMutation = fetchStream
+            .compactMap { category, event in
+                event.element.map { post in
+                    Mutation.set(category: category, posts: post)
+                }
+            }
+            .asObservable()
+            .catchAndReturn(.set(category: .invLogBoard, posts: []))
+        
+        // Mutation - append
+        let appendMutation = input.fetchMore
+            .withLatestFrom(selectedCategory)
+            .map { category -> Mutation in
+                // TODO: 무한스크롤 구현
+                return .append(category: category, posts: [])
+            }
+        
+        let initialPosts = makeInitialPosts()
+        
+        let postsDict = Observable.merge(refreshMutation,
+                                         appendMutation)
+            .scan(initialPosts) { dict, mutation in
+                var next = dict
+                switch mutation {
+                case let .set(category, posts):
+                    next[category] = posts
+                case let .append(category, posts):
+                    next[category, default: []] += posts
+                }
+                return next
+            }
+            .share(replay: 1)
+        
+        let currentCellData = postsDict
+            .map { dict in
+                dict.mapValues { posts in
+                    posts.map { CommunitySection(model: $0, items: $0.contentImage) }
+                }
+            }
+            .asDriver(onErrorJustReturn: [:])
+        
+        return Output(
+            selectedCategory: selectedCategory.asDriver(onErrorJustReturn: .invLogBoard),
+            currentCellData: currentCellData,
+            isUpdating: isUpdating
+        )
     }
     
-    // 무한스크롤
-    private func fetchMoreData(category: CommunitySectionType) {
-        // 기존 섹션 -> 기존 포스트 복원
-        let existingSections = output.currentCellData.value[category] ?? []
-        let existingPosts: [CommunityModel] = existingSections.map { $0.model }
-        
-        // 더 불러온 포스트(예시로 샘플 append)
-        var more = MockUpData.communitySample // FIXME: 페이지네이션 fetch
-        if category == .detectiveMateBoard, more.count >= 2 {
-            more.removeLast(2)
-        }
-        
-        let combinedPosts = existingPosts + more
-        let sections = makeSections(from: combinedPosts)
-        updateCellData(for: category, with: sections)
+    // 초기 세팅: nil 방지
+    private func makeInitialPosts() -> [CommunitySectionType : [CommunityModel]] {
+        var dict: [CommunitySectionType: [CommunityModel]] = [:]
+        CommunitySectionType.allCases.forEach { dict[$0] = [] }
+        return dict
     }
     
-    private func setup() {
-        // 세그 제목
-        output.sectionName.accept(CommunitySectionType.allCases.map { $0.name })
+    // MARK: - Networking helper
+    private func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
+        let collection = category.name
         
-        // 카테고리 키만 먼저 만들어 둠(빈 섹션)
-        var initDict: [CommunitySectionType: [CommunitySection]] = [:]
-        CommunitySectionType.allCases.forEach { initDict[$0] = [] }
-        output.currentCellData.accept(initDict)
-        
-        // 초기 카테고리 로드
-        fetchData(category: .invLogBoard)
-    }
-}
-
-// MARK: - Data mapping helpers
-extension CommunityViewModel {
-    /// 딕셔너리 업데이트 시 기존 카테고리 데이터 보존
-    private func updateCellData(for category: CommunitySectionType, with sections: [CommunitySection]) {
-        var dict = output.currentCellData.value
-        dict[category] = sections
-        output.currentCellData.accept(dict)
-    }
-    
-    /// [CommunityModel] -> [CommunitySection] 로 변환
-    private func makeSections(from posts: [CommunityModel]) -> [CommunitySection] {
-        return posts.map { post in
-            CommunitySection(model: post, items: post.contentImage) // 이미지 URL 배열을 아이템으로
-        }
+        return FirestoreManager.shared.fetchCollection(
+            collection: collection,
+            sortField: "postDate",
+            descending: true,
+            type: CommunityModel.self
+        )
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .observe(on: MainScheduler.instance)
     }
 }
