@@ -163,7 +163,7 @@ extension SelectAvatarViewController {
         avatarImageView.contentMode = .scaleAspectFit
         
         detailView.image = .avatarDetail
-        detailView.contentMode = .scaleToFill
+        detailView.contentMode = .scaleAspectFill
         
         detailTitleLabel.font = .highlight4
         detailTitleLabel.textColor = .textSecondary
