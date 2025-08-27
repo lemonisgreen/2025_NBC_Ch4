@@ -340,7 +340,7 @@ class WalkEndModalViewController : UIViewController {
         dividerLine.backgroundColor = UIColor(named: "gray300")
         
         backgroundImageView.image = .endInvestigation
-        backgroundImageView.contentMode = UIScreen.isIPhoneSE ? .scaleToFill : .scaleAspectFit
+        backgroundImageView.contentMode = UIScreen.isIPhoneSE ? .scaleAspectFill : .scaleAspectFit
         view.insertSubview(backgroundImageView, at: 0)
         
         todayLabel.text = "2025/06/05"
