@@ -205,13 +205,7 @@ extension CreateAssistantProfileViewController {
                 
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
                 requestView.modalPresentationStyle = .pageSheet
-                
-                if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 340 }]
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
+                requestView.sheetPresentationController?.setModalSize(type: .pictureWithAvatar, grabber: true)
                 
                 self.present(requestView, animated: true)
             })
