@@ -37,13 +37,6 @@ class SelectAvatarViewModel {
     init() {
         transform()
         fetchCellData()
-        
-        if let firstAvatar = data.first {
-            output.selectedAvatar.accept(firstAvatar)
-            let icon = firstAvatar.icon
-            let selectedIcon = "selected" + icon.prefix(1).capitalized + icon.dropFirst()
-            output.icon.accept(selectedIcon)
-        }
     }
     
     private func transform() {

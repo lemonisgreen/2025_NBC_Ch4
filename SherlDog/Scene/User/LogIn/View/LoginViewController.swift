@@ -48,12 +48,12 @@ class LoginViewController: UIViewController {
         logo.image = UIImage(named: "bigLogo")
         logo.contentMode = .scaleAspectFit
         
-        helloLabel.text = "반가워요!"
+        helloLabel.text = SDLiteral.LoginView.helloLabelLarge
         helloLabel.font = UIFont(name: "EF_jejudoldam", size: 24)
         helloLabel.textAlignment = .center
         helloLabel.textColor = .textPrimary
         
-        helloLabel2.text = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
+        helloLabel2.text = SDLiteral.LoginView.helloLabelSmall
         helloLabel2.font = UIFont(name: "EF_jejudoldam", size: 18)
         helloLabel2.textAlignment = .center
         helloLabel2.textColor = .textPrimary
@@ -221,11 +221,11 @@ class LoginViewController: UIViewController {
     
     private func showErrorAlert(message: String) {
         let alert = UIAlertController(
-            title: "로그인 실패",
-            message: "다시 로그인 해주세요!",
+            title: SDLiteral.LoginView.loginErrorMessageTitle,
+            message: SDLiteral.LoginView.loginErrorMessage,
             preferredStyle: .alert
         )
-        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        alert.addAction(UIAlertAction(title: SDLiteral.AlertMessage.confirm, style: .default))
         present(alert, animated: true)
     }
 }

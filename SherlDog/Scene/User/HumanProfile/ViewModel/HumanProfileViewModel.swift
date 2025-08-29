@@ -12,6 +12,11 @@ import UIKit
 
 final class HumanProfileViewModel {
     
+    enum Mode {
+        case create
+        case edit(HumanProfileModel)
+    }
+    
     let nickname = BehaviorRelay<String>(value: "")
     let introduce = BehaviorRelay<String>(value: "")
     let imageString = BehaviorRelay<String>(value: "")
@@ -23,11 +28,6 @@ final class HumanProfileViewModel {
     let isEditMode = BehaviorRelay<Bool>(value: false)
     let userId = Auth.auth().currentUser?.uid
     private let disposeBag = DisposeBag()
-    
-    enum Mode {
-        case create
-        case edit(HumanProfileModel)
-    }
     
     func setEditMode(with profile: HumanProfileModel) {
         currentMode = .edit(profile)
@@ -126,8 +126,7 @@ final class HumanProfileViewModel {
     }
     
     func updateProfile() {
-        guard case .edit(let originalProfile) = currentMode,
-              let image = imageForUpload.value,
+        guard case .edit(_) = currentMode,
               !nickname.value.isEmpty,
               !introduce.value.isEmpty,
               let userId = Auth.auth().currentUser?.uid else {
@@ -137,42 +136,69 @@ final class HumanProfileViewModel {
         
         isLoading.accept(true)
         
-        FirebaseImageManager.shared.uploadAssistantImage(image) { [weak self] result in
-            switch result {
-            case .success(let imageURL):
-                let updatedProfile = HumanProfileModel(
-                    nickname: self?.nickname.value ?? "",
-                    image: imageURL,
-                    introduce: self?.introduce.value ?? ""
-                )
-                
-                FirestoreManager.shared.updateDocument(
-                    collection: "HumanProfile",
-                    documentId: userId,
-                    data: updatedProfile
-                )
-                .subscribe(
-                    onCompleted: {
-                        DispatchQueue.main.async {
-                            self?.isLoading.accept(false)
-                            self?.saveResult.onNext(.success(()))
+        if let image = imageForUpload.value {
+            FirebaseImageManager.shared.uploadAssistantImage(image) { [weak self] result in
+                switch result {
+                case .success(let imageURL):
+                    let updatedProfile = HumanProfileModel(
+                        nickname: self?.nickname.value ?? "",
+                        image: imageURL,
+                        introduce: self?.introduce.value ?? ""
+                    )
+                    
+                    FirestoreManager.shared.updateDocument(
+                        collection: "HumanProfile",
+                        documentId: userId,
+                        data: updatedProfile
+                    )
+                    .subscribe(
+                        onCompleted: {
+                            DispatchQueue.main.async {
+                                self?.isLoading.accept(false)
+                                self?.saveResult.onNext(.success(()))
+                            }
+                        },
+                        onError: { error in
+                            DispatchQueue.main.async {
+                                self?.isLoading.accept(false)
+                                self?.saveResult.onNext(.failure(error))
+                            }
                         }
-                    },
-                    onError: { error in
-                        DispatchQueue.main.async {
-                            self?.isLoading.accept(false)
-                            self?.saveResult.onNext(.failure(error))
-                        }
+                    )
+                    .disposed(by: self?.disposeBag ?? DisposeBag())
+                    
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        self?.isLoading.accept(false)
+                        self?.saveResult.onNext(.failure(error))
                     }
-                )
-                .disposed(by: self?.disposeBag ?? DisposeBag())
-                
-            case .failure(let error):
+                }
+            }
+        } else if imageString.value != "" {
+            let updatedProfile = HumanProfileModel(
+                nickname: self.nickname.value,
+                image: imageString.value,
+                introduce: self.introduce.value
+            )
+            
+            FirestoreManager.shared.updateDocument(collection: "HumanProfile",
+                                                   documentId: userId,
+                                                   data: updatedProfile)
+            .subscribe(onCompleted: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.isLoading.accept(false)
+                    self?.saveResult.onNext(.success(()))
+                }
+            }, onError: { [weak self] error in
                 DispatchQueue.main.async {
                     self?.isLoading.accept(false)
                     self?.saveResult.onNext(.failure(error))
                 }
-            }
+            })
+            .disposed(by: self.disposeBag)
+        } else {
+            saveResult.onNext(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "입력값이 부족합니다."])))
+            return
         }
     }
 }

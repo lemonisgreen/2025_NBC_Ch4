@@ -82,17 +82,19 @@ extension CreateAssistantProfileViewController {
         if let delegate = introduceTextView.delegate {
             delegate.textViewDidChange?(introduceTextView)
         }
+        
+        self.nextButton.isEnabled = true
     }
     
     private func bind() {
         Observable.combineLatest(
-            self.cameraViewModel.output.capturedImage,
-            self.avatarViewModel.output.icon,
+            self.viewModel.imageForUpload,
+            self.viewModel.imageString,
             self.nicknameTextField.rx.text,
             self.introduceTextView.rx.text
         )
-        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce in
-            if image != nil || avatar != "",
+        .subscribe(onNext: { [weak self] image, imageString, nickName, introduce in
+            if image != nil || imageString != "",
                nickName != "",
                introduce != "" {
                 if let nickName, nickName.contains(" ") {
@@ -203,13 +205,7 @@ extension CreateAssistantProfileViewController {
                 
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
                 requestView.modalPresentationStyle = .pageSheet
-                
-                if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 340 }]
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
+                requestView.sheetPresentationController?.setModalSize(type: .pictureWithAvatar, grabber: true)
                 
                 self.present(requestView, animated: true)
             })
@@ -309,7 +305,7 @@ extension CreateAssistantProfileViewController {
         // 다음 버튼
         nextButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.viewModel.uploadAndSaveProfile()
+                self?.viewModel.saveProfile()
             })
             .disposed(by: disposeBag)
         

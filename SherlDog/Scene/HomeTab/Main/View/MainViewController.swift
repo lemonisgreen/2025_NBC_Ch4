@@ -212,12 +212,7 @@ class MainViewController: UIViewController {
                 let detailVC = ClueDetailViewController(viewModel: viewModel)
 //                let nav = UINavigationController(rootViewController: detailVC)
                 detailVC.modalPresentationStyle = .pageSheet
-                if let sheet = detailVC.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 650 }]
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
+                detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
                 self.present(detailVC, animated: true)
                 return true
             }
@@ -372,12 +367,7 @@ class MainViewController: UIViewController {
                             let detailVC = ClueDetailViewController(viewModel: viewModel)
                             let nav = UINavigationController(rootViewController: detailVC)
                             nav.modalPresentationStyle = .pageSheet
-                            if let sheet = nav.sheetPresentationController {
-                                sheet.detents = [.custom { _ in 650 }]
-                                sheet.selectedDetentIdentifier = .medium
-                                sheet.prefersGrabberVisible = true
-                                sheet.preferredCornerRadius = 20
-                            }
+                            nav.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
                             self.present(nav, animated: true)
                             return true
                         }
@@ -443,18 +433,15 @@ class MainViewController: UIViewController {
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
                 let requestView = PictureUploadRequestViewController(viewModel: self.requestViewModel)
                 requestView.modalPresentationStyle = .pageSheet
-                if let sheet = requestView.sheetPresentationController {
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.preferredCornerRadius = 20
-                    sheet.prefersGrabberVisible = true
-                    let petCount = self.requestViewModel.output.petProfiles.value.count
-                    switch petCount {
-                    case 1: sheet.detents = [.custom { _ in 240 }]
-                    case 2: sheet.detents = [.custom { _ in 320 }]
-                    case 3: sheet.detents = [.custom { _ in 400 }]
-                    default: sheet.detents = [.custom { _ in 400 }]
-                    }
+                
+                let petCount = self.requestViewModel.output.petProfiles.value.count
+                switch petCount {
+                case 1: requestView.sheetPresentationController?.setModalSize(type: .onePet, grabber: true)
+                case 2: requestView.sheetPresentationController?.setModalSize(type: .twoPet, grabber: true)
+                case 3: requestView.sheetPresentationController?.setModalSize(type: .thrPet, grabber: true)
+                default: requestView.sheetPresentationController?.setModalSize(type: .thrPet, grabber: true)
                 }
+                
                 self.present(requestView, animated: true)
             })
             .disposed(by: disposeBag)

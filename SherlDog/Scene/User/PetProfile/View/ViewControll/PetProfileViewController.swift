@@ -121,12 +121,7 @@ final class PetProfileViewController: UIViewController {
                     })
                     .disposed(by: registrationVC.disposeBag)
                 
-                if let sheet = registrationVC.sheetPresentationController {
-                    sheet.detents = [.large()]
-                    sheet.selectedDetentIdentifier = .large
-                    sheet.prefersGrabberVisible = false
-                    sheet.preferredCornerRadius = 20
-                }
+                registrationVC.sheetPresentationController?.setModalSize(type: .large, grabber: false)
                 registrationVC.isModalInPresentation = true
                 
                 self?.present(registrationVC, animated: true)
@@ -189,13 +184,8 @@ final class PetProfileViewController: UIViewController {
         registrationVC.onProfileAdded = { [weak self] newProfileID in
             self?.petProfileViewModel.input.addProfile.accept(newProfileID)
         }
-        if let sheet = registrationVC.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.selectedDetentIdentifier = .large
-            sheet.prefersGrabberVisible = false
-            sheet.preferredCornerRadius = 20
-            self.present(registrationVC, animated: true)
-        }
+        
+        registrationVC.sheetPresentationController?.setModalSize(type: .large, grabber: false)
         registrationVC.isModalInPresentation = true
     }
     
