@@ -30,7 +30,7 @@ enum PostMenuEvent {
 // MARK: - CommunityViewController
 final class CommunityViewController: UIViewController {
     
-    private let likeButtonEvent = PublishRelay<Void>()
+    private let likeButtonEvent = PublishRelay<CommunityModel>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
@@ -67,7 +67,8 @@ extension CommunityViewController {
         let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
                                              pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
                                              fetchMore: Observable.empty(),
-                                             menuEvent: self.menuEvent.asObservable())
+                                             menuEvent: self.menuEvent.asObservable(),
+                                             likeEvent: likeButtonEvent.asObservable())
         
         self.addButton.rx.tap
             .asSignal()
@@ -264,7 +265,7 @@ extension CommunityViewController {
                     
                     footer.rx.likeButtonTap
                         .subscribe(onNext: { [weak self] in
-                            self?.likeButtonEvent.accept(())
+                            self?.likeButtonEvent.accept(sectionModel)
                         })
                         .disposed(by: footer.disposeBag)
                     

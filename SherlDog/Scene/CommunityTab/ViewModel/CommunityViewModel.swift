@@ -45,6 +45,7 @@ final class CommunityViewModel {
         let pullToRefresh: Observable<Void>
         let fetchMore: Observable<Void>
         let menuEvent: Observable<PostMenuEvent>
+        let likeEvent: Observable<CommunityModel>
     }
     
     struct Output {
@@ -66,11 +67,15 @@ final class CommunityViewModel {
         // Menu event
         let menu = menuButtonEvent(input.menuEvent, category: selectedCategory)
         
+        // Like event
+        let likeEvent = like(input.likeEvent, category: selectedCategory)
+        
         // 새로고침을 하는 상황
         let refreshTrigger = makeRefreshTrigger(trigger: [
             selectedCategory.map { _ in () },
             input.pullToRefresh,
-            menu.asObservable().map { _ in () }
+            menu.asObservable().map { _ in () },
+            likeEvent
         ])
         
         // 데이터 불러오기
@@ -99,11 +104,6 @@ final class CommunityViewModel {
             menuComplete: menu
         )
     }
-    
-    // MARK: - Public helpers (필요 시)
-    private func getUserId() -> String {
-        Auth.auth().currentUser?.uid ?? ""
-    }
 }
 
 // MARK: - Pipeline builders
@@ -122,7 +122,7 @@ private extension CommunityViewModel {
             .share(replay: 1)
     }
     
-    // 초기 로드 + 카테고리 변경 + 풀투리프레시
+    // 새로고침 트리거
     func makeRefreshTrigger(trigger: [Observable<Void>])
     -> Observable<Void> {
         Observable.merge(trigger)
@@ -209,6 +209,32 @@ private extension CommunityViewModel {
                 }
             }
             .asDriver(onErrorJustReturn: [:])
+    }
+}
+
+// MARK: - Like Button Event
+extension CommunityViewModel {
+    private func like(_ input: Observable<CommunityModel>, category: Observable<CommunitySectionType>) -> Observable<Void> {
+        return input
+            .withLatestFrom(category) { ($0, $1) }
+            .flatMapFirst { [weak self] (data, category) -> Observable<Void> in
+                guard let self, let userId = Auth.auth().currentUser?.uid else { return .empty() }
+                
+                let newLiker = data.like.contains(userId)
+                ? data.like.filter { $0 != userId }
+                : (data.like + [userId])
+                
+                return self.findPostId(section: category, postCode: data.postCode)
+                    .asObservable()
+                    .flatMap { id -> Observable<Void> in
+                        guard !id.isEmpty else { return .empty() }
+                        var updateData = data
+                        updateData.like = newLiker
+                        return FirestoreManager.shared.updateDocument(collection: category.collectionName, documentId: id, data: updateData)
+                            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                            .andThen(.just(()))
+                    }
+            }
     }
 }
 
