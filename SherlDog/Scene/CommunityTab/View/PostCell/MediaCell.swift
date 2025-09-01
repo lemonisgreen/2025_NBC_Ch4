@@ -28,9 +28,7 @@ final class MediaCell: UICollectionViewCell {
     
     // 외부에서 URL 문자열을 받는 형태
     func settingCell(_ urlString: String) {
-        let size = imageView.bounds.size == .zero
-        ? CGSize(width: UIScreen.main.bounds.width - 24, height: 192)
-        : imageView.bounds.size
+        let size = imageView.bounds.size
         
         let processor = DownsamplingImageProcessor(size: size)
         imageView.kf.indicatorType = .activity

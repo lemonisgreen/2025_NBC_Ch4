@@ -11,11 +11,14 @@ import FirebaseFirestore
 // MARK: - CommunityModel
 struct CommunityModel: Codable {
     let userId: String
-    let profileImage: String
-    let name: String
-    let info: [PetProfile]
+    var profileImage: String = ""
+    var name: String = ""
+    var petProfile: [PetProfile] = []
     let postDate: Timestamp
     let contentImage: [String]
     let content: String
+    var like: [String] = []
+    var previewComment: [String] = []
+    var postCode: String = UUID().uuidString
     var isExpanded: Bool = false
 }

@@ -65,7 +65,7 @@ class InvLogViewModel {
         let data = CommunityModel(userId: userId,
                                   profileImage: humanProfile.image,
                                   name: humanProfile.nickname,
-                                  info: petProfile,
+                                  petProfile: petProfile,
                                   postDate: Timestamp(date: Date()),
                                   contentImage: [image],
                                   content: content)

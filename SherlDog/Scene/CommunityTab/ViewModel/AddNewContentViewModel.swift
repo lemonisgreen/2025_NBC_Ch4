@@ -25,7 +25,7 @@ final class AddNewContentViewModel {
     
     struct Output {
         let petProfile = BehaviorRelay<[PetProfile]>(value: [])
-        let userProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
+//        let userProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
         let selectedProfileIndex = BehaviorRelay<[Int]>(value: [])
         let selectedImageIdentifiers = BehaviorRelay<[String]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
@@ -127,8 +127,7 @@ final class AddNewContentViewModel {
     }
     
     private func addPost() {
-        guard let userId = Auth.auth().currentUser?.uid,
-              let userProfile = output.userProfile.value else { return }
+        guard let userId = Auth.auth().currentUser?.uid else { return }
         let selectedIndex = output.selectedProfileIndex.value
         let petProfiles = selectedIndex.map { self.output.petProfile.value[$0] }
         
@@ -138,9 +137,6 @@ final class AddNewContentViewModel {
                 guard let self else { return Completable.error(NSError(domain: "", code: 0, userInfo: nil)) }
                 
                 let uploadData = CommunityModel(userId: userId,
-                                                profileImage: userProfile.image,
-                                                name: userProfile.nickname,
-                                                info: petProfiles,
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
                                                 content: self.text.value)
@@ -165,7 +161,7 @@ final class AddNewContentViewModel {
         
         let uploads: [Single<String>] = images.map { image in
             Single<String>.create { observer in
-                FirebaseImageManager.shared.uploadDetectiveMateImage(image) { [weak self] result in
+                FirebaseImageManager.shared.uploadDetectiveMateImage(image) { result in
                     switch result {
                     case .success(let imageUrl):
                         observer(.success(imageUrl))
@@ -184,12 +180,12 @@ final class AddNewContentViewModel {
     private func fetchProfiles() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        FirestoreManager.shared.fetchHumanProfile(userId: userId)
-            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] profile in
-                self?.output.userProfile.accept(profile)
-            })
-            .disposed(by: disposeBag)
+//        FirestoreManager.shared.fetchHumanProfile(userId: userId)
+//            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+//            .subscribe(onSuccess: { [weak self] profile in
+//                self?.output.userProfile.accept(profile)
+//            })
+//            .disposed(by: disposeBag)
         
         FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
             .subscribe(onSuccess: { [weak self] profile in

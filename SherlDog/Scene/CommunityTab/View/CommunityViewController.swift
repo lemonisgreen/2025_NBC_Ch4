@@ -10,6 +10,7 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import RxDataSources
+import FirebaseAuth
 
 // 레이아웃/등록/데이터소스에서 공통 사용
 enum PostElementKind {
@@ -17,9 +18,20 @@ enum PostElementKind {
     static let footer = "post-footer-kind"
 }
 
+// 셀 메뉴 버튼 타입
+enum PostMenuEvent {
+    case fix
+    case delete(String)
+    case report(String)
+    case block(String)
+    case error
+}
+
 // MARK: - CommunityViewController
 final class CommunityViewController: UIViewController {
     
+    private let likeButtonEvent = PublishRelay<Void>()
+    private let menuEvent = PublishRelay<PostMenuEvent>()
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
     
@@ -54,7 +66,8 @@ extension CommunityViewController {
         // MARK: - Inputs
         let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
                                              pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
-                                             fetchMore: Observable.empty())
+                                             fetchMore: Observable.empty(),
+                                             menuEvent: self.menuEvent.asObservable())
         
         self.addButton.rx.tap
             .asSignal()
@@ -92,6 +105,115 @@ extension CommunityViewController {
         output.isUpdating
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
+        
+        output.menuComplete
+            .emit(onNext: { [weak self] type in
+                self?.completeAlert(type: type)
+            })
+            .disposed(by: disposeBag)
+    }
+}
+
+// MARK: - Cell Menu Button Setting
+extension CommunityViewController {
+    private func isWriter(_ postUserId: String) -> Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        return postUserId == currentUserId
+    }
+    
+    private func myPostMenu(post: CommunityModel) -> UIMenu {
+        let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                               SDLiteral.CommunityView.fix)) { [weak self] action in
+            self?.menuEvent.accept(.fix)
+        }
+        
+        let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                  SDLiteral.CommunityView.delete)) { [weak self] _ in
+            self?.showMenuAlert(type: .delete(post.postCode))
+        }
+        
+        return UIMenu(children: [fixAction, deleteAction])
+    }
+    
+    private func otherPostMenu(post: CommunityModel) -> UIMenu {
+        let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                 SDLiteral.CommunityView.block)) { [weak self] _ in
+            self?.showMenuAlert(type: .block(post.userId))
+        }
+        
+        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
+            self?.showMenuAlert(type: .report(post.postCode))
+        }
+        
+        return UIMenu(children: [blockAction, reportAction])
+    }
+    
+    private func showMenuAlert(type: PostMenuEvent) {
+        switch type {
+        case .fix, .error:
+            return
+        default:
+            break
+        }
+        
+        var title: String {
+            switch type {
+            case .fix: return    SDLiteral.CommunityView.fix
+            case .delete: return SDLiteral.CommunityView.delete
+            case .report: return SDLiteral.CommunityView.report
+            case .block: return  SDLiteral.CommunityView.block
+            case .error: return  SDLiteral.CommunityView.error
+            }
+        }
+        
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.menuAlertMessage, title),
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.AlertMessage.cancel,
+                    action: nil
+                ),
+                CustomAlertViewController.AlertButton(
+                    title: title,
+                    action: { [weak self] in
+                        self?.menuEvent.accept(type)
+                    }
+                )
+            ]
+        )
+        
+        self.present(alert, animated: true)
+    }
+    
+    private func completeAlert(type: PostMenuEvent) {
+        switch type {
+        case .fix, .error:
+            return
+        default:
+            break
+        }
+        
+        var message: String {
+            switch type {
+            case .delete: SDLiteral.CommunityView.delete
+            case .block:  SDLiteral.CommunityView.block
+            case .report: SDLiteral.CommunityView.report
+            default: String()
+            }
+        }
+        
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert, message),
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.AlertMessage.cancel,
+                    action: nil
+                )
+            ]
+        )
+        
+        self.present(alert, animated: true)
     }
 }
 
@@ -120,6 +242,11 @@ extension CommunityViewController {
                     ) as? PostHeaderView else { return .init() }
                     
                     header.settingCell(data: sectionModel)
+                    header.settingMenu(
+                        menu: self.isWriter(sectionModel.userId)
+                        ? self.myPostMenu(post: sectionModel)
+                        : self.otherPostMenu(post: sectionModel)
+                    )
                     
                     return header
                     
@@ -134,6 +261,12 @@ extension CommunityViewController {
                     
                     footer.settingCell(data: sectionModel)
                     footer.updatePage(total: count, current: 0)
+                    
+                    footer.rx.likeButtonTap
+                        .subscribe(onNext: { [weak self] in
+                            self?.likeButtonEvent.accept(())
+                        })
+                        .disposed(by: footer.disposeBag)
                     
                     return footer
                     

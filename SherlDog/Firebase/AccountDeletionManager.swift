@@ -120,7 +120,7 @@ final class AccountDeletionManager {
     // MARK: - 데이터 삭제
     private func deleteUserData(userId: String, completion: @escaping (Bool) -> Void) {
         let db = Firestore.firestore()
-        let collectionsToDelete = ["HumanProfile", "PetProfile", "clues", "WalkResult", "users", "InvLog"]
+        let collectionsToDelete = SDLiteral.CollectionName.allCases.map { $0.rawValue }
         
         var deletionTasks = 0
         let totalTasks = collectionsToDelete.count

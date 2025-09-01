@@ -6,9 +6,12 @@
 //
 
 import UIKit
+import RxSwift
+import RxCocoa
 import SnapKit
 import Kingfisher
 import FirebaseFirestore
+import FirebaseAuth
 
 final class PostHeaderView: UICollectionReusableView {
     static let identifier = "PostHeaderView"
@@ -18,7 +21,7 @@ final class PostHeaderView: UICollectionReusableView {
     private let infoLabel = UILabel()
     private let nameInfoStackView = UIStackView()
     private let hStack = UIStackView()
-    private let dateLabel = UILabel()
+    private let configButton = UIButton()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -32,14 +35,12 @@ final class PostHeaderView: UICollectionReusableView {
         profileImageView.image = nil
         nameLabel.text = nil
         infoLabel.text = nil
-        dateLabel.text = nil
     }
     
     // MARK: - Public
     func settingCell(data: CommunityModel) {
         nameLabel.text = data.name
-        infoLabel.text = self.petProfilesToNames(data.info)
-        dateLabel.text = timestampToDate(data.postDate)
+        infoLabel.text = self.petProfilesToNames(data.petProfile) + " · " + timestampToDate(data.postDate)
         
         let size = CGSize(width: 32, height: 32)
         let processor = DownsamplingImageProcessor(size: size)
@@ -52,6 +53,10 @@ final class PostHeaderView: UICollectionReusableView {
             .onFailureImage(UIImage.petAvatar)
             .set(to: profileImageView)
     }
+    
+    func settingMenu(menu: UIMenu) {
+        configButton.menu = menu
+    }
 }
 
 // MARK: - Data mapping helpers
@@ -62,7 +67,7 @@ extension PostHeaderView {
         
         formatter.dateFormat = checkToday(date)
         ? setTodayStyle(date)
-        : "M월 d일"
+        : "yyyy.MM.dd"
         
         return formatter.string(from: date)
     }
@@ -88,7 +93,7 @@ extension PostHeaderView {
     }
     
     private func petProfilesToNames(_ data: [PetProfile]) -> String {
-        return data.map { $0.name }.joined(separator: ", ")
+        return data.map { $0.name }.joined(separator: " ")
     }
 }
 
@@ -107,21 +112,23 @@ private extension PostHeaderView {
         [profileImageView, nameInfoStackView].forEach { hStack.addArrangedSubview($0) }
         
         addSubview(hStack)
-        addSubview(dateLabel)
+        addSubview(configButton)
         
         // 스타일
         profileImageView.contentMode = .scaleAspectFill
-        profileImageView.layer.cornerRadius = 16
+        profileImageView.layer.cornerRadius = 8
         profileImageView.clipsToBounds = true
         
         nameLabel.font = .body4
         nameLabel.textColor = .textPrimary
         
         infoLabel.font = .alert2
-        infoLabel.textColor = .textTertiary
+        infoLabel.textColor = .gray500
         
-        dateLabel.font = .alert2
-        dateLabel.textColor = .textTertiary
+        configButton.setTitle("···", for: .normal)
+        configButton.setTitleColor(.textPrimary, for: .normal)
+        configButton.titleLabel?.font = .alert2
+        configButton.showsMenuAsPrimaryAction = true
     }
     
     func configureUI() {
@@ -132,11 +139,11 @@ private extension PostHeaderView {
         hStack.snp.makeConstraints {
             $0.top.bottom.equalToSuperview().inset(12)
             $0.leading.equalToSuperview()
-            $0.trailing.lessThanOrEqualTo(dateLabel.snp.leading).offset(-8)
+            $0.trailing.lessThanOrEqualTo(configButton.snp.leading).offset(-8)
         }
         
-        dateLabel.setContentHuggingPriority(.required, for: .horizontal)
-        dateLabel.snp.makeConstraints {
+        configButton.setContentHuggingPriority(.required, for: .horizontal)
+        configButton.snp.makeConstraints {
             $0.trailing.equalToSuperview()
             $0.centerY.equalTo(hStack)
         }

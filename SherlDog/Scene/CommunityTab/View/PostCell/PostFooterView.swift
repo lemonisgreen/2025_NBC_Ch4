@@ -7,17 +7,23 @@
 
 import UIKit
 import SnapKit
+import FirebaseAuth
+import RxSwift
+import RxCocoa
 
 final class PostFooterView: UICollectionReusableView {
     static let identifier = "PostFooterView"
     
+    var disposeBag = DisposeBag()
+    
     private let container = UIStackView()
     private let actionBar = UIStackView()
     private let pageControl = UIPageControl()
-    private let likesLabel = UILabel()
     private let captionLabel = UILabel()
-    private let commentPreviewLabel = UILabel()
+    private let likeButton = UIButton()
+    private let previewCommentButton = UIButton()
     
+    // MARK: - Initialize
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -27,18 +33,29 @@ final class PostFooterView: UICollectionReusableView {
     
     override func prepareForReuse() {
         super.prepareForReuse()
-        likesLabel.text = nil
+        
+        disposeBag = DisposeBag()
         captionLabel.text = nil
-        commentPreviewLabel.text = nil
+        likeButton.setTitle(nil, for: .normal)
+        likeButton.imageView?.tintColor = .gray900
+        previewCommentButton.setTitle(nil, for: .normal)
         pageControl.currentPage = 0
         pageControl.numberOfPages = 0
     }
     
+    // MARK: - Method
     func settingCell(data: CommunityModel) {
+        let likeButtonTitle = data.like.count > 0 ? String(data.like.count) : nil
+        
         captionLabel.text = data.content
-//        likesLabel.text = data.likeCount > 0 ? "좋아요 \(data.likeCount)개" : nil
-//        commentPreviewLabel.text = data.previewComment // 없다면 숨김
-//        commentPreviewLabel.isHidden = (data.previewComment?.isEmpty ?? true)
+        
+        likeButton.configuration?.title = likeButtonTitle
+        likeButton.configuration?.image = self.isLiker(data)
+        ? UIImage(systemName: "heart.fill")?.withTintColor(.keycolorPrimary2, renderingMode: .alwaysOriginal)
+        : UIImage(systemName: "heart")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
+        
+        previewCommentButton.configuration?.title = String(data.previewComment.count)
+        previewCommentButton.isHidden = (data.previewComment.isEmpty ? true : false)
     }
     
     func updatePage(total: Int, current: Int) {
@@ -46,16 +63,29 @@ final class PostFooterView: UICollectionReusableView {
         pageControl.currentPage = min(max(current, 0), total - 1)
         pageControl.isHidden = (total <= 1)
     }
+    
+    private func isLiker(_ data: CommunityModel) -> Bool {
+        guard let userId = Auth.auth().currentUser?.uid else { return false }
+        return data.like.contains(where: { $0 == userId })
+    }
 }
 
-private extension PostFooterView {
-    func setupUI() {
+// MARK: - UI
+extension PostFooterView {
+    private func setupUI() {
+        [likeButton, previewCommentButton]
+            .forEach { actionBar.addArrangedSubview($0) }
+        
+        [captionLabel, actionBar]
+            .forEach { container.addArrangedSubview($0) }
+        
         addSubviews([
             container,
             pageControl
         ])
         
         container.axis = .vertical
+        container.alignment = .leading
         container.spacing = 8
         
         actionBar.axis = .horizontal
@@ -72,28 +102,32 @@ private extension PostFooterView {
         captionLabel.numberOfLines = 0
         captionLabel.lineBreakMode = .byTruncatingTail
         
-        // 여기에 버튼들 추가 가능 (아이콘 버튼 등)
-        // let likeButton = UIButton(type: .system) ...
-        // actionBar.addArrangedSubview(likeButton)
+        // MARK: - likeButton Configuration
+        var likeButtonConfig = UIButton.Configuration.plain()
+        likeButtonConfig.buttonSize = .mini
+        likeButtonConfig.image = UIImage(systemName: "heart")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
+        likeButtonConfig.baseForegroundColor = .gray900
+        likeButtonConfig.title = ""
+        likeButtonConfig.attributedTitle?.font = .body6
+        likeButtonConfig.imagePadding = 4
+        likeButtonConfig.contentInsets = .zero
         
-        likesLabel.font = .alert2
-        likesLabel.textColor = .textPrimary
+        likeButton.configuration = likeButtonConfig
         
-        commentPreviewLabel.font = .alert2
-        commentPreviewLabel.textColor = .textTertiary
-        commentPreviewLabel.numberOfLines = 1
+        // MARK: - previewCommentButton Configuration
+        var commentButtonConfig = UIButton.Configuration.plain()
+        commentButtonConfig.buttonSize = .mini
+        commentButtonConfig.image = UIImage(systemName: "bubble")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
+        commentButtonConfig.baseForegroundColor = .gray900
+        commentButtonConfig.title = ""
+        commentButtonConfig.attributedTitle?.font = .body6
+        commentButtonConfig.imagePadding = 4
+        commentButtonConfig.contentInsets = .zero
         
-        [
-//            actionBar,
-//            likesLabel,
-            captionLabel,
-//            commentPreviewLabel
-        ].forEach {
-            container.addArrangedSubview($0)
-        }
+        previewCommentButton.configuration = commentButtonConfig
     }
     
-    func configureUI() {
+    private func configureUI() {
         container.snp.makeConstraints {
             $0.top.equalToSuperview().offset(16)
             $0.leading.trailing.equalToSuperview()
@@ -104,5 +138,17 @@ private extension PostFooterView {
             $0.top.equalToSuperview().inset(-4)
             $0.leading.trailing.equalToSuperview()
         }
+    }
+}
+
+extension PostFooterView {
+    fileprivate var likeButtonTap: ControlEvent<Void> {
+        self.likeButton.rx.tap
+    }
+}
+
+extension Reactive where Base: PostFooterView {
+    var likeButtonTap: ControlEvent<Void> {
+        base.likeButtonTap
     }
 }
