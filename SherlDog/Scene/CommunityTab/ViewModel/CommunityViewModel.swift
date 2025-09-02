@@ -292,7 +292,7 @@ private extension CommunityViewModel {
     
     func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
         let collection = category.collectionName
-        return FirestoreManager.shared.fetchCollection(
+        return FirestoreManager.shared.fetchCollectionWithoutBlockedUser(
             collection: collection,
             sortField: "postDate",
             descending: true,

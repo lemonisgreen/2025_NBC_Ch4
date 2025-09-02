@@ -8,6 +8,7 @@
 import Foundation
 import FirebaseFirestore
 import RxSwift
+import FirebaseAuth
 
 enum FirestoreError: Error {
     case unknown
@@ -73,19 +74,26 @@ extension FirestoreManager {
     /// false는 최신 데이터가 제일 마지막으로 들어옵니다.
     func fetchCollection<T: Decodable>(
         collection: String,
+        blockedUserids: [String]? = nil,
         sortField: String? = nil,
         descending: Bool = true,
         type: T.Type
     ) -> Single<[T]> {
         return Single.create { [weak self] single in
-            guard let self, let sortField else {
+            guard let self else {
                 single(.failure(FirestoreError.unknown))
                 return Disposables.create()
             }
             
-            let query: Query = sortField.isEmpty
-            ? self.db.collection(collection)
-            : self.db.collection(collection).order(by: sortField, descending: descending)
+            var query: Query = self.db.collection(collection)
+            
+            if let sortField, !sortField.isEmpty {
+                query = query.order(by: sortField, descending: descending)
+            }
+            
+            if let blockedUserids, !blockedUserids.isEmpty {
+                query = query.whereField("userId", notIn: blockedUserids)
+            }
             
             query.getDocuments { snapshot, error in
                 if let error = error {
@@ -99,6 +107,28 @@ extension FirestoreManager {
             }
             return Disposables.create()
         }
+    }
+    
+    func fetchCollectionWithoutBlockedUser<T: Decodable>(
+        collection: String,
+        sortField: String? = nil,
+        descending: Bool = true,
+        type: T.Type
+    ) -> Single<[T]> {
+        return BlockManager.shared.fetchBlockedUsers()
+            .flatMap { [weak self] blockedUsers in
+                guard let self else { return .error(FirestoreError.unknown) }
+                
+                return self.fetchCollection(collection: collection,
+                                            blockedUserids: blockedUsers.isEmpty
+                                            ? nil
+                                            : blockedUsers,
+                                            sortField: sortField,
+                                            descending: true,
+                                            type: type)
+                
+            }
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
     }
     
     //날짜 범위 fetch for day

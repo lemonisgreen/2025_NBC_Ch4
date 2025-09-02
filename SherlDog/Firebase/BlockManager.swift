@@ -25,7 +25,7 @@ extension BlockManager {
     func blockUser(_ userId: String) -> Completable {
         return Completable.create { [weak self] completable in
             guard let self else {
-                completable(.error(FirestoreError.noData))
+                completable(.error(FirestoreError.unknown))
                 return Disposables.create()
             }
             
@@ -49,7 +49,7 @@ extension BlockManager {
     func unblockUser(_ userId: String) -> Completable {
         return Completable.create { [weak self] completable in
             guard let self else {
-                completable(.error(FirestoreError.noData))
+                completable(.error(FirestoreError.unknown))
                 return Disposables.create()
             }
             
@@ -73,7 +73,7 @@ extension BlockManager {
     func fetchBlockedUsers() -> Single<[String]> {
         return Single.create { [weak self] single in
             guard let self else {
-                single(.failure(FirestoreError.noData))
+                single(.failure(FirestoreError.unknown))
                 return Disposables.create()
             }
             
