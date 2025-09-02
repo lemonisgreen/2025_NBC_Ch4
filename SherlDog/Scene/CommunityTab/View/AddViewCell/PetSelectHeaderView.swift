@@ -10,7 +10,8 @@ import SnapKit
 
 // MARK: - 헤더 뷰
 final class PetSelectHeaderView: UICollectionReusableView {
-    static let reuseID = "PetSelectHeaderView"
+    static let identifier: String = "PetSelectHeaderView"
+    
     let titleLabel = UILabel()
 
     override init(frame: CGRect) {

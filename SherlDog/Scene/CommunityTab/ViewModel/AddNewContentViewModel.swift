@@ -11,6 +11,8 @@ import UIKit
 import FirebaseFirestore
 import FirebaseAuth
 import PhotosUI
+import RxDataSources
+import Differentiator
 
 final class AddNewContentViewModel {
     
@@ -25,7 +27,6 @@ final class AddNewContentViewModel {
     
     struct Output {
         let petProfile = BehaviorRelay<[PetProfile]>(value: [])
-//        let userProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
         let selectedProfileIndex = BehaviorRelay<[Int]>(value: [])
         let selectedImageIdentifiers = BehaviorRelay<[String]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
@@ -36,6 +37,8 @@ final class AddNewContentViewModel {
         let uploadComplete = PublishRelay<Void>()
         let error = PublishRelay<String>()
     }
+    
+    typealias petSelectSection = SectionModel<String, PetProfile>
     
     let text = BehaviorRelay<String>(value: "")
     
@@ -129,7 +132,6 @@ final class AddNewContentViewModel {
     private func addPost() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         let selectedIndex = output.selectedProfileIndex.value
-        let petProfiles = selectedIndex.map { self.output.petProfile.value[$0] }
         
         uploadImage()
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -179,13 +181,6 @@ final class AddNewContentViewModel {
     
     private func fetchProfiles() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-//        FirestoreManager.shared.fetchHumanProfile(userId: userId)
-//            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-//            .subscribe(onSuccess: { [weak self] profile in
-//                self?.output.userProfile.accept(profile)
-//            })
-//            .disposed(by: disposeBag)
         
         FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
             .subscribe(onSuccess: { [weak self] profile in

@@ -26,7 +26,7 @@ final class AddNewContentViewController: UIViewController {
     private let contentView = UIView()
     private let selectPetLabel = UILabel()
     private let dropDownButton = UIButton()
-    private let petListTableView = UITableView()
+    private let petListCollectionView = UICollectionView()
     private let contentTextView = UITextView()
     private let addPictureButton = UIButton()
     private lazy var picturesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
@@ -73,7 +73,7 @@ final class AddNewContentViewController: UIViewController {
         
         viewModel.output.petProfile
             .asDriver()
-            .drive(self.petListTableView.rx.items) { tableView, row, item in
+            .drive(self.petListCollectionView.rx.items) { tableView, row, item in
                 guard let cell = tableView.dequeueReusableCell(withIdentifier: PetProfileTableViewCell.identifier, for: IndexPath(row: row, section: 0)) as? PetProfileTableViewCell else { return .init() }
                 
                 cell.settingCell(data: item)
@@ -151,7 +151,7 @@ final class AddNewContentViewController: UIViewController {
             .asDriver(onErrorJustReturn: false)
             .drive(onNext: { [weak self] isExpended in
                 guard let self else { return }
-                let height = self.petListTableView.contentSize.height
+                let height = self.petListCollectionView.contentSize.height
                 
                 self.petListTableViewHeightConstraint?.update(offset: isExpended ? height : 0)
                 
@@ -163,9 +163,9 @@ final class AddNewContentViewController: UIViewController {
     }
     
     private func inputBind() {
-        self.petListTableView.rx.itemSelected
+        self.petListCollectionView.rx.itemSelected
             .compactMap { _ in
-                guard let indexs = self.petListTableView.indexPathsForSelectedRows else { return nil }
+                guard let indexs = self.petListCollectionView.indexPathsForSelectedRows else { return nil }
                 let rows = indexs.map { $0.row }
                 return .profileSelect(rows)
             }
@@ -217,7 +217,7 @@ final class AddNewContentViewController: UIViewController {
         contentView.addSubviews([
             selectPetLabel,
             dropDownButton,
-            petListTableView,
+            petListCollectionView,
             contentTextView,
             picturesCollectionView,
             addPictureButton,
@@ -275,12 +275,12 @@ final class AddNewContentViewController: UIViewController {
         dropDownButton.setImage(UIImage(systemName: "chevron.down"), for: .normal)
         dropDownButton.tintColor = .textPrimary
         
-        petListTableView.register(PetProfileTableViewCell.self, forCellReuseIdentifier: PetProfileTableViewCell.identifier)
-        petListTableView.allowsMultipleSelection = true
-        petListTableView.rowHeight = 44
-        petListTableView.backgroundColor = .keycolorBackground
-        petListTableView.separatorStyle = .singleLine
-        petListTableView.separatorColor = .gray200
+        petListCollectionView.register(PetProfileTableViewCell.self, forCellReuseIdentifier: PetProfileTableViewCell.identifier)
+        petListCollectionView.allowsMultipleSelection = true
+        petListCollectionView.rowHeight = 44
+        petListCollectionView.backgroundColor = .keycolorBackground
+        petListCollectionView.separatorStyle = .singleLine
+        petListCollectionView.separatorColor = .gray200
         
         contentTextView.font = .body3
         contentTextView.backgroundColor = .gray50
@@ -314,7 +314,7 @@ final class AddNewContentViewController: UIViewController {
             $0.trailing.equalToSuperview().inset(16)
         }
         
-        petListTableView.snp.makeConstraints {
+        petListCollectionView.snp.makeConstraints {
             $0.top.equalTo(selectPetLabel.snp.bottom).offset(4)
             $0.leading.trailing.equalToSuperview().inset(16)
             self.petListTableViewHeightConstraint = $0.height.equalTo(0).constraint
@@ -322,7 +322,7 @@ final class AddNewContentViewController: UIViewController {
         
         contentTextView.snp.makeConstraints {
             $0.height.equalTo(400)
-            $0.top.equalTo(petListTableView.snp.bottom).offset(16)
+            $0.top.equalTo(petListCollectionView.snp.bottom).offset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
