@@ -9,7 +9,7 @@ import UIKit
 
 class BottomTabBarController: UITabBarController {
     
-    let mainVC = UINavigationController(rootViewController: MainViewController())
+    let mainVC = UINavigationController(rootViewController: UserProfileViewController())
     let communityVC = UINavigationController(rootViewController: CommunityViewController())
     let myPageVC = UINavigationController(rootViewController: MyPageViewController())
 

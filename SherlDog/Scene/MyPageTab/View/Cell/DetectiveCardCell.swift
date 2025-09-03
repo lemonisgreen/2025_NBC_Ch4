@@ -26,7 +26,7 @@ class DetectiveCardCell: UICollectionViewCell {
     
     private func setupUI() {
         contentView.addSubview(cardView)
-        contentView.backgroundColor = .textInverse
+        contentView.backgroundColor = .clear
         backgroundColor = .clear
         cardView.snp.makeConstraints {
             $0.edges.equalToSuperview()
