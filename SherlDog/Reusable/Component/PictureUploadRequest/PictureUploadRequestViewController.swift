@@ -195,6 +195,7 @@ extension PictureUploadRequestViewController {
                     break
                 default:
                     self.viewModel.input.accept(.setButtonTapped([indexPath.row]))
+                    self.collectionView.deselectItem(at: indexPath, animated: true)
                 }
             })
             .disposed(by: disposeBag)

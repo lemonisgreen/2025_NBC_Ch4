@@ -57,6 +57,7 @@ class SelectAvatarViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
+        collectionViewDefaultSelect()
     }
 }
 
@@ -125,6 +126,14 @@ extension SelectAvatarViewController {
             .disposed(by: disposeBag)
     }
     
+    private func collectionViewDefaultSelect() {
+        if self.viewModel.output.cellData.value.count > 0 {
+            // collectionView 초기 선택
+            self.viewModel.input.accept(.avatarSelect(0))
+            self.collectionView.selectItem(at: IndexPath(row: 0, section: 0), animated: true, scrollPosition: [])
+        }
+    }
+    
     private func setupUI() {
         view.backgroundColor = .textInverse
         
@@ -163,7 +172,7 @@ extension SelectAvatarViewController {
         avatarImageView.contentMode = .scaleAspectFit
         
         detailView.image = .avatarDetail
-        detailView.contentMode = .scaleToFill
+        detailView.contentMode = .scaleAspectFill
         
         detailTitleLabel.font = .highlight4
         detailTitleLabel.textColor = .textSecondary
