@@ -258,6 +258,7 @@ extension CameraViewController: AVCapturePhotoCaptureDelegate {
             guard let viewControllerForPicture else { return }
             viewControllerForPicture.presentationController?.delegate = self
             viewControllerForPicture.sheetPresentationController?.prefersGrabberVisible = true
+            viewControllerForPicture.isModalInPresentation = true
             
             DispatchQueue.main.async {
                 self.present(viewControllerForPicture, animated: true)
