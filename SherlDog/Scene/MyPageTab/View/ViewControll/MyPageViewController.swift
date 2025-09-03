@@ -85,7 +85,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         mypageSettingButton.setImage(UIImage(named: "setting"), for: .normal)
         
         assistantImage.backgroundColor = .keycolorPrimary4
-        assistantImage.layer.cornerRadius = 8
+        assistantImage.layer.cornerRadius = 10
         assistantImage.layer.masksToBounds = true
         
         assistantLabel.font = .title3
@@ -425,12 +425,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             }
         }
         
-        if let sheet = registrationVC.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.selectedDetentIdentifier = .large
-            sheet.prefersGrabberVisible = false
-            sheet.preferredCornerRadius = 20
-        }
+        registrationVC.sheetPresentationController?.setModalSize(type: .large, grabber: false)
         registrationVC.isModalInPresentation = true
         
         present(registrationVC, animated: true)
@@ -456,12 +451,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 })
                 .disposed(by: registrationVC.disposeBag)
             
-            if let sheet = registrationVC.sheetPresentationController {
-                sheet.detents = [.large()]
-                sheet.selectedDetentIdentifier = .large
-                sheet.prefersGrabberVisible = false
-                sheet.preferredCornerRadius = 20
-            }
+            registrationVC.sheetPresentationController?.setModalSize(type: .large, grabber: false)
             registrationVC.isModalInPresentation = true
             
             self.present(registrationVC, animated: true)

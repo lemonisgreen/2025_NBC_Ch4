@@ -54,7 +54,7 @@ class DetectiveCardCell: UICollectionViewCell {
         cardView.detectiveBreed.text = profile.breed
         cardView.detectiveAge.text = "\(age)세"
         cardView.detectiveIntroduce.text = "# \(profile.introduce)"
-        FirebaseImageManager.shared.downloadPetImage(petId: profile.petProfileId, userId: profile.userId) { [weak self] url in
+        FirebaseImageManager.shared.getPetImageURL(petId: profile.petProfileId, userId: profile.userId) { [weak self] url in
             guard let self else { return }
             
             let processor = DownsamplingImageProcessor(size: self.cardView.detectivePhotoImageView.bounds.size) // 크기 지정 다운 샘플링

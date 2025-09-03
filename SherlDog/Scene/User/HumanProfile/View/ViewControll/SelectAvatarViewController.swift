@@ -57,6 +57,7 @@ class SelectAvatarViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
+        collectionViewDefaultSelect()
     }
 }
 
@@ -79,15 +80,17 @@ extension SelectAvatarViewController {
             .disposed(by: disposeBag)
         
         self.viewModel.output.selectedAvatar
-            .asSignal()
-            .emit(onNext: { [weak self] data in
-                guard let self else { return }
-                
-                self.avatarImageView.image = UIImage(named: data.avatar)
-                self.detailTitleLabel.text = data.title
-                self.detailLabel.text = data.content
-            })
-            .disposed(by: disposeBag)
+            .compactMap { $0 }
+                .asSignal(onErrorSignalWith: .empty())
+                .emit(onNext: { [weak self] data in
+                    guard let self = self else { return }
+                    
+                    self.avatarImageView.image = UIImage(named: data.avatar)
+                    self.detailTitleLabel.text = data.title
+                    self.detailLabel.text = data.content
+                    self.choiceButton.isEnabled = true
+                })
+                .disposed(by: disposeBag)
         
         self.viewModel.output.moveToBack
             .asSignal()
@@ -121,6 +124,14 @@ extension SelectAvatarViewController {
             .map { .completeSelect }
             .bind(to: viewModel.input)
             .disposed(by: disposeBag)
+    }
+    
+    private func collectionViewDefaultSelect() {
+        if self.viewModel.output.cellData.value.count > 0 {
+            // collectionView 초기 선택
+            self.viewModel.input.accept(.avatarSelect(0))
+            self.collectionView.selectItem(at: IndexPath(row: 0, section: 0), animated: true, scrollPosition: [])
+        }
     }
     
     private func setupUI() {
@@ -161,7 +172,7 @@ extension SelectAvatarViewController {
         avatarImageView.contentMode = .scaleAspectFit
         
         detailView.image = .avatarDetail
-        detailView.contentMode = .scaleToFill
+        detailView.contentMode = .scaleAspectFill
         
         detailTitleLabel.font = .highlight4
         detailTitleLabel.textColor = .textSecondary

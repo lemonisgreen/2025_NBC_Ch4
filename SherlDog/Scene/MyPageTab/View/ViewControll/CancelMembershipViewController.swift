@@ -1,5 +1,5 @@
 //
-//  CancelMembership.swift
+//  WithdrawViewController.swift
 //  SherlDog
 //
 //  Created by 전원식 on 6/24/25.
@@ -10,7 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-class CancelMembershipViewController: UIViewController {
+class WithdrawViewController: UIViewController {
     
     private let disposeBag = DisposeBag()
     
@@ -58,7 +58,7 @@ class CancelMembershipViewController: UIViewController {
             contentView.addSubview($0)
         }
         
-        imageView.image = UIImage(named: "cancelMembership")
+        imageView.image = UIImage(named: "withdrawFile")
         imageView.contentMode = .scaleAspectFit
         
         mainLabel.text = "그동안 정말 많은 수사를 함께 했네요.\n함께한 시간 모두\n소중한 추억으로 남을 거예요."

@@ -21,7 +21,7 @@ class SelectAvatarViewModel {
     struct Output {
         let cellData = BehaviorRelay(value: [SelectAvatarDataSource]())
         let moveToBack = PublishRelay<Void>()
-        let selectedAvatar = PublishRelay<AvatarModel>()
+        let selectedAvatar = BehaviorRelay<AvatarModel?>(value: nil)
         let icon = BehaviorRelay(value: "")
         let completeSelect = PublishRelay<Void>()
     }

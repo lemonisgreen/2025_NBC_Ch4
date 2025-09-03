@@ -47,8 +47,8 @@ class CreateAssistantProfileViewController: UIViewController {
         configureUI()
         
         if viewModel.isEditMode.value {
-               setInitialUIValues()
-           }
+            setInitialUIValues()
+        }
         
         bind()
         bindViewModel()
@@ -62,37 +62,39 @@ extension CreateAssistantProfileViewController {
         viewModel.setEditMode(with: profile)
         
         DispatchQueue.main.async { [weak self] in
-              if self?.isViewLoaded == true {
-                  self?.setInitialUIValues()
-              }
-          }
+            if self?.isViewLoaded == true {
+                self?.setInitialUIValues()
+            }
+        }
     }
     
     private func setInitialUIValues() {
         // 텍스트 설정
         nicknameTextField.text = viewModel.nickname.value
         introduceTextView.text = viewModel.introduce.value
-   
+        
         // 글자 수 업데이트
         nickNameConstraintsLabel.text = "\(viewModel.nickname.value.count) / 12자"
         introduceConstraintsLabel.text = "\(viewModel.introduce.value.count) / 150자"
-    
+        
         nicknameTextField.sendActions(for: .editingChanged)
         
         if let delegate = introduceTextView.delegate {
             delegate.textViewDidChange?(introduceTextView)
         }
+        
+        self.nextButton.isEnabled = true
     }
     
     private func bind() {
         Observable.combineLatest(
-            self.cameraViewModel.output.capturedImage,
-            self.avatarViewModel.output.icon,
+            self.viewModel.imageForUpload,
+            self.viewModel.imageString,
             self.nicknameTextField.rx.text,
             self.introduceTextView.rx.text
         )
-        .subscribe(onNext: { [weak self] image, avatar, nickName, introduce in
-            if image != nil || avatar != "",
+        .subscribe(onNext: { [weak self] image, imageString, nickName, introduce in
+            if image != nil || imageString != "",
                nickName != "",
                introduce != "" {
                 if let nickName, nickName.contains(" ") {
@@ -111,7 +113,25 @@ extension CreateAssistantProfileViewController {
         
         navigationBackButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.navigationController?.popViewController(animated: true)
+                guard let self = self else { return }
+                
+                let alert = CustomAlertViewController(
+                    message: "작성을 종료하시겠습니까?",
+                    subMessage: "작성한 정보는 저장되지 않습니다.",
+                    buttons: [
+                        CustomAlertViewController.AlertButton(
+                            title: "취소",
+                            action: nil
+                        ),
+                        CustomAlertViewController.AlertButton(
+                            title: "확인",
+                            action: { [weak self] in
+                                self?.navigationController?.popViewController(animated: true)
+                            }
+                        )
+                    ]
+                )
+                self.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -185,13 +205,7 @@ extension CreateAssistantProfileViewController {
                 
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: pictureViewModel, cameraViewModel: cameraViewModel, avatarViewModel: avatarViewModel))
                 requestView.modalPresentationStyle = .pageSheet
-                
-                if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 400 }]
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.prefersGrabberVisible = true
-                    sheet.preferredCornerRadius = 20
-                }
+                requestView.sheetPresentationController?.setModalSize(type: .pictureWithAvatar, grabber: true)
                 
                 self.present(requestView, animated: true)
             })
@@ -250,7 +264,7 @@ extension CreateAssistantProfileViewController {
                         .onFailureImage(UIImage.petProfile)
                         .onSuccess { result in }
                         .onFailure { error in }
-                        .set(to: self.profileImageView) 
+                        .set(to: self.profileImageView)
                 }
             })
             .disposed(by: disposeBag)
@@ -291,7 +305,7 @@ extension CreateAssistantProfileViewController {
         // 다음 버튼
         nextButton.rx.tap
             .subscribe(onNext: { [weak self] in
-                self?.viewModel.uploadAndSaveProfile()
+                self?.viewModel.saveProfile()
             })
             .disposed(by: disposeBag)
         
