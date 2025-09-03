@@ -12,12 +12,6 @@ import SnapKit
 import RxDataSources
 import FirebaseAuth
 
-// 레이아웃/등록/데이터소스에서 공통 사용
-enum PostElementKind {
-    static let header = "post-header-kind"
-    static let footer = "post-footer-kind"
-}
-
 // 셀 메뉴 버튼 타입
 enum PostMenuEvent {
     case fix
@@ -220,7 +214,6 @@ extension CommunityViewController {
 
 // MARK: - DataSource
 extension CommunityViewController {
-    
     private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection> {
         return RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection>(
             configureCell: { _, collectionView, indexPath, item in
@@ -235,7 +228,7 @@ extension CommunityViewController {
                 // 섹션 모델 == CommunityModel
                 let sectionModel = dataSource.sectionModels[indexPath.section].model
                 switch kind {
-                case PostElementKind.header:
+                case UICollectionView.elementKindSectionHeader:
                     guard let header = collectionView.dequeueReusableSupplementaryView(
                         ofKind: kind,
                         withReuseIdentifier: PostHeaderView.identifier,
@@ -251,7 +244,7 @@ extension CommunityViewController {
                     
                     return header
                     
-                case PostElementKind.footer:
+                case UICollectionView.elementKindSectionFooter:
                     guard let footer = collectionView.dequeueReusableSupplementaryView(
                         ofKind: kind,
                         withReuseIdentifier: PostFooterView.identifier,
@@ -303,15 +296,15 @@ extension CommunityViewController {
             let header = NSCollectionLayoutBoundarySupplementaryItem(
                 layoutSize: .init(widthDimension: .fractionalWidth(1.0),
                                   heightDimension: .estimated(64)),
-                elementKind: PostElementKind.header,
+                elementKind: UICollectionView.elementKindSectionHeader,
                 alignment: .top
             )
             
             // 푸터
             let footer = NSCollectionLayoutBoundarySupplementaryItem(
                 layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                                  heightDimension: .estimated(20)),
-                elementKind: PostElementKind.footer,
+                                  heightDimension: .estimated(60)),
+                elementKind: UICollectionView.elementKindSectionFooter,
                 alignment: .bottom
             )
             
@@ -328,7 +321,7 @@ extension CommunityViewController {
                 let page = Int(round(offset.x / pageWidth))
                 let indexPath = IndexPath(item: 0, section: row)
                 
-                if let footerView = self.collectionView.supplementaryView(forElementKind: PostElementKind.footer,
+                if let footerView = self.collectionView.supplementaryView(forElementKind: UICollectionView.elementKindSectionFooter,
                                                                           at: indexPath) as? PostFooterView {
                     let total = (self.dataSource.sectionModels[row].items.count)
                     footerView.updatePage(total: total, current: page)
@@ -356,17 +349,15 @@ extension CommunityViewController {
         
         collectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
         collectionView.register(PostHeaderView.self,
-                                forSupplementaryViewOfKind: PostElementKind.header,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
                                 withReuseIdentifier: PostHeaderView.identifier)
         collectionView.register(PostFooterView.self,
-                                forSupplementaryViewOfKind: PostElementKind.footer,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
                                 withReuseIdentifier: PostFooterView.identifier)
         collectionView.backgroundColor = .textInverse
         collectionView.refreshControl = refreshControl
         
-        let config = UIImage.SymbolConfiguration(pointSize: 64, weight: .bold)
-        let image = UIImage(systemName: "plus.circle.fill", withConfiguration: config)
-        addButton.setImage(image, for: .normal)
+        addButton.setImage(.postAdd, for: .normal)
         addButton.tintColor = .keycolorPrimary2
     }
     

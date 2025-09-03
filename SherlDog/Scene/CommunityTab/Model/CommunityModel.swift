@@ -13,7 +13,7 @@ struct CommunityModel: Codable {
     let userId: String
     var profileImage: String = ""
     var name: String = ""
-    var petProfile: [PetProfile] = []
+    var petProfile: [PetProfile]
     let postDate: Timestamp
     let contentImage: [String]
     let content: String

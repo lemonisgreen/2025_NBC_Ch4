@@ -26,21 +26,32 @@ final class AddNewContentViewModel {
     }
     
     struct Output {
-        let petProfile = BehaviorRelay<[PetProfile]>(value: [])
-        let selectedProfileIndex = BehaviorRelay<[Int]>(value: [])
+        let petSelectCellData = BehaviorRelay<[PetSelectSection]>(value: [])
+        let isExpanded = BehaviorRelay<Bool>(value: false)
+        let selectedIndex = BehaviorRelay<[Int]>(value: [])
+        let selectedProfile = BehaviorRelay<[PetProfile]>(value: [])
         let selectedImageIdentifiers = BehaviorRelay<[String]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
-        let isExpended = BehaviorRelay<Bool?>(value: nil)
-        let maxPictureCount: Int = 10
+        let maxPictureCount: Int = 5
         let addPicture = PublishRelay<[String]>()
         let addedPictures = BehaviorRelay<[UIImage]>(value: [])
         let uploadComplete = PublishRelay<Void>()
         let error = PublishRelay<String>()
     }
     
-    typealias petSelectSection = SectionModel<String, PetProfile>
+    struct PetSelectItem<Base>: IdentifiableType, Equatable {
+        let base: Base
+        var identity = UUID()
+        
+        static func == (lhs: AddNewContentViewModel.PetSelectItem<Base>, rhs: AddNewContentViewModel.PetSelectItem<Base>) -> Bool {
+            lhs.identity == rhs.identity
+        }
+    }
+    
+    typealias PetSelectSection = AnimatableSectionModel<String, PetSelectItem<PetProfile>>
     
     let text = BehaviorRelay<String>(value: "")
+    var dataBox = [PetSelectSection]()
     
     private let disposeBag = DisposeBag()
     
@@ -58,15 +69,20 @@ final class AddNewContentViewModel {
                 guard let self else { return }
                 
                 switch input {
-                case .dropdownTap:
-                    self.output.isExpended.accept(!(self.output.isExpended.value ?? false))
-                    
                 case .addButtonTap:
                     self.output.isLoading.accept(true)
                     self.addPost()
                     
-                case .profileSelect(let row):
-                    self.output.selectedProfileIndex.accept(row)
+                case .dropdownTap:
+                    toggleCell()
+                    
+                case .profileSelect(let rows):
+                    let selectedIndex = rows
+                    let petSelectCellData = dataBox.flatMap { $0.items.map { $0.base } }
+                    let selectedPets = selectedIndex.map { petSelectCellData[$0] }
+                    
+                    self.output.selectedIndex.accept(rows)
+                    self.output.selectedProfile.accept(selectedPets)
                     
                 case .addPicture:
                     let ids = self.output.selectedImageIdentifiers.value
@@ -92,6 +108,26 @@ final class AddNewContentViewModel {
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func toggleCell() {
+        let isExpanded = !output.isExpanded.value
+        self.output.isExpanded.accept(isExpanded)
+        
+        if isExpanded {
+            // 펼치기: 섹션 스냅샷을 실제 섹션에 적용
+            self.output.petSelectCellData.accept(self.dataBox)
+        } else {
+            // 접기: 섹션에서 아이템 제거 (섹션은 유지)
+            let namesArray = self.output.selectedProfile.value
+            let names = self.output.selectedProfile.value.map { $0.name }.joined(separator: " ")
+            let sample = [PetSelectSection(model: namesArray.isEmpty
+                                           ? SDLiteral.AddNewContentView.petSelectHeader
+                                           : String(format: SDLiteral.AddNewContentView.selectedPetNames, names),
+                                          items: [])]
+            
+            self.output.petSelectCellData.accept(sample)
+        }
     }
     
     private func loadOrderedImages(from results: [PHPickerResult]) -> Single<[UIImage]> {
@@ -131,7 +167,7 @@ final class AddNewContentViewModel {
     
     private func addPost() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
-        let selectedIndex = output.selectedProfileIndex.value
+        let selectedPets = self.output.selectedProfile.value
         
         uploadImage()
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -139,11 +175,13 @@ final class AddNewContentViewModel {
                 guard let self else { return Completable.error(NSError(domain: "", code: 0, userInfo: nil)) }
                 
                 let uploadData = CommunityModel(userId: userId,
+                                                petProfile: selectedPets,
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
                                                 content: self.text.value)
                 
-                return FirestoreManager.shared.createDocument(collection: "DetectiveMate", data: uploadData)
+                return FirestoreManager.shared.createDocument(collection: SDLiteral.CollectionName.detectiveMate.rawValue,
+                                                              data: uploadData)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             }
             .subscribe(onCompleted: { [weak self] in
@@ -183,8 +221,20 @@ final class AddNewContentViewModel {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
         FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
-            .subscribe(onSuccess: { [weak self] profile in
-                self?.output.petProfile.accept(profile)
+            .map { profile in
+                // UI 섹션으로 매핑
+                let box: [PetSelectItem] = profile.map { PetSelectItem(base: $0) }
+                
+                return [PetSelectSection(model: SDLiteral.AddNewContentView.petSelectHeader, items: box)]
+            }
+            .subscribe(onSuccess: { [weak self] sections in
+                self?.dataBox = sections
+                
+                // ✅ 초기 상태: 접힘(isExpanded=false)이므로 헤더만 보이게 빈 아이템 섹션을 방출
+                let collapsed: [PetSelectSection] = [
+                    PetSelectSection(model: SDLiteral.AddNewContentView.petSelectHeader, items: [])
+                ]
+                self?.output.petSelectCellData.accept(collapsed)
             })
             .disposed(by: disposeBag)
     }

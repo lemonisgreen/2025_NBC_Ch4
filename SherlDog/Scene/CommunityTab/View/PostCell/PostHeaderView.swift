@@ -40,7 +40,9 @@ final class PostHeaderView: UICollectionReusableView {
     // MARK: - Public
     func settingCell(data: CommunityModel) {
         nameLabel.text = data.name
-        infoLabel.text = self.petProfilesToNames(data.petProfile) + " · " + timestampToDate(data.postDate)
+        infoLabel.text = self.petProfilesToNames(data.petProfile)
+        + SDLiteral.CommunityView.separateDot
+        + timestampToDate(data.postDate)
         
         let size = CGSize(width: 32, height: 32)
         let processor = DownsamplingImageProcessor(size: size)
@@ -63,26 +65,11 @@ final class PostHeaderView: UICollectionReusableView {
 extension PostHeaderView {
     private func timestampToDate(_ time: Timestamp) -> String {
         let date = time.dateValue()
-        let formatter = DateFormatter()
-        
-        formatter.dateFormat = checkToday(date)
-        ? setTodayStyle(date)
-        : "yyyy.MM.dd"
+        let formatter = checkToday(date)
+        ? DateFormatter.todayStyle(date)
+        : DateFormatter.yyyyMMddDot
         
         return formatter.string(from: date)
-    }
-    
-    private func setTodayStyle(_ date: Date) -> String {
-        let now = Date()
-        let diff = now.timeIntervalSince(date)
-        
-        if diff < 60 {
-            return "방금 전"
-        } else if diff < 3600 {
-            return "\(Int(diff / 60))분 전"
-        } else {
-            return "\(Int(diff / 3600))시간 전"
-        }
     }
     
     private func checkToday(_ date: Date) -> Bool {
@@ -125,9 +112,9 @@ private extension PostHeaderView {
         infoLabel.font = .alert2
         infoLabel.textColor = .gray500
         
-        configButton.setTitle("···", for: .normal)
+        configButton.setTitle(SDLiteral.CommunityView.dotdotdot, for: .normal)
         configButton.setTitleColor(.textPrimary, for: .normal)
-        configButton.titleLabel?.font = .alert2
+        configButton.titleLabel?.font = .body1
         configButton.showsMenuAsPrimaryAction = true
     }
     

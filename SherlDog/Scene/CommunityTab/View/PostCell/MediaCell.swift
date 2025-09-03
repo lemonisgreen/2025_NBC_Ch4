@@ -37,7 +37,7 @@ final class MediaCell: UICollectionViewCell {
             .setProcessor(processor)
             .cacheOriginalImage()
             .fade(duration: 0.25)
-            .onFailureImage(UIImage(systemName: "exclamationmark.icloud"))
+            .onFailureImage(UIImage(systemName: "xmark"))
             .set(to: imageView)
     }
 }

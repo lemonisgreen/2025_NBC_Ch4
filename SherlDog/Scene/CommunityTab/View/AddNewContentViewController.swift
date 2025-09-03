@@ -11,11 +11,14 @@ import RxSwift
 import RxCocoa
 import Kingfisher
 import PhotosUI
+import RxDataSources
 
 final class AddNewContentViewController: UIViewController {
 
     private let viewModel = AddNewContentViewModel()
     private let disposeBag = DisposeBag()
+    
+    private lazy var dataSource = setDataSource()
     
     // MARK: - UIProperty
     private let navigationTitleLabel = UILabel()
@@ -24,15 +27,14 @@ final class AddNewContentViewController: UIViewController {
     
     private let scrollView = UIScrollView()
     private let contentView = UIView()
-    private let selectPetLabel = UILabel()
-    private let dropDownButton = UIButton()
-    private let petListCollectionView = UICollectionView()
+    private lazy var petListCollectionView = UICollectionView(frame: .zero, collectionViewLayout: petSelectCollectionViewLayout())
     private let contentTextView = UITextView()
+    private let textViewPlaceholderLabel = UILabel()
+    private let selectedPictureCountLabel = UILabel()
     private let addPictureButton = UIButton()
-    private lazy var picturesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
+    private lazy var picturesCollectionView = UICollectionView(frame: .zero, collectionViewLayout: picturesCollectionViewCompositionalLayout())
     private let loadingIndicator = CustomLoadingIndicator()
     
-    private var petListTableViewHeightConstraint: Constraint?
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -71,14 +73,42 @@ final class AddNewContentViewController: UIViewController {
             })
             .disposed(by: disposeBag)
         
-        viewModel.output.petProfile
+        viewModel.output.petSelectCellData
             .asDriver()
-            .drive(self.petListCollectionView.rx.items) { tableView, row, item in
-                guard let cell = tableView.dequeueReusableCell(withIdentifier: PetProfileTableViewCell.identifier, for: IndexPath(row: row, section: 0)) as? PetProfileTableViewCell else { return .init() }
+            .drive(self.petListCollectionView.rx.items(dataSource: dataSource))
+            .disposed(by: disposeBag)
+        
+        viewModel.output.petSelectCellData
+            .bind { [weak self] sections in
+                guard let self else { return }
+                let headerH: CGFloat = 50
+                let rowH: CGFloat = 50
+                let rowSpacing: CGFloat = 8
+                let itemCount = sections.first?.items.count ?? 0
+                let rowsHeight = (CGFloat(itemCount) * rowH) + (CGFloat(max(0, itemCount - 1)) * rowSpacing)
+                let total = headerH + rowsHeight
                 
-                cell.settingCell(data: item)
+                UIView.animate(withDuration: 0.2) {
+                    self.petListCollectionView.snp.updateConstraints { $0.height.equalTo(total) }
+                }
                 
-                return cell
+                self.reselect()
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.isExpanded
+            .asSignal(onErrorJustReturn: false)
+            .emit { [weak self] isExpanded in
+                guard let self,
+                      let header = self.petListCollectionView.supplementaryView(
+                        forElementKind: UICollectionView.elementKindSectionHeader,
+                        at: IndexPath(row: 0, section: 0)) as? PetSelectHeaderView else { return }
+                
+                header.setDisclosure(isExpanded: isExpanded)
+                
+                self.petListCollectionView.layer.borderColor = isExpanded
+                ? UIColor.gray100.cgColor
+                : UIColor.gray300.cgColor
             }
             .disposed(by: disposeBag)
         
@@ -96,6 +126,11 @@ final class AddNewContentViewController: UIViewController {
                 
                 return cell
             }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.addedPictures
+            .map { String(format: SDLiteral.AddNewContentView.pictureCount, $0.count) }
+            .bind(to: self.selectedPictureCountLabel.rx.text)
             .disposed(by: disposeBag)
         
         viewModel.output.addPicture
@@ -121,15 +156,16 @@ final class AddNewContentViewController: UIViewController {
                         
                     case false:
                         let alert = CustomAlertViewController(
-                            message: "앨범 권한이 필요합니다.",
-                            subMessage: "설정에서 변경해주세요.",
+                            message: String(format: SDLiteral.AlertMessage.permissionDenied,
+                                            SDLiteral.AlertMessage.album),
+                            subMessage: SDLiteral.AlertMessage.permissionSetting,
                             buttons: [
                                 CustomAlertViewController.AlertButton(
-                                    title: "취소",
+                                    title: SDLiteral.AlertMessage.cancel,
                                     action: nil
                                 ),
                                 CustomAlertViewController.AlertButton(
-                                    title: "설정으로 이동",
+                                    title: SDLiteral.AlertMessage.moveToSetting,
                                     action: {
                                         if let settingsURL = URL(string: UIApplication.openSettingsURLString),
                                            UIApplication.shared.canOpenURL(settingsURL) {
@@ -145,27 +181,21 @@ final class AddNewContentViewController: UIViewController {
                 }
             })
             .disposed(by: disposeBag)
-        
-        viewModel.output.isExpended
-            .compactMap { $0 }
-            .asDriver(onErrorJustReturn: false)
-            .drive(onNext: { [weak self] isExpended in
-                guard let self else { return }
-                let height = self.petListCollectionView.contentSize.height
-                
-                self.petListTableViewHeightConstraint?.update(offset: isExpended ? height : 0)
-                
-                UIView.animate(withDuration: 0.3) {
-                    self.view.layoutIfNeeded()
-                }
-            })
-            .disposed(by: disposeBag)
     }
     
     private func inputBind() {
         self.petListCollectionView.rx.itemSelected
             .compactMap { _ in
-                guard let indexs = self.petListCollectionView.indexPathsForSelectedRows else { return nil }
+                guard let indexs = self.petListCollectionView.indexPathsForSelectedItems else { return nil }
+                let rows = indexs.map { $0.row }
+                return .profileSelect(rows)
+            }
+            .bind(to: self.viewModel.input)
+            .disposed(by: disposeBag)
+        
+        self.petListCollectionView.rx.itemDeselected
+            .compactMap { _ in
+                guard let indexs = self.petListCollectionView.indexPathsForSelectedItems else { return nil }
                 let rows = indexs.map { $0.row }
                 return .profileSelect(rows)
             }
@@ -188,20 +218,36 @@ final class AddNewContentViewController: UIViewController {
             .bind(to: self.viewModel.input)
             .disposed(by: disposeBag)
         
-        self.dropDownButton.rx.tap
-            .map { .dropdownTap }
-            .bind(to: self.viewModel.input)
-            .disposed(by: disposeBag)
-        
         self.contentTextView.rx.text.orEmpty
             .bind(to: self.viewModel.text)
             .disposed(by: disposeBag)
+        
+        self.contentTextView.rx.text.orEmpty
+            .map { !$0.isEmpty }
+            .bind(to: self.textViewPlaceholderLabel.rx.isHidden)
+            .disposed(by: disposeBag)
+    }
+    
+    private func reselect() {
+        let rows = self.viewModel.output.selectedIndex.value
+        
+        guard let maxSelected = rows.max(),
+              self.petListCollectionView.numberOfItems(inSection: 0) >= maxSelected else { return }
+        
+        if self.viewModel.output.isExpanded.value, !rows.isEmpty {
+            let indexPaths = rows.map { return IndexPath(row: $0, section: 0) }
+            indexPaths.forEach {
+                self.petListCollectionView.selectItem(at: $0,
+                                                      animated: true,
+                                                      scrollPosition: [])
+            }
+        }
     }
     
     private func completeAlert() {
-        let alert = CustomAlertViewController(message: "등록되었습니다!",
+        let alert = CustomAlertViewController(message: SDLiteral.AlertMessage.completePost,
                                               buttons: [CustomAlertViewController.AlertButton(
-                                                title: "확인",
+                                                title: SDLiteral.AlertMessage.confirm,
                                                 action: { [weak self] in
                                                     self?.navigationController?.popViewController(animated: true)
                                                 })])
@@ -214,12 +260,13 @@ final class AddNewContentViewController: UIViewController {
         
         scrollView.addSubview(contentView)
         
+        contentTextView.addSubview(textViewPlaceholderLabel)
+        
         contentView.addSubviews([
-            selectPetLabel,
-            dropDownButton,
             petListCollectionView,
             contentTextView,
             picturesCollectionView,
+            selectedPictureCountLabel,
             addPictureButton,
             loadingIndicator
         ])
@@ -233,7 +280,7 @@ final class AddNewContentViewController: UIViewController {
         self.navigationController?.interactivePopGestureRecognizer?.delegate = nil
         self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         
-        navigationTitleLabel.text = "글 작성"
+        navigationTitleLabel.text = SDLiteral.AddNewContentView.title
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
@@ -253,7 +300,7 @@ final class AddNewContentViewController: UIViewController {
         navigationStack.spacing = 8
         navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
         
-        navigationAddButton.setTitle("등록", for: .normal)
+        navigationAddButton.setTitle(SDLiteral.AddNewContentView.addButtonTitle, for: .normal)
         navigationAddButton.setTitleColor(.textAlert, for: .normal)
         navigationAddButton.titleLabel?.font = .highlight3
         
@@ -268,31 +315,45 @@ final class AddNewContentViewController: UIViewController {
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
-        selectPetLabel.text = "어떤 탐정님이 모집하는 건가요?"
-        selectPetLabel.font = .title1
-        selectPetLabel.textColor = .textPrimary
-        
-        dropDownButton.setImage(UIImage(systemName: "chevron.down"), for: .normal)
-        dropDownButton.tintColor = .textPrimary
-        
-        petListCollectionView.register(PetProfileTableViewCell.self, forCellReuseIdentifier: PetProfileTableViewCell.identifier)
+        petListCollectionView.register(PetSelectCardCell.self,
+                                       forCellWithReuseIdentifier: PetSelectCardCell.identifier)
+        petListCollectionView.register(PetSelectHeaderView.self,
+                                       forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                       withReuseIdentifier: PetSelectHeaderView.identifier)
         petListCollectionView.allowsMultipleSelection = true
-        petListCollectionView.rowHeight = 44
-        petListCollectionView.backgroundColor = .keycolorBackground
-        petListCollectionView.separatorStyle = .singleLine
-        petListCollectionView.separatorColor = .gray200
+        petListCollectionView.backgroundColor = .white
+        petListCollectionView.layer.cornerRadius = 12
+        petListCollectionView.clipsToBounds = true
+        petListCollectionView.layer.borderColor = UIColor.gray300.cgColor
+        petListCollectionView.layer.borderWidth = 1
         
         contentTextView.font = .body3
         contentTextView.backgroundColor = .gray50
         contentTextView.layer.cornerRadius = 6
-        contentTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
+        contentTextView.textContainerInset = .init(top: 12, left: 4, bottom: 12, right: 4)
         contentTextView.textColor = .textPrimary
+        
+        textViewPlaceholderLabel.text = SDLiteral.AddNewContentView.textViewPlaceholder
+        textViewPlaceholderLabel.font = .body6
+        textViewPlaceholderLabel.textColor = .gray500
+        textViewPlaceholderLabel.numberOfLines = 0
+        
+        selectedPictureCountLabel.text = String(format:SDLiteral.AddNewContentView.selectedPetNames, 0)
+        selectedPictureCountLabel.font = .alert2
+        selectedPictureCountLabel.textColor = .gray400
         
         picturesCollectionView.register(PicturesCollectionViewCell.self, forCellWithReuseIdentifier: PicturesCollectionViewCell.identifier)
         picturesCollectionView.backgroundColor = .clear
         
-        addPictureButton.setImage(UIImage(systemName: "plus.circle.fill"), for: .normal)
-        addPictureButton.setBackgroundColor(.gray200, for: .normal)
+        addPictureButton
+            .setImage(UIImage(systemName: "plus")?
+                .withTintColor(.white, renderingMode: .alwaysOriginal),
+                      for: .normal)
+        addPictureButton.setBackgroundColor(.gray300, for: .normal)
+        addPictureButton.clipsToBounds = true
+        addPictureButton.layer.cornerRadius = 2
+        addPictureButton.layer.borderColor = UIColor.gray400.cgColor
+        addPictureButton.layer.borderWidth = 1
     }
     
     private func configureUI() {
@@ -304,20 +365,11 @@ final class AddNewContentViewController: UIViewController {
             $0.edges.width.equalToSuperview()
         }
         
-        selectPetLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(16)
-            $0.leading.equalToSuperview().inset(16)
-        }
-        
-        dropDownButton.snp.makeConstraints {
-            $0.top.bottom.equalTo(selectPetLabel)
-            $0.trailing.equalToSuperview().inset(16)
-        }
-        
         petListCollectionView.snp.makeConstraints {
-            $0.top.equalTo(selectPetLabel.snp.bottom).offset(4)
+            $0.height.equalTo(54)
+            $0.top.equalToSuperview().inset(16)
             $0.leading.trailing.equalToSuperview().inset(16)
-            self.petListTableViewHeightConstraint = $0.height.equalTo(0).constraint
+            $0.bottom.equalTo(contentTextView.snp.top).offset(-16)
         }
         
         contentTextView.snp.makeConstraints {
@@ -326,18 +378,26 @@ final class AddNewContentViewController: UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
+        textViewPlaceholderLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(12)
+            $0.leading.equalToSuperview().inset(8)
+        }
+        
+        selectedPictureCountLabel.snp.makeConstraints {
+            $0.top.equalTo(contentTextView.snp.bottom).offset(4)
+            $0.trailing.equalToSuperview().inset(16)
+        }
+        
         addPictureButton.snp.makeConstraints {
-            let width: CGFloat = (UIScreen.main.bounds.width - (16 * 2)) / 4
-            
-            $0.height.equalTo(100)
-            $0.width.equalTo(width)
-            $0.top.equalTo(contentTextView.snp.bottom).offset(16)
+            $0.height.equalTo(96)
+            $0.width.equalTo(76)
+            $0.top.equalTo(selectedPictureCountLabel.snp.bottom).offset(2)
             $0.leading.equalToSuperview().inset(16)
         }
         
         picturesCollectionView.snp.makeConstraints {
-            $0.height.equalTo(addPictureButton)
-            $0.top.equalTo(addPictureButton)
+            $0.height.equalTo(104)
+            $0.top.equalTo(addPictureButton).offset(-8)
             $0.leading.equalTo(addPictureButton.snp.trailing).offset(8)
             $0.trailing.bottom.equalToSuperview().inset(16)
         }
@@ -347,12 +407,38 @@ final class AddNewContentViewController: UIViewController {
         }
     }
     
-    private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
+    // MARK: - CollectionView Layout
+    private func petSelectCollectionViewLayout() -> UICollectionViewCompositionalLayout {
+        let layout = UICollectionViewCompositionalLayout { row, env in
+            let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                                                heightDimension: .estimated(50)))
+
+            let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                                                           heightDimension: .estimated(50)),
+                                                         subitems: [item])
+
+            let section = NSCollectionLayoutSection(group: group)
+            section.contentInsets = .init(top: 0, leading: 12, bottom: 0, trailing: 12)
+            section.interGroupSpacing = 8
+
+            // Header
+            let header = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
+                                                                                       heightDimension: .estimated(50)),
+                                                                     elementKind: UICollectionView.elementKindSectionHeader,
+                                                                     alignment: .top)
+            section.boundarySupplementaryItems = [header]
+
+            return section
+        }
+        return layout
+    }
+    
+    private func picturesCollectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { row, environment in
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
                                                                 heightDimension: .fractionalHeight(1)))
             
-            let group = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1/3.2),
+            let group = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .absolute(76),
                                                                              heightDimension: .fractionalHeight(1)),
                                                            subitems: [item])
             
@@ -363,6 +449,45 @@ final class AddNewContentViewController: UIViewController {
             
             return section
         }
+    }
+}
+
+// MARK: - petSelectCollectionView DataSource
+extension AddNewContentViewController {
+    private func setDataSource() -> RxCollectionViewSectionedAnimatedDataSource<AddNewContentViewModel.PetSelectSection> {
+        return RxCollectionViewSectionedAnimatedDataSource<AddNewContentViewModel.PetSelectSection>(
+            configureCell: { _, collectionView, indexPath, item in
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PetSelectCardCell.identifier, for: indexPath) as? PetSelectCardCell else { return .init() }
+                
+                cell.settingCell(data: item.base)
+                
+                return cell
+            },
+            configureSupplementaryView: { dataSource, collectionView, kind, indexPath in
+                let sectionModel = dataSource.sectionModels[indexPath.section].model
+                switch kind {
+                case UICollectionView.elementKindSectionHeader:
+                    guard let header = collectionView.dequeueReusableSupplementaryView(
+                        ofKind: kind,
+                        withReuseIdentifier: PetSelectHeaderView.identifier,
+                        for: indexPath
+                    ) as? PetSelectHeaderView else { return .init() }
+                    
+                    header.setTitle(title: sectionModel)
+                    
+                    header.rx.dropdownEvent
+                        .subscribe(onNext: { [weak self] _ in
+                            self?.viewModel.input.accept(.dropdownTap)
+                        })
+                        .disposed(by: header.disposeBag)
+                    
+                    return header
+                    
+                default:
+                    return .init()
+                }
+            }
+        )
     }
 }
 

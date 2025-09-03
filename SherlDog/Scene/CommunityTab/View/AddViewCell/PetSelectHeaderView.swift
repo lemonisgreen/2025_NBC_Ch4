@@ -7,24 +7,81 @@
 
 import UIKit
 import SnapKit
+import RxCocoa
+import RxSwift
 
 // MARK: - 헤더 뷰
 final class PetSelectHeaderView: UICollectionReusableView {
-    static let identifier: String = "PetSelectHeaderView"
+    static let identifier = "PetSelectHeaderView"
     
-    let titleLabel = UILabel()
+    private let titleLabel = UILabel()
+    private let chevron = UIImageView(image: UIImage(systemName: "chevron.down"))
+    private let tap = UITapGestureRecognizer()
+    
+    var onTap: (() -> Void)?
+    var disposeBag = DisposeBag()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        titleLabel.font = .preferredFont(forTextStyle: .headline)
-        titleLabel.textColor = .label
-        titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(titleLabel)
-        NSLayoutConstraint.activate([
-            titleLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 4),
-            titleLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
-            titleLabel.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
+        
+        setupUI()
+        configureUI()
     }
     required init?(coder: NSCoder) { fatalError() }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        disposeBag = DisposeBag()
+        titleLabel.text = nil
+    }
+    
+    func setTitle(title: String) {
+        titleLabel.text = title
+    }
+
+    func setDisclosure(isExpanded: Bool) {
+        titleLabel.textColor = isExpanded ? .textPrimary : .gray500
+        chevron.tintColor    = isExpanded ? .textPrimary : .gray500
+        
+        UIView.animate(withDuration: 0.1) {
+            self.chevron.transform = isExpanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+        }
+    }
+    
+    private func setupUI() {
+        titleLabel.font = .body2
+        titleLabel.textColor = .gray500
+        
+        chevron.tintColor = .gray500
+        
+        addGestureRecognizer(tap)
+
+        addSubview(titleLabel)
+        addSubview(chevron)
+    }
+    
+    private func configureUI() {
+        titleLabel.snp.makeConstraints {
+            $0.leading.equalToSuperview().inset(12)
+            $0.centerY.equalToSuperview()
+        }
+        
+        chevron.snp.makeConstraints {
+            $0.trailing.equalToSuperview().inset(12)
+            $0.centerY.equalToSuperview()
+        }
+    }
+}
+
+extension PetSelectHeaderView {
+    fileprivate var dropdownEvent: ControlEvent<UITapGestureRecognizer> {
+        self.tap.rx.event
+    }
+}
+
+extension Reactive where Base: PetSelectHeaderView {
+    var dropdownEvent: ControlEvent<UITapGestureRecognizer> {
+        base.dropdownEvent
+    }
 }

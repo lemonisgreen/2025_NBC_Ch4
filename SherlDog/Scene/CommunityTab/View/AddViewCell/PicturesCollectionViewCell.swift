@@ -42,22 +42,28 @@ final class PicturesCollectionViewCell: UICollectionViewCell {
     private func setupUI() {
         contentView.addSubviews([
             imageView,
-            deleteButton
+//            deleteButton
         ])
         
-        imageView.image = UIImage(systemName: "plus.circle")?.withTintColor(.gray400)
-        imageView.contentMode = .scaleAspectFit
+        addSubview(deleteButton)
         
-        deleteButton.setImage(UIImage(systemName: "minus.circle.fill"), for: .normal)
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        
+        let xmarkImage = UIImage(systemName: "xmark.circle.fill")?.withTintColor(.gray800, renderingMode: .alwaysOriginal)
+        deleteButton.setImage(xmarkImage, for: .normal)
     }
     
     private func configureUI() {
         imageView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+            $0.leading.trailing.bottom.equalToSuperview()
+            $0.top.equalToSuperview().inset(8)
         }
         
         deleteButton.snp.makeConstraints {
-            $0.top.trailing.equalToSuperview()
+            $0.height.width.equalTo(24)
+            $0.top.equalToSuperview()
+            $0.trailing.equalToSuperview().inset(-6)
         }
     }
 }

@@ -37,6 +37,7 @@ final class CommunityViewModel {
     enum Mutation {
         case set(category: CommunitySectionType, posts: [CommunityModel])
         case append(category: CommunitySectionType, posts: [CommunityModel])
+        case patch(category: CommunitySectionType, post: CommunityModel)
     }
     
     // MARK: - Input & Output
@@ -67,15 +68,11 @@ final class CommunityViewModel {
         // Menu event
         let menu = menuButtonEvent(input.menuEvent, category: selectedCategory)
         
-        // Like event
-        let likeEvent = like(input.likeEvent, category: selectedCategory)
-        
         // 새로고침을 하는 상황
         let refreshTrigger = makeRefreshTrigger(trigger: [
             selectedCategory.map { _ in () },
             input.pullToRefresh,
-            menu.asObservable().map { _ in () },
-            likeEvent
+            menu.asObservable().map { _ in () }
         ])
         
         // 데이터 불러오기
@@ -91,10 +88,12 @@ final class CommunityViewModel {
                                                   selectedCategory: selectedCategory)
         let appendMutation = makeAppendMutation(fetchMore: input.fetchMore,
                                                 selectedCategory: selectedCategory)
+        let likeMutation = like(input.likeEvent, category: selectedCategory)
         
         // state(store)
         let postsDict = makePostsDict(refreshMutation: refreshMutation,
-                                      appendMutation: appendMutation)
+                                      appendMutation: appendMutation,
+                                      likeMutation: likeMutation)
         let currentCellData = mapPostsToSections(postsDict)
         
         return Output(
@@ -183,9 +182,14 @@ private extension CommunityViewModel {
     
     // 상태(Store) 축적
     func makePostsDict(refreshMutation: Observable<Mutation>,
-                       appendMutation: Observable<Mutation>)
+                       appendMutation: Observable<Mutation>,
+                       likeMutation: Observable<Mutation>)
     -> Observable<[CommunitySectionType : [CommunityModel]]> {
-        Observable.merge(refreshMutation, appendMutation)
+        Observable.merge(
+            refreshMutation,
+            appendMutation,
+            likeMutation
+        )
             .scan(makeInitialPosts()) { dict, mutation in
                 var next = dict
                 switch mutation {
@@ -193,6 +197,13 @@ private extension CommunityViewModel {
                     next[category] = posts
                 case let .append(category, posts):
                     next[category, default: []] += posts
+                case let .patch(category, post):
+                    var data = next[category, default: []]
+                    if let index = data.firstIndex(where: { $0.postCode == post.postCode }) {
+                        data[index] = post
+                    }
+                    
+                    next[category] = data
                 }
                 return next
             }
@@ -214,25 +225,30 @@ private extension CommunityViewModel {
 
 // MARK: - Like Button Event
 extension CommunityViewModel {
-    private func like(_ input: Observable<CommunityModel>, category: Observable<CommunitySectionType>) -> Observable<Void> {
+    private func like(
+        _ input: Observable<CommunityModel>,
+        category: Observable<CommunitySectionType>
+    ) -> Observable<Mutation> {
         return input
             .withLatestFrom(category) { ($0, $1) }
-            .flatMapFirst { [weak self] (data, category) -> Observable<Void> in
+            .flatMapFirst { [weak self] (model, category) -> Observable<Mutation> in
                 guard let self, let userId = Auth.auth().currentUser?.uid else { return .empty() }
                 
-                let newLiker = data.like.contains(userId)
-                ? data.like.filter { $0 != userId }
-                : (data.like + [userId])
+                let newLikes = model.like.contains(userId)
+                ? model.like.filter { $0 != userId }
+                : (model.like + [userId])
                 
-                return self.findPostId(section: category, postCode: data.postCode)
+                var patched = model
+                patched.like = newLikes
+                
+                return self.findPostId(section: category, postCode: model.postCode)
                     .asObservable()
-                    .flatMap { id -> Observable<Void> in
+                    .flatMap { id -> Observable<Mutation> in
                         guard !id.isEmpty else { return .empty() }
-                        var updateData = data
-                        updateData.like = newLiker
-                        return FirestoreManager.shared.updateDocument(collection: category.collectionName, documentId: id, data: updateData)
+                        
+                        return FirestoreManager.shared.updateDocument(collection: category.collectionName, documentId: id, data: patched)
                             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                            .andThen(.just(()))
+                            .andThen(.just(Mutation.patch(category: category, post: patched)))
                     }
             }
     }
@@ -308,9 +324,17 @@ private extension CommunityViewModel {
     
     func fetchProfiles(_ data: [CommunityModel]) -> Single<[CommunityModel]> {
         let singles = data.map { postData in
+            let pets = postData.petProfile.map { pet in
+                FirestoreManager.shared.fetchDocument(collection: SDLiteral.CollectionName.petProfile.rawValue,
+                                                      documentId: pet.petProfileId,
+                                                      type: PetProfile.self)
+            }
+            
             let human = FirestoreManager.shared.fetchHumanProfile(userId: postData.userId)
-            let pet   = FirestoreManager.shared.fetchUserPetProfiles(userId: postData.userId)
-            return Single.zip(human, pet)
+            
+            let petZip = Single.zip(pets)
+            
+            return Single.zip(human, petZip)
                 .map { human, pet in
                     var post = postData
                     post.name = human.nickname
@@ -319,6 +343,7 @@ private extension CommunityViewModel {
                     return post
                 }
         }
+        
         return Single.zip(singles)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
     }

@@ -16,57 +16,26 @@ final class PetSelectCardCell: UICollectionViewListCell {
     private let container = UIView()
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
-
+    
     override init(frame: CGRect) {
         super.init(frame: frame)
-        var bg = UIBackgroundConfiguration.clear()
-        backgroundConfiguration = bg   // 기본 list 배경 제거
-
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.layer.cornerRadius = 12
-        container.layer.borderWidth = 1
-        container.layer.borderColor = UIColor.separator.withAlphaComponent(0.3).cgColor
-        container.backgroundColor = .secondarySystemGroupedBackground
-        contentView.addSubview(container)
-
-        profileImageView.translatesAutoresizingMaskIntoConstraints = false
-        profileImageView.contentMode = .scaleAspectFit
-        profileImageView.tintColor = .label
-        profileImageView.layer.cornerRadius = 14
-        profileImageView.clipsToBounds = true
-
-        nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        nameLabel.font = .preferredFont(forTextStyle: .body)
-
-        container.addSubview(profileImageView)
-        container.addSubview(nameLabel)
-
-        let inset: CGFloat = 8
-        NSLayoutConstraint.activate([
-            container.topAnchor.constraint(equalTo: contentView.topAnchor, constant: 6),
-            container.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -6),
-            container.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            container.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-
-            profileImageView.widthAnchor.constraint(equalToConstant: 28),
-            profileImageView.heightAnchor.constraint(equalToConstant: 28),
-            profileImageView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 12),
-            profileImageView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-
-            nameLabel.leadingAnchor.constraint(equalTo: profileImageView.trailingAnchor, constant: 10),
-            nameLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -12),
-            nameLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
-            nameLabel.bottomAnchor.constraint(equalTo: container.bottomAnchor, constant: -12)
-        ])
-
-        // 선택 시 카드만 하이라이트
-        let selectedBG = UIView()
-        selectedBG.backgroundColor = UIColor.systemFill
-        selectedBackgroundView = selectedBG
-        selectedBackgroundView?.layer.cornerRadius = 12
-        selectedBackgroundView?.clipsToBounds = true
+        
+        setupUI()
+        configureUI()
     }
-
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        selectedBackgroundView?.frame = container.frame
+    }
+    
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        
+        profileImageView.image = nil
+        nameLabel.text = nil
+    }
+    
     required init?(coder: NSCoder) { fatalError() }
     
     func settingCell(data: PetProfile) {
@@ -87,10 +56,53 @@ final class PetSelectCardCell: UICollectionViewListCell {
     }
     
     private func setupUI() {
+//        contentView.backgroundColor = .keycolorBackground
         
+        let bg = UIBackgroundConfiguration.clear()
+        backgroundConfiguration = bg   // 기본 list 배경 제거
+        
+        // selectedView
+        let selectedView = UIView()
+        selectedView.backgroundColor = .keycolorPrimary2.withAlphaComponent(0.1)
+        selectedView.layer.borderColor = UIColor.keycolorPrimary2.cgColor
+        selectedView.layer.borderWidth = 1
+        selectedBackgroundView = selectedView
+        selectedBackgroundView?.layer.cornerRadius = 12
+        selectedBackgroundView?.clipsToBounds = true
+        
+        // container
+        contentView.addSubview(container)
+        container.layer.cornerRadius = 12
+        container.layer.borderWidth = 1
+        container.layer.borderColor = UIColor.separator.withAlphaComponent(0.3).cgColor
+        container.backgroundColor = .clear
+        
+        // icon
+        container.addSubview(profileImageView)
+        profileImageView.contentMode = .scaleAspectFill
+        profileImageView.layer.cornerRadius = 16
+        profileImageView.clipsToBounds = true
+        
+        // title
+        container.addSubview(nameLabel)
+        nameLabel.font = .body2
+        nameLabel.textColor = .textPrimary
     }
     
     private func configureUI() {
+        container.snp.makeConstraints {
+            $0.edges.equalToSuperview()//.inset(UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12))
+        }
         
+        profileImageView.snp.makeConstraints {
+            $0.size.equalTo(32)
+            $0.left.equalToSuperview().offset(12)
+            $0.centerY.equalToSuperview()
+        }
+        
+        nameLabel.snp.makeConstraints {
+            $0.left.equalTo(profileImageView.snp.right).offset(10)
+            $0.top.bottom.equalToSuperview().inset(12)
+        }
     }
 }
