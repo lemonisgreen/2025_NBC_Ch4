@@ -142,7 +142,7 @@ class MyPageViewModel {
         let profileId = profile.petProfileId
 
         FirestoreManager.shared.deleteDocument(
-            collection: "PetProfile",
+            collection: .petProfile,
             documentId: profileId
         )
         .subscribe(onCompleted: { [weak self] in

@@ -488,7 +488,7 @@ class RegistrationViewController: UIViewController {
     /// Presents the edit view for a given pet profile ID.
     private func presentEditView(for profileId: String) {
         FirestoreManager.shared.fetchDocument(
-            collection: "PetProfile",
+            collection: .petProfile,
             documentId: profileId,
             type: PetProfile.self
         )

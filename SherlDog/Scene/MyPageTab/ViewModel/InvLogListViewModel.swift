@@ -89,14 +89,14 @@ extension InvLogListViewModel {
     }
     
     private func deleteWalkResultData(at indexPath: IndexPath) {
-        FirestoreManager.shared.findDocumentId(collection: "WalkResult",
+        FirestoreManager.shared.findDocumentId(collection: .walkResult,
                                                whereField: "walkingPathImage",
                                                isEqualTo: self.originalData[indexPath.row].walkingPathImage)
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .flatMapCompletable { documentId in
             guard let id = documentId.first else { return Completable.error(FirestoreError.noData) }
             
-            return FirestoreManager.shared.deleteDocument(collection: "WalkResult", documentId: id)
+            return FirestoreManager.shared.deleteDocument(collection: .walkResult, documentId: id)
                 .andThen(FirebaseImageManager.shared.deleteImageByURL(self.originalData[indexPath.row].walkingPathImage))
         }
         .subscribe(onCompleted: { [weak self] in

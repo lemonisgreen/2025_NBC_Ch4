@@ -96,7 +96,7 @@ final class PetProfileViewModel {
                 }
                 let petProfileId = profiles[index].petProfileId
                 
-                return FirestoreManager.shared.deleteDocument(collection: "PetProfile", documentId: petProfileId)
+                return FirestoreManager.shared.deleteDocument(collection: .petProfile, documentId: petProfileId)
                     .andThen(Observable.just(profiles.enumerated()
                         .filter { $0.offset != index }
                         .map { $0.element }))
@@ -118,7 +118,7 @@ final class PetProfileViewModel {
         
         input.editProfileId
             .flatMapLatest { id in
-                FirestoreManager.shared.fetchDocument(collection: "PetProfile", documentId: id, type: PetProfile.self)
+                FirestoreManager.shared.fetchDocument(collection: .petProfile, documentId: id, type: PetProfile.self)
                     .asObservable()
                     .catch { [weak self] error in
                         self?.output.errorMessage.onNext("편집 프로필 로딩 실패: \(error.localizedDescription)")

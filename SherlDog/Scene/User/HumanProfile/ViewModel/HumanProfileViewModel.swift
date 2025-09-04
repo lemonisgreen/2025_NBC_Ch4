@@ -98,7 +98,7 @@ final class HumanProfileViewModel {
                 ]
                 
                 FirestoreManager.shared.createDocument(
-                    collection: "HumanProfile",
+                    collection: .humanProfile,
                     data: data,
                     documentId: userId
                 ).subscribe(
@@ -147,7 +147,7 @@ final class HumanProfileViewModel {
                     )
                     
                     FirestoreManager.shared.updateDocument(
-                        collection: "HumanProfile",
+                        collection: .humanProfile,
                         documentId: userId,
                         data: updatedProfile
                     )
@@ -181,7 +181,7 @@ final class HumanProfileViewModel {
                 introduce: self.introduce.value
             )
             
-            FirestoreManager.shared.updateDocument(collection: "HumanProfile",
+            FirestoreManager.shared.updateDocument(collection: .humanProfile,
                                                    documentId: userId,
                                                    data: updatedProfile)
             .subscribe(onCompleted: { [weak self] in
