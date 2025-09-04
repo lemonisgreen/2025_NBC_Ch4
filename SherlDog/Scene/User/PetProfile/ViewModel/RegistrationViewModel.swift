@@ -106,7 +106,7 @@ class RegistrationViewModel {
         let petProfileID = newDocRef.documentID
         self.imageDocumentId = petProfileID
         
-        FirebaseImageManager.shared.uploadPetImage(image, petId: petProfileID) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(image, type: .petProfile, petId: petProfileID) { [weak self] result in
             switch result {
             case .success(let urlString):
                 self?.output.newPetProfileId.onNext(petProfileID)
@@ -127,7 +127,7 @@ class RegistrationViewModel {
         let petProfileID = originalProfile.petProfileId
         self.imageDocumentId = petProfileID
         
-        FirebaseImageManager.shared.uploadPetImage(image, petId: petProfileID) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(image, type: .petProfile, petId: petProfileID) { [weak self] result in
             switch result {
             case .success(let urlString):
                 self?.imageURL.accept(urlString)

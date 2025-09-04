@@ -91,7 +91,7 @@ class DataTrackingViewModel {
     }
     
     func saveWalkResultCapturedImage(image: UIImage, selectedProfiles: [PetProfile]) {
-        FirebaseImageManager.shared.uploadWalkResultImage(image) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(image, type: .walkResult) { [weak self] result in
             switch result {
             case .success(let urlString):
                 self?.imageURL.accept(urlString)
