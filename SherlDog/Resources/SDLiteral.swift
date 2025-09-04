@@ -18,4 +18,13 @@ enum SDLiteral {
         static let loginErrorMessageTitle: String = "로그인 실패"
         static let loginErrorMessage: String = "다시 로그인 해주세요!"
     }
+    
+    enum UserProfileViewController {
+        static let navigationTitle: String = "프로필"
+        static let navigationBackButtonImage: String  = "chevron.backward"
+        static let navigationMoreButtonImage: String = "ellipsis"
+        static let assistantNickNameLabel: String = "닉네임"
+        static let postCollectionButtonTitle: String = "작성 글 둘러보기"
+        static let postCollectionButtonImage: String = "note"
+    }
 }
