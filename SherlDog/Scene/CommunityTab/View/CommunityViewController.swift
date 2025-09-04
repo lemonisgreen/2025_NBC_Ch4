@@ -216,11 +216,16 @@ extension CommunityViewController {
 extension CommunityViewController {
     private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection> {
         return RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection>(
-            configureCell: { _, collectionView, indexPath, item in
+            configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
                 
                 cell.settingCell(item)
+                
+                cell.rx.mediaDoubleTap
+                    .map { _ in dataSource.sectionModels[indexPath.section].model }
+                    .bind(to: self.likeButtonEvent)
+                    .disposed(by: cell.disposeBag)
                 
                 return cell
             },
@@ -257,8 +262,15 @@ extension CommunityViewController {
                     footer.updatePage(total: count, current: 0)
                     
                     footer.rx.likeButtonTap
+                        .map { sectionModel }
+                        .bind(to: self.likeButtonEvent)
+                        .disposed(by: footer.disposeBag)
+                    
+                    footer.rx.containerTap
+                        .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
-                            self?.likeButtonEvent.accept(sectionModel)
+                            // TODO: 상세 뷰 이동 로직
+                            print("상세 뷰로 이동")
                         })
                         .disposed(by: footer.disposeBag)
                     

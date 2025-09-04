@@ -22,6 +22,7 @@ final class PostFooterView: UICollectionReusableView {
     private let captionLabel = UILabel()
     private let likeButton = UIButton()
     private let previewCommentButton = UIButton()
+    private let tap = UITapGestureRecognizer()
     
     // MARK: - Initialize
     override init(frame: CGRect) {
@@ -84,9 +85,12 @@ extension PostFooterView {
             pageControl
         ])
         
+        container.addGestureRecognizer(tap)
+        
         container.axis = .vertical
         container.alignment = .leading
         container.spacing = 8
+        container.isUserInteractionEnabled = true
         
         actionBar.axis = .horizontal
         actionBar.spacing = 12
@@ -99,8 +103,9 @@ extension PostFooterView {
         
         captionLabel.font = .body5
         captionLabel.textColor = .textPrimary
-        captionLabel.numberOfLines = 0
+        captionLabel.numberOfLines = 2
         captionLabel.lineBreakMode = .byTruncatingTail
+        captionLabel.isUserInteractionEnabled = true
         
         // MARK: - likeButton Configuration
         var likeButtonConfig = UIButton.Configuration.plain()
@@ -129,7 +134,7 @@ extension PostFooterView {
     
     private func configureUI() {
         container.snp.makeConstraints {
-            $0.top.equalToSuperview().offset(8)
+            $0.top.equalToSuperview().offset(12)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview().inset(8)
         }
@@ -145,10 +150,23 @@ extension PostFooterView {
     fileprivate var likeButtonTap: ControlEvent<Void> {
         self.likeButton.rx.tap
     }
+    
+    fileprivate var containerTap: ControlEvent<Void> {
+        return ControlEvent<Void>(events: Observable.merge(
+            self.tap.rx.event
+                .filter { $0.state == .ended }
+                .map { _ in },
+            self.previewCommentButton.rx.tap.asObservable()
+        ))
+    }
 }
 
 extension Reactive where Base: PostFooterView {
     var likeButtonTap: ControlEvent<Void> {
         base.likeButtonTap
+    }
+    
+    var containerTap: ControlEvent<Void> {
+        base.containerTap
     }
 }

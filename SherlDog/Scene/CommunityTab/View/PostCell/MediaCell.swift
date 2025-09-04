@@ -8,11 +8,16 @@
 import UIKit
 import SnapKit
 import Kingfisher
+import RxSwift
+import RxCocoa
 
 final class MediaCell: UICollectionViewCell {
     static let identifier = "MediaCell"
     
     private let imageView = UIImageView()
+    private let doubleTap = UITapGestureRecognizer()
+    
+    var disposeBag = DisposeBag()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -24,6 +29,7 @@ final class MediaCell: UICollectionViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         imageView.image = nil
+        disposeBag = DisposeBag()
     }
     
     // 외부에서 URL 문자열을 받는 형태
@@ -43,15 +49,30 @@ final class MediaCell: UICollectionViewCell {
 }
 
 // MARK: - UI
-private extension MediaCell {
-    func setupUI() {
+extension MediaCell {
+    private func setupUI() {
         contentView.addSubview(imageView)
+        addGestureRecognizer(doubleTap)
+        
+        doubleTap.numberOfTapsRequired = 2
         
         imageView.contentMode = .scaleAspectFill
         imageView.clipsToBounds = true
     }
     
-    func configureUI() {
+    private func configureUI() {
         imageView.snp.makeConstraints { $0.edges.equalToSuperview() }
+    }
+}
+
+extension MediaCell {
+    fileprivate var MediadoubleTap: ControlEvent<UITapGestureRecognizer> {
+        self.doubleTap.rx.event
+    }
+}
+
+extension Reactive where Base: MediaCell {
+    var mediaDoubleTap: ControlEvent<UITapGestureRecognizer> {
+        base.MediadoubleTap
     }
 }
