@@ -23,6 +23,7 @@ final class AddNewContentViewModel {
         case addPicture
         case selectedPictures([PHPickerResult])
         case deleteButtonTap(Int)
+        case editCase(category: CommunityViewModel.CommunitySectionType, postCode: String)
     }
     
     struct Output {
@@ -105,9 +106,40 @@ final class AddNewContentViewModel {
                     
                     self.output.addedPictures.accept(images)
                     self.output.selectedImageIdentifiers.accept(ids)
+                    
+                case let .editCase(category, postCode):
+                    self.setEditMode(category: category, postCode: postCode)
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func setEditMode(category: CommunityViewModel.CommunitySectionType, postCode: String) {
+        fetchProfiles()
+        
+        self.findDocumentId(category: category, postCode: postCode)
+            .subscribe(onSuccess: { [weak self] data in
+                
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func findDocumentId(category: CommunityViewModel.CommunitySectionType, postCode: String) -> Single<CommunityModel> {
+        guard let collectionName = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first else {
+            return .error(FirestoreError.unknown)
+        }
+        
+        return FirestoreManager.shared.findDocumentId(collection: collectionName,
+                                                      whereField: "postCode",
+                                                      isEqualTo: postCode)
+        .flatMap { datas -> Single<CommunityModel> in
+            guard let data = datas.first else { return .error(FirestoreError.noData) }
+            
+            return FirestoreManager.shared.fetchDocument(collection: collectionName,
+                                                         documentId: data,
+                                                         type: CommunityModel.self)
+        }
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
     }
     
     private func toggleCell() {
@@ -180,7 +212,7 @@ final class AddNewContentViewModel {
                                                 contentImage: urls,
                                                 content: self.text.value)
                 
-                return FirestoreManager.shared.createDocument(collection: SDLiteral.CollectionName.detectiveMate.rawValue,
+                return FirestoreManager.shared.createDocument(collection: .detectiveMate,
                                                               data: uploadData)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             }
@@ -201,7 +233,8 @@ final class AddNewContentViewModel {
         
         let uploads: [Single<String>] = images.map { image in
             Single<String>.create { observer in
-                FirebaseImageManager.shared.uploadDetectiveMateImage(image) { result in
+                FirebaseImageManager.shared.uploadImage(image,
+                                                        type: .detectiveMate) { result in
                     switch result {
                     case .success(let imageUrl):
                         observer(.success(imageUrl))

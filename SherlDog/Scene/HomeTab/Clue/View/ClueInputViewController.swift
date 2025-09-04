@@ -202,7 +202,7 @@ class ClueInputViewController: UIViewController {
         registerButton.isEnabled = false
         registerButton.setTitle("저장 중...", for: .normal)
         
-        FirebaseImageManager.shared.uploadClueImage(image) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(image, type: .clue) { [weak self] result in
             switch result {
             case .success(let imageUrl):
                 self?.saveToFirestore(userId: userId, text: text, imageUrl: imageUrl)
@@ -224,7 +224,7 @@ class ClueInputViewController: UIViewController {
             date: Timestamp(date: Date())
         )
         
-        FirestoreManager.shared.createDocument(collection: "clues", data: clue)
+        FirestoreManager.shared.createDocument(collection: .clues, data: clue)
             .subscribe(
                 onCompleted: { [weak self] in
                     DispatchQueue.main.async {

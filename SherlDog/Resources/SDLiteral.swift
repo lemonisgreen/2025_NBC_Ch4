@@ -7,17 +7,6 @@
 
 enum SDLiteral {
     
-    enum CollectionName: String, CaseIterable {
-        case users = "users"
-        case clues = "clues"
-        case humanProfile = "HumanProfile"
-        case petProfile = "PetProfile"
-        case invLog = "InvLog"
-        case walkResult = "WalkResult"
-        case detectiveMate = "DetectiveMate"
-        case invLogBoard = "InvLogBoard"
-    }
-    
     enum AlertMessage {
         static let confirm = "확인"
         static let cancel = "취소"
@@ -58,5 +47,14 @@ enum SDLiteral {
         static let selectedPetNames: String = "%@ 탐정"
         static let textViewPlaceholder: String = "내용을 입력하세요.\n(최대 1000자 입력, 사진 최대 10장 업로드)"
         static let pictureCount: String = "%d/5 장"
+    }
+    
+    enum UserProfileViewController {
+        static let navigationTitle: String = "프로필"
+        static let navigationBackButtonImage: String  = "chevron.backward"
+        static let navigationMoreButtonImage: String = "ellipsis"
+        static let assistantNickNameLabel: String = "닉네임"
+        static let postCollectionButtonTitle: String = "작성 글 둘러보기"
+        static let postCollectionButtonImage: String = "note"
     }
 }

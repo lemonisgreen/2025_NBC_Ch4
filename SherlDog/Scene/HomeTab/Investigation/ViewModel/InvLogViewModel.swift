@@ -30,7 +30,6 @@ class InvLogViewModel {
         let petProfile = BehaviorRelay<[PetProfile]>(value: [])
     }
     
-    private let collection: String = "InvLogBoard"
     private let disposeBag = DisposeBag()
     
     let input = PublishRelay<Input>()
@@ -70,7 +69,7 @@ class InvLogViewModel {
                                   contentImage: [image],
                                   content: content)
         
-        FirestoreManager.shared.createDocument(collection: self.collection,
+        FirestoreManager.shared.createDocument(collection: .invLog,
                                                data: data)
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)
@@ -105,7 +104,7 @@ class InvLogViewModel {
     }
     
     private func imageToString(data: UploadData) {
-        FirebaseImageManager.shared.uploadInvLogImage(data.invImage) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(data.invImage, type: .invLog) { [weak self] result in
             switch result {
             case .success(let value):
                 self?.upload(image: value, content: data.content)

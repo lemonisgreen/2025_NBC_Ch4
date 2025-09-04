@@ -144,9 +144,10 @@ class RegistrationViewController: UIViewController {
     private func loadProfileImage() {
         guard case .edit(let profile) = viewModel.currentMode else { return }
         
-        FirebaseImageManager.shared.getPetImageURL(
-            petId: profile.petProfileId,
-            userId: profile.userId
+        FirebaseImageManager.shared.downloadImageURL(
+            userId: profile.userId,
+            type: .petProfile,
+            petId: profile.petProfileId
         ) { [weak self] url in
             guard let self else { return }
             
@@ -488,7 +489,7 @@ class RegistrationViewController: UIViewController {
     /// Presents the edit view for a given pet profile ID.
     private func presentEditView(for profileId: String) {
         FirestoreManager.shared.fetchDocument(
-            collection: "PetProfile",
+            collection: .petProfile,
             documentId: profileId,
             type: PetProfile.self
         )

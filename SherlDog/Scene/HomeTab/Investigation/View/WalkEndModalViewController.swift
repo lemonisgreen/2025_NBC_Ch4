@@ -246,7 +246,7 @@ class WalkEndModalViewController : UIViewController {
     
     private func fetchSelectedPetProfiles(petProfileIds: [String]) {
         let profileObservables = petProfileIds.map { id in
-            FirestoreManager.shared.fetchDocument(collection: "PetProfile",
+            FirestoreManager.shared.fetchDocument(collection: .petProfile,
                                                   documentId: id,
                                                   type: PetProfile.self)
         }

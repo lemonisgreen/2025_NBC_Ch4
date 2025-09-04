@@ -29,7 +29,7 @@ extension BlockManager {
                 return Disposables.create()
             }
             
-            self.db.collection(SDLiteral.CollectionName.users.rawValue)
+            self.db.collection(FirestoreCollection.users.rawValue)
                 .document(self.myUserId)
                 .collection(self.collectionName)
                 .document(userId)
@@ -53,7 +53,7 @@ extension BlockManager {
                 return Disposables.create()
             }
             
-            self.db.collection(SDLiteral.CollectionName.users.rawValue)
+            self.db.collection(FirestoreCollection.users.rawValue)
                 .document(self.myUserId)
                 .collection(self.collectionName)
                 .document(userId)
@@ -78,7 +78,7 @@ extension BlockManager {
             }
             
             self.db
-                .collection(SDLiteral.CollectionName.users.rawValue)
+                .collection(FirestoreCollection.users.rawValue)
                 .document(self.myUserId)
                 .collection(self.collectionName)
                 .getDocuments() { snapshot, error in

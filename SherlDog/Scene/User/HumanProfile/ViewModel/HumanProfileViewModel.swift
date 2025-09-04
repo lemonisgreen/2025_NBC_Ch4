@@ -88,7 +88,7 @@ final class HumanProfileViewModel {
         
         isLoading.accept(true)
         
-        FirebaseImageManager.shared.uploadAssistantImage(image) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(image, type: .assistant) { [weak self] result in
             switch result {
             case .success(let imageURL):
                 let data: [String: String] = [
@@ -98,7 +98,7 @@ final class HumanProfileViewModel {
                 ]
                 
                 FirestoreManager.shared.createDocument(
-                    collection: "HumanProfile",
+                    collection: .humanProfile,
                     data: data,
                     documentId: userId
                 ).subscribe(
@@ -137,7 +137,7 @@ final class HumanProfileViewModel {
         isLoading.accept(true)
         
         if let image = imageForUpload.value {
-            FirebaseImageManager.shared.uploadAssistantImage(image) { [weak self] result in
+            FirebaseImageManager.shared.uploadImage(image, type: .assistant) { [weak self] result in
                 switch result {
                 case .success(let imageURL):
                     let updatedProfile = HumanProfileModel(
@@ -147,7 +147,7 @@ final class HumanProfileViewModel {
                     )
                     
                     FirestoreManager.shared.updateDocument(
-                        collection: "HumanProfile",
+                        collection: .humanProfile,
                         documentId: userId,
                         data: updatedProfile
                     )
@@ -181,7 +181,7 @@ final class HumanProfileViewModel {
                 introduce: self.introduce.value
             )
             
-            FirestoreManager.shared.updateDocument(collection: "HumanProfile",
+            FirestoreManager.shared.updateDocument(collection: .humanProfile,
                                                    documentId: userId,
                                                    data: updatedProfile)
             .subscribe(onCompleted: { [weak self] in

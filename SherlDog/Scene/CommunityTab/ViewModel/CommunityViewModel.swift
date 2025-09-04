@@ -27,8 +27,8 @@ final class CommunityViewModel {
         
         var collectionName: String {
             switch self {
-            case .invLogBoard:        return SDLiteral.CollectionName.invLogBoard.rawValue
-            case .detectiveMateBoard: return SDLiteral.CollectionName.detectiveMate.rawValue
+            case .invLogBoard:        return FirestoreCollection.invLogBoard.rawValue
+            case .detectiveMateBoard: return FirestoreCollection.detectiveMate.rawValue
             }
         }
     }
@@ -244,9 +244,10 @@ extension CommunityViewModel {
                 return self.findPostId(section: category, postCode: model.postCode)
                     .asObservable()
                     .flatMap { id -> Observable<Mutation> in
-                        guard !id.isEmpty else { return .empty() }
+                        guard !id.isEmpty,
+                              let collection = self.getCollection(category) else { return .empty() }
                         
-                        return FirestoreManager.shared.updateDocument(collection: category.collectionName, documentId: id, data: patched)
+                        return FirestoreManager.shared.updateDocument(collection: collection, documentId: id, data: patched)
                             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
                             .andThen(.just(Mutation.patch(category: category, post: patched)))
                     }
@@ -261,7 +262,8 @@ private extension CommunityViewModel {
         input
             .withLatestFrom(category) { ($0, $1) }
             .flatMapLatest { [weak self] (menu, category) -> Observable<PostMenuEvent> in
-                guard let self else { return .empty() }
+                guard let self,
+                      let collection = self.getCollection(category) else { return .empty() }
                 
                 switch menu {
                 case .fix:
@@ -271,7 +273,7 @@ private extension CommunityViewModel {
                     return self.findPostId(section: category, postCode: postCode)
                         .flatMapCompletable { postId in
                             FirestoreManager.shared.deleteDocument(
-                                collection: category.collectionName,
+                                collection: collection,
                                 documentId: postId
                             )
                             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -307,7 +309,8 @@ private extension CommunityViewModel {
     }
     
     func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
-        let collection = category.collectionName
+        guard let collection = self.getCollection(category) else { return .error(FirestoreError.unknown) }
+        
         return FirestoreManager.shared.fetchCollectionWithoutBlockedUser(
             collection: collection,
             sortField: "postDate",
@@ -325,7 +328,7 @@ private extension CommunityViewModel {
     func fetchProfiles(_ data: [CommunityModel]) -> Single<[CommunityModel]> {
         let singles = data.map { postData in
             let pets = postData.petProfile.map { pet in
-                FirestoreManager.shared.fetchDocument(collection: SDLiteral.CollectionName.petProfile.rawValue,
+                FirestoreManager.shared.fetchDocument(collection: .petProfile,
                                                       documentId: pet.petProfileId,
                                                       type: PetProfile.self)
             }
@@ -349,12 +352,23 @@ private extension CommunityViewModel {
     }
     
     func findPostId(section: CommunitySectionType, postCode: String) -> Single<String> {
-        FirestoreManager.shared.findDocumentId(
-            collection: section.collectionName,
+        guard let collection = self.getCollection(section) else { return .error(FirestoreError.unknown) }
+        
+        return FirestoreManager.shared.findDocumentId(
+            collection: collection,
             whereField: "postCode",
             isEqualTo: postCode
         )
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .map { $0.first ?? "" }
+    }
+    
+    func getCollection(_ category: CommunitySectionType) -> FirestoreCollection? {
+        if let collectionName = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first {
+            return collectionName
+        } else {
+            return nil
+        }
+        
     }
 }
