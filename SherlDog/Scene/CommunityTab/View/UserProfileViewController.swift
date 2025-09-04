@@ -7,8 +7,16 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
+import FirebaseAuth
+import Kingfisher
 
 class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIScrollViewDelegate {
+    
+    private let viewModel = MyPageViewModel()
+    private let disposeBag = DisposeBag()
+    private let maxProfileCount = 3
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
@@ -24,15 +32,140 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .keycolorBackground
-
+        bind()
         setupUI()
         configureUI()
     }
     
     private func bind() {
         
+        viewModel.output.humanProfile
+            .compactMap { $0 }
+            .subscribe(onNext: { [weak self] humanProfile in
+                DispatchQueue.main.async {
+                    self?.assistantNickNameField.text = humanProfile.nickname
+                    
+                    if !humanProfile.image.isEmpty, let url = URL(string: humanProfile.image) {
+                        self?.loadImage(from: url)
+                    }
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        viewModel.output.petProfiles
+            .bind(to: collectionView.rx.items) { collectionView, index, profile in
+                if let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: DetectiveCardCell.identifier,
+                    for: IndexPath(item: index, section: 0)
+                ) as? DetectiveCardCell {
+                    cell.configure(with: profile)
+                    return cell
+                } else {
+                    return UICollectionViewCell()
+                }
+            }
+            .disposed(by: disposeBag)
+        
+        // 펫프로필 갯수에 따른 인덱스닷 생성
+        viewModel.output.petProfiles
+            .map { $0.count }
+            .bind(to: pageControl.rx.numberOfPages)
+            .disposed(by: disposeBag)
+        
+        // 옆으로 얼만큼 스크롤 되어야 인덱스 닷이 넘어가는지에 대한 설정
+        collectionView.rx.contentOffset
+            .withLatestFrom(viewModel.output.petProfiles) { offset, profiles in
+                let pageIndex = self.viewModel.calculatePageIndex(from: offset)
+                // ProfileAdd 셀이 있어도 실제 프로필 개수 내에서만 계산
+                return min(pageIndex, profiles.count - 1)
+            }
+            .filter { $0 >= 0 }
+            .bind(to: pageControl.rx.currentPage)
+            .disposed(by: disposeBag)
+        
+        // 인덱스닷 누르면 해당 순서의 카드로 넘어가는 스크롤 설정
+        pageControl.rx.controlEvent(.valueChanged)
+            .map { [weak self] in self?.pageControl.currentPage ?? 0 }
+            .subscribe(onNext: { [weak self] pageIndex in
+                guard let self = self else { return }
+                let indexPath = IndexPath(item: pageIndex, section: 0)
+                self.collectionView.scrollToItem(
+                    at: indexPath,
+                    at: .centeredHorizontally,
+                    animated: true
+                )
+            })
+            .disposed(by: disposeBag)
+        
     }
     
+    private func loadImage(from url: URL) {
+        let processor = DownsamplingImageProcessor(size: self.profileImageView.bounds.size) // 크기 지정 다운 샘플링
+        
+        self.profileImageView.kf.indicatorType = .activity
+        KF.url(url)
+            .placeholder(UIImage.petProfile)
+            .setProcessor(processor)
+            .cacheOriginalImage()
+            .fade(duration: 0.25)
+            .onFailureImage(UIImage.petProfile)
+            .onSuccess { result in }
+            .onFailure { error in }
+            .set(to: self.profileImageView)
+    }
+    
+    // 인덱스 닷 누르면 해당 순서의 멍카드 화면 중앙으로 이동
+    private func scrollToItem(at index: Int) {
+        let indexPath = IndexPath(item: index, section: 0)
+        
+        guard collectionView.numberOfItems(inSection: 0) > index else { return }
+        
+        collectionView.scrollToItem(
+            at: indexPath,
+            at: .centeredHorizontally,
+            animated: true
+        )
+    }
+    
+    private func scrollToLastProfile() {
+        let profileCount = viewModel.output.petProfiles.value.count
+        if profileCount > 0 {
+            let lastIndex = profileCount - 1
+            let indexPath = IndexPath(item: lastIndex, section: 0)
+            collectionView.scrollToItem(
+                at: indexPath,
+                at: .centeredHorizontally,
+                animated: true
+            )
+            
+            // 페이지 컨트롤도 업데이트
+            pageControl.currentPage = lastIndex
+        }
+    }
+    
+    func scrollViewWillEndDragging(_ scrollView: UIScrollView,
+                                   withVelocity velocity: CGPoint,
+                                   targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        guard let collectionView = scrollView as? UICollectionView else { return }
+        
+        let cellWidth: CGFloat = 336
+        let cellSpacing: CGFloat = 12
+        let totalCellWidth = cellWidth + cellSpacing
+        let leftInset = collectionView.contentInset.left
+        
+        let proposedOffsetX = targetContentOffset.pointee.x
+        let index = round((proposedOffsetX + leftInset) / totalCellWidth)
+        
+        let maxIdx = max(0, collectionView.numberOfItems(inSection: 0) - 1)
+        let targetIndex = Int(max(0, min(index, CGFloat(maxIdx))))
+        
+        DispatchQueue.main.async {
+            let indexPath = IndexPath(item: targetIndex, section: 0)
+            collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+        }
+    }
+    
+    //MARK: - UI
     private func setupUI() {
         [
             profileImageView,
@@ -69,7 +202,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
-        profileImageView.backgroundColor = .keycolorPrimary4
+        profileImageView.backgroundColor = .clear
         profileImageView.contentMode = .scaleAspectFit
         profileImageView.layer.cornerRadius = 66
         profileImageView.layer.masksToBounds = true
@@ -84,20 +217,24 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         assistantNickNameField.leftViewMode = .always
         assistantNickNameField.textColor = .textPrimary
         
+        layout.scrollDirection = .horizontal
+        layout.scrollDirection = .horizontal
+        layout.itemSize = CGSize(width: 336, height: 208)
+        layout.sectionInset = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        layout.minimumLineSpacing = 12
+        layout.minimumInteritemSpacing = 0
+        
         collectionView.register(
             DetectiveCardCell.self,
             forCellWithReuseIdentifier: DetectiveCardCell.identifier)
-        collectionView.register(
-            ProfileAddCollectionViewCell.self,
-            forCellWithReuseIdentifier: ProfileAddCollectionViewCell.identifier)
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
-        collectionView.backgroundColor = .keycolorInverse
+        collectionView.backgroundColor = .keycolorBackground
         collectionView.isUserInteractionEnabled = true
         collectionView.allowsSelection = true
         collectionView.delegate = self
-        
+
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
         pageControl.pageIndicatorTintColor = .keycolorPrimary5
