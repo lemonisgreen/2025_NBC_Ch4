@@ -90,7 +90,6 @@ extension PostFooterView {
         container.axis = .vertical
         container.alignment = .leading
         container.spacing = 8
-        container.isUserInteractionEnabled = true
         
         actionBar.axis = .horizontal
         actionBar.spacing = 12
@@ -105,7 +104,6 @@ extension PostFooterView {
         captionLabel.textColor = .textPrimary
         captionLabel.numberOfLines = 2
         captionLabel.lineBreakMode = .byTruncatingTail
-        captionLabel.isUserInteractionEnabled = true
         
         // MARK: - likeButton Configuration
         var likeButtonConfig = UIButton.Configuration.plain()

@@ -16,12 +16,15 @@ import FirebaseAuth
 final class PostHeaderView: UICollectionReusableView {
     static let identifier = "PostHeaderView"
     
+    var disposeBag = DisposeBag()
+    
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
     private let infoLabel = UILabel()
     private let nameInfoStackView = UIStackView()
-    private let hStack = UIStackView()
+    private let horizontalStackView = UIStackView()
     private let configButton = UIButton()
+    private let tap = UITapGestureRecognizer()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -32,9 +35,11 @@ final class PostHeaderView: UICollectionReusableView {
     
     override func prepareForReuse() {
         super.prepareForReuse()
+        
         profileImageView.image = nil
         nameLabel.text = nil
         infoLabel.text = nil
+        disposeBag = DisposeBag()
     }
     
     // MARK: - Public
@@ -91,15 +96,19 @@ private extension PostHeaderView {
         nameInfoStackView.alignment = .leading
         nameInfoStackView.spacing = 2
         
-        hStack.axis = .horizontal
-        hStack.alignment = .center
-        hStack.spacing = 8
+        horizontalStackView.axis = .horizontal
+        horizontalStackView.alignment = .center
+        horizontalStackView.spacing = 8
         
         [nameLabel, infoLabel].forEach { nameInfoStackView.addArrangedSubview($0) }
-        [profileImageView, nameInfoStackView].forEach { hStack.addArrangedSubview($0) }
+        [profileImageView, nameInfoStackView].forEach { horizontalStackView.addArrangedSubview($0) }
         
-        addSubview(hStack)
-        addSubview(configButton)
+        addSubviews([
+            horizontalStackView,
+            configButton
+        ])
+        
+        horizontalStackView.addGestureRecognizer(tap)
         
         // 스타일
         profileImageView.contentMode = .scaleAspectFill
@@ -123,7 +132,7 @@ private extension PostHeaderView {
             $0.size.equalTo(32)
         }
         
-        hStack.snp.makeConstraints {
+        horizontalStackView.snp.makeConstraints {
             $0.top.bottom.equalToSuperview().inset(12)
             $0.leading.equalToSuperview()
             $0.trailing.lessThanOrEqualTo(configButton.snp.leading).offset(-8)
@@ -132,7 +141,23 @@ private extension PostHeaderView {
         configButton.setContentHuggingPriority(.required, for: .horizontal)
         configButton.snp.makeConstraints {
             $0.trailing.equalToSuperview()
-            $0.centerY.equalTo(hStack)
+            $0.centerY.equalTo(horizontalStackView)
         }
+    }
+}
+
+extension PostHeaderView {
+    fileprivate var profileTap: ControlEvent<Void> {
+        return ControlEvent<Void>(
+            events: tap.rx.event
+                .filter { $0.state == .ended }
+                .map { _ in }
+        )
+    }
+}
+
+extension Reactive where Base: PostHeaderView {
+    var profileTap: ControlEvent<Void> {
+        return base.profileTap
     }
 }

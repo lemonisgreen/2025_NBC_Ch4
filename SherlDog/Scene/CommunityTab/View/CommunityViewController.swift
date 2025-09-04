@@ -219,8 +219,10 @@ extension CommunityViewController {
             configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
+                let petProfile = dataSource.sectionModels[indexPath.section].model.petProfile
                 
                 cell.settingCell(item)
+                cell.settingPetProfile(profile: petProfile)
                 
                 cell.rx.mediaDoubleTap
                     .map { _ in dataSource.sectionModels[indexPath.section].model }
@@ -247,6 +249,23 @@ extension CommunityViewController {
                         : self.otherPostMenu(post: sectionModel)
                     )
                     
+                    header.rx.profileTap
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] in
+                            // TODO: 프로필 뷰로 이동
+                            let alert = CustomAlertViewController(
+                                message: "Test alert",
+                                subMessage: "Move to profile view",
+                                buttons: [CustomAlertViewController.AlertButton(
+                                    title: SDLiteral.AlertMessage.confirm,
+                                    action: nil
+                                )]
+                            )
+                            
+                            self?.present(alert, animated: true)
+                        })
+                        .disposed(by: header.disposeBag)
+                    
                     return header
                     
                 case UICollectionView.elementKindSectionFooter:
@@ -269,8 +288,17 @@ extension CommunityViewController {
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
-                            // TODO: 상세 뷰 이동 로직
-                            print("상세 뷰로 이동")
+                            // TODO: 상세 뷰로 이동
+                            let alert = CustomAlertViewController(
+                                message: "Test alert",
+                                subMessage: "Move to detail view",
+                                buttons: [CustomAlertViewController.AlertButton(
+                                    title: SDLiteral.AlertMessage.confirm,
+                                    action: nil
+                                )]
+                            )
+                            
+                            self?.present(alert, animated: true)
                         })
                         .disposed(by: footer.disposeBag)
                     
