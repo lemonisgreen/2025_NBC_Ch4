@@ -224,7 +224,7 @@ class ClueInputViewController: UIViewController {
             date: Timestamp(date: Date())
         )
         
-        FirestoreManager.shared.createDocument(collection: "clues", data: clue)
+        FirestoreManager.shared.createDocument(collection: .clues, data: clue)
             .subscribe(
                 onCompleted: { [weak self] in
                     DispatchQueue.main.async {

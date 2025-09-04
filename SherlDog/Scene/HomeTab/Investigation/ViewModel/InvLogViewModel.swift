@@ -26,7 +26,6 @@ class InvLogViewModel {
         let uploadError = PublishRelay<Void>()
     }
     
-    private let collection: String = "InvLog"
     private let disposeBag = DisposeBag()
     
     let input = PublishRelay<Input>()
@@ -52,7 +51,7 @@ class InvLogViewModel {
     }
     
     private func upload(image: String, content: String) {
-        FirestoreManager.shared.createDocument(collection: self.collection,
+        FirestoreManager.shared.createDocument(collection: .invLog,
                                                data: InvLogModel(userId: "unknown", image: image, content: content)) // todo: Insert userId
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)

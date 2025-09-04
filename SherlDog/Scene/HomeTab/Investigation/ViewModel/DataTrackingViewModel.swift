@@ -128,7 +128,7 @@ class DataTrackingViewModel {
         )
         
         FirestoreManager.shared.createDocument(
-            collection: "WalkResult",
+            collection: .walkResult,
             data: newWalkResult)
         .subscribe(
             onCompleted: { [weak self] in

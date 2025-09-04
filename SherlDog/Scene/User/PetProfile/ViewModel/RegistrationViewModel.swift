@@ -162,7 +162,7 @@ class RegistrationViewModel {
         )
         
         FirestoreManager.shared.createDocument(
-            collection: "PetProfile",
+            collection: .petProfile,
             data: newProfile,
             documentId: petProfileID
         )
@@ -202,7 +202,7 @@ class RegistrationViewModel {
         )
         
         FirestoreManager.shared.updateDocument(
-            collection: "PetProfile",
+            collection: .petProfile,
             documentId: petProfileID,
             data: updatedProfile
         )
