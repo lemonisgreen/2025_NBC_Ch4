@@ -88,7 +88,7 @@ final class HumanProfileViewModel {
         
         isLoading.accept(true)
         
-        FirebaseImageManager.shared.uploadAssistantImage(image) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(image, type: .assistant) { [weak self] result in
             switch result {
             case .success(let imageURL):
                 let data: [String: String] = [
@@ -137,7 +137,7 @@ final class HumanProfileViewModel {
         isLoading.accept(true)
         
         if let image = imageForUpload.value {
-            FirebaseImageManager.shared.uploadAssistantImage(image) { [weak self] result in
+            FirebaseImageManager.shared.uploadImage(image, type: .assistant) { [weak self] result in
                 switch result {
                 case .success(let imageURL):
                     let updatedProfile = HumanProfileModel(
