@@ -53,12 +53,18 @@ final class PetProfileViewModel {
                 guard let uid = Auth.auth().currentUser?.uid else {
                     return .just([])
                 }
-                return FirestoreManager.shared.fetchUserPetProfiles(userId: uid)
-                    .asObservable()
-                    .catch { error in
-                        self.output.errorMessage.onNext("프로필 불러오기 실패: \(error.localizedDescription)")
-                        return .just([])
-                    }
+                return FirestoreManager.shared.fetchQuery(
+                    FirestoreQuery<PetProfile>(
+                        collection: .petProfile,
+                        type: .whereField(field: "userId", value: uid)
+                        
+                    )
+                )
+                .asObservable()
+                .catch { error in
+                    self.output.errorMessage.onNext("프로필 불러오기 실패: \(error.localizedDescription)")
+                    return .just([])
+                }
             }
             .subscribe(onNext: { [weak self] profiles in
                 self?.output.petProfiles.accept(profiles)
@@ -69,12 +75,19 @@ final class PetProfileViewModel {
         
         input.addProfile
             .flatMapLatest { petProfileID -> Observable<PetProfile> in
-                FirestoreManager.shared.fetchPetProfileById(petProfileId: petProfileID)
-                    .asObservable()
-                    .catch { error in
-                        self.output.errorMessage.onNext("프로필 추가 실패: \(error.localizedDescription)")
-                        return .empty()
-                    }
+                FirestoreManager.shared.fetchQuery(
+                    FirestoreQuery<PetProfile>(
+                        collection: .petProfile,
+                        type: .document(id: petProfileID)
+                    )
+                )
+                .map { $0.first }
+                .compactMap { $0 }
+                .asObservable()
+                .catch { error in
+                    self.output.errorMessage.onNext("프로필 추가 실패: \(error.localizedDescription)")
+                    return .empty()
+                }
             }
             .withLatestFrom(output.petProfiles) { newProfile, profiles in
                 profiles + [newProfile]
@@ -118,12 +131,19 @@ final class PetProfileViewModel {
         
         input.editProfileId
             .flatMapLatest { id in
-                FirestoreManager.shared.fetchDocument(collection: .petProfile, documentId: id, type: PetProfile.self)
-                    .asObservable()
-                    .catch { [weak self] error in
-                        self?.output.errorMessage.onNext("편집 프로필 로딩 실패: \(error.localizedDescription)")
-                        return Observable.empty()
-                    }
+                FirestoreManager.shared.fetchQuery(
+                    FirestoreQuery<PetProfile>(
+                        collection: .petProfile,
+                        type: .document(id: id)
+                    )
+                )
+                .map { $0.first }
+                .compactMap { $0 }
+                .asObservable()
+                .catch { [weak self] error in
+                    self?.output.errorMessage.onNext("편집 프로필 로딩 실패: \(error.localizedDescription)")
+                    return Observable.empty()
+                }
             }
             .bind(to: output.profileForEdit)
             .disposed(by: disposeBag)

@@ -97,11 +97,8 @@ final class HumanProfileViewModel {
                     "introduce": self?.introduce.value ?? ""
                 ]
                 
-                FirestoreManager.shared.createDocument(
-                    collection: .humanProfile,
-                    data: data,
-                    documentId: userId
-                ).subscribe(
+                FirestoreManager.shared.createDocument(collection: .humanProfile, data: data, documentId: userId)
+                    .subscribe(
                     onCompleted: {
                         DispatchQueue.main.async {
                             self?.isLoading.accept(false)
@@ -146,11 +143,7 @@ final class HumanProfileViewModel {
                         introduce: self?.introduce.value ?? ""
                     )
                     
-                    FirestoreManager.shared.updateDocument(
-                        collection: .humanProfile,
-                        documentId: userId,
-                        data: updatedProfile
-                    )
+                    FirestoreManager.shared.updateDocument(collection: .humanProfile, documentId: userId, data: updatedProfile)
                     .subscribe(
                         onCompleted: {
                             DispatchQueue.main.async {
@@ -181,9 +174,7 @@ final class HumanProfileViewModel {
                 introduce: self.introduce.value
             )
             
-            FirestoreManager.shared.updateDocument(collection: .humanProfile,
-                                                   documentId: userId,
-                                                   data: updatedProfile)
+            FirestoreManager.shared.updateDocument(collection: .humanProfile, documentId: userId, data: updatedProfile)
             .subscribe(onCompleted: { [weak self] in
                 DispatchQueue.main.async {
                     self?.isLoading.accept(false)

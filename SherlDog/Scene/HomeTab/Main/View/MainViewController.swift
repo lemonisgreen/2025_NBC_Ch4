@@ -42,15 +42,15 @@ class MainViewController: UIViewController {
     private let timeLabel = UILabel()
     private let stepsLabel = UILabel()
     private var selectedPetImage
-: [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
+    : [String] = ["sampleDogImage", "sampleDogImage", "sampleDogImage"]
     private let statusLabel = UILabel()
     
     // distance, time, steps
     private let distanceValueLabel = UILabel()
     private let trackingTimeLabel
- = UILabel()
+    = UILabel()
     private let stepCountLabel
- = UILabel()
+    = UILabel()
     
     // 스택 뷰
     private let titleStack = UIStackView()
@@ -112,10 +112,10 @@ class MainViewController: UIViewController {
     /// 위치 권한이 '사용 중'일 때 '항상 허용' 권장 안내
     private func checkAndGuideAlwaysAuthorizationIfNeeded() {
         let status = locationManager.authorizationStatus
-
+        
         // 이미 Always 허용이면 패스
         guard status == .authorizedWhenInUse else { return }
-
+        
         // 사용 중 허용인 경우만 항상 허용을 유도
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
             guard let self = self else { return }
@@ -141,7 +141,7 @@ class MainViewController: UIViewController {
             self.present(alert, animated: true)
         }
     }
-
+    
     private func setupMapAndStartLocation() {
         locationManager.startUpdatingLocation()
         setupUI()
@@ -173,7 +173,12 @@ class MainViewController: UIViewController {
         clueMarkers.removeAll()
         
         // Firestore에서 내 단서들 가져오기
-        FirestoreManager.shared.fetchCluesForUser(userId: userId)
+        FirestoreManager.shared.fetchQuery(FirestoreQuery<ClueModel>(
+            collection: .clues,
+            type: .whereField(field: "userId", value: userId)
+            
+        )
+        )
         .observe(on: MainScheduler.instance)
         .subscribe(
             onSuccess: { [weak self] myClues in
@@ -204,13 +209,13 @@ class MainViewController: UIViewController {
             marker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
                 guard let self = self,
                       let marker = overlay as? NMFMarker else { return false }
-
+                
                 // 마커 위치 정보 가져오기
                 let markerPosition = marker.position
                 guard let clue = marker.userInfo["clue"] as? ClueModel else { return false }
                 let viewModel = ClueDetailViewModel(clue: clue)
                 let detailVC = ClueDetailViewController(viewModel: viewModel)
-//                let nav = UINavigationController(rootViewController: detailVC)
+                //                let nav = UINavigationController(rootViewController: detailVC)
                 detailVC.modalPresentationStyle = .pageSheet
                 detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
                 self.present(detailVC, animated: true)
@@ -225,7 +230,7 @@ class MainViewController: UIViewController {
         dataTrackingViewModel.numberOfSteps
             .map { "\($0)" }
             .bind(to: stepCountLabel
-.rx.text)
+                .rx.text)
             .disposed(by: disposeBag)
         
         dataTrackingViewModel.distance
@@ -250,7 +255,7 @@ class MainViewController: UIViewController {
                     }
             }
             .bind(to: trackingTimeLabel
-.rx.text)
+                .rx.text)
             .disposed(by: disposeBag)
     }
     
@@ -258,7 +263,7 @@ class MainViewController: UIViewController {
         output.fullSideOfCourse
             .subscribe(onNext: { [weak self] fullSide in
                 guard let self else { return }
-
+                
                 // If not enough path, show alert and return
                 if fullSide.isEmpty {
                     let alert = CustomAlertViewController(
@@ -266,20 +271,20 @@ class MainViewController: UIViewController {
                         subMessage: "5미터 이하의 경로는 기록이 되지 않아요",
                         buttons: [CustomAlertViewController.AlertButton(title: "확인", action:
                                                                             {
-                            let confirmAlert = CustomAlertViewController(
-                                message: "수사가 종료되었습니다.",
-                                subMessage: nil,
-                                buttons: [CustomAlertViewController.AlertButton(title: "확인", action: nil)]
-                                
-                            )
-                            self.present(confirmAlert, animated: true)
-                            self.setInvestigation(active: false)
-                        }),CustomAlertViewController.AlertButton(title: "취소", action: nil)])
-                   
+                                                                                let confirmAlert = CustomAlertViewController(
+                                                                                    message: "수사가 종료되었습니다.",
+                                                                                    subMessage: nil,
+                                                                                    buttons: [CustomAlertViewController.AlertButton(title: "확인", action: nil)]
+                                                                                    
+                                                                                )
+                                                                                self.present(confirmAlert, animated: true)
+                                                                                self.setInvestigation(active: false)
+                                                                            }),CustomAlertViewController.AlertButton(title: "취소", action: nil)])
+                    
                     self.present(alert, animated: true)
                     return
                 }
-
+                
                 // WalkendModalViewController의 imageView에 맞게 들어가도록 예측한 값.
                 /*
                  top 25추정 + 박스사이즈(약 120추정) + 15 + 박스사이즈(약 150추정) + 60 + 라벨사이즈(약 24추정) + 75 = 469
@@ -455,7 +460,7 @@ class MainViewController: UIViewController {
                 // 선택된 강아지들의 이미지로 배열 업데이트
                 if !selectedProfiles.isEmpty {
                     self.selectedPetImage
- = selectedProfiles.map { $0.image }
+                    = selectedProfiles.map { $0.image }
                     self.updateDetectiveImageStack()
                 }
             })
@@ -466,49 +471,49 @@ class MainViewController: UIViewController {
         // 기존 이미지뷰들 제거
         detectiveImageStack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         detectiveImageStack.spacing = selectedPetImage
-.count > 1 ? -8 : 0
+            .count > 1 ? -8 : 0
         
         selectedPetImage
-.forEach { imageName in
-            let imageView = UIImageView()
-            imageView.contentMode = .scaleAspectFill
-            imageView.clipsToBounds = true
-            imageView.layer.cornerRadius = 18
-            imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
-            imageView.layer.borderWidth = 1
-            imageView.snp.makeConstraints { $0.size.equalTo(36) }
-            
-            // URL인지 확인해서 이미지 로드
-            if imageName.hasPrefix("http"), let url = URL(string: imageName) {
-                let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
+            .forEach { imageName in
+                let imageView = UIImageView()
+                imageView.contentMode = .scaleAspectFill
+                imageView.clipsToBounds = true
+                imageView.layer.cornerRadius = 18
+                imageView.layer.borderColor = UIColor(named: "textInverse")?.cgColor
+                imageView.layer.borderWidth = 1
+                imageView.snp.makeConstraints { $0.size.equalTo(36) }
                 
-                imageView.kf.indicatorType = .activity
-                KF.url(url)
-                    .placeholder(UIImage.petAvatar)
-                    .setProcessor(processor)
-                    .cacheOriginalImage()
-                    .fade(duration: 0.25)
-                    .onFailureImage(UIImage.petAvatar)
-                    .onSuccess { result in }
-                    .onFailure { error in }
-                    .set(to: imageView)
-            } else {
-                imageView.image = UIImage(named: imageName)
+                // URL인지 확인해서 이미지 로드
+                if imageName.hasPrefix("http"), let url = URL(string: imageName) {
+                    let processor = DownsamplingImageProcessor(size: CGSize(width: 100, height: 100)) // 크기 지정 다운 샘플링
+                    
+                    imageView.kf.indicatorType = .activity
+                    KF.url(url)
+                        .placeholder(UIImage.petAvatar)
+                        .setProcessor(processor)
+                        .cacheOriginalImage()
+                        .fade(duration: 0.25)
+                        .onFailureImage(UIImage.petAvatar)
+                        .onSuccess { result in }
+                        .onFailure { error in }
+                        .set(to: imageView)
+                } else {
+                    imageView.image = UIImage(named: imageName)
+                }
+                detectiveImageStack.addArrangedSubview(imageView)
             }
-            detectiveImageStack.addArrangedSubview(imageView)
-        }
         // 텍스트도 업데이트
         statusLabel.text = selectedPetImage
-.count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
+            .count > 1 ? "멍탐정들과 함께 수사 중" : "멍탐정과 함께 수사 중"
     }
     
-//    private func showWalkEndModal() {
-//        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
-//        let walkEndModal = WalkEndModalViewController(viewModel: trackingViewModel, selectedProfiles: selectedProfiles)
-//        let nav = UINavigationController(rootViewController: walkEndModal)
-//        nav.modalPresentationStyle = .overFullScreen
-//        present(nav, animated: true)
-//    }
+    //    private func showWalkEndModal() {
+    //        let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
+    //        let walkEndModal = WalkEndModalViewController(viewModel: trackingViewModel, selectedProfiles: selectedProfiles)
+    //        let nav = UINavigationController(rootViewController: walkEndModal)
+    //        nav.modalPresentationStyle = .overFullScreen
+    //        present(nav, animated: true)
+    //    }
     
     private func configureInitialVisibility() {
         // 시작 시 상태 뷰 및 버튼 숨김
@@ -527,9 +532,9 @@ class MainViewController: UIViewController {
         if !active {
             distanceValueLabel.text = "0.00"
             trackingTimeLabel
-.text = "00:00:00"
+                .text = "00:00:00"
             stepCountLabel
-.text = "0"
+                .text = "0"
         }
     }
     
@@ -564,8 +569,8 @@ class MainViewController: UIViewController {
         
         // ValueStack 설정
         [distanceValueLabel, trackingTimeLabel
-, stepCountLabel
-].forEach {
+         , stepCountLabel
+        ].forEach {
             $0.textAlignment = .center
             $0.font = .highlight3
             $0.textColor = .textPrimary
@@ -613,8 +618,8 @@ class MainViewController: UIViewController {
         locationButton.setImage(UIImage(named: "locationButton"), for: .normal)
         
         [distanceValueLabel, trackingTimeLabel
-, stepCountLabel
-].forEach { valueStack.addArrangedSubview($0) }
+         , stepCountLabel
+        ].forEach { valueStack.addArrangedSubview($0) }
         
         [distanceLabel, timeLabel, stepsLabel].forEach { titleStack.addArrangedSubview($0) }
         
@@ -690,8 +695,8 @@ extension MainViewController: CLLocationManagerDelegate {
         guard let location = locations.last else { return }
         
         let coord = location.coordinate
-           mapView.locationOverlay.location = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
-
+        mapView.locationOverlay.location = NMGLatLng(lat: coord.latitude, lng: coord.longitude)
+        
         // 앱 처음 시작 시 한 번만 현재 위치로 카메라 이동
         if !hasSetInitialCamera {
             let coord = location.coordinate
@@ -704,7 +709,7 @@ extension MainViewController: CLLocationManagerDelegate {
             hasSetInitialCamera = true
         }
     }
-
+    
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:

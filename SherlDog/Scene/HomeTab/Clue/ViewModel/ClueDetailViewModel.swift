@@ -69,9 +69,12 @@ final class ClueDetailViewModel {
     }
     
     private func fetchCluesData(day: Date) {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-        FirestoreManager.shared.fetchCluesForDay(userId: userId, day: day)
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<ClueModel>(
+                collection: .clues,
+                type: .dateRange(field: "userId", value: nil, orderBy: "date", day: day)
+            )
+        )
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         .subscribe(onSuccess: { [weak self] clues in
             clues.forEach {
