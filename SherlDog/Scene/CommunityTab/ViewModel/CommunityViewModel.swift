@@ -364,11 +364,10 @@ private extension CommunityViewModel {
     }
     
     func getCollection(_ category: CommunitySectionType) -> FirestoreCollection? {
-        if let collectionName = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first {
-            return collectionName
+        if let collection = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first {
+            return collection
         } else {
             return nil
         }
-        
     }
 }

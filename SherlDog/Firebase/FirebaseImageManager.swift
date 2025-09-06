@@ -9,13 +9,13 @@ import os.signpost
 
 // MARK: - UploadType
 enum UploadImageType {
-    case assistant, clue, invLog, walkResult, petProfile, detectiveMate
+    case assistant, clue, invLogBoard, walkResult, petProfile, detectiveMate
     
     var folder: String {
         switch self {
         case .assistant: return "assistant"
         case .clue: return "clue"
-        case .invLog: return "invLog"
+        case .invLogBoard: return "invLogBoard"
         case .walkResult: return "walkResult"
         case .petProfile: return "pets"
         case .detectiveMate: return "detectiveMate"
@@ -26,7 +26,7 @@ enum UploadImageType {
         switch self {
         case .assistant: return "assistant_"
         case .clue: return "clue_"
-        case .invLog: return "invLog_"
+        case .invLogBoard: return "invLogBoard_"
         case .walkResult: return "walkResult_"
         case .petProfile: return "profile.jpg"
         case .detectiveMate: return "detectiveMate_"
@@ -115,7 +115,7 @@ class FirebaseImageManager {
     // MARK: - 이미지 URL 다운로드
     func downloadImageURL(userId: String, type: UploadImageType, petId: String? = nil, completion: @escaping (URL?) -> Void) {
         var path: String
-        if type == .assistant || type == .clue || type == .invLog || type == .walkResult {
+        if type == .assistant || type == .clue || type == .invLogBoard || type == .walkResult {
             // 일반 이미지 타입별 경로 (이 예시는 단일 파일 명확하지 않는 경우 예시)
             path = "\(type.folder)/\(userId)"
             // 실제로 파일명까지 포함한 정확한 path 필요. 필요하면 DB에서 경로 관리 권장

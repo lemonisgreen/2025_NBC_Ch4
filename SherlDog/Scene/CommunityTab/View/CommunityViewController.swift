@@ -119,7 +119,12 @@ extension CommunityViewController {
     private func myPostMenu(post: CommunityModel) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
-            self?.menuEvent.accept(.fix)
+            let category: CommunityViewModel.CommunitySectionType = {
+                self?.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMateBoard
+            }()
+            
+            let editView = AddNewContentViewController(category: category, post: post)
+            self?.navigationController?.pushViewController(editView, animated: true) // TODO: TEST
         }
         
         let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,

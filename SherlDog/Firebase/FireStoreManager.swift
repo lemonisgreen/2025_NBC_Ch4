@@ -20,7 +20,6 @@ enum FirestoreCollection: String, CaseIterable {
     case clues = "clues"
     case humanProfile = "HumanProfile"
     case petProfile = "PetProfile"
-    case invLog = "InvLog"
     case walkResult = "WalkResult"
     case detectiveMate = "DetectiveMate"
     case invLogBoard = "InvLogBoard"

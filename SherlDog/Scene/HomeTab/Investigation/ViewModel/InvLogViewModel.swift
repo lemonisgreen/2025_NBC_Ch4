@@ -69,7 +69,7 @@ class InvLogViewModel {
                                   contentImage: [image],
                                   content: content)
         
-        FirestoreManager.shared.createDocument(collection: .invLog,
+        FirestoreManager.shared.createDocument(collection: .invLogBoard,
                                                data: data)
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)
@@ -104,7 +104,7 @@ class InvLogViewModel {
     }
     
     private func imageToString(data: UploadData) {
-        FirebaseImageManager.shared.uploadImage(data.invImage, type: .invLog) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(data.invImage, type: .invLogBoard) { [weak self] result in
             switch result {
             case .success(let value):
                 self?.upload(image: value, content: data.content)

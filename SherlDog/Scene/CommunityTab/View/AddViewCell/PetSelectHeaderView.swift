@@ -18,7 +18,6 @@ final class PetSelectHeaderView: UICollectionReusableView {
     private let chevron = UIImageView(image: UIImage(systemName: "chevron.down"))
     private let tap = UITapGestureRecognizer()
     
-    var onTap: (() -> Void)?
     var disposeBag = DisposeBag()
 
     override init(frame: CGRect) {
@@ -63,12 +62,12 @@ final class PetSelectHeaderView: UICollectionReusableView {
     
     private func configureUI() {
         titleLabel.snp.makeConstraints {
-            $0.leading.equalToSuperview().inset(12)
+            $0.leading.equalToSuperview()
             $0.centerY.equalToSuperview()
         }
         
         chevron.snp.makeConstraints {
-            $0.trailing.equalToSuperview().inset(12)
+            $0.trailing.equalToSuperview()
             $0.centerY.equalToSuperview()
         }
     }

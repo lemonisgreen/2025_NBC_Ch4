@@ -91,7 +91,7 @@ final class PetSelectCardCell: UICollectionViewListCell {
     
     private func configureUI() {
         container.snp.makeConstraints {
-            $0.edges.equalToSuperview()//.inset(UIEdgeInsets(top: 4, left: 12, bottom: 4, right: 12))
+            $0.edges.equalToSuperview()
         }
         
         profileImageView.snp.makeConstraints {

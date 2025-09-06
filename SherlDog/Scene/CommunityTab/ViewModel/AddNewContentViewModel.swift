@@ -16,6 +16,11 @@ import Differentiator
 
 final class AddNewContentViewModel {
     
+    enum Mode {
+        case add
+        case edit(category: CommunityViewModel.CommunitySectionType, post: CommunityModel)
+    }
+    
     enum Input {
         case addButtonTap
         case dropdownTap
@@ -23,10 +28,11 @@ final class AddNewContentViewModel {
         case addPicture
         case selectedPictures([PHPickerResult])
         case deleteButtonTap(Int)
-        case editCase(category: CommunityViewModel.CommunitySectionType, postCode: String)
+        case editCase(category: CommunityViewModel.CommunitySectionType, post: CommunityModel)
     }
     
     struct Output {
+        let mode = BehaviorRelay<Mode>(value: .add)
         let petSelectCellData = BehaviorRelay<[PetSelectSection]>(value: [])
         let isExpanded = BehaviorRelay<Bool>(value: false)
         let selectedIndex = BehaviorRelay<[Int]>(value: [])
@@ -34,8 +40,11 @@ final class AddNewContentViewModel {
         let selectedImageIdentifiers = BehaviorRelay<[String]>(value: [])
         let isLoading = BehaviorRelay<Bool>(value: false)
         let maxPictureCount: Int = 5
-        let addPicture = PublishRelay<[String]>()
-        let addedPictures = BehaviorRelay<[UIImage]>(value: [])
+        let openAlbum = PublishRelay<Void>()
+        let picturesCellDisplay = BehaviorRelay<[UIImage]>(value: [])
+        let existingImages = BehaviorRelay<[UIImage]>(value: [])
+        let existingImageURLs = BehaviorRelay<[String]>(value: [])
+        let newPictures = BehaviorRelay<[UIImage]>(value: [])
         let uploadComplete = PublishRelay<Void>()
         let error = PublishRelay<String>()
     }
@@ -53,6 +62,7 @@ final class AddNewContentViewModel {
     
     let text = BehaviorRelay<String>(value: "")
     var dataBox = [PetSelectSection]()
+    private var imagesForEdit: [UIImage] = []
     
     private let disposeBag = DisposeBag()
     
@@ -61,6 +71,7 @@ final class AddNewContentViewModel {
     
     init() {
         transform()
+        bindPetSelectSections()
         fetchProfiles()
     }
     
@@ -72,94 +83,152 @@ final class AddNewContentViewModel {
                 switch input {
                 case .addButtonTap:
                     self.output.isLoading.accept(true)
-                    self.addPost()
+                    switch self.output.mode.value {
+                    case .add:
+                        self.addPost()               // 기존 업로드 로직 유지
+                    case let .edit(category, post):
+                        self.updatePost(category: category, post: post) // 새로운 업데이트 로직
+                    }
                     
                 case .dropdownTap:
-                    toggleCell()
+                    let isExpanded = !output.isExpanded.value
+                    self.output.isExpanded.accept(isExpanded)
                     
                 case .profileSelect(let rows):
-                    let selectedIndex = rows
                     let petSelectCellData = dataBox.flatMap { $0.items.map { $0.base } }
-                    let selectedPets = selectedIndex.map { petSelectCellData[$0] }
+                    let selectedPets = rows.map { petSelectCellData[$0] }
                     
                     self.output.selectedIndex.accept(rows)
                     self.output.selectedProfile.accept(selectedPets)
                     
                 case .addPicture:
-                    let ids = self.output.selectedImageIdentifiers.value
-                    
-                    self.output.addPicture.accept(ids)
+                    self.output.openAlbum.accept(())
                     
                 case .selectedPictures(let results):
                     self.loadOrderedImages(from: results)
                         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
                         .subscribe(onSuccess: { [weak self] images in
-                            self?.output.addedPictures.accept(images)
+                            guard let self else { return }
+                            // 전시용 리스트에 append (원본 유지)
+                            let updatedDisplay = self.output.existingImages.value + images
+                            self.output.picturesCellDisplay.accept(updatedDisplay)
+                            
+                            // 업데이트 로직에서만 사용할 신규 업로드 버퍼
+                            self.output.newPictures.accept(images)
                         })
                         .disposed(by: disposeBag)
                     
                 case .deleteButtonTap(let row):
-                    var images = self.output.addedPictures.value
-                    var ids = self.output.selectedImageIdentifiers.value
-                    images.remove(at: row)
-                    ids.remove(at: row)
+                    self.deletePicture(row: row)
                     
-                    self.output.addedPictures.accept(images)
-                    self.output.selectedImageIdentifiers.accept(ids)
+                case let .editCase(category, post):
+                    self.output.mode.accept(.edit(category: category, post: post))
                     
-                case let .editCase(category, postCode):
-                    self.setEditMode(category: category, postCode: postCode)
                 }
             })
             .disposed(by: disposeBag)
     }
     
-    private func setEditMode(category: CommunityViewModel.CommunitySectionType, postCode: String) {
-        fetchProfiles()
+    private func setEditMode(category: CommunityViewModel.CommunitySectionType, post: CommunityModel) {
+        self.output.isLoading.accept(true)
         
-        self.findDocumentId(category: category, postCode: postCode)
-            .subscribe(onSuccess: { [weak self] data in
-                
+        let petData = self.dataBox
+            .flatMap { $0.items.map { $0.base } }
+        let petIds = petData.map(\.petProfileId)
+        let selectedPetIds = post.petProfile.map { $0.petProfileId }
+        
+        let selectedIndex: [Int] = petIds.enumerated()
+            .compactMap { (index, id) in selectedPetIds.contains(id) ? index : nil }
+        
+        self.output.selectedIndex.accept(selectedIndex)
+        self.output.selectedProfile.accept(selectedIndex.map { petData[$0] })
+        self.output.existingImageURLs.accept(post.contentImage)
+        self.text.accept(post.content)
+
+        // 원본 이미지 다운로드 및 보관
+        self.downloadImages(post.contentImage)
+            .do(onSuccess: { [weak self] images in
+                guard let self else { return }
+                self.output.existingImages.accept(images)
+                let display = images + self.output.newPictures.value
+                self.output.picturesCellDisplay.accept(display)
+            })
+            .subscribe(onSuccess: { [weak self] _ in
+                self?.output.isLoading.accept(false)
+            }, onFailure: { [weak self] error in
+                self?.output.isLoading.accept(false)
+                self?.output.error.accept(error.localizedDescription)
             })
             .disposed(by: disposeBag)
     }
     
-    private func findDocumentId(category: CommunityViewModel.CommunitySectionType, postCode: String) -> Single<CommunityModel> {
-        guard let collectionName = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first else {
-            return .error(FirestoreError.unknown)
-        }
+    private func downloadImages(_ urlStrings: [String]) -> Single<[UIImage]> {
+        // 빈 배열이면 바로 성공
+        guard !urlStrings.isEmpty else { return .just([]) }
         
-        return FirestoreManager.shared.findDocumentId(collection: collectionName,
-                                                      whereField: "postCode",
-                                                      isEqualTo: postCode)
-        .flatMap { datas -> Single<CommunityModel> in
-            guard let data = datas.first else { return .error(FirestoreError.noData) }
-            
-            return FirestoreManager.shared.fetchDocument(collection: collectionName,
-                                                         documentId: data,
-                                                         type: CommunityModel.self)
-        }
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        return Observable.from(urlStrings)
+            .compactMap { URL(string: $0) }
+            .flatMap { url -> Observable<UIImage> in
+                let request = URLRequest(url: url)
+                return URLSession.shared.rx.data(request: request)
+                    .compactMap { UIImage(data: $0) } // 실패 이미지는 걸러냄
+            }
+            .toArray() // Single<[UIImage]>
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
     }
     
-    private func toggleCell() {
-        let isExpanded = !output.isExpanded.value
-        self.output.isExpanded.accept(isExpanded)
-        
-        if isExpanded {
-            // 펼치기: 섹션 스냅샷을 실제 섹션에 적용
-            self.output.petSelectCellData.accept(self.dataBox)
+    private func deletePicture(row: Int) {
+        var display = self.output.picturesCellDisplay.value
+        guard row >= 0, row < display.count else { return }
+
+        let existingCount = self.output.existingImages.value.count
+
+        if row < existingCount {
+            // 원본 삭제: UI/URL 상태 정리
+            var originals = self.output.existingImages.value
+            var urls = self.output.existingImageURLs.value
+            originals.remove(at: row)
+            if row < urls.count { urls.remove(at: row) }
+            self.output.existingImages.accept(originals)
+            self.output.existingImageURLs.accept(urls)
         } else {
-            // 접기: 섹션에서 아이템 제거 (섹션은 유지)
-            let namesArray = self.output.selectedProfile.value
-            let names = self.output.selectedProfile.value.map { $0.name }.joined(separator: " ")
-            let sample = [PetSelectSection(model: namesArray.isEmpty
-                                           ? SDLiteral.AddNewContentView.petSelectHeader
-                                           : String(format: SDLiteral.AddNewContentView.selectedPetNames, names),
-                                          items: [])]
-            
-            self.output.petSelectCellData.accept(sample)
+            // 신규 삭제: 업로드 버퍼 정리
+            let idx = row - existingCount
+            var news = self.output.newPictures.value
+            var ids = self.output.selectedImageIdentifiers.value
+            if idx >= 0 && idx < news.count { news.remove(at: idx) }
+            if idx >= 0 && idx < ids.count { ids.remove(at: idx) }
+            self.output.newPictures.accept(news)
+            self.output.selectedImageIdentifiers.accept(ids)
         }
+
+        display.remove(at: row)
+        self.output.picturesCellDisplay.accept(display)
+    }
+    
+    private func bindPetSelectSections() {
+        Observable
+            .combineLatest(self.output.isExpanded, self.output.selectedProfile)
+            .map { [weak self] isExpanded, profiles -> [PetSelectSection] in
+                guard let self = self else { return [] }
+                if isExpanded {
+                    // 펼침: 보유한 전체 섹션 스냅샷을 그대로 노출
+                    return self.dataBox
+                    
+                } else {
+                    // 접힘: 헤더만 남기고 아이템은 비움. 선택된 프로필 이름을 헤더에 표시
+                    let names = profiles.map(\.name).joined(separator: " ")
+                    let title = names.isEmpty
+                    ? SDLiteral.AddNewContentView.petSelectHeader
+                    : String(format: SDLiteral.AddNewContentView.selectedPetNames, names)
+                    
+                    return [PetSelectSection(model: title, items: [])]
+                    
+                }
+            }
+            .observe(on: MainScheduler.asyncInstance)
+            .bind(to: self.output.petSelectCellData)
+            .disposed(by: self.disposeBag)
     }
     
     private func loadOrderedImages(from results: [PHPickerResult]) -> Single<[UIImage]> {
@@ -167,15 +236,15 @@ final class AddNewContentViewModel {
         let ids = results.compactMap { $0.assetIdentifier }
         guard !ids.isEmpty else { return .just([]) }
         self.output.selectedImageIdentifiers.accept(ids)
-        print(ids)
+        
         // ids 배열 순서대로 PHAsset을 담은 PHFetchResult 가져오기
         let fetched = PHAsset.fetchAssets(withLocalIdentifiers: ids, options: nil)
         
         // 사용자가 선택한 ID 순서대로 PHAsset 배열 복원
         var dics: [String: PHAsset] = [:]
-          fetched.enumerateObjects { asset, _, _ in
-              dics[asset.localIdentifier] = asset
-          }
+        fetched.enumerateObjects { asset, _, _ in
+            dics[asset.localIdentifier] = asset
+        }
         
         let assetsInOrder = ids.compactMap { dics[$0] }
         
@@ -185,7 +254,7 @@ final class AddNewContentViewModel {
                 let option = PHImageRequestOptions()
                 option.isNetworkAccessAllowed = true
                 option.deliveryMode = .highQualityFormat
-
+                
                 PHImageManager.default().requestImageDataAndOrientation(for: asset, options: option) { data, _, _, _ in
                     observer(.success(data.flatMap { UIImage(data: $0) }))
                 }
@@ -228,8 +297,56 @@ final class AddNewContentViewModel {
             .disposed(by: disposeBag)
     }
     
+    private func updatePost(category: CommunityViewModel.CommunitySectionType, post: CommunityModel) {
+        uploadNewImages(category: category)
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            .flatMapCompletable { [weak self] newURLs in
+                guard let self,
+                      let userId = Auth.auth().currentUser?.uid,
+                      let collection = self.getCollection(category) else {
+                    return .error(FirestoreError.unknown)
+                }
+                // 기존 URL + 신규 URL 합치기
+                let merged = self.output.existingImageURLs.value + newURLs
+                let selectedPets = self.output.selectedProfile.value
+
+                let updated = CommunityModel(
+                    userId: userId,
+                    petProfile: selectedPets,
+                    postDate: post.postDate,
+                    contentImage: merged,
+                    content: self.text.value,
+                    like: post.like,
+                    previewComment: post.previewComment,
+                    postCode: post.postCode
+                )
+
+                // 동일 문서 id에 덮어쓰기
+                return FirestoreManager.shared.findDocumentId(collection: collection,
+                                                              whereField: SDLiteral.AddNewContentView.postCode,
+                                                              isEqualTo: post.postCode)
+                .flatMapCompletable { ids in
+                    guard let id = ids.first else { return .error(FirestoreError.unknown) }
+                    
+                    return FirestoreManager.shared.updateDocument(collection: collection,
+                                                                   documentId: id,
+                                                                   data: updated)
+                }
+                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            }
+            .subscribe(onCompleted: { [weak self] in
+                guard let self else { return }
+                self.output.isLoading.accept(false)
+                self.output.uploadComplete.accept(())
+            }, onError: { [weak self] error in
+                self?.output.error.accept(error.localizedDescription)
+                self?.output.isLoading.accept(false)
+            })
+            .disposed(by: disposeBag)
+    }
+    
     private func uploadImage() -> Single<[String]> {
-        let images = self.output.addedPictures.value
+        let images = self.output.picturesCellDisplay.value
         
         let uploads: [Single<String>] = images.map { image in
             Single<String>.create { observer in
@@ -250,6 +367,27 @@ final class AddNewContentViewModel {
         
     }
     
+    private func uploadNewImages(category: CommunityViewModel.CommunitySectionType) -> Single<[String]> {
+        let images = self.output.newPictures.value
+        guard !images.isEmpty else { return .just([]) }
+        let uploadType: UploadImageType = category == .invLogBoard ? .invLogBoard : .detectiveMate
+        
+        let uploads: [Single<String>] = images.map { image in
+            Single<String>.create { observer in
+                FirebaseImageManager.shared.uploadImage(image, type: uploadType) { result in
+                    switch result {
+                    case .success(let imageUrl):
+                        observer(.success(imageUrl))
+                    case .failure(let error):
+                        observer(.failure(error))
+                    }
+                }
+                return Disposables.create()
+            }
+        }
+        return Single.zip(uploads)
+    }
+    
     private func fetchProfiles() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
@@ -263,13 +401,20 @@ final class AddNewContentViewModel {
             .subscribe(onSuccess: { [weak self] sections in
                 self?.dataBox = sections
                 
-                // ✅ 초기 상태: 접힘(isExpanded=false)이므로 헤더만 보이게 빈 아이템 섹션을 방출
-                let collapsed: [PetSelectSection] = [
-                    PetSelectSection(model: SDLiteral.AddNewContentView.petSelectHeader, items: [])
-                ]
-                self?.output.petSelectCellData.accept(collapsed)
+                // 프로필 섹션이 로드된 뒤, 편집 모드라면 선택 상태를 적용
+                if case let .edit(category, post) = self?.output.mode.value {
+                    self?.setEditMode(category: category, post: post)
+                }
             })
             .disposed(by: disposeBag)
+    }
+    
+    func getCollection(_ category: CommunityViewModel.CommunitySectionType) -> FirestoreCollection? {
+        if let collection = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first {
+            return collection
+        } else {
+            return nil
+        }
     }
     
     private func setAgeGenderStyle(data: PetProfile) -> String {

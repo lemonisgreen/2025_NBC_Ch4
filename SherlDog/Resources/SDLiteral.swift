@@ -42,11 +42,14 @@ enum SDLiteral {
     
     enum AddNewContentView {
         static let title: String = "글 작성"
+        static let titleByEditMode: String = "글 수정"
         static let addButtonTitle: String = "등록"
+        static let editButtonTitle: String = "수정"
         static let petSelectHeader: String = "어떤 탐정님이 모집하는 건가요?"
         static let selectedPetNames: String = "%@ 탐정"
         static let textViewPlaceholder: String = "내용을 입력하세요.\n(최대 1000자 입력, 사진 최대 10장 업로드)"
         static let pictureCount: String = "%d/5 장"
+        static let postCode: String = "postCode"
     }
     
     enum UserProfileViewController {

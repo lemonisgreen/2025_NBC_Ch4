@@ -52,6 +52,25 @@ final class AddNewContentViewController: UIViewController {
         self.navigationController?.navigationBar.isHidden = false
     }
     
+    // Add mode
+    init() {
+        super.init(nibName: nil, bundle: nil)
+        
+        self.addModeSetting()
+    }
+    
+    // Edit mode
+    init(category: CommunityViewModel.CommunitySectionType, post: CommunityModel) {
+        super.init(nibName: nil, bundle: nil)
+        
+        self.viewModel.input.accept(.editCase(category: category, post: post))
+        self.editModeBind()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     // MARK: - Method
     private func bind() {
         viewModel.output.uploadComplete
@@ -79,7 +98,8 @@ final class AddNewContentViewController: UIViewController {
             .disposed(by: disposeBag)
         
         viewModel.output.petSelectCellData
-            .bind { [weak self] sections in
+            .asDriver()
+            .drive { [weak self] sections in
                 guard let self else { return }
                 let headerH: CGFloat = 50
                 let rowH: CGFloat = 50
@@ -90,9 +110,8 @@ final class AddNewContentViewController: UIViewController {
                 
                 UIView.animate(withDuration: 0.2) {
                     self.petListCollectionView.snp.updateConstraints { $0.height.equalTo(total) }
+                    self.view.layoutIfNeeded()
                 }
-                
-                self.reselect()
             }
             .disposed(by: disposeBag)
         
@@ -112,7 +131,7 @@ final class AddNewContentViewController: UIViewController {
             }
             .disposed(by: disposeBag)
         
-        viewModel.output.addedPictures
+        viewModel.output.picturesCellDisplay
             .asDriver(onErrorJustReturn: [])
             .drive(self.picturesCollectionView.rx.items) { collectionView, row, item in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PicturesCollectionViewCell.identifier, for: IndexPath(item: row, section: 0)) as? PicturesCollectionViewCell else { return .init() }
@@ -128,22 +147,24 @@ final class AddNewContentViewController: UIViewController {
             }
             .disposed(by: disposeBag)
         
-        viewModel.output.addedPictures
+        viewModel.output.picturesCellDisplay
             .map { String(format: SDLiteral.AddNewContentView.pictureCount, $0.count) }
             .bind(to: self.selectedPictureCountLabel.rx.text)
             .disposed(by: disposeBag)
         
-        viewModel.output.addPicture
-            .asSignal()
+        viewModel.output.openAlbum
+            .withLatestFrom(self.viewModel.output.selectedImageIdentifiers)
+            .asSignal(onErrorJustReturn: [])
             .emit(onNext: { [weak self] ids in
                 guard let self else { return }
+                let existingCount = self.viewModel.output.existingImages.value.count
                 
                 PermissionManager.requestPermission(type: .album) { [weak self] isAllowed in
                     guard let self else { return }
                     switch isAllowed {
                     case true:
                         var configuration = PHPickerConfiguration(photoLibrary: .shared())
-                        configuration.selectionLimit = 5
+                        configuration.selectionLimit = 5 - existingCount
                         configuration.selection = .ordered
                         configuration.filter = .images
                         configuration.preferredAssetRepresentationMode = .current
@@ -180,6 +201,19 @@ final class AddNewContentViewController: UIViewController {
                     }
                 }
             })
+            .disposed(by: disposeBag)
+        
+        self.petListCollectionView.rx.willDisplayCell
+            .withLatestFrom(self.viewModel.output.selectedIndex) { ($0, $1) }
+            .observe(on: MainScheduler.asyncInstance)
+            .bind { [weak self] event, selectedRows in
+                guard let self = self else { return }
+                let indexPath = event.at
+                
+                if selectedRows.contains(indexPath.item) {
+                    self.petListCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+                }
+            }
             .disposed(by: disposeBag)
     }
     
@@ -219,6 +253,7 @@ final class AddNewContentViewController: UIViewController {
             .disposed(by: disposeBag)
         
         self.contentTextView.rx.text.orEmpty
+            .distinctUntilChanged()
             .bind(to: self.viewModel.text)
             .disposed(by: disposeBag)
         
@@ -228,20 +263,23 @@ final class AddNewContentViewController: UIViewController {
             .disposed(by: disposeBag)
     }
     
-    private func reselect() {
-        let rows = self.viewModel.output.selectedIndex.value
+    private func editModeBind() {
+        self.navigationAddButton.setTitle(SDLiteral.AddNewContentView.editButtonTitle, for: .normal)
+        self.navigationTitleLabel.text = SDLiteral.AddNewContentView.titleByEditMode
         
-        guard let maxSelected = rows.max(),
-              self.petListCollectionView.numberOfItems(inSection: 0) >= maxSelected else { return }
-        
-        if self.viewModel.output.isExpanded.value, !rows.isEmpty {
-            let indexPaths = rows.map { return IndexPath(row: $0, section: 0) }
-            indexPaths.forEach {
-                self.petListCollectionView.selectItem(at: $0,
-                                                      animated: true,
-                                                      scrollPosition: [])
-            }
-        }
+        viewModel.text
+            .skip(while: { $0 == "" })
+            .take(1)
+            .asSignal(onErrorJustReturn: "")
+            .emit(onNext: { [weak self] text in
+                self?.contentTextView.text = text
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func addModeSetting() {
+        navigationTitleLabel.text = SDLiteral.AddNewContentView.title
+        navigationAddButton.setTitle(SDLiteral.AddNewContentView.addButtonTitle, for: .normal)
     }
     
     private func completeAlert() {
@@ -280,7 +318,6 @@ final class AddNewContentViewController: UIViewController {
         self.navigationController?.interactivePopGestureRecognizer?.delegate = nil
         self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
         
-        navigationTitleLabel.text = SDLiteral.AddNewContentView.title
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
@@ -300,7 +337,6 @@ final class AddNewContentViewController: UIViewController {
         navigationStack.spacing = 8
         navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
         
-        navigationAddButton.setTitle(SDLiteral.AddNewContentView.addButtonTitle, for: .normal)
         navigationAddButton.setTitleColor(.textAlert, for: .normal)
         navigationAddButton.titleLabel?.font = .highlight3
         
@@ -338,7 +374,7 @@ final class AddNewContentViewController: UIViewController {
         textViewPlaceholderLabel.textColor = .gray500
         textViewPlaceholderLabel.numberOfLines = 0
         
-        selectedPictureCountLabel.text = String(format:SDLiteral.AddNewContentView.selectedPetNames, 0)
+        selectedPictureCountLabel.text = String(format:SDLiteral.AddNewContentView.pictureCount, 0)
         selectedPictureCountLabel.font = .alert2
         selectedPictureCountLabel.textColor = .gray400
         
@@ -476,9 +512,8 @@ extension AddNewContentViewController {
                     header.setTitle(title: sectionModel)
                     
                     header.rx.dropdownEvent
-                        .subscribe(onNext: { [weak self] _ in
-                            self?.viewModel.input.accept(.dropdownTap)
-                        })
+                        .map { _ in .dropdownTap }
+                        .bind(to: self.viewModel.input)
                         .disposed(by: header.disposeBag)
                     
                     return header
