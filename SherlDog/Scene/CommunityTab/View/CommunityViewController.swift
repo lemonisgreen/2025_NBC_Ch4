@@ -124,7 +124,7 @@ extension CommunityViewController {
             }()
             
             let editView = AddNewContentViewController(category: category, post: post)
-            self?.navigationController?.pushViewController(editView, animated: true) // TODO: TEST
+            self?.navigationController?.pushViewController(editView, animated: true)
         }
         
         let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
