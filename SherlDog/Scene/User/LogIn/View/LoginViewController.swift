@@ -190,33 +190,38 @@ class LoginViewController: UIViewController {
         // 현재 사용자가 펫 프로필을 가지고 있는지 확인
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { [weak self] profiles in
-                    if profiles.isEmpty {
-                        // 펫 프로필이 없으면 등록 화면으로
-                        let petProfileVC = PetProfileViewController()
-                        self?.navigationController?.pushViewController(petProfileVC, animated: true)
-                    } else {
-                        // 펫 프로필이 있으면 메인 화면으로
-                        let mainVC = BottomTabBarController()
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let delegate = windowScene.delegate as? SceneDelegate,
-                           let window = delegate.window {
-                            window.rootViewController = mainVC
-                            window.makeKeyAndVisible()
-                        }
-                    }
-                },
-                onFailure: { [weak self] error in
-                    print("펫 프로필 확인 실패: \(error)")
-                    // 실패 시 안전하게 펫 프로필 화면으로
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<PetProfile>(
+                collection: .petProfile,
+                type: .whereField(field: "userId", value: userId)
+            )
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(
+            onSuccess: { [weak self] profiles in
+                if profiles.isEmpty {
+                    // 펫 프로필이 없으면 등록 화면으로
                     let petProfileVC = PetProfileViewController()
                     self?.navigationController?.pushViewController(petProfileVC, animated: true)
+                } else {
+                    // 펫 프로필이 있으면 메인 화면으로
+                    let mainVC = BottomTabBarController()
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let delegate = windowScene.delegate as? SceneDelegate,
+                       let window = delegate.window {
+                        window.rootViewController = mainVC
+                        window.makeKeyAndVisible()
+                    }
                 }
-            )
-            .disposed(by: disposeBag)
+            },
+            onFailure: { [weak self] error in
+                print("펫 프로필 확인 실패: \(error)")
+                // 실패 시 안전하게 펫 프로필 화면으로
+                let petProfileVC = PetProfileViewController()
+                self?.navigationController?.pushViewController(petProfileVC, animated: true)
+            }
+        )
+        .disposed(by: disposeBag)
     }
     
     private func showErrorAlert(message: String) {
