@@ -7,7 +7,7 @@ import FirebaseAuth
 import RxSwift
 import os.signpost
 
-enum UploadImageFor {
+enum UploadImageType {
     case assistant, clue, invLog, walkResult, petProfile
     
     var folder: String {
@@ -67,7 +67,7 @@ class FirebaseImageManager {
     // MARK: - 공통 업로드
     func uploadImage(
         _ image: UIImage,
-        type: UploadImageFor,
+        type: UploadImageType,
         petId: String? = nil,
         completion: @escaping (Result<String, Error>) -> Void
     ) {
@@ -115,7 +115,7 @@ class FirebaseImageManager {
         }
     }
     
-    // MARK: - 이미지 URL 다운로드
+    // MARK: - 이미지 URL 다운로
     func downloadImageURL(
         userId: String? = nil,
         type: UploadImageFor,
