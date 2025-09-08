@@ -94,18 +94,23 @@ final class LoginViewModel: NSObject {
             return
         }
         
-        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] profiles in
-                if profiles.isEmpty {
-                    self?.navigateToPetProfileSubject.onNext(())
-                } else {
-                    self?.navigateToMainSubject.onNext(())
-                }
-            }, onFailure: { [weak self] _ in
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<PetProfile>(
+                collection: .petProfile,
+                type: .whereField(field: "userId", value: userId)
+            )
+        )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onSuccess: { [weak self] profiles in
+            if profiles.isEmpty {
                 self?.navigateToPetProfileSubject.onNext(())
-            })
-            .disposed(by: disposeBag)
+            } else {
+                self?.navigateToMainSubject.onNext(())
+            }
+        }, onFailure: { [weak self] _ in
+            self?.navigateToPetProfileSubject.onNext(())
+        })
+        .disposed(by: disposeBag)
     }
     
     // MARK: - 카카오 로그인

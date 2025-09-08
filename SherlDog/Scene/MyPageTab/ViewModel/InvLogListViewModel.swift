@@ -75,7 +75,12 @@ extension InvLogListViewModel {
         self.data = []
         self.originalData = []
         
-        FirestoreManager.shared.fetchWalkResults(userId: userId)
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<WalkResult>(
+                collection: .walkResult,
+                type: .whereField(field: "userId", value: userId)
+                )
+        )
             .flatMap { [weak self] result -> Single<[(WalkResult, [PetProfile])]> in
                 guard let self else { return .error(FirestoreError.unknown) }
                 let petSingles = result.map { result in
@@ -108,8 +113,17 @@ extension InvLogListViewModel {
     
     private func loadPetProfile(ids: [String]) -> Single<[PetProfile]> {
         let pets = ids.map { id in
-            FirestoreManager.shared.fetchPetProfileById(petProfileId: id)
-                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            return FirestoreManager.shared.fetchQuery(
+                FirestoreQuery<PetProfile>(
+                    collection: .petProfile,
+                    type: .document(id: id)
+                )
+            )
+            .flatMap { documents -> Single<PetProfile> in
+                guard let pet = documents.first else { return .error(FirestoreError.noData) }
+                return .just(pet)
+            }
+            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
         }
         
         return Single.zip(pets)
