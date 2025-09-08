@@ -85,7 +85,12 @@ class MyPageViewModel {
     private func fetchUserPetProfiles() {
         output.isLoading.accept(true)
         
-        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<PetProfile>(
+                collection: .petProfile,
+                type: .whereField(field: "userId", value: userId),
+            )
+        )
         .subscribe(
             onSuccess: { [weak self] profiles in
                 self?.output.petProfiles.accept(profiles)
@@ -101,11 +106,19 @@ class MyPageViewModel {
     }
     
     private func fetchHumanProfile() {
-        FirestoreManager.shared.fetchHumanProfile(userId: userId)
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<HumanProfileModel>(
+                collection: .humanProfile,
+                type: .document(id: userId),
+            )
+        )
         .subscribe(
-            onSuccess: { [weak self] humanProfile in
-                self?.output.humanProfile.accept(humanProfile)
-            },
+            onSuccess: { [weak self] humanProfiles in
+                   guard let profile = humanProfiles.first else {
+                       return
+                   }
+                   self?.output.humanProfile.accept(profile)
+               },
             onFailure: { [weak self] error in
                 self?.output.errorMessage.onNext("HumanProfile 로드 실패: \(error.localizedDescription)")
                 let defaultProfile = HumanProfileModel(nickname: "똥봉투조수", image: "", introduce: "")
@@ -118,12 +131,17 @@ class MyPageViewModel {
     private func addNewProfile(with petProfileID: String) {
         guard !petProfileID.isEmpty else { return }
         
-        FirestoreManager.shared.fetchPetProfileById(petProfileId: petProfileID)
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<PetProfile>(
+                collection: .petProfile,
+                type: .document(id: petProfileID)
+            )
+        )
         .subscribe(onSuccess: { [weak self] newProfile in
             guard let self = self else { return }
             
             var currentProfiles = self.output.petProfiles.value
-            currentProfiles.append(newProfile)
+            currentProfiles.append(contentsOf: newProfile)
             
             DispatchQueue.main.async {
                 self.output.petProfiles.accept(currentProfiles)

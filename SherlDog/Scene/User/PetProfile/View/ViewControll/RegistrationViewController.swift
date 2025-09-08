@@ -14,12 +14,12 @@ import FirebaseStorage
 import Kingfisher
 
 class RegistrationViewController: UIViewController {
-
+    
     enum Mode {
         case add
         case edit(PetProfile)
     }
-
+    
     private var mode: Mode = .add
     
     private let cameraViewModel = CameraViewModel()
@@ -30,7 +30,7 @@ class RegistrationViewController: UIViewController {
     let disposeBag = DisposeBag()
     
     private var selectedImage: UIImage?
-
+    
     private let registrationLabel = UILabel()
     private let registrationButton = UIButton()
     private let registrationStackView = UIStackView()
@@ -95,11 +95,11 @@ class RegistrationViewController: UIViewController {
     /// Configures the view for the specified mode. If mode is .edit, sets up the viewModel with the profile.
     func configure(for mode: Mode) {
         self.mode = mode
-
+        
         if case .edit(let profile) = mode {
             viewModel.setEditMode(with: profile)
         }
-
+        
         DispatchQueue.main.async { [weak self] in
             if self?.isViewLoaded == true {
                 self?.updateButtonStates()
@@ -172,20 +172,20 @@ class RegistrationViewController: UIViewController {
     func updateSizeSelectionButtons(selected: String) {
         // 아이콘 이미지 교체
         registSizeSmallIcon.image = selected == "small" ?
-            UIImage(named: "smallDogActive") :
-            UIImage(named: "smallDogInactive")
+        UIImage(named: "smallDogActive") :
+        UIImage(named: "smallDogInactive")
         registSizeSmallLabel.textColor = selected == "small" ?
             .textPrimary : .textTertiary
-
+        
         registSizeMediumIcon.image = selected == "medium" ?
-            UIImage(named: "mediumDogActive") :
-            UIImage(named: "mediumDogInactive")
+        UIImage(named: "mediumDogActive") :
+        UIImage(named: "mediumDogInactive")
         registSizeMediumLabel.textColor = selected == "medium" ?
             .textPrimary : .textTertiary
-
+        
         registSizeLargeIcon.image = selected == "large" ?
-            UIImage(named: "largeDogActive") :
-            UIImage(named: "largeDogInactive")
+        UIImage(named: "largeDogActive") :
+        UIImage(named: "largeDogInactive")
         registSizeLargeLabel.textColor = selected == "large" ?
             .textPrimary : .textTertiary
     }
@@ -488,24 +488,27 @@ class RegistrationViewController: UIViewController {
     // MARK: - Present Edit View for Profile
     /// Presents the edit view for a given pet profile ID.
     private func presentEditView(for profileId: String) {
-        FirestoreManager.shared.fetchDocument(
-            collection: .petProfile,
-            documentId: profileId,
-            type: PetProfile.self
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<PetProfile>(
+                collection: .petProfile,
+                type: .document(id: profileId)
+            )
         )
-        .subscribe(onSuccess: { [weak self] profile in
+        .subscribe(onSuccess: { [weak self] profiles in
             guard let self = self else { return }
-
+            guard let profile = profiles.first else {
+                    return
+                }
             let registrationVC = RegistrationViewController()
             registrationVC.configure(for: .edit(profile))
-
+            
             registrationVC.profileUpdateSubject
                 .take(1)
                 .subscribe(onNext: { [weak self] _ in
                     self?.viewModel.profileDidUpdate.onNext(())
                 })
                 .disposed(by: registrationVC.disposeBag)
-
+            
             // NOTE: Present or push registrationVC from the calling context as needed
         }, onFailure: { error in
             print("❌ Firestore에서 프로필 로딩 실패: \(error.localizedDescription)")
@@ -629,7 +632,7 @@ class RegistrationViewController: UIViewController {
         registedProfileImage.layer.cornerRadius = 4
         registedProfileImage.clipsToBounds = true
         registedProfileImage.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
-                
+        
         //MARK: 이름 --
         registNameLabel.text = "이름"
         registNameLabel.textColor = .textPrimary

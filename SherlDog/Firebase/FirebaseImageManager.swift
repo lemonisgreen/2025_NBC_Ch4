@@ -56,6 +56,10 @@ class FirebaseImageManager {
     private let storage = Storage.storage()
     private let storageRef: StorageReference
     
+    var userId: String {
+            return Auth.auth().currentUser?.uid ?? ""
+        }
+    
     private init() {
         storageRef = storage.reference()
     }
@@ -71,7 +75,9 @@ class FirebaseImageManager {
             completion(.failure(ImageError.invalidImageData))
             return
         }
-        guard let userId = Auth.auth().currentUser?.uid else {
+        
+        let actualUserId = userId
+        guard !actualUserId.isEmpty else {
             completion(.failure(ImageError.noUserId))
             return
         }
@@ -82,10 +88,10 @@ class FirebaseImageManager {
                 completion(.failure(ImageError.noPetId))
                 return
             }
-            imagePath = "\(type.folder)/\(userId)/\(petId)/\(type.filePrefix)" // pets/userId/petId/profile.jpg
+            imagePath = "\(type.folder)/\(actualUserId)/\(petId)/\(type.filePrefix)" // pets/userId/petId/profile.jpg
         } else {
             let timestamp = Int(Date().timeIntervalSince1970)
-            imagePath = "\(type.folder)/\(userId)/\(type.filePrefix)\(timestamp).jpg"
+            imagePath = "\(type.folder)/\(actualUserId)/\(type.filePrefix)\(timestamp).jpg"
         }
 
         let imageRef = storageRef.child(imagePath)
@@ -110,12 +116,19 @@ class FirebaseImageManager {
     }
     
     // MARK: - 이미지 URL 다운로드
-    func downloadImageURL(userId: String, type: UploadImageFor, petId: String? = nil, completion: @escaping (URL?) -> Void) {
+    func downloadImageURL(
+        userId: String? = nil,
+        type: UploadImageFor,
+        petId: String? = nil,
+        completion: @escaping (URL?) -> Void) {
+                let actualUserId = userId ?? self.userId
+                guard !actualUserId.isEmpty else {
+                    completion(nil)
+                    return
+                }
         var path: String
         if type == .assistant || type == .clue || type == .invLog || type == .walkResult {
-            // 일반 이미지 타입별 경로 (이 예시는 단일 파일 명확하지 않는 경우 예시)
-            path = "\(type.folder)/\(userId)"
-            // 실제로 파일명까지 포함한 정확한 path 필요. 필요하면 DB에서 경로 관리 권장
+            path = "\(type.folder)/\(actualUserId)"
             completion(nil)
             return
         }
@@ -124,7 +137,7 @@ class FirebaseImageManager {
                 completion(nil)
                 return
             }
-            path = "pets/\(userId)/\(petId)/profile.jpg"
+            path = "pets/\(actualUserId)/\(petId)/profile.jpg"
         } else {
             completion(nil)
             return
