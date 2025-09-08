@@ -311,29 +311,44 @@ private extension CommunityViewModel {
     func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
         guard let collection = self.getCollection(category) else { return .error(FirestoreError.unknown) }
         
-        return FirestoreManager.shared.fetchCollectionWithoutBlockedUser(
-            collection: collection,
-            sortField: "postDate",
-            descending: true,
-            type: CommunityModel.self
-        )
-        .flatMap { [weak self] data in
-            guard let self else { return .just([]) }
-            return self.fetchProfiles(data)
-        }
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .observe(on: MainScheduler.instance)
+        return BlockManager.shared.fetchBlockedUsers()
+            .flatMap { blocked in
+                return FirestoreManager.shared.fetchQuery(FirestoreQuery<CommunityModel>(
+                    collection: collection,
+                    type: .collection(sortField: SDLiteral.CommunityView.postDate,
+                                      descending: true,
+                                      blockedIds: blocked)
+                ))
+                .flatMap { [weak self] data in
+                    guard let self else { return .just([]) }
+                    return self.fetchProfiles(data)
+                }
+                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                .observe(on: MainScheduler.instance)
+            }
     }
     
     func fetchProfiles(_ data: [CommunityModel]) -> Single<[CommunityModel]> {
         let singles = data.map { postData in
             let pets = postData.petProfile.map { pet in
-                FirestoreManager.shared.fetchDocument(collection: .petProfile,
-                                                      documentId: pet.petProfileId,
-                                                      type: PetProfile.self)
+                FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
+                    collection: .petProfile,
+                    type: .document(id: pet.petProfileId)
+                ))
+                .flatMap { profile -> Single<PetProfile> in
+                    guard let profile = profile.first else { return .error(FirestoreError.noData) }
+                    return .just(profile)
+                }
             }
             
-            let human = FirestoreManager.shared.fetchHumanProfile(userId: postData.userId)
+            let human = FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
+                collection: .humanProfile,
+                type: .document(id: postData.userId)
+            ))
+                .flatMap { profile -> Single<HumanProfileModel> in
+                    guard let profile = profile.first else { return .error(FirestoreError.noData) }
+                    return .just(profile)
+                }
             
             let petZip = Single.zip(pets)
             
@@ -356,11 +371,14 @@ private extension CommunityViewModel {
         
         return FirestoreManager.shared.findDocumentId(
             collection: collection,
-            whereField: "postCode",
+            whereField: SDLiteral.CommunityView.postCode,
             isEqualTo: postCode
         )
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .map { $0.first ?? "" }
+        .flatMap { id in
+            guard let documentId = id.first else { return .error(FirestoreError.noData) }
+            return .just(documentId)
+        }
     }
     
     func getCollection(_ category: CommunitySectionType) -> FirestoreCollection? {

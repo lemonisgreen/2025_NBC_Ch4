@@ -84,23 +84,34 @@ class InvLogViewModel {
     private func fetchHumanProfile() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        FirestoreManager.shared.fetchHumanProfile(userId: userId)
-            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] profile in
-                self?.output.humanProfile.accept(profile)
-            })
-            .disposed(by: disposeBag)
+        FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
+            collection: .humanProfile,
+            type: .document(id: userId)
+        ))
+        .flatMap { profile in
+            guard let profile = profile.first else { return .error(FirestoreError.noData) }
+            return .just(profile)
+        }
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .subscribe(onSuccess: { [weak self] profile in
+            self?.output.humanProfile.accept(profile)
+        })
+        .disposed(by: disposeBag)
     }
     
     private func fetchPetProfile() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
-            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            .subscribe(onSuccess: { [weak self] profile in
-                self?.output.petProfile.accept(profile)
-            })
-            .disposed(by: disposeBag)
+        FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
+            collection: .petProfile,
+            type: .whereField(field: SDLiteral.FirestoreFieldName.userId,
+                              value: userId)
+        ))
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .subscribe(onSuccess: { [weak self] profile in
+            self?.output.petProfile.accept(profile)
+        })
+        .disposed(by: disposeBag)
     }
     
     private func imageToString(data: UploadData) {

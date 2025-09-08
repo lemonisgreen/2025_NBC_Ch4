@@ -70,15 +70,20 @@ extension InvLogListViewModel {
         self.data = []
         self.originalData = []
         
-        FirestoreManager.shared.fetchWalkResults(userId: userId)
-        .subscribe(onSuccess: { [weak self] result in
-            guard let self else { return }
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<WalkResult>(
+                collection: .walkResult,
+                type: .whereField(field: "userId", value: userId)
+                )
+        )
+        .subscribe(onSuccess: { [weak self] walkResult in
+            guard let self = self else { return }
             
             // 클라이언트에서 정렬
-            let sortedResult = result.sorted {
+            let sortedResult = walkResult.sorted {
                 $0.createdAt.dateValue() > $1.createdAt.dateValue()
             }
-
+            
             self.originalData = sortedResult
             self.data = sortedResult.enumerated().map { index, result in
                 let caseNumber = sortedResult.count - index  // 최신이 큰 번호

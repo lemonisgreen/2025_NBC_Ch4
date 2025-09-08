@@ -115,15 +115,15 @@ class WalkEndModalViewController : UIViewController {
                     self.isLoading(isLoading: false)
                     
                     let alert = CustomAlertViewController(
-                          message: "산책이 기록되었습니다.",
-                          subMessage: "마이페이지에서 확인하실 수 있습니다.",
-                          buttons: [
-                              CustomAlertViewController.AlertButton(
-                                  title: "닫기",
-                                  action: nil
-                              )
-                          ]
-                      )
+                        message: "산책이 기록되었습니다.",
+                        subMessage: "마이페이지에서 확인하실 수 있습니다.",
+                        buttons: [
+                            CustomAlertViewController.AlertButton(
+                                title: "닫기",
+                                action: nil
+                            )
+                        ]
+                    )
                     self.present(alert, animated: true)
                     
                 case .failure(let error):
@@ -147,7 +147,7 @@ class WalkEndModalViewController : UIViewController {
                 guard let self,
                       let url = URL(string: urlString),
                       !urlString.isEmpty else { return }
-
+                
                 self.mapImageView.kf.setImage(
                     with: url,
                     placeholder: UIImage(named: "mapPolaroid"),
@@ -246,16 +246,23 @@ class WalkEndModalViewController : UIViewController {
     
     private func fetchSelectedPetProfiles(petProfileIds: [String]) {
         let profileObservables = petProfileIds.map { id in
-            FirestoreManager.shared.fetchDocument(collection: .petProfile,
-                                                  documentId: id,
-                                                  type: PetProfile.self)
+            FirestoreManager.shared.fetchQuery(
+                FirestoreQuery<PetProfile>(
+                    collection: .petProfile,
+                    type: .document(id: id)
+                    
+                )
+            )
         }
         
         Single.zip(profileObservables)
-            .subscribe(onSuccess: { [weak self] profiles in
-                guard let self else { return }
+            .subscribe(onSuccess: { [weak self] profilesArray in
+                guard let self = self else { return }
                 
-                self.selectedPetProfiles = profiles
+                // 2차원 배열을 1차원 배열로 펼치기
+                let flattenedProfiles = profilesArray.flatMap { $0 }
+                
+                self.selectedPetProfiles = flattenedProfiles
                 self.setPetImages()
             }, onFailure: { error in
                 print("펫프로필 조회 실패: \(error)")
@@ -397,7 +404,7 @@ class WalkEndModalViewController : UIViewController {
         showProfileButton.setImage(UIImage(named: "showProfile"), for: .normal)
         showProfileButton.contentMode = .scaleAspectFit
         showProfileButton.snp.makeConstraints { $0.size.equalTo(CGSize(width: 75, height: 28)) }
-
+        
         dogImagesStack.axis = .horizontal
         dogImagesStack.spacing = -20
         dogImagesStack.alignment = .center
@@ -409,7 +416,7 @@ class WalkEndModalViewController : UIViewController {
         mapImageView.contentMode = .scaleAspectFill
         mapImageView.clipsToBounds = true
         mapImageView.backgroundColor = .clear
-
+        
         distanceStack.axis = .vertical
         distanceStack.spacing = 4
         distanceStack.alignment = .leading

@@ -323,7 +323,7 @@ final class AddNewContentViewModel {
 
                 // 동일 문서 id에 덮어쓰기
                 return FirestoreManager.shared.findDocumentId(collection: collection,
-                                                              whereField: SDLiteral.AddNewContentView.postCode,
+                                                              whereField: SDLiteral.CommunityView.postCode,
                                                               isEqualTo: post.postCode)
                 .flatMapCompletable { ids in
                     guard let id = ids.first else { return .error(FirestoreError.unknown) }
@@ -391,7 +391,10 @@ final class AddNewContentViewModel {
     private func fetchProfiles() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         
-        FirestoreManager.shared.fetchUserPetProfiles(userId: userId)
+        FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
+            collection: .petProfile,
+            type: .whereField(field: SDLiteral.FirestoreFieldName.userId, value: userId)
+        ))
             .map { profile in
                 // UI 섹션으로 매핑
                 let box: [PetSelectItem] = profile.map { PetSelectItem(base: $0) }

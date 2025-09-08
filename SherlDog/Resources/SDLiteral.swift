@@ -18,6 +18,10 @@ enum SDLiteral {
         static let completePost: String = "등록되었습니다."
     }
     
+    enum FirestoreFieldName {
+        static let userId: String = "userId"
+    }
+    
     enum LoginView {
         static let helloLabelLarge: String = "반가워요!"
         static let helloLabelSmall: String = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
@@ -38,6 +42,8 @@ enum SDLiteral {
         static let completeAlert: String = "%@ 완료했습니다."
         static let dotdotdot: String = "···"
         static let separateDot: String = " · "
+        static let postCode: String = "postCode"
+        static let postDate: String = "postDate"
     }
     
     enum AddNewContentView {
@@ -49,7 +55,6 @@ enum SDLiteral {
         static let selectedPetNames: String = "%@ 탐정"
         static let textViewPlaceholder: String = "내용을 입력하세요.\n(최대 1000자 입력, 사진 최대 10장 업로드)"
         static let pictureCount: String = "%d/5 장"
-        static let postCode: String = "postCode"
     }
     
     enum UserProfileViewController {
