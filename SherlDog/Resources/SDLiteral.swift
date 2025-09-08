@@ -27,4 +27,13 @@ enum SDLiteral {
         static let postCollectionButtonTitle: String = "작성 글 둘러보기"
         static let postCollectionButtonImage: String = "note"
     }
+    
+    enum InvLogListView {
+        static let title: String = "수사일지"
+        static let deleteButton: String = "삭제"
+        static let deleteComplete: String = "삭제되었습니다."
+        static let requestDelete: String = "수사일지를 삭제하시겠습니까?"
+        static let caseNumber: String = "CASE # %@"
+        static let infoLabel: String = "%@  ·  %@  ·  %@"
+    }
 }

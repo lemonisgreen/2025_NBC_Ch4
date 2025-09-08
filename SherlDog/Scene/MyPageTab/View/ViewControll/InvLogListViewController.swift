@@ -76,9 +76,9 @@ extension InvLogListViewController {
                     $0.removeFromSuperview()
                 }
                 
-                self.collectionView.visibleCells.forEach {
-                    ($0 as? InvLogListCell)?.toggleSelectMode(selectable: isSelectMode)
-                }
+//                self.collectionView.visibleCells.forEach {
+//                    ($0 as? InvLogListCell)?.toggleSelectMode(selectable: isSelectMode)
+//                }
                 
                 switch isSelectMode {
                 case true:
@@ -92,8 +92,18 @@ extension InvLogListViewController {
             .disposed(by: disposeBag)
         
         self.viewModel.output.deleteCompleted
-            .bind(onNext: {
-                print("삭제 완료") // todo: 완료 처리
+            .bind(onNext: { [weak self] in
+                let alert = CustomAlertViewController(
+                    message: SDLiteral.InvLogListView.deleteComplete,
+                    buttons: [
+                        CustomAlertViewController.AlertButton(
+                            title: SDLiteral.AlertMessage.confirm,
+                            action: nil
+                        )
+                    ]
+                )
+                
+                self?.present(alert, animated: true)
             })
             .disposed(by: disposeBag)
     }
@@ -116,14 +126,14 @@ extension InvLogListViewController {
         self.deleteButton.rx.tap
             .bind { [weak self] in
                 let alert = CustomAlertViewController(
-                     message: "수사일지를 삭제하시겠습니까?",
+                    message: SDLiteral.InvLogListView.requestDelete,
                      buttons: [
                          CustomAlertViewController.AlertButton(
-                             title: "취소",
+                            title: SDLiteral.AlertMessage.cancel,
                              action: nil
                          ),
                          CustomAlertViewController.AlertButton(
-                             title: "확인",
+                            title: SDLiteral.AlertMessage.confirm,
                              action: { [weak self] in
                                  guard let self,
                                         let indexPaths = self.collectionView.indexPathsForSelectedItems else { return }
@@ -151,11 +161,22 @@ extension InvLogListViewController {
         navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
         navigationBackButton.imageView?.tintColor = .textPrimary
         
-        navigationTitleLabel.text = "수사일지"
+        navigationTitleLabel.text = SDLiteral.InvLogListView.title
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
-//        navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
+        
+        let navigationStack = UIStackView()
+        let containerView = UIView()
+
+        containerView.addSubview(navigationStack)
+
+        navigationStack.addArrangedSubview(navigationBackButton)
+        navigationStack.addArrangedSubview(navigationTitleLabel)
+        navigationStack.axis = .horizontal
+        navigationStack.alignment = .center
+        navigationStack.spacing = 8
+        navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
@@ -166,9 +187,9 @@ extension InvLogListViewController {
         navigationRightButtonStackView.spacing = 16
         navigationRightButtonStackView.alignment = .center
         
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: containerView)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navigationRightButtonStackView)
-        self.navigationItem.titleView = navigationTitleLabel
+        self.navigationItem.titleView = nil
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
@@ -178,15 +199,15 @@ extension InvLogListViewController {
         collectionView.register(InvLogListCell.self, forCellWithReuseIdentifier: InvLogListCell.identifier)
         collectionView.allowsMultipleSelection = true
         
-        modeConvertButton.setTitle("삭제", for: .normal)
+        modeConvertButton.setTitle(SDLiteral.InvLogListView.deleteButton, for: .normal)
         modeConvertButton.setTitleColor(.textAlert, for: .normal)
         modeConvertButton.titleLabel?.font = .title3
         
-        cancelButton.setTitle("취소", for: .normal)
+        cancelButton.setTitle(SDLiteral.AlertMessage.cancel, for: .normal)
         cancelButton.setTitleColor(.gray500, for: .normal)
         cancelButton.titleLabel?.font = .title3
         
-        deleteButton.setTitle("확인", for: .normal)
+        deleteButton.setTitle(SDLiteral.AlertMessage.confirm, for: .normal)
         deleteButton.setTitleColor(.keycolorPrimary2, for: .normal)
         deleteButton.titleLabel?.font = .title3
         
@@ -218,6 +239,7 @@ extension InvLogListViewController {
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
                 
                 cell.settingCell(data: items)
+                cell.bind(isSelectMode: self.viewModel.output.isSelectMode.asDriver(onErrorJustReturn: false))
                 
                 cell.rx.cellTap
                     .subscribe(onNext: { [weak self] in

@@ -67,8 +67,11 @@ extension InvLogListCell {
     
     func settingCell(data: WalkResultToList) {
         self.dateLabel.text = data.date
-        self.caseNumberLabel.text = "CASE # \(data.caseNumber)"
-        self.infoLabel.text = "\(data.distance)  ·  \(data.duration)  ·  \(data.steps)"
+        self.caseNumberLabel.text = String(format: SDLiteral.InvLogListView.caseNumber, data.caseNumber)
+        self.infoLabel.text = String(format: SDLiteral.InvLogListView.infoLabel,
+                                     data.distance,
+                                     data.duration,
+                                     data.steps)
         
         data.petProfile.forEach { profile in
             let imageView = UIImageView()
@@ -100,6 +103,12 @@ extension InvLogListCell {
         selectable
         ? contentView.gestureRecognizers?.removeAll()
         : contentView.addGestureRecognizer(tap)
+    }
+    
+    func bind(isSelectMode: Driver<Bool>) {
+        isSelectMode
+            .drive(onNext: { [weak self] in self?.toggleSelectMode(selectable: $0) })
+            .disposed(by: disposeBag)
     }
     
     private func setup() {
