@@ -118,7 +118,7 @@ class FirebaseImageManager {
     // MARK: - 이미지 URL 다운로
     func downloadImageURL(
         userId: String? = nil,
-        type: UploadImageFor,
+        type: UploadImageType,
         petId: String? = nil,
         completion: @escaping (URL?) -> Void) {
                 let actualUserId = userId ?? self.userId
