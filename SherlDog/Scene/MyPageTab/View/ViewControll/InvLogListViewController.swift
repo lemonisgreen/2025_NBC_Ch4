@@ -20,6 +20,10 @@ class InvLogListViewController: UIViewController {
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
+    private let cancelButton = UIButton()
+    private let deleteButton = UIButton()
+    private let modeConvertButton = UIButton()
+    private let navigationRightButtonStackView = UIStackView()
     private let separatorView = UIView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: configureCollectionViewLayout())
     private let emptyView = EmptyInvLogView()
@@ -62,6 +66,31 @@ extension InvLogListViewController {
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
             .disposed(by: disposeBag)
         
+        self.viewModel.output.isSelectMode
+            .bind { [weak self] isSelectMode in
+                guard let self else { return }
+                self.collectionView.allowsSelection = isSelectMode
+                self.collectionView.allowsMultipleSelection = isSelectMode
+                
+                self.navigationRightButtonStackView.arrangedSubviews.forEach {
+                    $0.removeFromSuperview()
+                }
+                
+                self.collectionView.visibleCells.forEach {
+                    ($0 as? InvLogListCell)?.toggleSelectMode(selectable: isSelectMode)
+                }
+                
+                switch isSelectMode {
+                case true:
+                    self.navigationRightButtonStackView.addArrangedSubview(cancelButton)
+                    self.navigationRightButtonStackView.addArrangedSubview(deleteButton)
+                    
+                case false:
+                    self.navigationRightButtonStackView.addArrangedSubview(modeConvertButton)
+                }
+            }
+            .disposed(by: disposeBag)
+        
         self.viewModel.output.deleteCompleted
             .bind(onNext: {
                 print("삭제 완료") // todo: 완료 처리
@@ -74,6 +103,39 @@ extension InvLogListViewController {
             .bind(onNext: { [weak self] in
                 self?.navigationController?.popViewController(animated: true)
             })
+            .disposed(by: disposeBag)
+        
+        Observable.merge(
+            self.modeConvertButton.rx.tap.asObservable(),
+            self.cancelButton.rx.tap.asObservable()
+        )
+        .map { .selectModeConvert }
+        .bind(to: self.viewModel.input)
+        .disposed(by: disposeBag)
+        
+        self.deleteButton.rx.tap
+            .bind { [weak self] in
+                let alert = CustomAlertViewController(
+                     message: "수사일지를 삭제하시겠습니까?",
+                     buttons: [
+                         CustomAlertViewController.AlertButton(
+                             title: "취소",
+                             action: nil
+                         ),
+                         CustomAlertViewController.AlertButton(
+                             title: "확인",
+                             action: { [weak self] in
+                                 guard let self,
+                                        let indexPaths = self.collectionView.indexPathsForSelectedItems else { return }
+                                 
+                                 self.viewModel.input.accept(.delete(indexPaths))
+                             }
+                         )
+                     ]
+                 )
+                
+                self?.present(alert, animated: true)
+            }
             .disposed(by: disposeBag)
     }
     
@@ -93,14 +155,19 @@ extension InvLogListViewController {
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
-        navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
+//        navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
         navigationBarAppearance.backgroundColor = .gray50
         navigationBarAppearance.shadowColor = .clear
         
+        navigationRightButtonStackView.axis = .horizontal
+        navigationRightButtonStackView.spacing = 16
+        navigationRightButtonStackView.alignment = .center
+        
         self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navigationRightButtonStackView)
         self.navigationItem.titleView = navigationTitleLabel
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
@@ -109,6 +176,21 @@ extension InvLogListViewController {
         
         collectionView.backgroundColor = .gray50
         collectionView.register(InvLogListCell.self, forCellWithReuseIdentifier: InvLogListCell.identifier)
+        collectionView.allowsMultipleSelection = true
+        
+        modeConvertButton.setTitle("삭제", for: .normal)
+        modeConvertButton.setTitleColor(.textAlert, for: .normal)
+        modeConvertButton.titleLabel?.font = .title3
+        
+        cancelButton.setTitle("취소", for: .normal)
+        cancelButton.setTitleColor(.gray500, for: .normal)
+        cancelButton.titleLabel?.font = .title3
+        
+        deleteButton.setTitle("확인", for: .normal)
+        deleteButton.setTitleColor(.keycolorPrimary2, for: .normal)
+        deleteButton.titleLabel?.font = .title3
+        
+        navigationRightButtonStackView.addArrangedSubview(modeConvertButton)
         
         emptyView.isHidden = true
     }
@@ -135,37 +217,9 @@ extension InvLogListViewController {
             configureCell:{ dataSource, collectionView, indexPath, items in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
                 
-                // 역순으로 케이스 번호 계산
-                let totalCount = dataSource.sectionModels.first?.items.count ?? 0
-                let reversedIndex = totalCount - indexPath.row
-                
                 cell.settingCell(data: items)
                 
-                cell.rx.deleteButtonTap
-                    .subscribe(onNext: { [weak self] in
-                        guard let self else { return }
-                        
-                        let alert = CustomAlertViewController(
-                             message: "수사일지를 삭제하시겠습니까?",
-                             buttons: [
-                                 CustomAlertViewController.AlertButton(
-                                     title: "취소",
-                                     action: nil
-                                 ),
-                                 CustomAlertViewController.AlertButton(
-                                     title: "확인",
-                                     action: { [weak self] in
-                                         self?.viewModel.input.accept(.delete(indexPath))
-                                     }
-                                 )
-                             ]
-                         )
-                        
-                        self.present(alert, animated: true)
-                    })
-                    .disposed(by: cell.disposeBag)
-                
-                cell.rx.showButtonTap
+                cell.rx.cellTap
                     .subscribe(onNext: { [weak self] in
                         guard let self else { return }
                         
@@ -176,12 +230,12 @@ extension InvLogListViewController {
                         let nav = UINavigationController(rootViewController: walkEndView)
                         nav.modalPresentationStyle = .overFullScreen
                         
-                        walkResultViewModel.fetchResult.accept(originalData)
+                        walkResultViewModel.fetchResult.accept(originalData.0)
                         
                         self.present(nav, animated: true)
                     })
                     .disposed(by: cell.disposeBag)
-
+                
                 return cell
             })
     }
@@ -192,10 +246,12 @@ extension InvLogListViewController {
                                                                 heightDimension: .fractionalHeight(1)))
             
             let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                           heightDimension: .estimated(154)),
+                                                                           heightDimension: .estimated(144)),
                                                          subitems: [item])
             
             let section = NSCollectionLayoutSection(group: group)
+            section.contentInsets = .init(top: 0, leading: 16, bottom: 0, trailing: 16)
+            section.interGroupSpacing = 12
             
             return section
         }
