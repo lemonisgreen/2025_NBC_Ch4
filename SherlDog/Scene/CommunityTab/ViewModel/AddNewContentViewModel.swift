@@ -269,6 +269,8 @@ final class AddNewContentViewModel {
     private func addPost() {
         guard let userId = Auth.auth().currentUser?.uid else { return }
         let selectedPets = self.output.selectedProfile.value
+        let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.detectiveMate.rawValue).document()
+        let documentId = newDocRef.documentID
         
         uploadImage()
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -279,7 +281,8 @@ final class AddNewContentViewModel {
                                                 petProfile: selectedPets,
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
-                                                content: self.text.value)
+                                                content: self.text.value,
+                                                postCode: documentId)
                 
                 return FirestoreManager.shared.createDocument(collection: .detectiveMate,
                                                               data: uploadData)

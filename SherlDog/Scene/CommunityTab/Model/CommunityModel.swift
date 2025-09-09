@@ -19,6 +19,6 @@ struct CommunityModel: Codable {
     let content: String
     var like: [String] = []
     var previewComment: [String] = []
-    var postCode: String = UUID().uuidString
+    var postCode: String
     var isExpanded: Bool = false
 }

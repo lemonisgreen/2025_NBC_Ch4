@@ -103,7 +103,12 @@ extension CommunityViewController {
         
         output.menuComplete
             .emit(onNext: { [weak self] type in
-                self?.completeAlert(type: type)
+                switch type {
+                case .delete(_), .block(_):
+                    self?.completeAlert(type: type)
+                    
+                default: return
+                }
             })
             .disposed(by: disposeBag)
     }
@@ -143,13 +148,15 @@ extension CommunityViewController {
         
         let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.postCode))
+            self?.showMenuAlert(type: .report(post.postCode)) { [weak self] in
+                self?.blockMessageAfterReport(userId: post.userId)
+            }
         }
         
         return UIMenu(children: [blockAction, reportAction])
     }
     
-    private func showMenuAlert(type: PostMenuEvent) {
+    private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
         switch type {
         case .fix, .error:
             return
@@ -178,6 +185,28 @@ extension CommunityViewController {
                     title: title,
                     action: { [weak self] in
                         self?.menuEvent.accept(type)
+                        completion?()
+                    }
+                )
+            ]
+        )
+        
+        self.present(alert, animated: true)
+    }
+    
+    private func blockMessageAfterReport(userId: String) {
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert,
+                            SDLiteral.CommunityView.report),
+            subMessage: SDLiteral.CommunityView.blockMessageAfterReport,
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.AlertMessage.cancel,
+                    action: nil),
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.CommunityView.block,
+                    action: { [weak self] in
+                        self?.menuEvent.accept(.block(userId))
                     }
                 )
             ]
@@ -360,15 +389,18 @@ extension CommunityViewController {
             section.interGroupSpacing = 0
             section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
             
+            // 페이지 컨트롤 설정
             section.visibleItemsInvalidationHandler = { [weak self] item, offset, environment in
                 guard let self else { return }
                 let pageWidth = environment.container.contentSize.width
                 let page = Int(round(offset.x / pageWidth))
                 let indexPath = IndexPath(item: 0, section: row)
+                let total = self.dataSource.sectionModels[row].items.count
                 
-                if let footerView = self.collectionView.supplementaryView(forElementKind: UICollectionView.elementKindSectionFooter,
-                                                                          at: indexPath) as? PostFooterView {
-                    let total = (self.dataSource.sectionModels[row].items.count)
+                if let footerView = self.collectionView.supplementaryView(
+                    forElementKind: UICollectionView.elementKindSectionFooter,
+                    at: indexPath
+                ) as? PostFooterView {
                     footerView.updatePage(total: total, current: page)
                 }
             }

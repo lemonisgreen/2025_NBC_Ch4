@@ -282,8 +282,15 @@ private extension CommunityViewModel {
                         .catchAndReturn(.error)
                     
                 case .report(let postCode):
-                    // TODO: Report
-                    return .just(.report(postCode))
+                    let reportData = ReportModel(collection: category.collectionName,
+                                                            documentId: postCode)
+                    
+                    return FirestoreManager.shared.createDocument(collection: .reportLog,
+                                                           data: reportData,
+                                                           documentId: postCode)
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    .andThen(.just(.report(postCode)))
+                    .catchAndReturn(.error)
                     
                 case .block(let postUserId):
                     return BlockManager.shared.blockUser(postUserId)
