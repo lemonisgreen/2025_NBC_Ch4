@@ -34,7 +34,7 @@ class CameraViewModel {
     }
     
     private let disposeBag = DisposeBag()
-    private let maxZoomScale: CGFloat = 20 // todo: maximum 줌 값 상의하기
+    private let maxZoomScale: CGFloat = 20 // TODO: maximum 줌 값 상의하기
     private let minZoomScale: CGFloat = 1
     private var pinchDefault: CGFloat = 1
     var markerLocation: CLLocationCoordinate2D?

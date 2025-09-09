@@ -9,15 +9,33 @@ import UIKit
 import RxSwift
 import RxCocoa
 import SnapKit
+import RxDataSources
+import FirebaseAuth
+
+// 셀 메뉴 버튼 타입
+enum PostMenuEvent {
+    case fix
+    case delete(String)
+    case report(String)
+    case block(String)
+    case error
+}
 
 // MARK: - CommunityViewController
-class CommunityViewController: UIViewController {
+final class CommunityViewController: UIViewController {
     
+    private let likeButtonEvent = PublishRelay<CommunityModel>()
+    private let menuEvent = PublishRelay<PostMenuEvent>()
+    private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
-    private let testCell = BehaviorRelay(value: MockUpData.communitySample)  // test
     
-    private let titleLabel = UILabel()
+    private lazy var dataSource = setDataSource()
+    private let refreshControl = UIRefreshControl()
+    
+    // MARK: - UIProperty
+    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunityViewModel.CommunitySectionType.allCases.map { $0.name })
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
+    private let addButton = UIButton()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -27,73 +45,382 @@ class CommunityViewController: UIViewController {
         configureUI()
         bind()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.navigationBar.isHidden = true
+    }
 }
 
-// MARK: - Method
+// MARK: - Bindings
 extension CommunityViewController {
     
     private func bind() {
-        testCell.bind(to: self.collectionView.rx.items) { collectionView, row, item in
-            guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommunityCell.identifier, for: IndexPath(row: row, section: 0)) as? CommunityCell else { return .init() }
+        // MARK: - Inputs
+        let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
+                                             pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
+                                             fetchMore: Observable.empty(),
+                                             menuEvent: self.menuEvent.asObservable(),
+                                             likeEvent: likeButtonEvent.asObservable())
+        
+        self.addButton.rx.tap
+            .asSignal()
+            .emit(onNext: { [weak self] in
+                self?.navigationController?.pushViewController(AddNewContentViewController(), animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        
+        // MARK: - Outputs
+        let output = viewModel.transform(input)
+        
+        Driver.combineLatest(
+            output.selectedCategory,
+            output.currentCellData
+        )
+        .map { category, data in
+            guard let result = data[category] else { return [] }
             
-            cell.settingCell(data: item)
-            
-            // 추후 작업 예정
-//            cell.rx.moreShowButtonTap
-//                .subscribe(onNext: { [weak self] in
-//                    var current = testCell.value
-//                    current[row].isExpanded.toggle()
-//                    testCell.accept(current)
-//                })
-//                .disposed(by: cell.disposeBag)
-            
-            return cell
+            return result
         }
+        .drive(self.collectionView.rx.items(dataSource: dataSource))
         .disposed(by: disposeBag)
+        
+        output.selectedCategory
+            .map {
+                switch $0 {
+                case .invLogBoard: return true
+                case .detectiveMateBoard: return false
+                }
+            }
+            .drive(self.addButton.rx.isHidden)
+            .disposed(by: disposeBag)
+        
+        output.isUpdating
+            .drive(self.refreshControl.rx.isRefreshing)
+            .disposed(by: disposeBag)
+        
+        output.menuComplete
+            .emit(onNext: { [weak self] type in
+                self?.completeAlert(type: type)
+            })
+            .disposed(by: disposeBag)
     }
+}
+
+// MARK: - Cell Menu Button Setting
+extension CommunityViewController {
+    private func isWriter(_ postUserId: String) -> Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        return postUserId == currentUserId
+    }
+    
+    private func myPostMenu(post: CommunityModel) -> UIMenu {
+        let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                               SDLiteral.CommunityView.fix)) { [weak self] action in
+            let category: CommunityViewModel.CommunitySectionType = {
+                self?.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMateBoard
+            }()
+            
+            let editView = AddNewContentViewController(category: category, post: post)
+            self?.navigationController?.pushViewController(editView, animated: true)
+        }
+        
+        let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                  SDLiteral.CommunityView.delete)) { [weak self] _ in
+            self?.showMenuAlert(type: .delete(post.postCode))
+        }
+        
+        return UIMenu(children: [fixAction, deleteAction])
+    }
+    
+    private func otherPostMenu(post: CommunityModel) -> UIMenu {
+        let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                 SDLiteral.CommunityView.block)) { [weak self] _ in
+            self?.showMenuAlert(type: .block(post.userId))
+        }
+        
+        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
+            self?.showMenuAlert(type: .report(post.postCode))
+        }
+        
+        return UIMenu(children: [blockAction, reportAction])
+    }
+    
+    private func showMenuAlert(type: PostMenuEvent) {
+        switch type {
+        case .fix, .error:
+            return
+        default:
+            break
+        }
+        
+        var title: String {
+            switch type {
+            case .fix: return    SDLiteral.CommunityView.fix
+            case .delete: return SDLiteral.CommunityView.delete
+            case .report: return SDLiteral.CommunityView.report
+            case .block: return  SDLiteral.CommunityView.block
+            case .error: return  SDLiteral.CommunityView.error
+            }
+        }
+        
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.menuAlertMessage, title),
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.AlertMessage.cancel,
+                    action: nil
+                ),
+                CustomAlertViewController.AlertButton(
+                    title: title,
+                    action: { [weak self] in
+                        self?.menuEvent.accept(type)
+                    }
+                )
+            ]
+        )
+        
+        self.present(alert, animated: true)
+    }
+    
+    private func completeAlert(type: PostMenuEvent) {
+        switch type {
+        case .fix, .error:
+            return
+        default:
+            break
+        }
+        
+        var message: String {
+            switch type {
+            case .delete: SDLiteral.CommunityView.delete
+            case .block:  SDLiteral.CommunityView.block
+            case .report: SDLiteral.CommunityView.report
+            default: String()
+            }
+        }
+        
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert, message),
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.AlertMessage.cancel,
+                    action: nil
+                )
+            ]
+        )
+        
+        self.present(alert, animated: true)
+    }
+}
+
+// MARK: - DataSource
+extension CommunityViewController {
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection> {
+        return RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection>(
+            configureCell: { dataSource, collectionView, indexPath, item in
+                // item == String (이미지 URL)
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
+                let petProfile = dataSource.sectionModels[indexPath.section].model.petProfile
+                
+                cell.settingCell(item)
+                cell.settingPetProfile(profile: petProfile)
+                
+                cell.rx.mediaDoubleTap
+                    .map { _ in dataSource.sectionModels[indexPath.section].model }
+                    .bind(to: self.likeButtonEvent)
+                    .disposed(by: cell.disposeBag)
+                
+                return cell
+            },
+            configureSupplementaryView: { dataSource, collectionView, kind, indexPath in
+                // 섹션 모델 == CommunityModel
+                let sectionModel = dataSource.sectionModels[indexPath.section].model
+                switch kind {
+                case UICollectionView.elementKindSectionHeader:
+                    guard let header = collectionView.dequeueReusableSupplementaryView(
+                        ofKind: kind,
+                        withReuseIdentifier: PostHeaderView.identifier,
+                        for: indexPath
+                    ) as? PostHeaderView else { return .init() }
+                    
+                    header.settingCell(data: sectionModel)
+                    header.settingMenu(
+                        menu: self.isWriter(sectionModel.userId)
+                        ? self.myPostMenu(post: sectionModel)
+                        : self.otherPostMenu(post: sectionModel)
+                    )
+                    
+                    header.rx.profileTap
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] in
+                            // TODO: 프로필 뷰로 이동
+                            let alert = CustomAlertViewController(
+                                message: "Test alert",
+                                subMessage: "Move to profile view",
+                                buttons: [CustomAlertViewController.AlertButton(
+                                    title: SDLiteral.AlertMessage.confirm,
+                                    action: nil
+                                )]
+                            )
+                            
+                            self?.present(alert, animated: true)
+                        })
+                        .disposed(by: header.disposeBag)
+                    
+                    return header
+                    
+                case UICollectionView.elementKindSectionFooter:
+                    guard let footer = collectionView.dequeueReusableSupplementaryView(
+                        ofKind: kind,
+                        withReuseIdentifier: PostFooterView.identifier,
+                        for: indexPath
+                    ) as? PostFooterView else { return .init() }
+                    
+                    let count = dataSource.sectionModels[indexPath.section].items.count
+                    
+                    footer.settingCell(data: sectionModel)
+                    footer.updatePage(total: count, current: 0)
+                    
+                    footer.rx.likeButtonTap
+                        .map { sectionModel }
+                        .bind(to: self.likeButtonEvent)
+                        .disposed(by: footer.disposeBag)
+                    
+                    footer.rx.containerTap
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onNext: { [weak self] in
+                            // TODO: 상세 뷰로 이동
+                            let alert = CustomAlertViewController(
+                                message: "Test alert",
+                                subMessage: "Move to detail view",
+                                buttons: [CustomAlertViewController.AlertButton(
+                                    title: SDLiteral.AlertMessage.confirm,
+                                    action: nil
+                                )]
+                            )
+                            
+                            self?.present(alert, animated: true)
+                        })
+                        .disposed(by: footer.disposeBag)
+                    
+                    return footer
+                    
+                default:
+                    return .init()
+                }
+            }
+        )
+    }
+}
+
+// MARK: - Compositional Layout
+extension CommunityViewController {
+    private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
+        let inset: CGFloat = 16
+        
+        return UICollectionViewCompositionalLayout { row, env in
+            // 아이템(이미지 한 장)
+            let item = NSCollectionLayoutItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .fractionalHeight(1.0))
+            )
+            item.contentInsets = .zero
+            
+            // 가로 페이징 그룹
+            let group = NSCollectionLayoutGroup.horizontal(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .estimated(300)),
+                subitems: [item]
+            )
+            
+            // 헤더
+            let header = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .estimated(64)),
+                elementKind: UICollectionView.elementKindSectionHeader,
+                alignment: .top
+            )
+            
+            // 푸터
+            let footer = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                  heightDimension: .estimated(60)),
+                elementKind: UICollectionView.elementKindSectionFooter,
+                alignment: .bottom
+            )
+            
+            // 섹션
+            let section = NSCollectionLayoutSection(group: group)
+            section.boundarySupplementaryItems = [header, footer]
+            section.orthogonalScrollingBehavior = .groupPagingCentered
+            section.interGroupSpacing = 0
+            section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
+            
+            section.visibleItemsInvalidationHandler = { [weak self] item, offset, environment in
+                guard let self else { return }
+                let pageWidth = environment.container.contentSize.width
+                let page = Int(round(offset.x / pageWidth))
+                let indexPath = IndexPath(item: 0, section: row)
+                
+                if let footerView = self.collectionView.supplementaryView(forElementKind: UICollectionView.elementKindSectionFooter,
+                                                                          at: indexPath) as? PostFooterView {
+                    let total = (self.dataSource.sectionModels[row].items.count)
+                    footerView.updatePage(total: total, current: page)
+                }
+            }
+            
+            return section
+        }
+    }
+    
+}
+
+// MARK: - UI
+extension CommunityViewController {
     
     private func setupUI() {
         view.backgroundColor = .textInverse
         view.addSubviews([
-            titleLabel,
-            collectionView
+            segmentedControl,
+            collectionView,
+            addButton
         ])
         
-        titleLabel.text = "수사일지"
-        titleLabel.font = .title1
-        titleLabel.textColor = .textPrimary
+        segmentedControl.selectedSegmentIndex = 0
         
+        collectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
+        collectionView.register(PostHeaderView.self,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                withReuseIdentifier: PostHeaderView.identifier)
+        collectionView.register(PostFooterView.self,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
+                                withReuseIdentifier: PostFooterView.identifier)
         collectionView.backgroundColor = .textInverse
-        collectionView.register(CommunityCell.self, forCellWithReuseIdentifier: CommunityCell.identifier)
+        collectionView.refreshControl = refreshControl
+        
+        addButton.setImage(.postAdd, for: .normal)
+        addButton.tintColor = .keycolorPrimary2
     }
     
     private func configureUI() {
-        titleLabel.snp.makeConstraints {
+        segmentedControl.snp.makeConstraints {
+            $0.height.equalTo(50)
             $0.top.equalTo(view.safeAreaLayoutGuide).inset(16)
-            $0.leading.equalToSuperview().inset(16)
+            $0.leading.trailing.equalToSuperview().inset(16)
         }
         
         collectionView.snp.makeConstraints {
-            $0.top.equalTo(titleLabel.snp.bottom).offset(16)
+            $0.top.equalTo(segmentedControl.snp.bottom).offset(16)
             $0.horizontalEdges.equalToSuperview()
             $0.bottom.equalTo(view.safeAreaLayoutGuide)
         }
+        
+        addButton.snp.makeConstraints {
+            $0.trailing.bottom.equalTo(collectionView).offset(-16)
+        }
     }
-    
-    private func collectionViewCompositionalLayout() -> UICollectionViewCompositionalLayout {
-        let inset: CGFloat = 16
-        
-        let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                            heightDimension: .estimated(300)))
-        
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                       heightDimension: .estimated(300)),
-                                                     subitems: [item])
-        
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
-        
-        return UICollectionViewCompositionalLayout(section: section)
-    }
-    
 }

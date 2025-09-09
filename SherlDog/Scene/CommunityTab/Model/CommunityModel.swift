@@ -6,14 +6,19 @@
 //
 
 import UIKit
+import FirebaseFirestore
 
 // MARK: - CommunityModel
-struct CommunityModel {
-    let profileImage: UIImage?
-    let name: String
-    let info: String
-    let postDate: String
-    let contentImage: UIImage?
+struct CommunityModel: Codable {
+    let userId: String
+    var profileImage: String = ""
+    var name: String = ""
+    var petProfile: [PetProfile]
+    let postDate: Timestamp
+    let contentImage: [String]
     let content: String
+    var like: [String] = []
+    var previewComment: [String] = []
+    var postCode: String = UUID().uuidString
     var isExpanded: Bool = false
 }

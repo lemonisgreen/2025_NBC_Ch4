@@ -21,7 +21,6 @@ class PictureUploadRequestViewController: UIViewController { // 1: 240, 2: 320, 
     private let disposeBag = DisposeBag()
     private lazy var dataSource = self.setDataSource()
     
-    private let imagePickerController = UIImagePickerController()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let setButton = ButtonFactory.makeButton(type: .main, title: "")
     
@@ -135,8 +134,17 @@ extension PictureUploadRequestViewController {
                                 subMessage: "설정에서 변경해주세요.",
                                 buttons: [
                                     CustomAlertViewController.AlertButton(
-                                        title: "확인",
+                                        title: "취소",
                                         action: nil
+                                    ),
+                                    CustomAlertViewController.AlertButton(
+                                        title: "설정으로 이동",
+                                        action: {
+                                            if let settingsURL = URL(string: UIApplication.openSettingsURLString),
+                                               UIApplication.shared.canOpenURL(settingsURL) {
+                                                UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                                            }
+                                        }
                                     )
                                 ]
                             )
@@ -159,8 +167,17 @@ extension PictureUploadRequestViewController {
                                 subMessage: "설정에서 변경해주세요.",
                                 buttons: [
                                     CustomAlertViewController.AlertButton(
-                                        title: "확인",
+                                        title: "취소",
                                         action: nil
+                                    ),
+                                    CustomAlertViewController.AlertButton(
+                                        title: "설정으로 이동",
+                                        action: {
+                                            if let settingsURL = URL(string: UIApplication.openSettingsURLString),
+                                               UIApplication.shared.canOpenURL(settingsURL) {
+                                                UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                                            }
+                                        }
                                     )
                                 ]
                             )

@@ -7,16 +7,18 @@ import FirebaseAuth
 import RxSwift
 import os.signpost
 
+// MARK: - UploadType
 enum UploadImageType {
-    case assistant, clue, invLog, walkResult, petProfile
+    case assistant, clue, invLogBoard, walkResult, petProfile, detectiveMate
     
     var folder: String {
         switch self {
         case .assistant: return "assistant"
         case .clue: return "clue"
-        case .invLog: return "invLog"
+        case .invLogBoard: return "invLogBoard"
         case .walkResult: return "walkResult"
         case .petProfile: return "pets"
+        case .detectiveMate: return "detectiveMate"
         }
     }
     
@@ -24,9 +26,10 @@ enum UploadImageType {
         switch self {
         case .assistant: return "assistant_"
         case .clue: return "clue_"
-        case .invLog: return "invLog_"
+        case .invLogBoard: return "invLogBoard_"
         case .walkResult: return "walkResult_"
         case .petProfile: return "profile.jpg"
+        case .detectiveMate: return "detectiveMate_"
         }
     }
 }
@@ -90,8 +93,8 @@ class FirebaseImageManager {
             }
             imagePath = "\(type.folder)/\(actualUserId)/\(petId)/\(type.filePrefix)" // pets/userId/petId/profile.jpg
         } else {
-            let timestamp = Int(Date().timeIntervalSince1970)
-            imagePath = "\(type.folder)/\(actualUserId)/\(type.filePrefix)\(timestamp).jpg"
+            let uuid = UUID().uuidString
+            imagePath = "\(type.folder)/\(userId)/\(type.filePrefix)\(uuid).jpg"
         }
 
         let imageRef = storageRef.child(imagePath)
@@ -127,7 +130,7 @@ class FirebaseImageManager {
                     return
                 }
         var path: String
-        if type == .assistant || type == .clue || type == .invLog || type == .walkResult {
+        if type == .assistant || type == .clue || type == .invLogBoard || type == .walkResult {
             path = "\(type.folder)/\(actualUserId)"
             completion(nil)
             return

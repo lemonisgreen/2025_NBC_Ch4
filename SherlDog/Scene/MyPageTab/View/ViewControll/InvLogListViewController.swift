@@ -170,7 +170,8 @@ extension InvLogListViewController {
         let containerView = UIView()
 
         containerView.addSubview(navigationStack)
-
+        
+        containerView.addSubview(navigationStack)
         navigationStack.addArrangedSubview(navigationBackButton)
         navigationStack.addArrangedSubview(navigationTitleLabel)
         navigationStack.axis = .horizontal
