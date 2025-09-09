@@ -73,7 +73,8 @@ class InvLogViewModel {
                                   postCode: documentId)
         
         FirestoreManager.shared.createDocument(collection: .invLogBoard,
-                                               data: data)
+                                               data: data,
+                                               documentId: documentId)
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)
             self?.output.uploadComplete.accept(())

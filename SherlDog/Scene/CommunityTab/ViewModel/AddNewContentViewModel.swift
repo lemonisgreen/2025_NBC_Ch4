@@ -285,7 +285,8 @@ final class AddNewContentViewModel {
                                                 postCode: documentId)
                 
                 return FirestoreManager.shared.createDocument(collection: .detectiveMate,
-                                                              data: uploadData)
+                                                              data: uploadData,
+                                                              documentId: documentId)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             }
             .subscribe(onCompleted: { [weak self] in
@@ -324,17 +325,10 @@ final class AddNewContentViewModel {
                     postCode: post.postCode
                 )
 
-                // 동일 문서 id에 덮어쓰기
-                return FirestoreManager.shared.findDocumentId(collection: collection,
-                                                              whereField: SDLiteral.CommunityView.postCode,
-                                                              isEqualTo: post.postCode)
-                .flatMapCompletable { ids in
-                    guard let id = ids.first else { return .error(FirestoreError.unknown) }
                     
-                    return FirestoreManager.shared.updateDocument(collection: collection,
-                                                                   documentId: id,
-                                                                   data: updated)
-                }
+                return FirestoreManager.shared.updateDocument(collection: collection,
+                                                              documentId: post.postCode,
+                                                              data: updated)
                 .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             }
             .subscribe(onCompleted: { [weak self] in

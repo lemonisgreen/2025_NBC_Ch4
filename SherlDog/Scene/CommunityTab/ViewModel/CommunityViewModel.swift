@@ -232,7 +232,9 @@ extension CommunityViewModel {
         return input
             .withLatestFrom(category) { ($0, $1) }
             .flatMapFirst { [weak self] (model, category) -> Observable<Mutation> in
-                guard let self, let userId = Auth.auth().currentUser?.uid else { return .empty() }
+                guard let self,
+                      let userId = Auth.auth().currentUser?.uid,
+                      let collection = self.getCollection(category) else { return .empty() }
                 
                 let newLikes = model.like.contains(userId)
                 ? model.like.filter { $0 != userId }
@@ -241,16 +243,9 @@ extension CommunityViewModel {
                 var patched = model
                 patched.like = newLikes
                 
-                return self.findPostId(section: category, postCode: model.postCode)
-                    .asObservable()
-                    .flatMap { id -> Observable<Mutation> in
-                        guard !id.isEmpty,
-                              let collection = self.getCollection(category) else { return .empty() }
-                        
-                        return FirestoreManager.shared.updateDocument(collection: collection, documentId: id, data: patched)
-                            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                            .andThen(.just(Mutation.patch(category: category, post: patched)))
-                    }
+                return FirestoreManager.shared.updateDocument(collection: collection, documentId: model.postCode, data: patched)
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    .andThen(.just(Mutation.patch(category: category, post: patched)))
             }
     }
 }
@@ -270,16 +265,13 @@ private extension CommunityViewModel {
                     return .just(.fix)
                     
                 case .delete(let postCode):
-                    return self.findPostId(section: category, postCode: postCode)
-                        .flatMapCompletable { postId in
-                            FirestoreManager.shared.deleteDocument(
-                                collection: collection,
-                                documentId: postId
-                            )
-                            .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                        }
-                        .andThen(.just(.delete(postCode)))
-                        .catchAndReturn(.error)
+                    return FirestoreManager.shared.deleteDocument(
+                        collection: collection,
+                        documentId: postCode
+                    )
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    .andThen(.just(.delete(postCode)))
+                    .catchAndReturn(.error)
                     
                 case .report(let postCode):
                     let reportData = ReportModel(collection: category.collectionName,
@@ -371,21 +363,6 @@ private extension CommunityViewModel {
         
         return Single.zip(singles)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-    }
-    
-    func findPostId(section: CommunitySectionType, postCode: String) -> Single<String> {
-        guard let collection = self.getCollection(section) else { return .error(FirestoreError.unknown) }
-        
-        return FirestoreManager.shared.findDocumentId(
-            collection: collection,
-            whereField: SDLiteral.CommunityView.postCode,
-            isEqualTo: postCode
-        )
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .flatMap { id in
-            guard let documentId = id.first else { return .error(FirestoreError.noData) }
-            return .just(documentId)
-        }
     }
     
     func getCollection(_ category: CommunitySectionType) -> FirestoreCollection? {
