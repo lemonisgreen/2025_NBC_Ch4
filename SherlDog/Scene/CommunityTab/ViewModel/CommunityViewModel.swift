@@ -199,7 +199,7 @@ private extension CommunityViewModel {
                     next[category, default: []] += posts
                 case let .patch(category, post):
                     var data = next[category, default: []]
-                    if let index = data.firstIndex(where: { $0.postCode == post.postCode }) {
+                    if let index = data.firstIndex(where: { $0.documentId == post.documentId }) {
                         data[index] = post
                     }
                     
@@ -243,7 +243,7 @@ extension CommunityViewModel {
                 var patched = model
                 patched.like = newLikes
                 
-                return FirestoreManager.shared.updateDocument(collection: collection, documentId: model.postCode, data: patched)
+                return FirestoreManager.shared.updateDocument(collection: collection, documentId: model.documentId, data: patched)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
                     .andThen(.just(Mutation.patch(category: category, post: patched)))
             }
@@ -264,24 +264,24 @@ private extension CommunityViewModel {
                 case .fix:
                     return .just(.fix)
                     
-                case .delete(let postCode):
+                case .delete(let documentId):
                     return FirestoreManager.shared.deleteDocument(
                         collection: collection,
-                        documentId: postCode
+                        documentId: documentId
                     )
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .andThen(.just(.delete(postCode)))
+                    .andThen(.just(.delete(documentId)))
                     .catchAndReturn(.error)
                     
-                case .report(let postCode):
+                case .report(let documentId):
                     let reportData = ReportModel(collection: category.collectionName,
-                                                            documentId: postCode)
+                                                            documentId: documentId)
                     
                     return FirestoreManager.shared.createDocument(collection: .reportLog,
                                                            data: reportData,
-                                                           documentId: postCode)
+                                                           documentId: documentId)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .andThen(.just(.report(postCode)))
+                    .andThen(.just(.report(documentId)))
                     .catchAndReturn(.error)
                     
                 case .block(let postUserId):

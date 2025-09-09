@@ -134,7 +134,7 @@ extension CommunityViewController {
         
         let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.delete)) { [weak self] _ in
-            self?.showMenuAlert(type: .delete(post.postCode))
+            self?.showMenuAlert(type: .delete(post.documentId))
         }
         
         return UIMenu(children: [fixAction, deleteAction])
@@ -148,7 +148,7 @@ extension CommunityViewController {
         
         let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.postCode)) { [weak self] in
+            self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
                 self?.blockMessageAfterReport(userId: post.userId)
             }
         }

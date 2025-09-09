@@ -282,7 +282,7 @@ final class AddNewContentViewModel {
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
                                                 content: self.text.value,
-                                                postCode: documentId)
+                                                documentId: documentId)
                 
                 return FirestoreManager.shared.createDocument(collection: .detectiveMate,
                                                               data: uploadData,
@@ -322,12 +322,12 @@ final class AddNewContentViewModel {
                     content: self.text.value,
                     like: post.like,
                     previewComment: post.previewComment,
-                    postCode: post.postCode
+                    documentId: post.documentId
                 )
 
                     
                 return FirestoreManager.shared.updateDocument(collection: collection,
-                                                              documentId: post.postCode,
+                                                              documentId: post.documentId,
                                                               data: updated)
                 .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             }

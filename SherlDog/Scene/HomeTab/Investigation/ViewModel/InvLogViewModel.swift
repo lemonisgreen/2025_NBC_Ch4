@@ -70,7 +70,7 @@ class InvLogViewModel {
                                   postDate: Timestamp(date: Date()),
                                   contentImage: [image],
                                   content: content,
-                                  postCode: documentId)
+                                  documentId: documentId)
         
         FirestoreManager.shared.createDocument(collection: .invLogBoard,
                                                data: data,
