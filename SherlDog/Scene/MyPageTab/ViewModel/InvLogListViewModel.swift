@@ -34,6 +34,7 @@ class InvLogListViewModel {
     
     struct Output {
         let cellData = BehaviorRelay<[InvLogListDataSource]>(value: [])
+        let needOnboarding = PublishRelay<Bool>()
         let isSelectMode = BehaviorRelay<Bool>(value: false)
         let deleteCompleted = PublishRelay<Void>()
     }
@@ -68,6 +69,17 @@ extension InvLogListViewModel {
                 }
             })
             .disposed(by: disposeBag)
+    }
+    
+    private func needOnboarding() -> Bool {
+        let hasShown = UserDefaults.standard.bool(forKey: SDLiteral.InvLogListView.onboardingUserDefaults)
+        
+        if !hasShown {
+            UserDefaults.standard.set(true, forKey: SDLiteral.InvLogListView.onboardingUserDefaults)
+            return true
+        } else {
+            return false
+        }
     }
     
     private func fetchWalkResultData() {
@@ -106,6 +118,10 @@ extension InvLogListViewModel {
                 self.data = sortedResult.enumerated().map { index, result in
                     let caseNumber = sortedResult.count - index  // 최신이 큰 번호
                     return WalkResultToList(from: result.0, caseNumber: caseNumber, profile: result.1)
+                }
+                
+                if !self.data.isEmpty, self.needOnboarding() {
+                    self.output.needOnboarding.accept(true)
                 }
             })
             .disposed(by: disposeBag)

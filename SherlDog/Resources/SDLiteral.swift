@@ -73,5 +73,6 @@ enum SDLiteral {
         static let requestDelete: String = "수사일지를 삭제하시겠습니까?"
         static let caseNumber: String = "CASE # %@"
         static let infoLabel: String = "%@  ·  %@  ·  %@"
+        static let onboardingUserDefaults: String = "needOnboardingInvLogArchive"
     }
 }

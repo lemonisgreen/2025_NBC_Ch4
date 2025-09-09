@@ -97,18 +97,18 @@ extension InvLogListCell {
         }
     }
     
-    func toggleSelectMode(selectable: Bool) {
+    func bind(isSelectMode: Driver<Bool>) {
+        isSelectMode
+            .drive(onNext: { [weak self] in self?.toggleSelectMode(selectable: $0) })
+            .disposed(by: disposeBag)
+    }
+    
+    private func toggleSelectMode(selectable: Bool) {
         self.selectedStateImageView.isHidden = !selectable
         
         selectable
         ? contentView.gestureRecognizers?.removeAll()
         : contentView.addGestureRecognizer(tap)
-    }
-    
-    func bind(isSelectMode: Driver<Bool>) {
-        isSelectMode
-            .drive(onNext: { [weak self] in self?.toggleSelectMode(selectable: $0) })
-            .disposed(by: disposeBag)
     }
     
     private func setup() {

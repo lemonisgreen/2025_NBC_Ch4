@@ -27,6 +27,7 @@ class InvLogListViewController: UIViewController {
     private let separatorView = UIView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: configureCollectionViewLayout())
     private let emptyView = EmptyInvLogView()
+    private let onboardingView = UIView()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
@@ -76,10 +77,6 @@ extension InvLogListViewController {
                     $0.removeFromSuperview()
                 }
                 
-//                self.collectionView.visibleCells.forEach {
-//                    ($0 as? InvLogListCell)?.toggleSelectMode(selectable: isSelectMode)
-//                }
-                
                 switch isSelectMode {
                 case true:
                     self.navigationRightButtonStackView.addArrangedSubview(cancelButton)
@@ -105,6 +102,36 @@ extension InvLogListViewController {
                 
                 self?.present(alert, animated: true)
             })
+            .disposed(by: disposeBag)
+        
+        self.viewModel.output.needOnboarding
+            .asDriver(onErrorJustReturn: false)
+            .filter { $0 }
+            .do(onNext: { [weak self] _ in
+                self?.showOnboardingView()
+                self?.onboardingView.isHidden = false
+            })
+            .flatMap { [weak self] _ -> Driver<Void> in
+                self?.onboardingView.isUserInteractionEnabled = true
+                
+                let press = UILongPressGestureRecognizer()
+                press.minimumPressDuration = 0
+                press.allowableMovement = 2000
+                
+                self?.onboardingView.addGestureRecognizer(press)
+                return press.rx.event
+                    .filter { $0.state == .began }
+                    .map { _ in }
+                    .asDriver(onErrorDriveWith: .empty())
+            }
+            .drive { [weak self] _ in
+                UIView.animate(withDuration: 0.2, animations: {
+                    self?.onboardingView.alpha = 0
+                }, completion: { _ in
+                    self?.onboardingView.isHidden = true
+                    self?.onboardingView.alpha = 1   // 다음번 다시 보여줄 때 대비
+                })
+            }
             .disposed(by: disposeBag)
     }
     
@@ -149,13 +176,30 @@ extension InvLogListViewController {
             .disposed(by: disposeBag)
     }
     
+    private func showOnboardingView() {
+        let onboardingImageView = UIImageView()
+        
+        onboardingImageView.image = .invLogListOnboarding
+        onboardingImageView.contentMode = .scaleAspectFit
+        
+        onboardingView.addSubview(onboardingImageView)
+        
+        onboardingView.snp.makeConstraints { $0.edges.equalToSuperview() }
+        
+        onboardingImageView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.top.equalTo(view.safeAreaLayoutGuide)
+        }
+    }
+    
     private func setupUI() {
         view.backgroundColor = .gray50
         
         view.addSubviews([
             separatorView,
             collectionView,
-            emptyView
+            emptyView,
+            onboardingView
         ])
         
         navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
@@ -215,6 +259,7 @@ extension InvLogListViewController {
         navigationRightButtonStackView.addArrangedSubview(modeConvertButton)
         
         emptyView.isHidden = true
+        onboardingView.isHidden = true
     }
     
     private func configureUI() {
