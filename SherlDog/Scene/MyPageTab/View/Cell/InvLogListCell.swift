@@ -135,8 +135,12 @@ extension InvLogListCell {
         
         contentView.backgroundColor = .white
         contentView.layer.cornerRadius = 12
-        contentView.layer.borderColor = UIColor.black.withAlphaComponent(0.06).cgColor
-        contentView.layer.borderWidth = 1
+        
+        // MARK: - contentView shadow
+        contentView.layer.shadowOffset = .init(width: 0, height: 0)
+        contentView.layer.shadowColor = UIColor.black.withAlphaComponent(0.06).cgColor
+        contentView.layer.shadowOpacity = 1.0
+        contentView.layer.shadowRadius = 3.0 // 기본 값
         
         totalstackView.axis = .vertical
         totalstackView.spacing = 8
