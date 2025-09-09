@@ -208,7 +208,18 @@ final class PetProfileViewController: UIViewController {
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
-        navigationTitleLabel.snp.makeConstraints { $0.width.equalTo(UIScreen.main.bounds.width * (4 / 5)) }
+        
+        let navigationStack = UIStackView()
+        let containerView = UIView()
+        
+        containerView.addSubview(navigationStack)
+        
+        navigationStack.addArrangedSubview(navigationBackButton)
+        navigationStack.addArrangedSubview(navigationTitleLabel)
+        navigationStack.axis = .horizontal
+        navigationStack.alignment = .center
+        navigationStack.spacing = 8
+        navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
@@ -216,8 +227,8 @@ final class PetProfileViewController: UIViewController {
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationController?.navigationBar.isHidden = false
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
-        self.navigationItem.titleView = navigationTitleLabel
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: containerView)
+        self.navigationItem.titleView = nil
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         

@@ -8,6 +8,8 @@
 import RxSwift
 import RxRelay
 import UIKit
+import FirebaseAuth
+import FirebaseFirestore
 
 class InvLogViewModel {
     
@@ -24,6 +26,8 @@ class InvLogViewModel {
         let isLoading = BehaviorRelay<Bool>(value: false)
         let uploadComplete = PublishRelay<Void>()
         let uploadError = PublishRelay<Void>()
+        let humanProfile = BehaviorRelay<HumanProfileModel?>(value: nil)
+        let petProfile = BehaviorRelay<[PetProfile]>(value: [])
     }
     
     private let disposeBag = DisposeBag()
@@ -32,6 +36,8 @@ class InvLogViewModel {
     let output = Output()
     
     init() {
+        fetchHumanProfile()
+        fetchPetProfile()
         transform()
     }
     
@@ -51,8 +57,20 @@ class InvLogViewModel {
     }
     
     private func upload(image: String, content: String) {
-        FirestoreManager.shared.createDocument(collection: .invLog,
-                                               data: InvLogModel(userId: "unknown", image: image, content: content)) // todo: Insert userId
+        guard let userId = Auth.auth().currentUser?.uid,
+              let humanProfile = output.humanProfile.value else { return }
+        let petProfile = output.petProfile.value
+        
+        let data = CommunityModel(userId: userId,
+                                  profileImage: humanProfile.image,
+                                  name: humanProfile.nickname,
+                                  petProfile: petProfile,
+                                  postDate: Timestamp(date: Date()),
+                                  contentImage: [image],
+                                  content: content)
+        
+        FirestoreManager.shared.createDocument(collection: .invLogBoard,
+                                               data: data)
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)
             self?.output.uploadComplete.accept(())
@@ -63,8 +81,41 @@ class InvLogViewModel {
         .disposed(by: disposeBag)
     }
     
+    private func fetchHumanProfile() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
+            collection: .humanProfile,
+            type: .document(id: userId)
+        ))
+        .flatMap { profile in
+            guard let profile = profile.first else { return .error(FirestoreError.noData) }
+            return .just(profile)
+        }
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .subscribe(onSuccess: { [weak self] profile in
+            self?.output.humanProfile.accept(profile)
+        })
+        .disposed(by: disposeBag)
+    }
+    
+    private func fetchPetProfile() {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
+            collection: .petProfile,
+            type: .whereField(field: SDLiteral.FirestoreFieldName.userId,
+                              value: userId)
+        ))
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .subscribe(onSuccess: { [weak self] profile in
+            self?.output.petProfile.accept(profile)
+        })
+        .disposed(by: disposeBag)
+    }
+    
     private func imageToString(data: UploadData) {
-        FirebaseImageManager.shared.uploadImage(data.invImage, type: .invLog) { [weak self] result in
+        FirebaseImageManager.shared.uploadImage(data.invImage, type: .invLogBoard) { [weak self] result in
             switch result {
             case .success(let value):
                 self?.upload(image: value, content: data.content)

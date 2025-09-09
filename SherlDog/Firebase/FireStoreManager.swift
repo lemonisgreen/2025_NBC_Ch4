@@ -21,18 +21,20 @@ struct FirestoreQuery<T: Decodable> {
     let modelType: T.Type = T.self
 }
 
-enum FirestoreCollection: String {
+enum FirestoreCollection: String, CaseIterable {
+    case users = "users"
     case clues = "clues"
-    case walkResult = "WalkResult"
-    case petProfile = "PetProfile"
     case humanProfile = "HumanProfile"
-    case invLog = "InvLog"
+    case petProfile = "PetProfile"
+    case walkResult = "WalkResult"
+    case detectiveMate = "DetectiveMate"
+    case invLogBoard = "InvLogBoard"
 }
 
 enum FirestoreQueryType {
     case document(id: String)
     case whereField(field: String, value: Any?)
-    case collection
+    case collection(sortField: String?, descending: Bool, blockedIds: [String])
     case dateRange(field: String, value: Any?, orderBy: String, day: Date)
 }
 
@@ -95,9 +97,24 @@ final class FirestoreManager {
                 return Disposables.create()
             }
             
-        case .collection:
+        case let .collection(sortField, descending, blocked):
             return Single.create { [weak self] single in
-                self?.db.collection(query.collection.rawValue).getDocuments { snapshot, error in
+                guard let self else {
+                    single(.failure(FirestoreError.unknown))
+                    return Disposables.create()
+                }
+                var queryByCollection: Query = self.db.collection(query.collection.rawValue)
+                
+                if let sortField, !sortField.isEmpty {
+                    queryByCollection = queryByCollection.order(by: sortField, descending: descending)
+                }
+                
+                if !blocked.isEmpty {
+                    queryByCollection = queryByCollection.whereField(SDLiteral.FirestoreFieldName.userId, notIn: blocked)
+                }
+                
+                queryByCollection
+                    .getDocuments { snapshot, error in
                     if let error = error { single(.failure(error)) }
                     else if let snapshot = snapshot {
                         let items = snapshot.documents.compactMap { try? $0.data(as: T.self) }
