@@ -196,8 +196,12 @@ final class FirestoreManager {
                 completable(.error(FirestoreError.unknown))
                 return Disposables.create()
             }
-            let docId = (documentId == nil || documentId!.isEmpty) ? self.userId : documentId!
-            let docRef: DocumentReference = self.db.collection(collection.rawValue).document(docId)
+            
+            let collection: CollectionReference = self.db.collection(collection.rawValue)
+            let docRef: DocumentReference = (documentId == nil || documentId!.isEmpty)
+            ? collection.document()
+            : collection.document(documentId!)
+            
             do {
                 try docRef.setData(from: data) { error in
                     if let error = error {

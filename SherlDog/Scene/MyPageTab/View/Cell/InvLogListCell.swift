@@ -19,9 +19,11 @@ class InvLogListCell: UICollectionViewCell {
     override var isSelected: Bool {
         didSet {
             if isSelected {
-                self.selectedStateImageView.image = UIImage(systemName: "checkmark.circle")
+                self.selectedStateImageView.image = UIImage(systemName: "checkmark.circle")?
+                    .withTintColor(.keycolorSecondary2, renderingMode: .alwaysOriginal)
             } else {
-                self.selectedStateImageView.image = UIImage(systemName: "circle")
+                self.selectedStateImageView.image = UIImage(systemName: "circle")?
+                    .withTintColor(.gray200, renderingMode: .alwaysOriginal)
             }
         }
     }
@@ -171,7 +173,8 @@ extension InvLogListCell {
         infoLabel.font = .body1
         infoLabel.textColor = .gray700
         
-        selectedStateImageView.image = UIImage(systemName: "circle")
+        selectedStateImageView.image = UIImage(systemName: "circle")?
+            .withTintColor(.gray200, renderingMode: .alwaysOriginal)
         selectedStateImageView.contentMode = .scaleAspectFit
         selectedStateImageView.isHidden = true
     }
