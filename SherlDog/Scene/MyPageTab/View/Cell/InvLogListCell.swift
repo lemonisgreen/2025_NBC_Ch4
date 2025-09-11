@@ -48,8 +48,13 @@ class InvLogListCell: UICollectionViewCell {
         configureUI()
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        contentView.layer.shadowPath = UIBezierPath(
+            roundedRect: contentView.bounds,
+            cornerRadius: contentView.layer.cornerRadius
+        ).cgPath
     }
     
     override func prepareForReuse() {
@@ -62,6 +67,10 @@ class InvLogListCell: UICollectionViewCell {
         contentView.gestureRecognizers?.removeAll()
         petProfileStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
         self.disposeBag = DisposeBag()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }
 
