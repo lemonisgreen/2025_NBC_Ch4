@@ -6,17 +6,19 @@
 //
 
 import UIKit
+import RxSwift
 
 struct WalkResultToList {
     let date: String
     let distance: String
     let duration: String
     let steps: String
+    var petProfile: [PetProfile]
     let caseNumber: String
 }
 
 extension WalkResultToList {
-    init(from result: WalkResult, caseNumber: Int) {
+    init(from result: WalkResult, caseNumber: Int, profile: [PetProfile]) {
         let formatter = DateFormatter()
         
         // MARK: result.date transform -
@@ -47,5 +49,6 @@ extension WalkResultToList {
         self.duration = duration
         self.steps = "\(result.steps)보"
         self.caseNumber = String(format: "%03d", caseNumber)
+        self.petProfile = profile
     }
 }
