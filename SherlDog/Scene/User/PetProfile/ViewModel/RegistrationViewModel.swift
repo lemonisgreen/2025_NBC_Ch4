@@ -102,7 +102,7 @@ class RegistrationViewModel {
     func uploadImageAndSaveProfile(image: UIImage) {
         self.output.isLoading.accept(true)
         
-        let newDocRef = FirestoreManager.shared.db.collection("PetProfile").document()
+        let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.petProfile.rawValue).document()
         let petProfileID = newDocRef.documentID
         self.imageDocumentId = petProfileID
         

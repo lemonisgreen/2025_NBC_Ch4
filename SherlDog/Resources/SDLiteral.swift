@@ -40,9 +40,10 @@ enum SDLiteral {
         static let menuAlertMessage: String = "정말 %@하시겠습니까?"
         static let menuButtonTitle: String = "%@하기"
         static let completeAlert: String = "%@ 완료했습니다."
+        static let blockMessageAfterReport: String = "해당 유저를 차단하시겠습니까?"
         static let dotdotdot: String = "···"
         static let separateDot: String = " · "
-        static let postCode: String = "postCode"
+        static let documentId: String = "documentId"
         static let postDate: String = "postDate"
     }
     

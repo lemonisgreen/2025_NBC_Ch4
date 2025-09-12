@@ -60,6 +60,8 @@ class InvLogViewModel {
         guard let userId = Auth.auth().currentUser?.uid,
               let humanProfile = output.humanProfile.value else { return }
         let petProfile = output.petProfile.value
+        let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.invLogBoard.rawValue).document()
+        let documentId = newDocRef.documentID
         
         let data = CommunityModel(userId: userId,
                                   profileImage: humanProfile.image,
@@ -67,10 +69,12 @@ class InvLogViewModel {
                                   petProfile: petProfile,
                                   postDate: Timestamp(date: Date()),
                                   contentImage: [image],
-                                  content: content)
+                                  content: content,
+                                  documentId: documentId)
         
         FirestoreManager.shared.createDocument(collection: .invLogBoard,
-                                               data: data)
+                                               data: data,
+                                               documentId: documentId)
         .subscribe(onCompleted: { [weak self] in
             self?.output.isLoading.accept(false)
             self?.output.uploadComplete.accept(())
