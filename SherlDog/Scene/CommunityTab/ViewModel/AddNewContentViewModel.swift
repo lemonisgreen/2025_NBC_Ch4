@@ -320,11 +320,10 @@ final class AddNewContentViewModel {
                     postDate: post.postDate,
                     contentImage: merged,
                     content: self.text.value,
-                    like: post.like,
-                    previewComment: post.previewComment,
+                    likeCount: post.likeCount,
+                    commentCount: post.commentCount,
                     documentId: post.documentId
-                )
-
+                ) // TODO: 모델 자체를 넣는 것이 아닌 일부 프로퍼티만 변경하도록
                     
                 return FirestoreManager.shared.updateDocument(collection: collection,
                                                               documentId: post.documentId,

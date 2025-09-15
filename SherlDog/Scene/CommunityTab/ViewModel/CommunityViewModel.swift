@@ -229,23 +229,35 @@ extension CommunityViewModel {
         _ input: Observable<CommunityModel>,
         category: Observable<CommunitySectionType>
     ) -> Observable<Mutation> {
-        return input
+        
+        // 현재 isLiked 스트림
+        let isLikedStream = input
             .withLatestFrom(category) { ($0, $1) }
-            .flatMapFirst { [weak self] (model, category) -> Observable<Mutation> in
+            .flatMapLatest { [weak self] (model, category) -> Observable<Bool> in
                 guard let self,
                       let userId = Auth.auth().currentUser?.uid,
                       let collection = self.getCollection(category) else { return .empty() }
+                return CommunityActionManager.shared.isLiked(collection: collection, postCode: model.documentId, userId: userId)
+            }
+            .share(replay: 1)
+        
+        // 토글
+        return input
+            .withLatestFrom(Observable.combineLatest(category, isLikedStream)) { ($0, $1.0, $1.1) }
+            .flatMapFirst { [weak self] (model, category, isLiked) -> Observable<Mutation> in
+                guard let self, let collection = self.getCollection(category) else { return .empty() }
                 
-                let newLikes = model.like.contains(userId)
-                ? model.like.filter { $0 != userId }
-                : (model.like + [userId])
+                let newLikes = isLiked
+                ? model.likeCount - 1
+                : model.likeCount + 1
                 
                 var patched = model
-                patched.like = newLikes
+                patched.likeCount = newLikes
                 
-                return FirestoreManager.shared.updateDocument(collection: collection, documentId: model.documentId, data: patched)
-                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .andThen(.just(Mutation.patch(category: category, post: patched)))
+                return CommunityActionManager.shared.toggleLikeWithCount(collection: collection,
+                                                                         postCode: model.documentId)
+                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                .andThen(.just(Mutation.patch(category: category, post: patched)))
             }
     }
 }

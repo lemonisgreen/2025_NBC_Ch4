@@ -310,8 +310,11 @@ extension CommunityViewController {
                     ) as? PostFooterView else { return .init() }
                     
                     let count = dataSource.sectionModels[indexPath.section].items.count
+                    let category: FirestoreCollection = {
+                        self.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMate
+                    }()
                     
-                    footer.settingCell(data: sectionModel)
+                    footer.settingCell(data: sectionModel, collection: category)
                     footer.updatePage(total: count, current: 0)
                     
                     footer.rx.likeButtonTap
