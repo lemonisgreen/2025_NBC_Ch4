@@ -64,7 +64,8 @@ extension CommunityActionManager {
         }
     }
     
-    func isLiked(collection: FirestoreCollection, postCode: String, userId: String) -> Observable<Bool> {
+    // Like state observer
+    func observeIsLiked(collection: FirestoreCollection, postCode: String, userId: String) -> Observable<Bool> {
         let doc = self.db
             .collection(collection.rawValue)
             .document(postCode)
@@ -84,7 +85,25 @@ extension CommunityActionManager {
         }
     }
     
-    // create
+    // Like count observer
+    func observeLikeCount(
+        collection: FirestoreCollection,
+        postCode: String
+    ) -> Observable<Int> {
+        let doc = self.db
+            .collection(collection.rawValue)
+            .document(postCode)
+
+        return Observable.create { observable in
+            let listener = doc.addSnapshotListener { snapshot, _ in
+                let count = (snapshot?.data()?["likeCount"] as? Int) ?? 0
+                observable.onNext(count)
+            }
+            return Disposables.create { listener.remove() }
+        }
+    }
+    
+    // Create Comment
     func createComment<T: Codable>(
         collection: FirestoreCollection,
         postCode: String,
@@ -116,7 +135,7 @@ extension CommunityActionManager {
         }
     }
     
-    // delete
+    // Delete Comment
     func deleteComment(
         collection: FirestoreCollection,
         postCode: String,
@@ -144,7 +163,7 @@ extension CommunityActionManager {
         }
     }
     
-    // like list 불러오기
+    // Like list 불러오기
     func fetchLikersList(
         collection: FirestoreCollection,
         postCode: String

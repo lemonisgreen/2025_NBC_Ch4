@@ -18,7 +18,7 @@ final class AddNewContentViewModel {
     
     enum Mode {
         case add
-        case edit(category: CommunityViewModel.CommunitySectionType, post: CommunityModel)
+        case edit(category: CommunitySectionType, post: CommunityModel)
     }
     
     enum Input {
@@ -28,7 +28,7 @@ final class AddNewContentViewModel {
         case addPicture
         case selectedPictures([PHPickerResult])
         case deleteButtonTap(Int)
-        case editCase(category: CommunityViewModel.CommunitySectionType, post: CommunityModel)
+        case editCase(category: CommunitySectionType, post: CommunityModel)
     }
     
     struct Output {
@@ -129,7 +129,7 @@ final class AddNewContentViewModel {
             .disposed(by: disposeBag)
     }
     
-    private func setEditMode(category: CommunityViewModel.CommunitySectionType, post: CommunityModel) {
+    private func setEditMode(category: CommunitySectionType, post: CommunityModel) {
         self.output.isLoading.accept(true)
         
         let petData = self.dataBox
@@ -301,14 +301,13 @@ final class AddNewContentViewModel {
             .disposed(by: disposeBag)
     }
     
-    private func updatePost(category: CommunityViewModel.CommunitySectionType, post: CommunityModel) {
+    private func updatePost(category: CommunitySectionType, post: CommunityModel) {
         uploadNewImages(category: category)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             .flatMapCompletable { [weak self] newURLs in
-                guard let self,
-                      let collection = self.getCollection(category) else {
-                    return .error(FirestoreError.unknown)
-                }
+                guard let self else { return .error(FirestoreError.unknown) }
+                let collection = category.toFirestoreCollection
+                
                 // 기존 URL + 신규 URL 합치기
                 let merged = self.output.existingImageURLs.value + newURLs
                 let selectedPets = self.output.selectedProfile.value
@@ -360,7 +359,7 @@ final class AddNewContentViewModel {
         
     }
     
-    private func uploadNewImages(category: CommunityViewModel.CommunitySectionType) -> Single<[String]> {
+    private func uploadNewImages(category: CommunitySectionType) -> Single<[String]> {
         let images = self.output.newPictures.value
         guard !images.isEmpty else { return .just([]) }
         let uploadType: UploadImageType = category == .invLogBoard ? .invLogBoard : .detectiveMate
@@ -403,14 +402,6 @@ final class AddNewContentViewModel {
                 }
             })
             .disposed(by: disposeBag)
-    }
-    
-    func getCollection(_ category: CommunityViewModel.CommunitySectionType) -> FirestoreCollection? {
-        if let collection = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first {
-            return collection
-        } else {
-            return nil
-        }
     }
     
     private func setAgeGenderStyle(data: PetProfile) -> String {

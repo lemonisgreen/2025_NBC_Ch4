@@ -33,7 +33,7 @@ final class CommunityViewController: UIViewController {
     private let refreshControl = UIRefreshControl()
     
     // MARK: - UIProperty
-    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunityViewModel.CommunitySectionType.allCases.map { $0.name })
+    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunitySectionType.allCases.map { $0.name })
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let addButton = UIButton()
     
@@ -124,7 +124,7 @@ extension CommunityViewController {
     private func myPostMenu(post: CommunityModel) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
-            let category: CommunityViewModel.CommunitySectionType = {
+            let category: CommunitySectionType = {
                 self?.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMateBoard
             }()
             
@@ -250,6 +250,8 @@ extension CommunityViewController {
 extension CommunityViewController {
     private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection> {
         return RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection>(
+            
+            // MARK: - PostMediaCell
             configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
@@ -268,7 +270,9 @@ extension CommunityViewController {
             configureSupplementaryView: { dataSource, collectionView, kind, indexPath in
                 // 섹션 모델 == CommunityModel
                 let sectionModel = dataSource.sectionModels[indexPath.section].model
+                
                 switch kind {
+                    // MARK: - PostHeader
                 case UICollectionView.elementKindSectionHeader:
                     guard let header = collectionView.dequeueReusableSupplementaryView(
                         ofKind: kind,
@@ -302,6 +306,7 @@ extension CommunityViewController {
                     
                     return header
                     
+                    // MARK: - PostFooter
                 case UICollectionView.elementKindSectionFooter:
                     guard let footer = collectionView.dequeueReusableSupplementaryView(
                         ofKind: kind,
@@ -311,17 +316,36 @@ extension CommunityViewController {
                     
                     let count = dataSource.sectionModels[indexPath.section].items.count
                     let category: FirestoreCollection = {
-                        self.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMate
+                        let index = self.segmentedControl.selectedSegmentIndex
+                        
+                        return CommunitySectionType.allCases.indices.contains(index)
+                        ? CommunitySectionType.allCases[index].toFirestoreCollection
+                        : .invLogBoard
                     }()
                     
                     footer.settingCell(data: sectionModel, collection: category)
                     footer.updatePage(total: count, current: 0)
+
+                    // ViewModel for footer
+                    let viewModel = PostFooterViewModel(category: category, post: sectionModel)
+                    let output = viewModel.transform(
+                        input: .init(
+                            likeTap: footer.rx.likeButtonTap
+                                .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
+                                .asSignal(onErrorSignalWith: .empty())
+                        )
+                    )
+                    output.state
+                        .drive(onNext: { [weak footer] state in
+                            footer?.updateLike(state)
+                        })
+                        .disposed(by: footer.disposeBag)
                     
                     footer.rx.likeButtonTap
                         .map { sectionModel }
                         .bind(to: self.likeButtonEvent)
                         .disposed(by: footer.disposeBag)
-                    
+
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
@@ -334,11 +358,11 @@ extension CommunityViewController {
                                     action: nil
                                 )]
                             )
-                            
+
                             self?.present(alert, animated: true)
                         })
                         .disposed(by: footer.disposeBag)
-                    
+
                     return footer
                     
                 default:

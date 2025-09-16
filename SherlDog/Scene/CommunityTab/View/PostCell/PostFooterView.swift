@@ -1,4 +1,3 @@
-//
 //  PostFooterView.swift
 //  SherlDog
 //
@@ -46,15 +45,7 @@ final class PostFooterView: UICollectionReusableView {
     
     // MARK: - Method
     func settingCell(data: CommunityModel, collection: FirestoreCollection) {
-        let likeButtonTitle = data.likeCount > 0 ? String(data.likeCount) : ""
-        
         captionLabel.text = data.content
-        
-        self.isLiker(data, collection: collection)
-        likeButton.configuration?.attributedTitle = AttributedString(
-            likeButtonTitle,
-            attributes: AttributeContainer([.font: UIFont.body6])
-        )
         
         previewCommentButton.configuration?.attributedTitle = AttributedString(
             String(data.commentCount),
@@ -63,23 +54,22 @@ final class PostFooterView: UICollectionReusableView {
         previewCommentButton.isHidden = (data.commentCount == 0 ? true : false)
     }
     
+    // Update Page
     func updatePage(total: Int, current: Int) {
         pageControl.numberOfPages = max(total, 0)
         pageControl.currentPage = min(max(current, 0), total - 1)
         pageControl.isHidden = (total <= 1)
     }
     
-    private func isLiker(_ data: CommunityModel, collection: FirestoreCollection) {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        
-        CommunityActionManager.shared.isLiked(collection: collection, postCode: data.documentId, userId: userId)
-            .observe(on: MainScheduler.instance)
-            .subscribe { [weak self] isLiked in
-                self?.likeButton.configuration?.image = isLiked
-                ? UIImage(systemName: "heart.fill")?.withTintColor(.keycolorPrimary2, renderingMode: .alwaysOriginal)
-                : UIImage(systemName: "heart")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
-            }
-            .disposed(by: disposeBag)
+    // Update Like
+    func updateLike(_ state: PostFooterLikeState) {
+        var likeConfig = likeButton.configuration
+        likeConfig?.image = state.likeImage
+        likeConfig?.attributedTitle = AttributedString(
+            state.likeCountText,
+            attributes: AttributeContainer([.font: UIFont.body6])
+        )
+        likeButton.configuration = likeConfig
     }
 }
 
