@@ -30,4 +30,8 @@ final class OnboardingViewModel {
         let next = min(currentStep.value + 1, stepCount - 1)
         currentStep.accept(next)
     }
+    
+    func completeOnboarding() {
+           UserDefaults.standard.set(true, forKey: "onboardingCompleted")
+       }
 }

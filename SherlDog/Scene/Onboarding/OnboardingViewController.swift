@@ -98,8 +98,10 @@ class OnboardingViewController: UIViewController {
             .disposed(by: disposeBag)
         
         skipButton.rx.tap
-            .bind { [weak self] in self?.goToLogin() }
-            .disposed(by: disposeBag)
+            .bind { [weak self] in
+                self?.viewModel.completeOnboarding()
+                self?.goToLogin()
+            }.disposed(by: disposeBag)
         
         nextButton.rx.tap
             .bind { [weak self] in self?.viewModel.goToNextStep() }
@@ -107,8 +109,8 @@ class OnboardingViewController: UIViewController {
         
         startButton.rx.tap
             .bind { [weak self] in
+                self?.viewModel.completeOnboarding()
                 self?.goToLogin()
-                UserDefaults.standard.set(true, forKey: "onboardingCompleted")
             }.disposed(by: disposeBag)
     }
     
