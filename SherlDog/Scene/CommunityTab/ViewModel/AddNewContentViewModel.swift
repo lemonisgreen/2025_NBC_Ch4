@@ -306,24 +306,21 @@ final class AddNewContentViewModel {
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
             .flatMapCompletable { [weak self] newURLs in
                 guard let self,
-                      let userId = Auth.auth().currentUser?.uid,
                       let collection = self.getCollection(category) else {
                     return .error(FirestoreError.unknown)
                 }
                 // 기존 URL + 신규 URL 합치기
                 let merged = self.output.existingImageURLs.value + newURLs
                 let selectedPets = self.output.selectedProfile.value
-
-                let updated = CommunityModel(
-                    userId: userId,
-                    petProfile: selectedPets,
-                    postDate: post.postDate,
-                    contentImage: merged,
-                    content: self.text.value,
-                    likeCount: post.likeCount,
-                    commentCount: post.commentCount,
-                    documentId: post.documentId
-                ) // TODO: 모델 자체를 넣는 것이 아닌 일부 프로퍼티만 변경하도록
+                
+                struct PostUpdateData: Encodable {
+                    let petProfile: [PetProfile]
+                    let contentImage: [String]
+                    let content: String
+                }
+                let updated = PostUpdateData(petProfile: selectedPets,
+                                             contentImage: merged,
+                                             content: self.text.value)
                     
                 return FirestoreManager.shared.updateDocument(collection: collection,
                                                               documentId: post.documentId,

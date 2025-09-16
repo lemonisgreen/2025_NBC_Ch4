@@ -219,7 +219,7 @@ final class FirestoreManager {
     }
     
     //문서 수정
-    func updateDocument<T: Codable>(
+    func updateDocument<T: Encodable>(
         collection: FirestoreCollection,
         documentId: String?,
         data: T
