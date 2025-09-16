@@ -15,19 +15,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         guard let windowScene = (scene as? UIWindowScene) else { return }
-        
         let window = UIWindow(windowScene: windowScene)
-        
-        // 로그인 상태 확인 후 초기 화면 결정
-       let initialViewController = determineInitialViewController()
-        
-        window.rootViewController = initialViewController
         self.window = window
-        window.makeKeyAndVisible()
+        
+        let splashVC = SplashViewController()
+        window.rootViewController = splashVC    // 스플래시를 root로 먼저 설정
+           window.makeKeyAndVisible()
+        
+        splashVC.onSplashEnd = { [weak self] in
+            guard let self = self else { return }
+            let initialViewController = determineInitialViewController()
+            window.rootViewController = initialViewController
+            window.makeKeyAndVisible()
+        }
     }
     
     // MARK: - 초기 화면 결정
     private func determineInitialViewController() -> UIViewController {
+        let onboardingCompletedKey = "onboardingCompleted"
+        let onboardingCompleted = UserDefaults.standard.bool(forKey: onboardingCompletedKey)
+        
         // Firebase 현재 사용자 확인
         let hasFirebaseUser = Auth.auth().currentUser != nil
         
@@ -35,6 +42,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let isKakaoLoggedIn = UserDefaults.standard.bool(forKey: "isKakaoLoggedIn")
         let isGoogleLoggedIn = UserDefaults.standard.bool(forKey: "isGoogleLoggedIn")
         let isAppleLoggedIn = UserDefaults.standard.bool(forKey: "isAppleLoggedIn") // 추가
+        
+        // 온보딩이 완료되지 않은 경우 온보딩 화면을 초기 화면으로 설정
+        if !onboardingCompleted {
+            return OnboardingViewController()
+        }
         
         // 카카오 토큰 유효성 확인 (카카오 로그인인 경우)
         if isKakaoLoggedIn && hasFirebaseUser {
@@ -71,7 +83,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // 여기서 메인 화면
         return BottomTabBarController()
     }
-    
     // MARK: - 만료된 로그인 정보 정리
     private func clearExpiredLoginInfo() {
         let keysToRemove = [
