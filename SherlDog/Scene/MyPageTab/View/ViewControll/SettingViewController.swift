@@ -13,26 +13,31 @@ import RxCocoa
 class SettingViewController : UIViewController {
     
     private let disposeBag = DisposeBag()
-    let loginView = UIView()
-    let loginStack = UIStackView()
-    let loginLabel = UILabel()
-    let loginButton = UIButton()
-    let clauseStack = UIStackView()
-    let clauseLabel = UILabel()
-    let clauseButton = UIButton()
-    let privacyPolicyStack = UIStackView()
-    let privacyPolicyLabel = UILabel()
-    let privacyPolicyButton = UIButton()
-    let withdrawStack = UIStackView()
-    let withdrawLabel = UILabel()
-    let withdrawButton = UIButton()
-    let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
-    let settingBackStack = UIStackView()
-    let settingBackButton = UIButton()
-    let settingTitleLabel = UILabel()
-    let clauseWholeButton = UIButton()
-    let privacyPolicyWholeButton = UIButton()
-    let withdrawWholeButton = UIButton()
+    private let loginView = UIView()
+    private let loginStack = UIStackView()
+    private let loginLabel = UILabel()
+    private let loginButton = UIButton()
+    private let clauseStack = UIStackView()
+    private let clauseLabel = UILabel()
+    private let clauseButton = UIButton()
+    private let privacyPolicyStack = UIStackView()
+    private let privacyPolicyLabel = UILabel()
+    private let privacyPolicyButton = UIButton()
+    private let withdrawStack = UIStackView()
+    private let withdrawLabel = UILabel()
+    private let withdrawButton = UIButton()
+    private let blockedUserStack = UIStackView()
+    private let blockedUserLabel = UILabel()
+    private let blockedUserButton = UIButton()
+    private let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
+    private let settingBackStack = UIStackView()
+    private let settingBackButton = UIButton()
+    private let settingTitleLabel = UILabel()
+    private let clauseWholeButton = UIButton()
+    private let privacyPolicyWholeButton = UIButton()
+    private let withdrawWholeButton = UIButton()
+    private let blockedUserWholeButton = UIButton()
+
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -66,6 +71,9 @@ class SettingViewController : UIViewController {
             withdrawStack,
             withdrawLabel,
             withdrawButton,
+            blockedUserStack,
+            blockedUserLabel,
+            blockedUserButton
         ].forEach {
             view.addSubview($0)
         }
@@ -126,6 +134,17 @@ class SettingViewController : UIViewController {
         withdrawStack.addArrangedSubview(withdrawLabel)
         withdrawStack.addArrangedSubview(withdrawButton)
         
+        blockedUserLabel.text = "차단한 사용자 목록"
+        blockedUserLabel.font = .body1
+        blockedUserLabel.textColor = .textPrimary
+        blockedUserButton.setImage(UIImage(named: "rightChevron"), for: .normal)
+        
+        blockedUserStack.axis = .horizontal
+        blockedUserStack.spacing = 50
+        blockedUserStack.alignment = .leading
+        blockedUserStack.addArrangedSubview(blockedUserLabel)
+        blockedUserStack.addArrangedSubview(blockedUserButton)
+        
         spacer.width = -8
         
         settingBackButton.setImage(UIImage(named: "leftChevron"), for: .normal)
@@ -144,6 +163,8 @@ class SettingViewController : UIViewController {
         privacyPolicyStack.addSubview(privacyPolicyWholeButton)
         
         withdrawStack.addSubview(withdrawWholeButton)
+        
+        blockedUserStack.addSubview(blockedUserWholeButton)
         
     }
     
@@ -172,6 +193,11 @@ class SettingViewController : UIViewController {
             $0.top.equalTo(privacyPolicyStack.snp.bottom).offset(34)
             $0.leading.trailing.equalToSuperview().inset(16)
         }
+        
+        blockedUserStack.snp.makeConstraints {
+            $0.top.equalTo(withdrawStack.snp.bottom).offset(34)
+            $0.leading.trailing.equalToSuperview().inset(16)
+        }
 
         clauseWholeButton.snp.makeConstraints {
             $0.edges.equalToSuperview()
@@ -182,6 +208,10 @@ class SettingViewController : UIViewController {
         }
 
         withdrawWholeButton.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
+        
+        blockedUserWholeButton.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
     }
@@ -239,6 +269,13 @@ class SettingViewController : UIViewController {
             .bind { [weak self] in
                 let withdrawViewController = WithdrawViewController()
                 self?.navigationController?.pushViewController(withdrawViewController, animated: true)
+            }
+            .disposed(by: disposeBag)
+        
+        blockedUserWholeButton.rx.tap
+            .bind { [weak self] in
+                let blockedUserViewController = BlockedUserViewController()
+                self?.navigationController?.pushViewController(blockedUserViewController, animated: true)
             }
             .disposed(by: disposeBag)
     }
