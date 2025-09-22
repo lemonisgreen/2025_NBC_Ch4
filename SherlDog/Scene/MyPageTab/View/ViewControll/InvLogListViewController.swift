@@ -88,6 +88,22 @@ extension InvLogListViewController {
             }
             .disposed(by: disposeBag)
         
+        self.viewModel.output.cellData
+            .map { data -> Bool in
+                guard let section = data.first else { return false }
+                
+                return section.items.count > 0
+            }
+            .asDriver(onErrorJustReturn: false)
+            .drive(onNext: { [weak self] state in
+                self?.modeConvertButton.isEnabled = state
+                
+                state
+                ? self?.modeConvertButton.setTitleColor(.textAlert, for: .normal)
+                : self?.modeConvertButton.setTitleColor(.textDisabled, for: .normal)
+            })
+            .disposed(by: disposeBag)
+        
         self.viewModel.output.deleteCompleted
             .bind(onNext: { [weak self] in
                 let alert = CustomAlertViewController(
@@ -95,7 +111,9 @@ extension InvLogListViewController {
                     buttons: [
                         CustomAlertViewController.AlertButton(
                             title: SDLiteral.AlertMessage.confirm,
-                            action: nil
+                            action: { [weak self] in
+                                self?.viewModel.input.accept(.selectModeConvert)
+                            }
                         )
                     ]
                 )
@@ -129,7 +147,7 @@ extension InvLogListViewController {
                     self?.onboardingView.alpha = 0
                 }, completion: { _ in
                     self?.onboardingView.isHidden = true
-                    self?.onboardingView.alpha = 1   // 다음번 다시 보여줄 때 대비
+                    self?.onboardingView.alpha = 1
                 })
             }
             .disposed(by: disposeBag)
@@ -151,24 +169,42 @@ extension InvLogListViewController {
         .disposed(by: disposeBag)
         
         self.deleteButton.rx.tap
-            .bind { [weak self] in
-                let alert = CustomAlertViewController(
-                    message: SDLiteral.InvLogListView.requestDelete,
-                     buttons: [
-                         CustomAlertViewController.AlertButton(
-                            title: SDLiteral.AlertMessage.cancel,
-                             action: nil
-                         ),
-                         CustomAlertViewController.AlertButton(
+            .map { [weak self] _ -> [IndexPath] in
+                guard let self,
+                       let indexPaths = self.collectionView.indexPathsForSelectedItems else { return [] }
+                
+                return indexPaths
+            }
+            .bind { [weak self] indexPaths in
+                let buttons: [CustomAlertViewController.AlertButton]
+                
+                if indexPaths.count > 0 {
+                    buttons = [
+                        CustomAlertViewController.AlertButton(
+                           title: SDLiteral.AlertMessage.cancel,
+                            action: nil
+                        ),
+                        CustomAlertViewController.AlertButton(
+                           title: SDLiteral.AlertMessage.confirm,
+                            action: { [weak self] in
+                                self?.viewModel.input.accept(.delete(indexPaths))
+                            }
+                        )
+                    ]
+                } else {
+                    buttons = [
+                        CustomAlertViewController.AlertButton(
                             title: SDLiteral.AlertMessage.confirm,
-                             action: { [weak self] in
-                                 guard let self,
-                                        let indexPaths = self.collectionView.indexPathsForSelectedItems else { return }
-                                 
-                                 self.viewModel.input.accept(.delete(indexPaths))
-                             }
-                         )
-                     ]
+                            action: nil
+                        )
+                    ]
+                }
+                
+                let alert = CustomAlertViewController(
+                    message: indexPaths.count > 0
+                    ? SDLiteral.InvLogListView.requestDelete
+                    : SDLiteral.InvLogListView.requestDeleteWithoutList,
+                     buttons: buttons
                  )
                 
                 self?.present(alert, animated: true)

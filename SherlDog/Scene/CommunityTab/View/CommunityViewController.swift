@@ -236,7 +236,7 @@ extension CommunityViewController {
             message: String(format: SDLiteral.CommunityView.completeAlert, message),
             buttons: [
                 CustomAlertViewController.AlertButton(
-                    title: SDLiteral.AlertMessage.cancel,
+                    title: SDLiteral.AlertMessage.confirm,
                     action: nil
                 )
             ]
