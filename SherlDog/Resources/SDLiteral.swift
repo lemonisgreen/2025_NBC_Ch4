@@ -76,4 +76,13 @@ enum SDLiteral {
         static let infoLabel: String = "%@  ·  %@  ·  %@"
         static let onboardingUserDefaults: String = "needOnboardingInvLogArchive"
     }
+    
+    enum BlockedUserViewController {
+        static let navigationTitle: String = "차단한 사용자 목록"
+        static let navigationEditButton: String = "편집"
+        static let navigationCancelButton: String = "취소"
+        static let navigationUnblockButton: String = "차단 해제"
+        static let emptyStateLabel: String = "차단한 사용자가 없습니다."
+        static let unblcockAlertText: String = "선택한 사용자를\n차단 해제하시겠습니까?"
+    }
 }
