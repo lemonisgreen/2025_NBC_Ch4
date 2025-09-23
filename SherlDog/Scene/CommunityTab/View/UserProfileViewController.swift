@@ -14,9 +14,20 @@ import Kingfisher
 
 class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIScrollViewDelegate {
     
-    private let viewModel = MyPageViewModel()
+    private let viewModel: UserProfileViewModel
+    
+    init(userId: String) {
+        self.viewModel = UserProfileViewModel(userId: userId)
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     private let disposeBag = DisposeBag()
     private let maxProfileCount = 3
+    private let menuEvent = PublishRelay<PostMenuEvent>()
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
@@ -31,38 +42,51 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .keycolorBackground
-        bind()
+        
         setupUI()
         configureUI()
+        configureNavigationMenu()
+        bind()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        navigationController?.interactivePopGestureRecognizer?.delegate = nil
     }
     
     private func bind() {
+        navigationBackButton.rx.tap
+            .bind { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }
+            .disposed(by: disposeBag)
         
         viewModel.output.humanProfile
             .compactMap { $0 }
+            .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] humanProfile in
-                DispatchQueue.main.async {
-                    self?.assistantNickNameField.text = humanProfile.nickname
-                    
-                    if !humanProfile.image.isEmpty, let url = URL(string: humanProfile.image) {
-                        self?.loadImage(from: url)
-                    }
+                guard let self = self else { return }
+                self.assistantNickNameField.text = humanProfile.nickname
+                
+                if !humanProfile.image.isEmpty, let url = URL(string: humanProfile.image) {
+                    self.loadImage(from: url)
+                } else {
+                    self.profileImageView.image = UIImage.petProfile
                 }
             })
             .disposed(by: disposeBag)
         
         viewModel.output.petProfiles
+            .observe(on: MainScheduler.instance)
             .bind(to: collectionView.rx.items) { collectionView, index, profile in
-                if let cell = collectionView.dequeueReusableCell(
+                guard let cell = collectionView.dequeueReusableCell(
                     withReuseIdentifier: DetectiveCardCell.identifier,
                     for: IndexPath(item: index, section: 0)
-                ) as? DetectiveCardCell {
-                    cell.configure(with: profile)
-                    return cell
-                } else {
+                ) as? DetectiveCardCell else {
                     return UICollectionViewCell()
                 }
+                cell.configure(with: profile)
+                return cell
             }
             .disposed(by: disposeBag)
         
@@ -97,6 +121,16 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
             })
             .disposed(by: disposeBag)
         
+        menuEvent
+            .subscribe(onNext: { [weak self] event in
+                switch event {
+                case .block(_), .report(_):
+                    self?.completeAlert(type: event)
+                default:
+                    break
+                }
+            })
+            .disposed(by: disposeBag)
     }
     
     private func loadImage(from url: URL) {
@@ -178,6 +212,8 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
             view.addSubview($0)
         }
         
+        view.backgroundColor = .keycolorBackground
+        
         navigationBackButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationBackButtonImage), for: .normal)
         navigationBackButton.imageView?.tintColor = .textPrimary
         
@@ -189,6 +225,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         
         navigationMoreButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationMoreButtonImage), for: .normal)
         navigationMoreButton.imageView?.tintColor = .textPrimary
+        navigationMoreButton.showsMenuAsPrimaryAction = true
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
@@ -203,7 +240,8 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
         profileImageView.backgroundColor = .clear
-        profileImageView.contentMode = .scaleAspectFit
+        profileImageView.contentMode = .scaleAspectFill
+        profileImageView.clipsToBounds = true
         profileImageView.layer.cornerRadius = 66
         profileImageView.layer.masksToBounds = true
         
@@ -233,8 +271,8 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         collectionView.backgroundColor = .keycolorBackground
         collectionView.isUserInteractionEnabled = true
         collectionView.allowsSelection = true
-        collectionView.delegate = self
-
+        collectionView.rx.setDelegate(self).disposed(by: disposeBag)
+        
         pageControl.numberOfPages = 0
         pageControl.currentPage = 0
         pageControl.pageIndicatorTintColor = .keycolorPrimary5
@@ -287,5 +325,83 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
             $0.height.equalTo(64)
         }
     }
+    
+}
 
+// MARK: - 메뉴 설정 & Alert
+extension UserProfileViewController {
+    /// 내 프로필인지 확인
+    private func isMyProfile() -> Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        return currentUserId == viewModel.userId
+    }
+    
+    /// 메뉴 버튼 설정
+    private func configureNavigationMenu() {
+        if isMyProfile() {
+            navigationItem.rightBarButtonItem = nil
+        } else {
+            navigationMoreButton.menu = UIMenu(children: [
+                UIAction(title: SDLiteral.CommunityView.block) { [weak self] _ in
+                    guard let self = self else { return }
+                    self.showMenuAlert(type: .block(self.viewModel.userId))
+                },
+                UIAction(title: SDLiteral.CommunityView.report) { [weak self] _ in
+                    guard let self = self else { return }
+                    self.showMenuAlert(type: .report(self.viewModel.userId)) { [weak self] in
+                        self?.blockMessageAfterReport(userId: self?.viewModel.userId ?? "")
+                    }
+                }
+            ])
+        }
+    }
+    
+    private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
+        var title: String {
+            switch type {
+            case .block: return SDLiteral.CommunityView.block
+            case .report: return SDLiteral.CommunityView.report
+            default: return ""
+            }
+        }
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.menuAlertMessage, title),
+            buttons: [
+                .init(title: SDLiteral.AlertMessage.cancel, action: nil),
+                .init(title: title, action: { [weak self] in
+                    self?.menuEvent.accept(type)
+                    completion?()
+                })
+            ])
+        present(alert, animated: true)
+    }
+    
+    private func blockMessageAfterReport(userId: String) {
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert,
+                            SDLiteral.CommunityView.report),
+            subMessage: SDLiteral.CommunityView.blockMessageAfterReport,
+            buttons: [
+                .init(title: SDLiteral.AlertMessage.cancel, action: nil),
+                .init(title: SDLiteral.CommunityView.block, action: { [weak self] in
+                    self?.menuEvent.accept(.block(userId))
+                })
+            ])
+        present(alert, animated: true)
+    }
+    
+    private func completeAlert(type: PostMenuEvent) {
+        var message: String {
+            switch type {
+            case .block: return SDLiteral.CommunityView.block
+            case .report: return SDLiteral.CommunityView.report
+            default: return ""
+            }
+        }
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert, message),
+            buttons: [.init(title: SDLiteral.AlertMessage.cancel, action: nil)]
+        )
+        present(alert, animated: true)
+    }
 }
