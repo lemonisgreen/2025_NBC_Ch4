@@ -102,7 +102,7 @@ extension UIFont {
     static var cardTitle2: UIFont {
         return UIFont(name: "EF_jejudoldam", size: 18) ?? UIFont.systemFont(ofSize: 18, weight: .bold)
     }
-    static var loginScreent: UIFont {
+    static var loginScreen: UIFont {
         return UIFont(name: "EF_jejudoldam", size: 24) ?? UIFont.systemFont(ofSize: 24, weight: .bold)
     }
     static var splashScreen: UIFont {
