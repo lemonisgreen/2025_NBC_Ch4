@@ -125,7 +125,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.distribution = .fillEqually
         buttonStack.spacing = 0
         buttonStack.addArrangedSubview(archiveButton)
-        //buttonStack.addArrangedSubview(findMateButton)
+        buttonStack.addArrangedSubview(findMateButton)
         
         archiveButton.setTitle("수사일지 아카이브", for: .normal)
         archiveButton.titleLabel?.font = .body3
@@ -135,7 +135,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         archiveButton.contentHorizontalAlignment = .left
         archiveButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         archiveButton.layer.cornerRadius = 12
-        //archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
         archiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
         
@@ -195,7 +195,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(pageControl.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(60)
+            $0.height.equalTo(120)
         }
     }
     
