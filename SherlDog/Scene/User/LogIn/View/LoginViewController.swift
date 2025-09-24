@@ -20,7 +20,6 @@ class LoginViewController: UIViewController {
     private let viewModel = LoginViewModel()
     
     // MARK: - UI Components
-    private let splashView = SplashView()
     private let logo = UIImageView()
     private let helloLabel = UILabel()
     private let helloLabel2 = UILabel()
@@ -36,7 +35,6 @@ class LoginViewController: UIViewController {
         configureUI()
         setupUI()
         setupConstraints()
-        setupSplashView()
         bindViewModel()
         navigationItem.backButtonTitle = ""
     }
@@ -117,24 +115,6 @@ class LoginViewController: UIViewController {
         
         loadingIndicator.snp.makeConstraints {
             $0.edges.equalToSuperview()
-        }
-    }
-    
-    private func setupSplashView() {
-        view.addSubview(splashView)
-        splashView.frame = view.bounds
-        view.bringSubviewToFront(splashView)
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            self.dismissSplashView()
-        }
-    }
-    
-    private func dismissSplashView() {
-        UIView.animate(withDuration: 0.5, animations: {
-            self.splashView.alpha = 0
-        }) { _ in
-            self.splashView.removeFromSuperview()
         }
     }
     
