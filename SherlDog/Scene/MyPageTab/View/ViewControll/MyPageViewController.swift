@@ -195,7 +195,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(pageControl.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(60)
+            $0.height.equalTo(120)
         }
     }
     
@@ -206,6 +206,16 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 
                 let archiveView = InvLogListViewController()
                 self.navigationController?.pushViewController(archiveView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        findMateButton.rx.tap
+            .bind(onNext: { [weak self] in
+                guard let self else { return }
+                
+                let findMateViewController = FindMateViewController()
+                self.navigationController?
+                    .pushViewController(findMateViewController, animated: true)
             })
             .disposed(by: disposeBag)
         
