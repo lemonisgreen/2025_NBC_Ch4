@@ -281,7 +281,7 @@ private extension CommunityViewModel {
     func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
         let collection = category.toFirestoreCollection
         
-        return BlockManager.shared.fetchBlockedUsers()
+        return BlockManager.shared.fetchBlockedUserIds()
             .flatMap { blocked in
                 return FirestoreManager.shared.fetchQuery(FirestoreQuery<CommunityModel>(
                     collection: collection,
