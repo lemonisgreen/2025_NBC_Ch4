@@ -17,8 +17,8 @@ struct CommunityModel: Codable {
     let postDate: Timestamp
     let contentImage: [String]
     let content: String
-    var like: [String] = []
-    var previewComment: [String] = []
+    var likeCount: Int = 0
+    var commentCount: Int = 0
     let documentId: String
     var isExpanded: Bool = false
 }

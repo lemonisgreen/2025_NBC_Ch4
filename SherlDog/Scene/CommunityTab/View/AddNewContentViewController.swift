@@ -60,7 +60,7 @@ final class AddNewContentViewController: UIViewController {
     }
     
     // Edit mode
-    init(category: CommunityViewModel.CommunitySectionType, post: CommunityModel) {
+    init(category: CommunitySectionType, post: CommunityModel) {
         super.init(nibName: nil, bundle: nil)
         
         self.viewModel.input.accept(.editCase(category: category, post: post))

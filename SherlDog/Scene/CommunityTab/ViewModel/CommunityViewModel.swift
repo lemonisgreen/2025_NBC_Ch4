@@ -11,27 +11,27 @@ import RxDataSources
 import Differentiator
 import FirebaseAuth
 
-final class CommunityViewModel {
+// 게시판 종류
+enum CommunitySectionType: CaseIterable {
+    case invLogBoard
+    case detectiveMateBoard
     
-    // 게시판 종류
-    enum CommunitySectionType: CaseIterable {
-        case invLogBoard
-        case detectiveMateBoard
-        
-        var name: String {
-            switch self {
-            case .invLogBoard:        return SDLiteral.CommunityView.invLogBoardTitle
-            case .detectiveMateBoard: return SDLiteral.CommunityView.detectiveMateTitle
-            }
-        }
-        
-        var collectionName: String {
-            switch self {
-            case .invLogBoard:        return FirestoreCollection.invLogBoard.rawValue
-            case .detectiveMateBoard: return FirestoreCollection.detectiveMate.rawValue
-            }
+    var name: String {
+        switch self {
+        case .invLogBoard:        return SDLiteral.CommunityView.invLogBoardTitle
+        case .detectiveMateBoard: return SDLiteral.CommunityView.detectiveMateTitle
         }
     }
+    
+    var toFirestoreCollection: FirestoreCollection {
+        switch self {
+        case .invLogBoard:        return .invLogBoard
+        case .detectiveMateBoard: return .detectiveMate
+        }
+    }
+}
+
+final class CommunityViewModel {
     
     // 데이터 변경 Mutation
     enum Mutation {
@@ -83,17 +83,18 @@ final class CommunityViewModel {
         let isUpdating = makeIsUpdating(refreshTrigger: refreshTrigger,
                                         fetchStream: fetchStream)
         
+        // Like Event
+        bindLikeSideEffect(input.likeEvent, category: selectedCategory)
+        
         // mutations
         let refreshMutation = makeRefreshMutation(postsEvent: fetchStream,
                                                   selectedCategory: selectedCategory)
         let appendMutation = makeAppendMutation(fetchMore: input.fetchMore,
                                                 selectedCategory: selectedCategory)
-        let likeMutation = like(input.likeEvent, category: selectedCategory)
         
         // state(store)
         let postsDict = makePostsDict(refreshMutation: refreshMutation,
-                                      appendMutation: appendMutation,
-                                      likeMutation: likeMutation)
+                                      appendMutation: appendMutation)
         let currentCellData = mapPostsToSections(postsDict)
         
         return Output(
@@ -182,13 +183,11 @@ private extension CommunityViewModel {
     
     // 상태(Store) 축적
     func makePostsDict(refreshMutation: Observable<Mutation>,
-                       appendMutation: Observable<Mutation>,
-                       likeMutation: Observable<Mutation>)
+                       appendMutation: Observable<Mutation>)
     -> Observable<[CommunitySectionType : [CommunityModel]]> {
         Observable.merge(
             refreshMutation,
-            appendMutation,
-            likeMutation
+            appendMutation
         )
             .scan(makeInitialPosts()) { dict, mutation in
                 var next = dict
@@ -223,42 +222,14 @@ private extension CommunityViewModel {
     }
 }
 
-// MARK: - Like Button Event
-extension CommunityViewModel {
-    private func like(
-        _ input: Observable<CommunityModel>,
-        category: Observable<CommunitySectionType>
-    ) -> Observable<Mutation> {
-        return input
-            .withLatestFrom(category) { ($0, $1) }
-            .flatMapFirst { [weak self] (model, category) -> Observable<Mutation> in
-                guard let self,
-                      let userId = Auth.auth().currentUser?.uid,
-                      let collection = self.getCollection(category) else { return .empty() }
-                
-                let newLikes = model.like.contains(userId)
-                ? model.like.filter { $0 != userId }
-                : (model.like + [userId])
-                
-                var patched = model
-                patched.like = newLikes
-                
-                return FirestoreManager.shared.updateDocument(collection: collection, documentId: model.documentId, data: patched)
-                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .andThen(.just(Mutation.patch(category: category, post: patched)))
-            }
-    }
-}
-
 // MARK: - Menu Button Event
 private extension CommunityViewModel {
     func menuButtonEvent(_ input: Observable<PostMenuEvent>,
                          category: Observable<CommunitySectionType>) -> Signal<PostMenuEvent> {
         input
             .withLatestFrom(category) { ($0, $1) }
-            .flatMapLatest { [weak self] (menu, category) -> Observable<PostMenuEvent> in
-                guard let self,
-                      let collection = self.getCollection(category) else { return .empty() }
+            .flatMapLatest { (menu, category) -> Observable<PostMenuEvent> in
+                let collection = category.toFirestoreCollection
                 
                 switch menu {
                 case .fix:
@@ -274,7 +245,7 @@ private extension CommunityViewModel {
                     .catchAndReturn(.error)
                     
                 case .report(let documentId):
-                    let reportData = ReportModel(collection: category.collectionName,
+                    let reportData = ReportModel(collection: category.toFirestoreCollection.rawValue,
                                                             documentId: documentId)
                     
                     return FirestoreManager.shared.createDocument(collection: .reportLog,
@@ -308,7 +279,7 @@ private extension CommunityViewModel {
     }
     
     func fetchPosts(category: CommunitySectionType) -> Single<[CommunityModel]> {
-        guard let collection = self.getCollection(category) else { return .error(FirestoreError.unknown) }
+        let collection = category.toFirestoreCollection
         
         return BlockManager.shared.fetchBlockedUsers()
             .flatMap { blocked in
@@ -364,12 +335,23 @@ private extension CommunityViewModel {
         return Single.zip(singles)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
     }
-    
-    func getCollection(_ category: CommunitySectionType) -> FirestoreCollection? {
-        if let collection = FirestoreCollection.allCases.filter({ category.collectionName == $0.rawValue }).first {
-            return collection
-        } else {
-            return nil
-        }
+}
+
+// MARK: - Like Event
+private extension CommunityViewModel {
+    func bindLikeSideEffect(_ input: Observable<CommunityModel>,
+                            category: Observable<CommunitySectionType>) {
+        input
+            .withLatestFrom(category) { ($0, $1) }
+            .flatMapFirst { (model, category) -> Completable in
+                let collection = category.toFirestoreCollection
+                return CommunityActionManager.shared.toggleLikeWithCount(
+                    collection: collection,
+                    postCode: model.documentId
+                )
+                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+            }
+            .subscribe()
+            .disposed(by: disposeBag)
     }
 }
