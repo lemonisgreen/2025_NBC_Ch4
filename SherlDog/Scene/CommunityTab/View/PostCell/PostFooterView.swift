@@ -1,4 +1,3 @@
-//
 //  PostFooterView.swift
 //  SherlDog
 //
@@ -38,36 +37,39 @@ final class PostFooterView: UICollectionReusableView {
         disposeBag = DisposeBag()
         captionLabel.text = nil
         likeButton.setTitle(nil, for: .normal)
-        likeButton.imageView?.tintColor = .gray900
+        likeButton.setImage(nil, for: .normal)
         previewCommentButton.setTitle(nil, for: .normal)
         pageControl.currentPage = 0
         pageControl.numberOfPages = 0
     }
     
     // MARK: - Method
-    func settingCell(data: CommunityModel) {
-        let likeButtonTitle = data.like.count > 0 ? String(data.like.count) : nil
-        
+    func settingCell(data: CommunityModel, collection: FirestoreCollection) {
         captionLabel.text = data.content
         
-        likeButton.configuration?.title = likeButtonTitle
-        likeButton.configuration?.image = self.isLiker(data)
-        ? UIImage(systemName: "heart.fill")?.withTintColor(.keycolorPrimary2, renderingMode: .alwaysOriginal)
-        : UIImage(systemName: "heart")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
-        
-        previewCommentButton.configuration?.title = String(data.previewComment.count)
-        previewCommentButton.isHidden = (data.previewComment.isEmpty ? true : false)
+        previewCommentButton.configuration?.attributedTitle = AttributedString(
+            String(data.commentCount),
+            attributes: AttributeContainer([.font: UIFont.body6])
+        )
+        previewCommentButton.isHidden = (data.commentCount == 0 ? true : false)
     }
     
+    // Update Page
     func updatePage(total: Int, current: Int) {
         pageControl.numberOfPages = max(total, 0)
         pageControl.currentPage = min(max(current, 0), total - 1)
         pageControl.isHidden = (total <= 1)
     }
     
-    private func isLiker(_ data: CommunityModel) -> Bool {
-        guard let userId = Auth.auth().currentUser?.uid else { return false }
-        return data.like.contains(where: { $0 == userId })
+    // Update Like
+    func updateLike(_ state: PostFooterLikeState) {
+        var likeConfig = likeButton.configuration
+        likeConfig?.image = state.likeImage
+        likeConfig?.attributedTitle = AttributedString(
+            state.likeCountText,
+            attributes: AttributeContainer([.font: UIFont.body6])
+        )
+        likeButton.configuration = likeConfig
     }
 }
 
@@ -110,9 +112,11 @@ extension PostFooterView {
         likeButtonConfig.buttonSize = .mini
         likeButtonConfig.image = UIImage(systemName: "heart")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
         likeButtonConfig.baseForegroundColor = .gray900
-        likeButtonConfig.title = ""
-        likeButtonConfig.attributedTitle?.font = .body6
-        likeButtonConfig.imagePadding = 4
+        likeButtonConfig.attributedTitle = AttributedString(
+            "",
+            attributes: AttributeContainer([.font: UIFont.body6])
+        )
+        likeButtonConfig.imagePadding = 2
         likeButtonConfig.contentInsets = .zero
         
         likeButton.configuration = likeButtonConfig
@@ -122,9 +126,11 @@ extension PostFooterView {
         commentButtonConfig.buttonSize = .mini
         commentButtonConfig.image = UIImage(systemName: "bubble")?.withTintColor(.gray900, renderingMode: .alwaysOriginal)
         commentButtonConfig.baseForegroundColor = .gray900
-        commentButtonConfig.title = ""
-        commentButtonConfig.attributedTitle?.font = .body6
-        commentButtonConfig.imagePadding = 4
+        commentButtonConfig.attributedTitle = AttributedString(
+            "",
+            attributes: AttributeContainer([.font: UIFont.body6])
+        )
+        commentButtonConfig.imagePadding = 2
         commentButtonConfig.contentInsets = .zero
         
         previewCommentButton.configuration = commentButtonConfig

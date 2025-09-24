@@ -72,9 +72,19 @@ enum SDLiteral {
         static let deleteButton: String = "삭제"
         static let deleteComplete: String = "삭제되었습니다."
         static let requestDelete: String = "수사일지를 삭제하시겠습니까?"
+        static let requestDeleteWithoutList: String = "선택된 수사일지가 없습니다."
         static let caseNumber: String = "CASE # %@"
         static let infoLabel: String = "%@  ·  %@  ·  %@"
         static let onboardingUserDefaults: String = "needOnboardingInvLogArchive"
+    }
+    
+    enum BlockedUserViewController {
+        static let navigationTitle: String = "차단한 사용자 목록"
+        static let navigationEditButton: String = "편집"
+        static let navigationCancelButton: String = "취소"
+        static let navigationUnblockButton: String = "차단 해제"
+        static let emptyStateLabel: String = "차단한 사용자가 없습니다."
+        static let unblcockAlertText: String = "선택한 사용자를\n차단 해제하시겠습니까?"
     }
     
     enum MyPageViewController {

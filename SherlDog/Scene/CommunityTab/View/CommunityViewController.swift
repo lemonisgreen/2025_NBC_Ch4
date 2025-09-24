@@ -26,6 +26,8 @@ final class CommunityViewController: UIViewController {
     
     private let likeButtonEvent = PublishRelay<CommunityModel>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
+    private let manualRefresh = PublishRelay<Void>()
+
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
     
@@ -33,7 +35,7 @@ final class CommunityViewController: UIViewController {
     private let refreshControl = UIRefreshControl()
     
     // MARK: - UIProperty
-    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunityViewModel.CommunitySectionType.allCases.map { $0.name })
+    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunitySectionType.allCases.map { $0.name })
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     private let addButton = UIButton()
     
@@ -50,6 +52,7 @@ final class CommunityViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
+        manualRefresh.accept(())
     }
 }
 
@@ -60,6 +63,7 @@ extension CommunityViewController {
         // MARK: - Inputs
         let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
                                              pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
+                                             manualRefresh: manualRefresh.asObservable(),
                                              fetchMore: Observable.empty(),
                                              menuEvent: self.menuEvent.asObservable(),
                                              likeEvent: likeButtonEvent.asObservable())
@@ -124,7 +128,7 @@ extension CommunityViewController {
     private func myPostMenu(post: CommunityModel) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
-            let category: CommunityViewModel.CommunitySectionType = {
+            let category: CommunitySectionType = {
                 self?.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMateBoard
             }()
             
@@ -236,7 +240,7 @@ extension CommunityViewController {
             message: String(format: SDLiteral.CommunityView.completeAlert, message),
             buttons: [
                 CustomAlertViewController.AlertButton(
-                    title: SDLiteral.AlertMessage.cancel,
+                    title: SDLiteral.AlertMessage.confirm,
                     action: nil
                 )
             ]
@@ -250,6 +254,8 @@ extension CommunityViewController {
 extension CommunityViewController {
     private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection> {
         return RxCollectionViewSectionedReloadDataSource<CommunityViewModel.CommunitySection>(
+            
+            // MARK: - PostMediaCell
             configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
@@ -268,7 +274,9 @@ extension CommunityViewController {
             configureSupplementaryView: { dataSource, collectionView, kind, indexPath in
                 // 섹션 모델 == CommunityModel
                 let sectionModel = dataSource.sectionModels[indexPath.section].model
+                
                 switch kind {
+                    // MARK: - PostHeader
                 case UICollectionView.elementKindSectionHeader:
                     guard let header = collectionView.dequeueReusableSupplementaryView(
                         ofKind: kind,
@@ -287,21 +295,15 @@ extension CommunityViewController {
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
                             // TODO: 프로필 뷰로 이동
-                            let alert = CustomAlertViewController(
-                                message: "Test alert",
-                                subMessage: "Move to profile view",
-                                buttons: [CustomAlertViewController.AlertButton(
-                                    title: SDLiteral.AlertMessage.confirm,
-                                    action: nil
-                                )]
-                            )
-                            
-                            self?.present(alert, animated: true)
+                            let authorUserId = sectionModel.userId
+                            let userProfileViewComtroll = UserProfileViewController(userId: authorUserId)
+                            self?.navigationController?.pushViewController(userProfileViewComtroll, animated: true)
                         })
                         .disposed(by: header.disposeBag)
                     
                     return header
                     
+                    // MARK: - PostFooter
                 case UICollectionView.elementKindSectionFooter:
                     guard let footer = collectionView.dequeueReusableSupplementaryView(
                         ofKind: kind,
@@ -310,15 +312,37 @@ extension CommunityViewController {
                     ) as? PostFooterView else { return .init() }
                     
                     let count = dataSource.sectionModels[indexPath.section].items.count
+                    let category: FirestoreCollection = {
+                        let index = self.segmentedControl.selectedSegmentIndex
+                        
+                        return CommunitySectionType.allCases.indices.contains(index)
+                        ? CommunitySectionType.allCases[index].toFirestoreCollection
+                        : .invLogBoard
+                    }()
                     
-                    footer.settingCell(data: sectionModel)
+                    footer.settingCell(data: sectionModel, collection: category)
                     footer.updatePage(total: count, current: 0)
+
+                    // ViewModel for footer
+                    let viewModel = PostFooterViewModel(category: category, post: sectionModel)
+                    let output = viewModel.transform(
+                        input: .init(
+                            likeTap: footer.rx.likeButtonTap
+                                .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
+                                .asSignal(onErrorSignalWith: .empty())
+                        )
+                    )
+                    output.state
+                        .drive(onNext: { [weak footer] state in
+                            footer?.updateLike(state)
+                        })
+                        .disposed(by: footer.disposeBag)
                     
                     footer.rx.likeButtonTap
                         .map { sectionModel }
                         .bind(to: self.likeButtonEvent)
                         .disposed(by: footer.disposeBag)
-                    
+
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
@@ -331,11 +355,11 @@ extension CommunityViewController {
                                     action: nil
                                 )]
                             )
-                            
+
                             self?.present(alert, animated: true)
                         })
                         .disposed(by: footer.disposeBag)
-                    
+
                     return footer
                     
                 default:
