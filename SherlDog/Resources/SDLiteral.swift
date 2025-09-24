@@ -76,4 +76,14 @@ enum SDLiteral {
         static let infoLabel: String = "%@  ·  %@  ·  %@"
         static let onboardingUserDefaults: String = "needOnboardingInvLogArchive"
     }
+    
+    enum MyPageViewController {
+        static let mypageLabel: String = "멍탐정 사무소"
+        static let mypageSettingButtonIcon: String = "setting"
+        static let assistantButtonTitle: String = "편집"
+        static let archiveButtonTitle: String = "수사일지 아카이브"
+        static let archiveButtonImage: String = "note"
+        static let findMateButtonTitle: String = "탐정메이트 찾기"
+        static let findMateButtonImage: String = "search"
+    }
 }
