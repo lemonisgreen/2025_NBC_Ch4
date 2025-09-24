@@ -18,6 +18,7 @@ final class FindMateViewController: UIViewController {
     private let viewModel = CommunityViewModel()
     private lazy var dataSource = setDataSource()
     private let refreshControl = UIRefreshControl()
+    private let manualRefresh = PublishRelay<Void>()
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
@@ -31,6 +32,13 @@ final class FindMateViewController: UIViewController {
         setupUI()
         bind()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        //self.navigationController?.navigationBar.isHidden = true
+        manualRefresh.accept(())
+    }
 }
 
 // MARK: - UI
@@ -40,7 +48,7 @@ private extension FindMateViewController {
         navigationBackButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationBackButtonImage), for: .normal)
         navigationBackButton.imageView?.tintColor = .textPrimary
         
-        navigationTitleLabel.text = SDLiteral.UserProfileViewController.navigationTitle
+        navigationTitleLabel.text = SDLiteral.FindMateViewController.navigationTitle
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
@@ -90,12 +98,15 @@ private extension FindMateViewController {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return }
         
         let input = CommunityViewModel.Input(
-            segmentIndexChanged: Observable.just(CommunityViewModel.CommunitySectionType.allCases.firstIndex(of: .detectiveMateBoard) ?? 1),
-            pullToRefresh: refreshControl.rx.controlEvent(.valueChanged).asObservable(),
-            fetchMore: Observable.empty(),
-            menuEvent: menuEvent.asObservable(),
-            likeEvent: Observable.never()
-        )
+                    segmentIndexChanged: Observable.just(
+                        CommunitySectionType.allCases.firstIndex(of: .detectiveMateBoard) ?? 1
+                    ),
+                    pullToRefresh: refreshControl.rx.controlEvent(.valueChanged).asObservable(),
+                    manualRefresh: manualRefresh.asObservable(),
+                    fetchMore: Observable.empty(),
+                    menuEvent: menuEvent.asObservable(),
+                    likeEvent: Observable.never()
+                )
         
         let output = viewModel.transform(input)
         
@@ -152,7 +163,7 @@ private extension FindMateViewController {
                         for: indexPath
                     ) as? PostFooterView else { return UICollectionReusableView() }
                     let model = dataSource.sectionModels[indexPath.section].model
-                    footer.settingCell(data: model)
+                    footer.settingCell(data: model, collection: FirestoreCollection.detectiveMate )
                     footer.updatePage(total: dataSource.sectionModels[indexPath.section].items.count, current: 0)
                     return footer
                 default:

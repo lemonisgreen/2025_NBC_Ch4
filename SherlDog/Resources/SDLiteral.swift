@@ -96,4 +96,8 @@ enum SDLiteral {
         static let findMateButtonTitle: String = "탐정메이트 찾기"
         static let findMateButtonImage: String = "search"
     }
+    
+    enum FindMateViewController {
+        static let navigationTitle: String = "내가 쓴 탐정메이트"
+    }
 }
