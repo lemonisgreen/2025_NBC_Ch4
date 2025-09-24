@@ -141,7 +141,7 @@ class OnboardingViewController: UIViewController {
         progressBarStackView.distribution = .fillEqually
         progressBarStackView.spacing = 4
         
-        introduceLabel.font = .loginScreent
+        introduceLabel.font = .loginScreen
         introduceLabel.textAlignment = .center
         introduceLabel.numberOfLines = 0
         
