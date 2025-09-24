@@ -130,6 +130,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         archiveButton.setTitle(SDLiteral.MyPageViewController.archiveButtonTitle, for: .normal)
         archiveButton.titleLabel?.font = .body3
         archiveButton.setTitleColor(.textPrimary, for: .normal)
+        archiveButton.setTitleColor(.textPrimary, for: .highlighted)
         archiveButton.backgroundColor = .gray100
         archiveButton.setImage(UIImage(named: SDLiteral.MyPageViewController.archiveButtonImage), for: .normal)
         archiveButton.contentHorizontalAlignment = .left
@@ -142,6 +143,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         findMateButton.setTitle(SDLiteral.MyPageViewController.findMateButtonTitle, for: .normal)
         findMateButton.titleLabel?.font = .body3
         findMateButton.setTitleColor(.textPrimary, for: .normal)
+        findMateButton.setTitleColor(.textPrimary, for: .highlighted)
         findMateButton.backgroundColor = .gray100
         findMateButton.setImage(UIImage(named: SDLiteral.MyPageViewController.findMateButtonImage), for: .normal)
         findMateButton.contentHorizontalAlignment = .left
