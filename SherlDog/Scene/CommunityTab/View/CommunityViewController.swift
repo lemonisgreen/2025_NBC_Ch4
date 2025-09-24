@@ -26,6 +26,8 @@ final class CommunityViewController: UIViewController {
     
     private let likeButtonEvent = PublishRelay<CommunityModel>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
+    private let manualRefresh = PublishRelay<Void>()
+
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
     
@@ -50,6 +52,7 @@ final class CommunityViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
+        manualRefresh.accept(())
     }
 }
 
@@ -60,6 +63,7 @@ extension CommunityViewController {
         // MARK: - Inputs
         let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
                                              pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
+                                             manualRefresh: manualRefresh.asObservable(),
                                              fetchMore: Observable.empty(),
                                              menuEvent: self.menuEvent.asObservable(),
                                              likeEvent: likeButtonEvent.asObservable())
