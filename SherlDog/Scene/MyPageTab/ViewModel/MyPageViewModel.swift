@@ -88,7 +88,7 @@ class MyPageViewModel {
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<PetProfile>(
                 collection: .petProfile,
-                type: .whereField(field: "userId", value: userId),
+                type: .whereField(field: "userId", value: userId)
             )
         )
         .subscribe(
@@ -109,7 +109,7 @@ class MyPageViewModel {
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<HumanProfileModel>(
                 collection: .humanProfile,
-                type: .document(id: userId),
+                type: .document(id: userId)
             )
         )
         .subscribe(
