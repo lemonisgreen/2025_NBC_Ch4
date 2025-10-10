@@ -13,6 +13,8 @@ import RxCocoa
 final class PostFooterView: UICollectionReusableView {
     static let identifier = "PostFooterView"
     
+    private var viewModelRef: PostFooterViewModel?
+    let externalLikeEvent = PublishRelay<Void>()
     var disposeBag = DisposeBag()
     
     private let container = UIStackView()
@@ -44,6 +46,27 @@ final class PostFooterView: UICollectionReusableView {
     }
     
     // MARK: - Method
+    func bind(viewModel: PostFooterViewModel) {
+        print("[PostFooterView] bind(viewModel:) called")
+        self.viewModelRef = viewModel
+        
+        let buttonTap = likeButton.rx.tap
+            .map { () }
+        
+        let externalTap = externalLikeEvent
+            .asObservable()
+        
+        let input = PostFooterViewModel.Input(
+            likeTap: Observable.merge(buttonTap, externalTap)
+        )
+        
+        let output = viewModel.transform(input: input)
+        output.state
+            .drive(onNext: { [weak self] state in
+                self?.updateLike(state)
+            })
+            .disposed(by: disposeBag)
+    }
     func settingCell(data: CommunityModel, collection: FirestoreCollection) {
         captionLabel.text = data.content
         
@@ -151,10 +174,6 @@ extension PostFooterView {
 }
 
 extension PostFooterView {
-    fileprivate var likeButtonTap: ControlEvent<Void> {
-        self.likeButton.rx.tap
-    }
-    
     fileprivate var containerTap: ControlEvent<Void> {
         return ControlEvent<Void>(events: Observable.merge(
             self.tap.rx.event
@@ -166,10 +185,6 @@ extension PostFooterView {
 }
 
 extension Reactive where Base: PostFooterView {
-    var likeButtonTap: ControlEvent<Void> {
-        base.likeButtonTap
-    }
-    
     var containerTap: ControlEvent<Void> {
         base.containerTap
     }

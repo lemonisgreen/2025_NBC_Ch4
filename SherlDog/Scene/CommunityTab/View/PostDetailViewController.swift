@@ -176,14 +176,24 @@ extension PostDetailViewController {
             configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
-                let petProfile = dataSource.sectionModels[indexPath.section].model.petProfile
+                let model = dataSource.sectionModels[indexPath.section].model
                 
                 cell.settingCell(item)
-                cell.settingPetProfile(profile: petProfile)
+                cell.settingPetProfile(profile: model.petProfile)
                 
                 cell.rx.mediaDoubleTap
-                    .map { _ in dataSource.sectionModels[indexPath.section].model }
-                    .bind(to: self.likeButtonEvent)
+                    .filter { $0.state == .ended }
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak collectionView] _ in
+                        guard let collectionView else { return }
+                        let footerIndex = IndexPath(item: 0, section: indexPath.section)
+                        if let footer = collectionView.supplementaryView(
+                            forElementKind: UICollectionView.elementKindSectionFooter,
+                            at: footerIndex
+                        ) as? PostFooterView {
+                            footer.externalLikeEvent.accept(())
+                        }
+                    })
                     .disposed(by: cell.disposeBag)
                 
                 return cell
@@ -240,43 +250,10 @@ extension PostDetailViewController {
                     footer.settingCell(data: sectionModel, collection: category)
                     footer.updatePage(total: count, current: 0)
 
-                    // ViewModel for footer
+                    // footerViewModel
                     let viewModel = PostFooterViewModel(category: category, post: sectionModel)
-                    let output = viewModel.transform(
-                        input: .init(
-                            likeTap: footer.rx.likeButtonTap
-                                .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
-                                .asSignal(onErrorSignalWith: .empty())
-                        )
-                    )
-                    output.state
-                        .drive(onNext: { [weak footer] state in
-                            footer?.updateLike(state)
-                        })
-                        .disposed(by: footer.disposeBag)
+                    footer.bind(viewModel: viewModel)
                     
-                    footer.rx.likeButtonTap
-                        .map { sectionModel }
-                        .bind(to: self.likeButtonEvent)
-                        .disposed(by: footer.disposeBag)
-
-                    footer.rx.containerTap
-                        .observe(on: MainScheduler.instance)
-                        .subscribe(onNext: { [weak self] in
-                            // TODO: 상세 뷰로 이동
-                            let alert = CustomAlertViewController(
-                                message: "Test alert",
-                                subMessage: "Move to detail view",
-                                buttons: [CustomAlertViewController.AlertButton(
-                                    title: SDLiteral.AlertMessage.confirm,
-                                    action: nil
-                                )]
-                            )
-
-                            self?.present(alert, animated: true)
-                        })
-                        .disposed(by: footer.disposeBag)
-
                     return footer
                     
                 default:
