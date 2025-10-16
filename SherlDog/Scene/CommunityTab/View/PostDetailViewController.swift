@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import SnapKit
 import RxSwift
 import RxCocoa
 import RxDataSources
@@ -13,7 +14,9 @@ import FirebaseAuth
 
 final class PostDetailViewController: UIViewController {
     
-    private let likeButtonEvent = PublishRelay<CommunityModel>()
+    private let viewModel: PostDetailViewModel
+    private let likeButtonEvent = PublishRelay<Void>()
+    private let commentEvent = PublishRelay<CommentEvent>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
     private let disposeBag = DisposeBag()
     
@@ -22,8 +25,22 @@ final class PostDetailViewController: UIViewController {
     
     
     // MARK: - UI property
+    private let refreshControl = UIRefreshControl()
+    private let scrollView = UIScrollView()
+    private let contentView = UIView()
     private lazy var postCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postCollectionViewLayout())
     private lazy var commentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: commentCollectionViewLayout())
+    
+    // MARK: - Lifecycle
+    init(viewModel: PostDetailViewModel) {
+        self.viewModel = viewModel
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -32,9 +49,32 @@ final class PostDetailViewController: UIViewController {
         configureUI()
         bind()
     }
-    
+}
+
+// MARK: - bind
+extension PostDetailViewController {
     private func bind() {
+        // MARK: - Input
+        let input = PostDetailViewModel.Input(
+            refreshPost: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
+            likeEvent: self.likeButtonEvent.asObservable(),
+            commentEvent: self.commentEvent.asObservable(),
+            postMenuEvent: self.menuEvent.asObservable()
+        )
         
+        // MARK: - Output
+        let output = self.viewModel.transform(input)
+        
+        output.postData
+            .do(onNext: { data in
+                print("dataLoad: \(data)")
+            })
+            .drive(self.postCollectionView.rx.items(dataSource: self.postDataSource))
+            .disposed(by: disposeBag)
+        
+        output.commentData
+            .drive(self.commentCollectionView.rx.items(dataSource: self.commentDataSource))
+            .disposed(by: disposeBag)
     }
 }
 
@@ -268,6 +308,7 @@ extension PostDetailViewController {
             configureCell: { dataSource, collectionView, indexPath, item in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else { return .init() }
                 
+                
                 return cell
             })
     }
@@ -338,15 +379,19 @@ extension PostDetailViewController {
     
     private func commentCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { row, env in
+            let inset: CGFloat = 16
+            
             // FIXME: 레이아웃 설정
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
                                                                 heightDimension: .fractionalHeight(1)))
             
             let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                           heightDimension: .fractionalHeight(1)),
+                                                                           heightDimension: .estimated(80)),
                                                          subitems: [item])
             
             let section = NSCollectionLayoutSection(group: group)
+            section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
+            section.interGroupSpacing = 0
             
             return section
         }
@@ -356,21 +401,45 @@ extension PostDetailViewController {
 // MARK: - UI Setup
 extension PostDetailViewController {
     private func setupUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorInverse
         
-        view.addSubviews([
+        contentView.addSubviews([
             postCollectionView,
             commentCollectionView
         ])
         
+        scrollView.addSubview(contentView)
+        view.addSubview(scrollView)
+        
+        scrollView.refreshControl = refreshControl
+        
+        postCollectionView.backgroundColor = .keycolorInverse
         postCollectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
         postCollectionView.register(PostHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PostHeaderView.identifier)
         postCollectionView.register(PostFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: PostFooterView.identifier)
         
+        commentCollectionView.backgroundColor = .keycolorInverse
         commentCollectionView.register(CommentCell.self, forCellWithReuseIdentifier: CommentCell.identifier)
     }
     
     private func configureUI() {
+        scrollView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
+        }
         
+        contentView.snp.makeConstraints {
+            $0.edges.width.equalToSuperview()
+        }
+        
+        postCollectionView.snp.makeConstraints {
+            $0.top.leading.trailing.equalToSuperview()
+            $0.height.equalTo(500)
+        }
+        
+        commentCollectionView.snp.makeConstraints {
+            $0.top.equalTo(postCollectionView.snp.bottom).offset(4)
+            $0.leading.trailing.equalToSuperview()
+            $0.bottom.equalToSuperview()
+        }
     }
 }

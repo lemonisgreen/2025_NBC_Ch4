@@ -341,16 +341,10 @@ extension CommunityViewController {
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
                             // TODO: 상세 뷰로 이동
-                            let alert = CustomAlertViewController(
-                                message: "Test alert",
-                                subMessage: "Move to detail view",
-                                buttons: [CustomAlertViewController.AlertButton(
-                                    title: SDLiteral.AlertMessage.confirm,
-                                    action: nil
-                                )]
-                            )
-
-                            self?.present(alert, animated: true)
+                            let viewModel = PostDetailViewModel(post: sectionModel)
+                            let viewController = PostDetailViewController(viewModel: viewModel)
+                            
+                            self?.navigationController?.pushViewController(viewController, animated: true)
                         })
                         .disposed(by: footer.disposeBag)
 
