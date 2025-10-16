@@ -8,7 +8,9 @@
 import FirebaseFirestore
 
 struct CommentModel: Codable {
+    let userId: String
     let user: HumanProfileModel
     let content: String
+    var documentId: String = ""
     let date: Timestamp
 }

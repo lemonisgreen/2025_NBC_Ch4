@@ -47,7 +47,6 @@ final class PostFooterView: UICollectionReusableView {
     
     // MARK: - Method
     func bind(viewModel: PostFooterViewModel) {
-        print("[PostFooterView] bind(viewModel:) called")
         self.viewModelRef = viewModel
         
         let buttonTap = likeButton.rx.tap
@@ -67,6 +66,7 @@ final class PostFooterView: UICollectionReusableView {
             })
             .disposed(by: disposeBag)
     }
+    
     func settingCell(data: CommunityModel, collection: FirestoreCollection) {
         captionLabel.text = data.content
         

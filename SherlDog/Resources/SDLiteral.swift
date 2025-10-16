@@ -88,6 +88,9 @@ enum SDLiteral {
     }
     
     enum PostDetailViewController {
+        static let commentDate: String = "date"
         static let commentHeaderTitle: String = "댓글"
+        static let commentTextFieldPlaceholder: String = "댓글을 입력해주세요"
+        static let commentSaveButtonTitle: String = "등록"
     }
 }

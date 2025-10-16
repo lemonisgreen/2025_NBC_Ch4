@@ -30,6 +30,10 @@ final class PostDetailViewController: UIViewController {
     private let contentView = UIView()
     private lazy var postCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postCollectionViewLayout())
     private lazy var commentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: commentCollectionViewLayout())
+//    private let collectionViewStackView = UIStackView()
+    private let commentTextField = UITextField()
+    private let saveButton = UIButton()
+    private let commentStackView = UIStackView()
     
     // MARK: - Lifecycle
     init(viewModel: PostDetailViewModel) {
@@ -49,6 +53,13 @@ final class PostDetailViewController: UIViewController {
         configureUI()
         bind()
     }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // 최초 데이터 불러오기
+        refreshControl.sendActions(for: .valueChanged)
+    }
 }
 
 // MARK: - bind
@@ -62,29 +73,40 @@ extension PostDetailViewController {
             postMenuEvent: self.menuEvent.asObservable()
         )
         
+        self.saveButton.rx.tap
+            .map { [weak self] in
+                let text = self?.commentTextField.text ?? ""
+                self?.commentTextField.text = ""
+                
+                return CommentEvent.create(text)
+            }
+            .bind(to: self.commentEvent)
+            .disposed(by: disposeBag)
+        
         // MARK: - Output
         let output = self.viewModel.transform(input)
         
         output.postData
-            .do(onNext: { data in
-                print("dataLoad: \(data)")
-            })
             .drive(self.postCollectionView.rx.items(dataSource: self.postDataSource))
             .disposed(by: disposeBag)
         
         output.commentData
             .drive(self.commentCollectionView.rx.items(dataSource: self.commentDataSource))
             .disposed(by: disposeBag)
+        
+        output.isUpdating
+            .drive(self.refreshControl.rx.isRefreshing)
+            .disposed(by: disposeBag)
     }
 }
 
-// MARK: - Cell Menu Button Setting
 extension PostDetailViewController {
     private func isWriter(_ postUserId: String) -> Bool {
         guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
         return postUserId == currentUserId
     }
     
+    // MARK: - Post Menu Button Setting
     private func myPostMenu(post: CommunityModel) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
@@ -110,6 +132,37 @@ extension PostDetailViewController {
                                                   SDLiteral.CommunityView.report)) { [weak self] _ in
             self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
                 self?.blockMessageAfterReport(userId: post.userId)
+            }
+        }
+        
+        return UIMenu(children: [blockAction, reportAction])
+    }
+    
+    private func myCommentMenu(comment: CommentModel) -> UIMenu {
+        let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                               SDLiteral.CommunityView.fix)) { [weak self] action in
+            
+            // TODO: fixAction
+        }
+        
+        let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                  SDLiteral.CommunityView.delete)) { [weak self] _ in
+            self?.showMenuAlert(type: .delete(comment.documentId))
+        }
+        
+        return UIMenu(children: [fixAction, deleteAction])
+    }
+    
+    private func otherCommentMenu(comment: CommentModel) -> UIMenu {
+        let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                 SDLiteral.CommunityView.block)) { [weak self] _ in
+            self?.showMenuAlert(type: .block(comment.userId))
+        }
+        
+        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
+            self?.showMenuAlert(type: .report(comment.documentId)) { [weak self] in
+                self?.blockMessageAfterReport(userId: comment.userId)
             }
         }
         
@@ -308,6 +361,12 @@ extension PostDetailViewController {
             configureCell: { dataSource, collectionView, indexPath, item in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else { return .init() }
                 
+                cell.settingCell(data: item)
+                cell.settingMenu(
+                    menu: self.isWriter(item.userId)
+                    ? self.myCommentMenu(comment: item)
+                    : self.otherCommentMenu(comment: item)
+                )
                 
                 return cell
             })
@@ -382,12 +441,16 @@ extension PostDetailViewController {
             let inset: CGFloat = 16
             
             // FIXME: 레이아웃 설정
-            let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                heightDimension: .fractionalHeight(1)))
+            let item = NSCollectionLayoutItem(
+                layoutSize: .init(widthDimension: .fractionalWidth(1),
+                                  heightDimension: .fractionalHeight(1))
+            )
             
-            let group = NSCollectionLayoutGroup.vertical(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                           heightDimension: .estimated(80)),
-                                                         subitems: [item])
+            let group = NSCollectionLayoutGroup.vertical(
+                layoutSize: .init(widthDimension: .fractionalWidth(1),
+                                  heightDimension: .estimated(80)),
+                subitems: [item]
+            )
             
             let section = NSCollectionLayoutSection(group: group)
             section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
@@ -403,15 +466,33 @@ extension PostDetailViewController {
     private func setupUI() {
         view.backgroundColor = .keycolorInverse
         
+//        [
+//            postCollectionView,
+//            commentCollectionView
+//        ].forEach { collectionViewStackView.addArrangedSubview($0) }
+        
+        [
+            commentTextField,
+            saveButton
+        ].forEach { commentStackView.addArrangedSubview($0) }
+        
         contentView.addSubviews([
             postCollectionView,
-            commentCollectionView
+            commentCollectionView,
+//            collectionViewStackView
         ])
         
         scrollView.addSubview(contentView)
-        view.addSubview(scrollView)
+        view.addSubviews([
+            scrollView,
+            commentStackView
+        ])
         
         scrollView.refreshControl = refreshControl
+        
+//        collectionViewStackView.axis = .vertical
+//        collectionViewStackView.spacing = 4
+//        collectionViewStackView.alignment = .top
         
         postCollectionView.backgroundColor = .keycolorInverse
         postCollectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
@@ -420,16 +501,40 @@ extension PostDetailViewController {
         
         commentCollectionView.backgroundColor = .keycolorInverse
         commentCollectionView.register(CommentCell.self, forCellWithReuseIdentifier: CommentCell.identifier)
+        
+        commentStackView.axis = .horizontal
+        commentStackView.spacing = 8
+        commentStackView.alignment = .fill
+        
+        commentTextField.placeholder = SDLiteral.PostDetailViewController.commentTextFieldPlaceholder
+        commentTextField.font = .body5
+        commentTextField.textColor = .textPrimary
+        commentTextField.layer.borderColor = UIColor.gray800.cgColor
+        commentTextField.layer.borderWidth = 1
+        commentTextField.layer.cornerRadius = 8
+        commentTextField.leftView = UIView(frame: .init(x: 0, y: 0, width: 8, height: 0))
+        commentTextField.leftViewMode = .always
+        commentTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        
+        saveButton.setTitle(SDLiteral.PostDetailViewController.commentSaveButtonTitle,
+                            for: .normal)
+        saveButton.setTitleColor(.keycolorPrimary1, for: .normal)
+        saveButton.titleLabel?.font = .body4
     }
     
     private func configureUI() {
         scrollView.snp.makeConstraints {
-            $0.edges.equalToSuperview()
+            $0.top.leading.trailing.equalToSuperview()
+            $0.bottom.equalTo(commentStackView.snp.top).offset(-12)
         }
         
         contentView.snp.makeConstraints {
             $0.edges.width.equalToSuperview()
         }
+        
+//        collectionViewStackView.snp.makeConstraints {
+//            $0.top.leading.trailing.bottom.equalToSuperview()
+//        }
         
         postCollectionView.snp.makeConstraints {
             $0.top.leading.trailing.equalToSuperview()
@@ -437,9 +542,19 @@ extension PostDetailViewController {
         }
         
         commentCollectionView.snp.makeConstraints {
+            $0.height.equalTo(300)
             $0.top.equalTo(postCollectionView.snp.bottom).offset(4)
             $0.leading.trailing.equalToSuperview()
             $0.bottom.equalToSuperview()
+        }
+        
+        commentStackView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(16)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide).inset(12)
+        }
+        
+        commentTextField.snp.makeConstraints {
+            $0.height.equalTo(38)
         }
     }
 }

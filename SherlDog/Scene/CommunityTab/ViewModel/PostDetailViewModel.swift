@@ -13,8 +13,9 @@ import FirebaseAuth
 import FirebaseFirestore
 
 enum CommentEvent {
+    case refresh
     case create(String)
-    case fix(String)
+    case fix(documentId: String, content: String)
     case delete(String)
     case block(String)
     case report(String)
@@ -33,12 +34,18 @@ final class PostDetailViewModel {
     struct Output {
         let postData: Driver<[postDataSource]>
         let commentData: Driver<[commentDataSource]>
+        let isUpdating: Driver<Bool>
     }
     
     typealias postDataSource = SectionModel<CommunityModel, String>
     typealias commentDataSource = SectionModel<String, CommentModel>
     
     private let originalPost: CommunityModel
+    private lazy var category: FirestoreCollection = {
+        FirestoreCollection.allCases.filter {
+            $0.rawValue == self.originalPost.category
+        }.first ?? .invLogBoard
+    }()
     private let disposeBag = DisposeBag()
     
     init(post: CommunityModel) {
@@ -46,34 +53,59 @@ final class PostDetailViewModel {
     }
     
     func transform(_ input: Input) -> Output {
-        let collection = {
-            FirestoreCollection.allCases.filter {
-                $0.rawValue == self.originalPost.category
-            }.first ?? .invLogBoard
-        }()
-        
         let sharedRefresh = input.refreshPost.share()
-        let postData = fetchPost(sharedRefresh, collection: collection)
-        let commentData = fetchComment(sharedRefresh, collection: collection)
+        let commentRefreshTrigger = Observable.merge(
+            input.commentEvent,
+            sharedRefresh.map { CommentEvent.refresh }
+        ).share()
+        
+        let postData = fetchPost(sharedRefresh)
+        let commentData = commentEvent(commentRefreshTrigger)
+        
+        let refreshTrigger = Observable.merge(
+            sharedRefresh,
+            commentRefreshTrigger.map { _ in }
+        )
+        
+        let fetchStream = Observable.merge(
+            postData.map { _ in }.asObservable(),
+            commentData.map { _ in }.asObservable()
+        )
+        
+        let isUpdating = self.isUpdating(start: refreshTrigger,
+                                         end: fetchStream)
         
         return Output(
             postData: postData,
-            commentData: commentData
+            commentData: commentData,
+            isUpdating: isUpdating
         )
     }
 }
 
 extension PostDetailViewModel {
+    private func isUpdating(
+        start: Observable<Void>,
+        end: Observable<Void>
+    ) -> Driver<Bool> {
+        return Observable.merge(
+            start.map { true },
+            end.map { false }
+        )
+        .startWith(false)
+        .distinctUntilChanged()
+        .asDriver(onErrorJustReturn: false)
+    }
+    
     private func fetchPost(
-        _ input: Observable<Void>,
-        collection: FirestoreCollection
+        _ input: Observable<Void>
     ) -> Driver<[postDataSource]> {
         input
             .flatMap { [weak self] _ -> Observable<[postDataSource]> in
                 guard let self else { return .empty() }
                 
                 return FirestoreManager.shared.fetchQuery(FirestoreQuery<CommunityModel>(
-                    collection: collection,
+                    collection: self.category,
                     type: .document(id: self.originalPost.documentId)
                 ))
                 .flatMap { [weak self] data in
@@ -120,20 +152,86 @@ extension PostDetailViewModel {
             }
     }
     
-    private func fetchComment(
-        _ input: Observable<Void>,
-        collection: FirestoreCollection
+    private func commentEvent(
+        _ input: Observable<CommentEvent>
     ) -> Driver<[commentDataSource]> {
-        input
-            .flatMap { [weak self] _ -> Observable<[commentDataSource]> in
-                guard let self else { return .empty() }
+        return input
+            .flatMap { [weak self] state -> Observable<CommentEvent> in
+                guard let self,
+                      let myUserId = Auth.auth().currentUser?.uid else { return .empty() }
                 
-                return CommunityActionManager.shared.fetchCommentsList(collection: collection,
-                                                                       postCode: self.originalPost.documentId)
-                .asObservable()
-                .map { [commentDataSource(model: SDLiteral.PostDetailViewController.commentHeaderTitle,
-                                          items: $0)] }
+                switch state {
+                case .refresh:
+                    return .just(state)
+                    
+                case let .create(content):
+                    return FirestoreManager.shared.fetchQuery(
+                        FirestoreQuery<HumanProfileModel>(
+                            collection: .humanProfile,
+                            type: .document(id: myUserId)
+                        )
+                    )
+                    .flatMapCompletable { [weak self] humanProfile in
+                        guard let self,
+                              let humanProfile = humanProfile.first else { return .error(FirestoreError.unknown) }
+                        
+                        let data = CommentModel(
+                            userId: myUserId,
+                            user: humanProfile,
+                            content: content,
+                            date: Timestamp(date: Date())
+                        )
+                        
+                        return CommunityActionManager.shared.createComment(collection: self.category,
+                                                                           postCode: self.originalPost.documentId,
+                                                                           data: data)
+                        
+                    }
+                    .andThen(.just(state))
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    
+                case let .fix(documentId, content):
+                    return CommunityActionManager.shared.updateComment(collection: self.category,
+                                                                postCode: self.originalPost.documentId,
+                                                                commentDocumentId: documentId,
+                                                                text: content)
+                    .andThen(.just(state))
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    
+                case let .delete(documentId):
+                    return CommunityActionManager.shared.deleteComment(collection: self.category,
+                                                                       postCode: self.originalPost.documentId,
+                                                                       commentDocumentId: documentId)
+                    .andThen(.just(state))
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+
+                    
+                case let .block(userId):
+                    return BlockManager.shared.blockUser(userId)
+                        .andThen(.just(state))
+                        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+
+                    
+                case let .report(documentId):
+                    let reportData = ReportModel(collection: "\(self.category.rawValue) -> \(self.originalPost.documentId)",
+                                                 documentId: documentId)
+                    
+                    return FirestoreManager.shared.createDocument(collection: .reportLog,
+                                                           data: reportData,
+                                                           documentId: documentId)
+                    .andThen(.just(state))
+                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                    
+                case .error:
+                    return .error(FirestoreError.unknown)
+                }
             }
-            .asDriver(onErrorDriveWith: .empty())
+            .flatMap { _ in
+                CommunityActionManager.shared.fetchCommentsList(collection: self.category,
+                                                                postCode: self.originalPost.documentId)
+            }
+            .map { return [commentDataSource(model: SDLiteral.PostDetailViewController.commentHeaderTitle,
+                                      items: $0)] }
+            .asDriver(onErrorJustReturn: [])
     }
 }

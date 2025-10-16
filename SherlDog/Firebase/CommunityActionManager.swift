@@ -104,10 +104,10 @@ extension CommunityActionManager {
     }
     
     // Create Comment
-    func createComment<T: Codable>(
+    func createComment(
         collection: FirestoreCollection,
         postCode: String,
-        data: T
+        data: CommentModel
     ) -> Completable {
         return Completable.create { [weak self] completable in
             guard let self else {
@@ -115,11 +115,17 @@ extension CommunityActionManager {
                 return Disposables.create()
             }
             
+            let newDocRef = self.db.collection(CommunityAction.comment.rawValue).document()
+            let documentId = newDocRef.documentID
+            
+            var data = data
+            data.documentId = documentId
+            
             do {
                 try self.db.collection(collection.rawValue)
                     .document(postCode)
                     .collection(CommunityAction.comment.rawValue)
-                    .document()
+                    .document(documentId)
                     .setData(from: data) { error in
                         if let error {
                             completable(.error(error))
@@ -193,10 +199,10 @@ extension CommunityActionManager {
     }
 
     // 코멘트 리스트 불러오기
-    func fetchCommentsList<T: Codable>(
+    func fetchCommentsList(
         collection: FirestoreCollection,
         postCode: String
-    ) -> Single<[T]> {
+    ) -> Single<[CommentModel]> {
         return Single.create { [weak self] single in
             guard let self else {
                 single(.failure(FirestoreError.unknown))
@@ -207,9 +213,11 @@ extension CommunityActionManager {
                 .collection(collection.rawValue)
                 .document(postCode)
                 .collection(CommunityAction.comment.rawValue)
+                .order(by: SDLiteral.PostDetailViewController.commentDate,
+                       descending: false)
                 .getDocuments() { snapshot, error in
                     if let snapshot {
-                        single(.success(snapshot.documents.compactMap { try? $0.data(as: T.self) }))
+                        single(.success(snapshot.documents.compactMap { try? $0.data(as: CommentModel.self) }))
                     } else if let error {
                         single(.failure(error))
                     } else {
