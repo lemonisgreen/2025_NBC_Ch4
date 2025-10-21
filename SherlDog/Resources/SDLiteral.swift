@@ -86,4 +86,8 @@ enum SDLiteral {
         static let emptyStateLabel: String = "차단한 사용자가 없습니다."
         static let unblcockAlertText: String = "선택한 사용자를\n차단 해제하시겠습니까?"
     }
+    
+    enum UserPostViewController {
+        static let navigationTitle: String = "작성 글 둘러보기"
+    }
 }

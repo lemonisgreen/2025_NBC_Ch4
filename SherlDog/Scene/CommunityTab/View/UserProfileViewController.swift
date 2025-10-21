@@ -62,6 +62,16 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
             }
             .disposed(by: disposeBag)
         
+        postCollectionButton.rx.tap
+            .bind(onNext: { [weak self] in
+                guard let self else { return }
+                
+                let userId = self.viewModel.userId
+                let userPostVC = UserPostsViewController(userId: userId)
+                self.navigationController?.pushViewController(userPostVC, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         viewModel.output.humanProfile
             .compactMap { $0 }
             .observe(on: MainScheduler.instance)
@@ -142,7 +152,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
                         print("신고 실패: \(error)")
                     })
                     .disposed(by: self.disposeBag)
-
+                    
                 case .block(let userId):
                     BlockManager.shared.blockUser(userId)
                         .subscribe(onCompleted: { [weak self] in
@@ -153,13 +163,13 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
                             print("차단 실패: \(error)")
                         })
                         .disposed(by: self.disposeBag)
-
+                    
                 default:
                     break
                 }
             })
             .disposed(by: disposeBag)
-
+        
     }
     
     private func loadImage(from url: URL) {
@@ -366,23 +376,23 @@ extension UserProfileViewController {
     }
     
     private func configureNavigationMenu() {
-            if isMyProfile() {
-                navigationItem.rightBarButtonItem = nil
-            } else {
-                navigationMoreButton.menu = UIMenu(children: [
-                    UIAction(title: "차단하기") { [weak self] _ in
-                        guard let self = self else { return }
-                        self.showMenuAlert(type: .block(self.viewModel.userId))
-                    },
-                    UIAction(title: "신고하기") { [weak self] _ in
-                        guard let self = self else { return }
-                        self.showMenuAlert(type: .report(self.viewModel.userId)) { [weak self] in
-                            self?.blockMessageAfterReport(userId: self?.viewModel.userId ?? "")
-                        }
+        if isMyProfile() {
+            navigationItem.rightBarButtonItem = nil
+        } else {
+            navigationMoreButton.menu = UIMenu(children: [
+                UIAction(title: "차단하기") { [weak self] _ in
+                    guard let self = self else { return }
+                    self.showMenuAlert(type: .block(self.viewModel.userId))
+                },
+                UIAction(title: "신고하기") { [weak self] _ in
+                    guard let self = self else { return }
+                    self.showMenuAlert(type: .report(self.viewModel.userId)) { [weak self] in
+                        self?.blockMessageAfterReport(userId: self?.viewModel.userId ?? "")
                     }
-                ])
-            }
+                }
+            ])
         }
+    }
     
     private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
         switch type {
@@ -391,7 +401,7 @@ extension UserProfileViewController {
         default:
             return // 다른 케이스면 리턴
         }
-
+        
         let title: String = {
             switch type {
             case .block: return SDLiteral.CommunityView.block
@@ -399,7 +409,7 @@ extension UserProfileViewController {
             default: return ""
             }
         }()
-
+        
         let alert = CustomAlertViewController(
             message: String(format: SDLiteral.CommunityView.menuAlertMessage, title),
             buttons: [
@@ -414,35 +424,35 @@ extension UserProfileViewController {
     }
     
     private func blockMessageAfterReport(userId: String) {
-            let alert = CustomAlertViewController(
-                message: String(format: SDLiteral.CommunityView.completeAlert, SDLiteral.CommunityView.report),
-                subMessage: SDLiteral.CommunityView.blockMessageAfterReport,
-                buttons: [
-                    .init(title: SDLiteral.AlertMessage.cancel, action: nil),
-                    .init(title: SDLiteral.CommunityView.block, action: { [weak self] in
-                        guard let self = self else { return }
-                        self.menuEvent.accept(.block(userId))
-                    })
-                ]
-            )
-            present(alert, animated: true)
-        }
-
-        private func completeAlert(type: PostMenuEvent, completion: (() -> Void)? = nil) {
-            let message: String = {
-                switch type {
-                case .block: return SDLiteral.CommunityView.block
-                case .report: return SDLiteral.CommunityView.report
-                default: return ""
-                }
-            }()
-
-            let alert = CustomAlertViewController(
-                message: String(format: SDLiteral.CommunityView.completeAlert, message),
-                buttons: [
-                    .init(title: SDLiteral.AlertMessage.cancel, action: completion)
-                ]
-            )
-            present(alert, animated: true)
-        }
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert, SDLiteral.CommunityView.report),
+            subMessage: SDLiteral.CommunityView.blockMessageAfterReport,
+            buttons: [
+                .init(title: SDLiteral.AlertMessage.cancel, action: nil),
+                .init(title: SDLiteral.CommunityView.block, action: { [weak self] in
+                    guard let self = self else { return }
+                    self.menuEvent.accept(.block(userId))
+                })
+            ]
+        )
+        present(alert, animated: true)
+    }
+    
+    private func completeAlert(type: PostMenuEvent, completion: (() -> Void)? = nil) {
+        let message: String = {
+            switch type {
+            case .block: return SDLiteral.CommunityView.block
+            case .report: return SDLiteral.CommunityView.report
+            default: return ""
+            }
+        }()
+        
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.completeAlert, message),
+            buttons: [
+                .init(title: SDLiteral.AlertMessage.cancel, action: completion)
+            ]
+        )
+        present(alert, animated: true)
+    }
 }
