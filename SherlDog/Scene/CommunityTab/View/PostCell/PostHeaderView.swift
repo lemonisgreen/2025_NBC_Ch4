@@ -23,7 +23,7 @@ final class PostHeaderView: UICollectionReusableView {
     private let infoLabel = UILabel()
     private let nameInfoStackView = UIStackView()
     private let horizontalStackView = UIStackView()
-    private let configButton = UIButton()
+    let configButton = UIButton()
     private let tap = UITapGestureRecognizer()
     
     override init(frame: CGRect) {

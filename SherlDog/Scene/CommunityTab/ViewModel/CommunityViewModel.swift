@@ -191,24 +191,24 @@ private extension CommunityViewModel {
             refreshMutation,
             appendMutation
         )
-            .scan(makeInitialPosts()) { dict, mutation in
-                var next = dict
-                switch mutation {
-                case let .set(category, posts):
-                    next[category] = posts
-                case let .append(category, posts):
-                    next[category, default: []] += posts
-                case let .patch(category, post):
-                    var data = next[category, default: []]
-                    if let index = data.firstIndex(where: { $0.documentId == post.documentId }) {
-                        data[index] = post
-                    }
-                    
-                    next[category] = data
+        .scan(makeInitialPosts()) { dict, mutation in
+            var next = dict
+            switch mutation {
+            case let .set(category, posts):
+                next[category] = posts
+            case let .append(category, posts):
+                next[category, default: []] += posts
+            case let .patch(category, post):
+                var data = next[category, default: []]
+                if let index = data.firstIndex(where: { $0.documentId == post.documentId }) {
+                    data[index] = post
                 }
-                return next
+                
+                next[category] = data
             }
-            .share(replay: 1)
+            return next
+        }
+        .share(replay: 1)
     }
     
     // 섹션 매핑 → Driver
@@ -248,11 +248,11 @@ private extension CommunityViewModel {
                     
                 case .report(let documentId):
                     let reportData = ReportModel(collection: category.toFirestoreCollection.rawValue,
-                                                            documentId: documentId)
+                                                 documentId: documentId)
                     
                     return FirestoreManager.shared.createDocument(collection: .reportLog,
-                                                           data: reportData,
-                                                           documentId: documentId)
+                                                                  data: reportData,
+                                                                  documentId: documentId)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
                     .andThen(.just(.report(documentId)))
                     .catchAndReturn(.error)
@@ -285,7 +285,8 @@ private extension CommunityViewModel {
         
         return BlockManager.shared.fetchBlockedUserIds()
             .flatMap { blocked in
-                return FirestoreManager.shared.fetchQuery(FirestoreQuery<CommunityModel>(
+                return FirestoreManager.shared.fetchQuery(
+                    FirestoreQuery<CommunityModel>(
                     collection: collection,
                     type: .collection(sortField: SDLiteral.CommunityView.postDate,
                                       descending: true,
@@ -302,33 +303,31 @@ private extension CommunityViewModel {
     
     func fetchProfiles(_ data: [CommunityModel]) -> Single<[CommunityModel]> {
         let singles = data.map { postData in
-            let pets = postData.petProfile.map { pet in
-                FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
+            let pets: [Single<PetProfile?>] = postData.petProfile.map { pet in
+                FirestoreManager.shared.fetchQuery(
+                    FirestoreQuery<PetProfile>(
                     collection: .petProfile,
                     type: .document(id: pet.petProfileId)
                 ))
-                .flatMap { profile -> Single<PetProfile> in
-                    guard let profile = profile.first else { return .error(FirestoreError.noData) }
-                    return .just(profile)
-                }
+                .map { $0.first }
+                .catch { _ in .just(nil) }
             }
             
-            let human = FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
+            let human: Single<HumanProfileModel?> =
+            FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
                 collection: .humanProfile,
                 type: .document(id: postData.userId)
             ))
-                .flatMap { profile -> Single<HumanProfileModel> in
-                    guard let profile = profile.first else { return .error(FirestoreError.noData) }
-                    return .just(profile)
-                }
+            .map { $0.first }
+            .catch { _ in .just(nil) }
             
-            let petZip = Single.zip(pets)
+            let petZip: Single<[PetProfile]> = Single.zip(pets).map { $0.compactMap { $0 } }
             
             return Single.zip(human, petZip)
-                .map { human, pet in
+                .map { humanOpt, pet in
                     var post = postData
-                    post.name = human.nickname
-                    post.profileImage = human.image
+                    post.name = humanOpt?.nickname ?? "사용자"
+                    post.profileImage = humanOpt?.image ?? ""
                     post.petProfile = pet
                     return post
                 }
