@@ -262,8 +262,8 @@ extension PostDetailViewController {
 
 // MARK: - CollectionView DataSource
 extension PostDetailViewController {
-    private func postCollectionViewDataSource() -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.postDataSource> {
-        return RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.postDataSource>(
+    private func postCollectionViewDataSource() -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.PostDataSource> {
+        return RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.PostDataSource>(
             
             // MARK: - PostMediaCell
             configureCell: { dataSource, collectionView, indexPath, item in
@@ -356,8 +356,8 @@ extension PostDetailViewController {
         )
     }
     
-    private func commentCollectionViewDataSource() -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.commentDataSource> {
-        return RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.commentDataSource>(
+    private func commentCollectionViewDataSource() -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.CommentDataSource> {
+        return RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.CommentDataSource>(
             configureCell: { dataSource, collectionView, indexPath, item in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else { return .init() }
                 
