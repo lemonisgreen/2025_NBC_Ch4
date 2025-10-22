@@ -278,8 +278,9 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
-        profileImageView.backgroundColor = .clear
+        profileImageView.image = UIImage(named: "petProfile")
         profileImageView.contentMode = .scaleAspectFill
+        profileImageView.backgroundColor = .keycolorBackground
         profileImageView.clipsToBounds = true
         profileImageView.layer.cornerRadius = 66
         profileImageView.layer.masksToBounds = true
@@ -293,6 +294,8 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         assistantNickNameField.leftView = UIView(frame: .init(x: 0, y: 0, width: 12, height: 0))
         assistantNickNameField.leftViewMode = .always
         assistantNickNameField.textColor = .textPrimary
+        assistantNickNameField.isUserInteractionEnabled = false
+        assistantNickNameField.tintColor = .clear
         
         layout.scrollDirection = .horizontal
         layout.scrollDirection = .horizontal
