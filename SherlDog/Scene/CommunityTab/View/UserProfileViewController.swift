@@ -310,6 +310,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         postCollectionButton.setTitle(SDLiteral.UserProfileViewController.postCollectionButtonTitle, for: .normal)
         postCollectionButton.titleLabel?.font = .body3
         postCollectionButton.setTitleColor(.textPrimary, for: .normal)
+        postCollectionButton.setTitleColor(.textPrimary, for: .highlighted)
         postCollectionButton.backgroundColor = .gray100
         postCollectionButton.setImage(UIImage(named: SDLiteral.UserProfileViewController.postCollectionButtonImage), for: .normal)
         postCollectionButton.contentHorizontalAlignment = .left

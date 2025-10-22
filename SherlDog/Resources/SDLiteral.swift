@@ -86,4 +86,18 @@ enum SDLiteral {
         static let emptyStateLabel: String = "차단한 사용자가 없습니다."
         static let unblcockAlertText: String = "선택한 사용자를\n차단 해제하시겠습니까?"
     }
+    
+    enum MyPageViewController {
+        static let mypageLabel: String = "멍탐정 사무소"
+        static let mypageSettingButtonIcon: String = "setting"
+        static let assistantButtonTitle: String = "편집"
+        static let archiveButtonTitle: String = "수사일지 아카이브"
+        static let archiveButtonImage: String = "note"
+        static let findMateButtonTitle: String = "탐정메이트 찾기"
+        static let findMateButtonImage: String = "search"
+    }
+    
+    enum FindMateViewController {
+        static let navigationTitle: String = "내가 쓴 탐정메이트"
+    }
 }
