@@ -82,34 +82,9 @@ extension CreateAssistantProfileViewController {
         if let delegate = introduceTextView.delegate {
             delegate.textViewDidChange?(introduceTextView)
         }
-        
-        self.nextButton.isEnabled = true
     }
     
     private func bind() {
-        Observable.combineLatest(
-            self.viewModel.imageForUpload,
-            self.viewModel.imageString,
-            self.nicknameTextField.rx.text,
-            self.introduceTextView.rx.text
-        )
-        .subscribe(onNext: { [weak self] image, imageString, nickName, introduce in
-            if image != nil || imageString != "",
-               nickName != "",
-               introduce != "" {
-                if let nickName, nickName.contains(" ") {
-                    self?.nextButton.isEnabled = false
-                    
-                } else {
-                    self?.nextButton.isEnabled = true
-                    
-                }
-                
-            } else {
-                self?.nextButton.isEnabled = false
-            }
-        })
-        .disposed(by: disposeBag)
         
         navigationBackButton.rx.tap
             .subscribe(onNext: { [weak self] in
@@ -315,6 +290,7 @@ extension CreateAssistantProfileViewController {
             .disposed(by: disposeBag)
         
         viewModel.isSaveEnabled
+            .startWith(false)
             .bind(to: nextButton.rx.isEnabled)
             .disposed(by: disposeBag)
     }
