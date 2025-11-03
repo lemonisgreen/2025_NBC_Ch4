@@ -187,6 +187,8 @@ final class PetProfileViewController: UIViewController {
         
         registrationVC.sheetPresentationController?.setModalSize(type: .large, grabber: false)
         registrationVC.isModalInPresentation = true
+        
+        self.present(registrationVC, animated: true)
     }
     
     // MARK: - UI Setup
