@@ -160,15 +160,13 @@ class WalkEndModalViewController : UIViewController {
         
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
-                guard let self, let day = self.dataTrackingViewModel.endDate.value else { return }
+                guard let self, let _ = self.dataTrackingViewModel.endDate.value else { return }
                 let requestViewModel = PictureUploadRequestViewModel()
                 requestViewModel.input.accept(.sender(.pictureRequest))
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
                 
                 if let sheet = requestView.sheetPresentationController {
-                    sheet.detents = [.custom { _ in 320 }]
-                    sheet.selectedDetentIdentifier = .medium
-                    sheet.prefersGrabberVisible = true
+                    sheet.setModalSize(type: .pictureWithoutAvatar, grabber: true)
                     sheet.preferredCornerRadius = 20
                 }
                 
