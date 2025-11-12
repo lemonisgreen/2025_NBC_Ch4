@@ -18,6 +18,7 @@ import UIKit
 final class ClueDetailViewModel {
     
     private let disposeBag = DisposeBag()
+    let clueCount = BehaviorRelay<Int>(value: 0)
     
     struct ClueCellData {
         let imageURL: String
@@ -80,6 +81,7 @@ final class ClueDetailViewModel {
             clues.forEach {
                 self?.data.append(ClueCellData(imageURL: $0.image, content: $0.content))
             }
+            self?.clueCount.accept(clues.count)
             self?.output.isLoading.accept(false)
         })
         .disposed(by: disposeBag)
