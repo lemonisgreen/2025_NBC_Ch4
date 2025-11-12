@@ -16,6 +16,7 @@ class CreateLogViewController: UIViewController {
     private let cameraViewModel: CameraViewModel
     private let viewModel = InvLogViewModel()
     private let disposeBag = DisposeBag()
+    private let invData: InvData?
     
     private let titleLabel = UILabel()
     private let gradientLayer = CAGradientLayer()
@@ -40,8 +41,9 @@ class CreateLogViewController: UIViewController {
     private let loadingIndicator = CustomLoadingIndicator()
     
     // MARK: - Lifecycle
-    init(viewModel: CameraViewModel) {
+    init(viewModel: CameraViewModel, invData: InvData? = nil) {
         self.cameraViewModel = viewModel
+        self.invData = invData
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -58,6 +60,7 @@ class CreateLogViewController: UIViewController {
         configureUI()
         bind()
         inputBind()
+        applyInvData()
     }
     
     override func viewDidLayoutSubviews() {
@@ -186,6 +189,27 @@ extension CreateLogViewController {
             .disposed(by: disposeBag)
     }
     
+    private func applyInvData() {
+        guard let s = invData else { return }
+        
+        // 날짜
+        if let date = s.endDate {
+            let f = DateFormatter()
+            f.locale = Locale(identifier: "ko_KR")
+            f.dateFormat = "yyyy년 M월 d일"
+            self.dateLabel.text = f.string(from: date)
+        }
+        
+        // 거리 / 시간 / 걸음 수
+        self.distanceLabel.text = String(format: "%.2fkm", s.distanceMeters / 1000.0)
+        self.durationLabel.text = s.durationText
+        self.stepsLabel.text = NumberFormatter.localizedString(
+            from: NSNumber(value: s.steps),
+            number: .decimal
+        )
+        self.clueLabel.text = "\(s.clueCount ?? 0)개"
+    }
+    
     private func setupUI() {
         view.backgroundColor = .keycolorBackground
         
@@ -264,10 +288,10 @@ extension CreateLogViewController {
                 $0.textColor = .textInverse
             }
         
-        distanceLabel.text = "11.23km"
-        durationLabel.text = "01:12:23"
-        stepsLabel.text = "99999"
-        clueLabel.text = "12개"
+//        distanceLabel.text = "11.23km"
+//        durationLabel.text = "01:12:23"
+//        stepsLabel.text = "99999"
+//        clueLabel.text = "12개"
         
         textView.font = .body3
         textView.textColor = .textPrimary

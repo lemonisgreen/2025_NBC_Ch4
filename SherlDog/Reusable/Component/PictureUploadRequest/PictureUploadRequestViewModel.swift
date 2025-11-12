@@ -53,6 +53,7 @@ class PictureUploadRequestViewModel {
         let petProfiles = BehaviorRelay<[PetProfile]>(value: [])
         // 선택된 강아지 정보 저장
         let selectedPetProfiles = BehaviorRelay<[PetProfile]>(value: [])
+        let invData = BehaviorRelay<InvData?>(value: nil)
     }
     
     typealias RequestDataSource = SectionModel<String, CellList>

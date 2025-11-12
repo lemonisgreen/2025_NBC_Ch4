@@ -4,6 +4,7 @@
 //
 //  Created by 전원식 on 6/17/25.
 //
+
 import UIKit
 import RxSwift
 import RxCocoa
@@ -101,8 +102,6 @@ class DataTrackingViewModel {
             }
         }
     }
-    
-
     
     func saveWalkResult(selectedProfiles: [PetProfile]) {
         let dateString: String = {

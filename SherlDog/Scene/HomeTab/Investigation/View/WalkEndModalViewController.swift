@@ -162,6 +162,16 @@ class WalkEndModalViewController : UIViewController {
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let _ = self.dataTrackingViewModel.endDate.value else { return }
                 let requestViewModel = PictureUploadRequestViewModel()
+                
+                let inv = InvData(
+                    steps: self.dataTrackingViewModel.numberOfSteps.value,
+                    distanceMeters: self.dataTrackingViewModel.distance.value,
+                    durationText: self.dataTrackingViewModel.duration.value,
+                    endDate: self.dataTrackingViewModel.endDate.value,
+                    clueCount: nil
+                )
+                requestViewModel.output.invData.accept(inv)
+                
                 requestViewModel.input.accept(.sender(.pictureRequest))
                 let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
                 
