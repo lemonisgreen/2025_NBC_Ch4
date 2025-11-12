@@ -100,4 +100,8 @@ enum SDLiteral {
     enum FindMateViewController {
         static let navigationTitle: String = "내가 쓴 탐정메이트"
     }
+    
+    enum UserPostViewController {
+        static let navigationTitle: String = "작성 글 둘러보기"
+    }
 }

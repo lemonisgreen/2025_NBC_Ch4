@@ -230,24 +230,33 @@ final class FirestoreManager {
                 return Disposables.create()
             }
             let docId = (documentId == nil || documentId!.isEmpty) ? self.userId : documentId!
+
             do {
-                let encodedData = try Firestore.Encoder().encode(data)
-                self.db.collection(collection.rawValue)
-                    .document(docId)
-                    .updateData(encodedData) { error in
-                        if let error = error {
-                            completable(.error(error))
+                let encoded = try Firestore.Encoder().encode(data)
+                let ref = self.db.collection(collection.rawValue).document(docId)
+
+                ref.updateData(encoded) { error in
+                    if let ns = error as NSError? {
+                        if ns.domain == FirestoreErrorDomain,
+                           ns.code == FirestoreErrorCode.notFound.rawValue {
+                            ref.setData(encoded, merge: true) { setErr in
+                                if let setErr = setErr { completable(.error(setErr)) }
+                                else { completable(.completed) }
+                            }
                         } else {
-                            completable(.completed)
+                            completable(.error(ns))
                         }
+                    } else {
+                        completable(.completed)
                     }
+                }
             } catch {
                 completable(.error(error))
             }
             return Disposables.create()
         }
     }
-    
+
     //문서 삭제
     func deleteDocument(
         collection: FirestoreCollection,
