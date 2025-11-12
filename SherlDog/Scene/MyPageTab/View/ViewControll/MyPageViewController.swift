@@ -78,11 +78,11 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         ].forEach {
             view.addSubview($0)
         }
-        mypageLabel.text = "멍탐정 사무소"
+        mypageLabel.text = SDLiteral.MyPageViewController.mypageLabel
         mypageLabel.font = .highlight3
         mypageLabel.textColor = .textPrimary
         
-        mypageSettingButton.setImage(UIImage(named: "setting"), for: .normal)
+        mypageSettingButton.setImage(UIImage(named: SDLiteral.MyPageViewController.mypageSettingButtonIcon), for: .normal)
         
         assistantImage.backgroundColor = .keycolorPrimary4
         assistantImage.layer.cornerRadius = 10
@@ -91,7 +91,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         assistantLabel.font = .title3
         assistantLabel.textColor = .textPrimary
         
-        assistantButton.setTitle("편집", for: .normal)
+        assistantButton.setTitle(SDLiteral.MyPageViewController.assistantButtonTitle, for: .normal)
         assistantButton.setTitleColor(.keycolorPrimary3, for: .normal)
         assistantButton.titleLabel?.font = .body3
         
@@ -125,25 +125,27 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.distribution = .fillEqually
         buttonStack.spacing = 0
         buttonStack.addArrangedSubview(archiveButton)
-        //buttonStack.addArrangedSubview(findMateButton)
+        buttonStack.addArrangedSubview(findMateButton)
         
-        archiveButton.setTitle("수사일지 아카이브", for: .normal)
+        archiveButton.setTitle(SDLiteral.MyPageViewController.archiveButtonTitle, for: .normal)
         archiveButton.titleLabel?.font = .body3
         archiveButton.setTitleColor(.textPrimary, for: .normal)
+        archiveButton.setTitleColor(.textPrimary, for: .highlighted)
         archiveButton.backgroundColor = .gray100
-        archiveButton.setImage(UIImage(named: "note"), for: .normal)
+        archiveButton.setImage(UIImage(named: SDLiteral.MyPageViewController.archiveButtonImage), for: .normal)
         archiveButton.contentHorizontalAlignment = .left
         archiveButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         archiveButton.layer.cornerRadius = 12
-        //archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
         archiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
         
-        findMateButton.setTitle("탐정메이트 찾기", for: .normal)
+        findMateButton.setTitle(SDLiteral.MyPageViewController.findMateButtonTitle, for: .normal)
         findMateButton.titleLabel?.font = .body3
         findMateButton.setTitleColor(.textPrimary, for: .normal)
+        findMateButton.setTitleColor(.textPrimary, for: .highlighted)
         findMateButton.backgroundColor = .gray100
-        findMateButton.setImage(UIImage(named: "search"), for: .normal)
+        findMateButton.setImage(UIImage(named: SDLiteral.MyPageViewController.findMateButtonImage), for: .normal)
         findMateButton.contentHorizontalAlignment = .left
         findMateButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         findMateButton.layer.cornerRadius = 12
@@ -195,7 +197,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(pageControl.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(60)
+            $0.height.equalTo(120)
         }
     }
     
@@ -206,6 +208,16 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 
                 let archiveView = InvLogListViewController()
                 self.navigationController?.pushViewController(archiveView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        findMateButton.rx.tap
+            .bind(onNext: { [weak self] in
+                guard let self else { return }
+                
+                let findMateViewController = FindMateViewController()
+                self.navigationController?
+                    .pushViewController(findMateViewController, animated: true)
             })
             .disposed(by: disposeBag)
         
