@@ -20,17 +20,11 @@ final class PostDetailViewController: UIViewController {
     private let menuEvent = PublishRelay<PostMenuEvent>()
     private let disposeBag = DisposeBag()
     
-    private lazy var postDataSource = self.postCollectionViewDataSource()
-    private lazy var commentDataSource = self.commentCollectionViewDataSource()
-    
+    private lazy var dataSource = self.postCollectionViewDataSource()
     
     // MARK: - UI property
     private let refreshControl = UIRefreshControl()
-    private let scrollView = UIScrollView()
-    private let contentView = UIView()
-    private lazy var postCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postCollectionViewLayout())
-    private lazy var commentCollectionView = UICollectionView(frame: .zero, collectionViewLayout: commentCollectionViewLayout())
-//    private let collectionViewStackView = UIStackView()
+    private lazy var postDetailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postDetailCollectionViewLayout())
     private let commentTextField = UITextField()
     private let saveButton = UIButton()
     private let commentStackView = UIStackView()
@@ -86,12 +80,8 @@ extension PostDetailViewController {
         // MARK: - Output
         let output = self.viewModel.transform(input)
         
-        output.postData
-            .drive(self.postCollectionView.rx.items(dataSource: self.postDataSource))
-            .disposed(by: disposeBag)
-        
-        output.commentData
-            .drive(self.commentCollectionView.rx.items(dataSource: self.commentDataSource))
+        output.postDetailData
+            .drive(self.postDetailCollectionView.rx.items(dataSource: self.dataSource))
             .disposed(by: disposeBag)
         
         output.isUpdating
@@ -262,201 +252,233 @@ extension PostDetailViewController {
 
 // MARK: - CollectionView DataSource
 extension PostDetailViewController {
-    private func postCollectionViewDataSource() -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.PostDataSource> {
-        return RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.PostDataSource>(
-            
+    private func postCollectionViewDataSource()
+    -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.PostDetailSectionModel> {
+        return .init(
             // MARK: - PostMediaCell
             configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
-                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
-                let model = dataSource.sectionModels[indexPath.section].model
-                
-                cell.settingCell(item)
-                cell.settingPetProfile(profile: model.petProfile)
-                
-                cell.rx.mediaDoubleTap
-                    .filter { $0.state == .ended }
-                    .observe(on: MainScheduler.instance)
-                    .subscribe(onNext: { [weak collectionView] _ in
-                        guard let collectionView else { return }
-                        let footerIndex = IndexPath(item: 0, section: indexPath.section)
-                        if let footer = collectionView.supplementaryView(
-                            forElementKind: UICollectionView.elementKindSectionFooter,
-                            at: footerIndex
-                        ) as? PostFooterView {
-                            footer.externalLikeEvent.accept(())
-                        }
-                    })
-                    .disposed(by: cell.disposeBag)
-                
-                return cell
-            },
-            configureSupplementaryView: { dataSource, collectionView, kind, indexPath in
+                switch item {
+                case .post(let imageUrl):
+                    guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
+                    let model = dataSource.sectionModels[indexPath.section].model
+                    
+                    cell.settingCell(imageUrl)
+                    
+                    switch model {
+                    case .post(let post):
+                        cell.settingPetProfile(profile: post.petProfile)
+                        
+                    default:
+                        return .init()
+                    }
+                    
+                    cell.rx.mediaDoubleTap
+                        .filter { $0.state == .ended }
+                        .observe(on: MainScheduler.instance)
+                        .subscribe(onNext: { [weak collectionView] _ in
+                            guard let collectionView else { return }
+                            let footerIndex = IndexPath(item: 0, section: indexPath.section)
+                            if let footer = collectionView.supplementaryView(
+                                forElementKind: UICollectionView.elementKindSectionFooter,
+                                at: footerIndex
+                            ) as? PostFooterView {
+                                footer.externalLikeEvent.accept(())
+                            }
+                        })
+                        .disposed(by: cell.disposeBag)
+                    
+                    return cell
+                    
+                case .comment(let comment):
+                    guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else { return .init() }
+                    
+                    cell.settingCell(data: comment)
+                    cell.settingMenu(
+                        menu: self.isWriter(comment.userId)
+                        ? self.myCommentMenu(comment: comment)
+                        : self.otherCommentMenu(comment: comment)
+                    )
+                    
+                    return cell
+                }
+            }, configureSupplementaryView: { dataSource, collectionView, kind, indexPath in
                 // 섹션 모델 == CommunityModel
                 let sectionModel = dataSource.sectionModels[indexPath.section].model
                 
-                switch kind {
-                    // MARK: - PostHeader
-                case UICollectionView.elementKindSectionHeader:
-                    guard let header = collectionView.dequeueReusableSupplementaryView(
-                        ofKind: kind,
-                        withReuseIdentifier: PostHeaderView.identifier,
-                        for: indexPath
-                    ) as? PostHeaderView else { return .init() }
-                    
-                    header.settingCell(data: sectionModel)
-                    header.settingMenu(
-                        menu: self.isWriter(sectionModel.userId)
-                        ? self.myPostMenu(post: sectionModel)
-                        : self.otherPostMenu(post: sectionModel)
-                    )
-                    
-                    header.rx.profileTap
-                        .observe(on: MainScheduler.instance)
-                        .subscribe(onNext: { [weak self] in
-                            // TODO: 프로필 뷰로 이동
-                            let authorUserId = sectionModel.userId
-                            let userProfileViewComtroll = UserProfileViewController(userId: authorUserId)
-                            self?.navigationController?.pushViewController(userProfileViewComtroll, animated: true)
-                        })
-                        .disposed(by: header.disposeBag)
-                    
-                    return header
-                    
-                    // MARK: - PostFooter
-                case UICollectionView.elementKindSectionFooter:
-                    guard let footer = collectionView.dequeueReusableSupplementaryView(
-                        ofKind: kind,
-                        withReuseIdentifier: PostFooterView.identifier,
-                        for: indexPath
-                    ) as? PostFooterView else { return .init() }
-                    
-                    let count = dataSource.sectionModels[indexPath.section].items.count
-                    let category: FirestoreCollection = {
-                        let collection = FirestoreCollection.allCases.filter {
-                            $0.rawValue == sectionModel.category
-                        }.first
+                switch sectionModel {
+                case .post(let post):
+                    switch kind {
+                        // MARK: - PostHeader
+                    case UICollectionView.elementKindSectionHeader:
+                        guard let header = collectionView.dequeueReusableSupplementaryView(
+                            ofKind: kind,
+                            withReuseIdentifier: PostHeaderView.identifier,
+                            for: indexPath
+                        ) as? PostHeaderView else { return .init() }
                         
-                        return collection ?? .invLogBoard
-                    }()
+                        header.settingCell(data: post)
+                        header.settingMenu(
+                            menu: self.isWriter(post.userId)
+                            ? self.myPostMenu(post: post)
+                            : self.otherPostMenu(post: post)
+                        )
+                        
+                        header.rx.profileTap
+                            .observe(on: MainScheduler.instance)
+                            .subscribe(onNext: { [weak self] in
+                                // TODO: 프로필 뷰로 이동
+                                let authorUserId = post.userId
+                                let userProfileViewComtroll = UserProfileViewController(userId: authorUserId)
+                                self?.navigationController?.pushViewController(userProfileViewComtroll, animated: true)
+                            })
+                            .disposed(by: header.disposeBag)
+                        
+                        return header
+                        
+                        // MARK: - PostFooter
+                    case UICollectionView.elementKindSectionFooter:
+                        guard let footer = collectionView.dequeueReusableSupplementaryView(
+                            ofKind: kind,
+                            withReuseIdentifier: PostFooterView.identifier,
+                            for: indexPath
+                        ) as? PostFooterView else { return .init() }
+                        
+                        let count = dataSource.sectionModels[indexPath.section].items.count
+                        let category: FirestoreCollection = {
+                            let collection = FirestoreCollection.allCases.filter {
+                                $0.rawValue == post.category
+                            }.first
+                            
+                            return collection ?? .invLogBoard
+                        }()
+                        
+                        footer.settingCell(data: post, collection: category)
+                        footer.updatePage(total: count, current: 0)
+                        
+                        // footerViewModel
+                        let viewModel = PostFooterViewModel(category: category, post: post)
+                        footer.bind(viewModel: viewModel)
+                        
+                        return footer
+                        
+                    default:
+                        return .init()
+                    }
                     
-                    footer.settingCell(data: sectionModel, collection: category)
-                    footer.updatePage(total: count, current: 0)
-
-                    // footerViewModel
-                    let viewModel = PostFooterViewModel(category: category, post: sectionModel)
-                    footer.bind(viewModel: viewModel)
-                    
-                    return footer
-                    
-                default:
-                    return .init()
+                case .comment(let title):
+                    switch kind {
+                    case UICollectionView.elementKindSectionHeader:
+                        guard let header = collectionView.dequeueReusableSupplementaryView(
+                            ofKind: kind,
+                            withReuseIdentifier: CommentHeaderView.identifier,
+                            for: indexPath
+                        ) as? CommentHeaderView else { return .init() }
+                        
+                        header.setTitle(title: title)
+                        
+                        return header
+                    default:
+                        return .init()
+                    }
                 }
+                
             }
         )
-    }
-    
-    private func commentCollectionViewDataSource() -> RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.CommentDataSource> {
-        return RxCollectionViewSectionedReloadDataSource<PostDetailViewModel.CommentDataSource>(
-            configureCell: { dataSource, collectionView, indexPath, item in
-                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else { return .init() }
-                
-                cell.settingCell(data: item)
-                cell.settingMenu(
-                    menu: self.isWriter(item.userId)
-                    ? self.myCommentMenu(comment: item)
-                    : self.otherCommentMenu(comment: item)
-                )
-                
-                return cell
-            })
     }
 }
 
 // MARK: - CollectionView Layout
 extension PostDetailViewController {
-    private func postCollectionViewLayout() -> UICollectionViewCompositionalLayout {
+    private func postDetailCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         let inset: CGFloat = 16
         
-        return UICollectionViewCompositionalLayout { row, env in
-            // 아이템(이미지 한 장)
-            let item = NSCollectionLayoutItem(
-                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                                  heightDimension: .fractionalHeight(1.0))
-            )
-            item.contentInsets = .zero
-            
-            // 가로 페이징 그룹
-            let group = NSCollectionLayoutGroup.horizontal(
-                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                                  heightDimension: .estimated(300)),
-                subitems: [item]
-            )
-            
-            // 헤더
-            let header = NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                                  heightDimension: .estimated(64)),
-                elementKind: UICollectionView.elementKindSectionHeader,
-                alignment: .top
-            )
-            
-            // 푸터
-            let footer = NSCollectionLayoutBoundarySupplementaryItem(
-                layoutSize: .init(widthDimension: .fractionalWidth(1.0),
-                                  heightDimension: .estimated(60)),
-                elementKind: UICollectionView.elementKindSectionFooter,
-                alignment: .bottom
-            )
-            
-            // 섹션
-            let section = NSCollectionLayoutSection(group: group)
-            section.boundarySupplementaryItems = [header, footer]
-            section.orthogonalScrollingBehavior = .groupPagingCentered
-            section.interGroupSpacing = 0
-            section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
-            
-            // 페이지 컨트롤 설정
-            section.visibleItemsInvalidationHandler = { [weak self] item, offset, environment in
-                guard let self else { return }
-                let pageWidth = environment.container.contentSize.width
-                let page = Int(round(offset.x / pageWidth))
-                let indexPath = IndexPath(item: 0, section: row)
-                let total = self.postDataSource.sectionModels[row].items.count
+        return UICollectionViewCompositionalLayout { sectionIndex, env in
+            switch sectionIndex {
+            case 0:
+                // 아이템(이미지 한 장)
+                let item = NSCollectionLayoutItem(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                      heightDimension: .fractionalHeight(1.0))
+                )
+                item.contentInsets = .zero
                 
-                if let footerView = self.postCollectionView.supplementaryView(
-                    forElementKind: UICollectionView.elementKindSectionFooter,
-                    at: indexPath
-                ) as? PostFooterView {
-                    footerView.updatePage(total: total, current: page)
+                // 가로 페이징 그룹
+                let group = NSCollectionLayoutGroup.horizontal(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                      heightDimension: .estimated(300)),
+                    subitems: [item]
+                )
+                
+                // 헤더
+                let header = NSCollectionLayoutBoundarySupplementaryItem(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                      heightDimension: .estimated(64)),
+                    elementKind: UICollectionView.elementKindSectionHeader,
+                    alignment: .top
+                )
+                
+                // 푸터
+                let footer = NSCollectionLayoutBoundarySupplementaryItem(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                      heightDimension: .estimated(60)),
+                    elementKind: UICollectionView.elementKindSectionFooter,
+                    alignment: .bottom
+                )
+                
+                // 섹션
+                let section = NSCollectionLayoutSection(group: group)
+                section.boundarySupplementaryItems = [header, footer]
+                section.orthogonalScrollingBehavior = .groupPagingCentered
+                section.interGroupSpacing = 0
+                section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
+                
+                // 페이지 컨트롤 설정
+                section.visibleItemsInvalidationHandler = { [weak self] item, offset, environment in
+                    guard let self else { return }
+                    let pageWidth = environment.container.contentSize.width
+                    let page = Int(round(offset.x / pageWidth))
+                    let indexPath = IndexPath(item: 0, section: sectionIndex)
+                    let total = self.dataSource.sectionModels[sectionIndex].items.count
+                    
+                    if let footerView = self.postDetailCollectionView.supplementaryView(
+                        forElementKind: UICollectionView.elementKindSectionFooter,
+                        at: indexPath
+                    ) as? PostFooterView {
+                        footerView.updatePage(total: total, current: page)
+                    }
                 }
+                
+                return section
+            case 1:
+                // FIXME: 레이아웃 설정
+                let item = NSCollectionLayoutItem(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1),
+                                      heightDimension: .fractionalHeight(1))
+                )
+                
+                let group = NSCollectionLayoutGroup.vertical(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1),
+                                      heightDimension: .estimated(80)),
+                    subitems: [item]
+                )
+                
+                let header = NSCollectionLayoutBoundarySupplementaryItem(
+                    layoutSize: .init(widthDimension: .fractionalWidth(1.0),
+                                      heightDimension: .estimated(60)),
+                    elementKind: UICollectionView.elementKindSectionHeader,
+                    alignment: .top
+                )
+                
+                let section = NSCollectionLayoutSection(group: group)
+                section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
+                section.interGroupSpacing = 0
+                section.boundarySupplementaryItems = [header]
+                
+                return section
+            default:
+                return nil
             }
-            
-            return section
-        }
-    }
-    
-    private func commentCollectionViewLayout() -> UICollectionViewCompositionalLayout {
-        return UICollectionViewCompositionalLayout { row, env in
-            let inset: CGFloat = 16
-            
-            // FIXME: 레이아웃 설정
-            let item = NSCollectionLayoutItem(
-                layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                  heightDimension: .fractionalHeight(1))
-            )
-            
-            let group = NSCollectionLayoutGroup.vertical(
-                layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                  heightDimension: .estimated(80)),
-                subitems: [item]
-            )
-            
-            let section = NSCollectionLayoutSection(group: group)
-            section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
-            section.interGroupSpacing = 0
-            
-            return section
         }
     }
 }
@@ -466,41 +488,32 @@ extension PostDetailViewController {
     private func setupUI() {
         view.backgroundColor = .keycolorInverse
         
-//        [
-//            postCollectionView,
-//            commentCollectionView
-//        ].forEach { collectionViewStackView.addArrangedSubview($0) }
-        
         [
             commentTextField,
             saveButton
         ].forEach { commentStackView.addArrangedSubview($0) }
         
-        contentView.addSubviews([
-            postCollectionView,
-            commentCollectionView,
-//            collectionViewStackView
-        ])
-        
-        scrollView.addSubview(contentView)
         view.addSubviews([
-            scrollView,
+            postDetailCollectionView,
             commentStackView
         ])
         
-        scrollView.refreshControl = refreshControl
+        postDetailCollectionView.refreshControl = refreshControl
+        postDetailCollectionView.backgroundColor = .keycolorInverse
+        postDetailCollectionView.register(MediaCell.self,
+                                          forCellWithReuseIdentifier: MediaCell.identifier)
+        postDetailCollectionView.register(PostHeaderView.self,
+                                          forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                          withReuseIdentifier: PostHeaderView.identifier)
+        postDetailCollectionView.register(PostFooterView.self,
+                                          forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
+                                          withReuseIdentifier: PostFooterView.identifier)
         
-//        collectionViewStackView.axis = .vertical
-//        collectionViewStackView.spacing = 4
-//        collectionViewStackView.alignment = .top
-        
-        postCollectionView.backgroundColor = .keycolorInverse
-        postCollectionView.register(MediaCell.self, forCellWithReuseIdentifier: MediaCell.identifier)
-        postCollectionView.register(PostHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PostHeaderView.identifier)
-        postCollectionView.register(PostFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: PostFooterView.identifier)
-        
-        commentCollectionView.backgroundColor = .keycolorInverse
-        commentCollectionView.register(CommentCell.self, forCellWithReuseIdentifier: CommentCell.identifier)
+        postDetailCollectionView.register(CommentHeaderView.self,
+                                          forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                          withReuseIdentifier: CommentHeaderView.identifier)
+        postDetailCollectionView.register(CommentCell.self,
+                                          forCellWithReuseIdentifier: CommentCell.identifier)
         
         commentStackView.axis = .horizontal
         commentStackView.spacing = 8
@@ -523,29 +536,9 @@ extension PostDetailViewController {
     }
     
     private func configureUI() {
-        scrollView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
+        postDetailCollectionView.snp.makeConstraints {
+            $0.top.horizontalEdges.equalToSuperview()
             $0.bottom.equalTo(commentStackView.snp.top).offset(-12)
-        }
-        
-        contentView.snp.makeConstraints {
-            $0.edges.width.equalToSuperview()
-        }
-        
-//        collectionViewStackView.snp.makeConstraints {
-//            $0.top.leading.trailing.bottom.equalToSuperview()
-//        }
-        
-        postCollectionView.snp.makeConstraints {
-            $0.top.leading.trailing.equalToSuperview()
-            $0.height.equalTo(500)
-        }
-        
-        commentCollectionView.snp.makeConstraints {
-            $0.height.equalTo(300)
-            $0.top.equalTo(postCollectionView.snp.bottom).offset(4)
-            $0.leading.trailing.equalToSuperview()
-            $0.bottom.equalToSuperview()
         }
         
         commentStackView.snp.makeConstraints {

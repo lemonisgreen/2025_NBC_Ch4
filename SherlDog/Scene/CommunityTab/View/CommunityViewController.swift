@@ -347,6 +347,7 @@ extension CommunityViewController {
                             // TODO: 상세 뷰로 이동
                             let viewModel = PostDetailViewModel(post: sectionModel)
                             let viewController = PostDetailViewController(viewModel: viewModel)
+                            viewController.hidesBottomBarWhenPushed = true
                             
                             self?.navigationController?.pushViewController(viewController, animated: true)
                         })

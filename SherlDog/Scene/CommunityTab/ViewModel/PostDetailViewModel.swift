@@ -33,7 +33,6 @@ enum PostDetailItem {
 }
 
 final class PostDetailViewModel {
-    
     struct Input {
         let refreshPost: Observable<Void>
         let likeEvent: Observable<Void>
@@ -42,14 +41,11 @@ final class PostDetailViewModel {
     }
     
     struct Output {
-        let postData: Driver<[PostDataSource]>
-        let commentData: Driver<[CommentDataSource]>
+        let postDetailData: Driver<[PostDetailSectionModel]>
         let isUpdating: Driver<Bool>
     }
     
     typealias PostDetailSectionModel = SectionModel<PostDetailSectionModelType, PostDetailItem>
-    typealias PostDataSource = SectionModel<CommunityModel, String>
-    typealias CommentDataSource = SectionModel<String, CommentModel>
     
     private let originalPost: CommunityModel
     private lazy var category: FirestoreCollection = {
@@ -71,7 +67,13 @@ final class PostDetailViewModel {
         ).share()
         
         let postData = fetchPost(sharedRefresh)
+            .share(replay: 1)
         let commentData = commentEvent(commentRefreshTrigger)
+            .share(replay: 1)
+        
+        let postDetailData = Observable
+            .combineLatest(postData, commentData) { [$0, $1] }
+            .asDriver(onErrorDriveWith: .empty())
         
         let refreshTrigger = Observable.merge(
             sharedRefresh,
@@ -87,8 +89,7 @@ final class PostDetailViewModel {
                                          end: fetchStream)
         
         return Output(
-            postData: postData,
-            commentData: commentData,
+            postDetailData: postDetailData,
             isUpdating: isUpdating
         )
     }
@@ -110,27 +111,32 @@ extension PostDetailViewModel {
     
     private func fetchPost(
         _ input: Observable<Void>
-    ) -> Driver<[PostDataSource]> {
+    ) -> Observable<PostDetailSectionModel> {
         input
-            .flatMap { [weak self] _ -> Observable<[PostDataSource]> in
+            .flatMap { [weak self] _ -> Observable<PostDetailSectionModel> in
                 guard let self else { return .empty() }
                 
                 return FirestoreManager.shared.fetchQuery(FirestoreQuery<CommunityModel>(
                     collection: self.category,
                     type: .document(id: self.originalPost.documentId)
                 ))
-                .flatMap { [weak self] data in
-                    guard let self, let data = data.first else { return .just([]) }
-                    
-                    let item = data.contentImage.map { PostDetailItem.post($0) }
-                    let model: SectionModel<PostDetailSectionModelType, PostDetailItem> = SectionModel(model: .post(data),
-                                                                                                       items: item)
-                    return self.fetchProfiles(data)
-                        .map { [PostDataSource(model: $0, items: $0.contentImage)] }
-                }
                 .asObservable()
+                .flatMap { [weak self] data -> Observable<PostDetailSectionModel> in
+                    guard let self, let data = data.first else { return .empty() }
+                    
+                    return self.fetchProfiles(data)
+                        .map { post in
+                            let item = data.contentImage.map { PostDetailItem.post($0) }
+                            let model: SectionModel<PostDetailSectionModelType, PostDetailItem> = SectionModel(
+                                model: .post(post),
+                                items: item
+                            )
+                            
+                            return model
+                        }
+                        .asObservable()
+                }
             }
-            .asDriver(onErrorDriveWith: .empty())
     }
     
     private func fetchProfiles(_ data: CommunityModel) -> Single<CommunityModel> {
@@ -162,13 +168,14 @@ extension PostDetailViewModel {
                 post.name = human.nickname
                 post.profileImage = human.image
                 post.petProfile = pet
+                
                 return post
             }
     }
     
     private func commentEvent(
         _ input: Observable<CommentEvent>
-    ) -> Driver<[CommentDataSource]> {
+    ) -> Observable<PostDetailSectionModel> {
         return input
             .flatMap { [weak self] state -> Observable<CommentEvent> in
                 guard let self,
@@ -251,9 +258,7 @@ extension PostDetailViewModel {
                     items: item
                 )
                 
-                return [CommentDataSource(model: SDLiteral.PostDetailViewController.commentHeaderTitle,
-                                          items: $0)]
+                return comment
             }
-            .asDriver(onErrorJustReturn: [])
     }
 }

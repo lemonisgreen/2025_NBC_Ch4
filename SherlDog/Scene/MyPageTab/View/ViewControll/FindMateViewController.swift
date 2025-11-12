@@ -105,7 +105,7 @@ private extension FindMateViewController {
                     manualRefresh: manualRefresh.asObservable(),
                     fetchMore: Observable.empty(),
                     menuEvent: menuEvent.asObservable(),
-                    likeEvent: Observable.never()
+//                    likeEvent: Observable.never()
                 )
         
         let output = viewModel.transform(input)
