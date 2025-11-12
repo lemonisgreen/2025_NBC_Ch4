@@ -20,10 +20,15 @@ final class HumanProfileViewModel {
     let nickname = BehaviorRelay<String>(value: "")
     let introduce = BehaviorRelay<String>(value: "")
     let imageString = BehaviorRelay<String>(value: "")
+    
+    private let originalNickname = BehaviorRelay<String>(value: "")
+    private let originalIntroduce = BehaviorRelay<String>(value: "")
+    private let originalImageString = BehaviorRelay<String>(value: "")
+    
     let imageForUpload = BehaviorRelay<UIImage?>(value: nil)
     let saveResult = PublishSubject<Result<Void, Error>>()
     let isLoading = PublishRelay<Bool>()
-
+    
     var currentMode: Mode = .create
     let isEditMode = BehaviorRelay<Bool>(value: false)
     let userId = Auth.auth().currentUser?.uid
@@ -33,15 +38,22 @@ final class HumanProfileViewModel {
         currentMode = .edit(profile)
         isEditMode.accept(true)
         
+        originalNickname.accept(profile.nickname)
+        originalIntroduce.accept(profile.introduce)
+        originalImageString.accept(profile.image)
+        
         nickname.accept(profile.nickname)
         introduce.accept(profile.introduce)
-        
         self.imageString.accept(profile.image)
     }
     
     func setCreateMode() {
         currentMode = .create
         isEditMode.accept(false)
+        
+        originalNickname.accept("")
+        originalIntroduce.accept("")
+        originalImageString.accept("")
         
         nickname.accept("")
         introduce.accept("")
@@ -59,11 +71,27 @@ final class HumanProfileViewModel {
     
     var isSaveEnabled: Observable<Bool> {
         return Observable
-            .combineLatest(nickname, introduce, imageForUpload)
-            .map { nickname, introduce, image in
-                return !nickname.isEmpty && !introduce.isEmpty && image != nil
+            .combineLatest(
+                nickname.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) },
+                introduce.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) },
+                imageForUpload,
+                originalNickname,
+                originalIntroduce,
+                isEditMode
+            )
+            .map { nick, intro, newImage, origNick, origIntro, isEdit in
+                guard !nick.isEmpty, !intro.isEmpty else { return false }
+                
+                if isEdit {
+                    let textChanged = (nick != origNick) || (intro != origIntro)
+                    let imageChanged = (newImage != nil)
+                    return textChanged || imageChanged
+                } else {
+                    return newImage != nil
+                }
             }
     }
+    
     
     var nextButtonTitle: Observable<String> {
         return isEditMode.asObservable().map { isEdit in
@@ -99,19 +127,19 @@ final class HumanProfileViewModel {
                 
                 FirestoreManager.shared.createDocument(collection: .humanProfile, data: data, documentId: userId)
                     .subscribe(
-                    onCompleted: {
-                        DispatchQueue.main.async {
-                            self?.isLoading.accept(false)
-                            self?.saveResult.onNext(.success(()))
+                        onCompleted: {
+                            DispatchQueue.main.async {
+                                self?.isLoading.accept(false)
+                                self?.saveResult.onNext(.success(()))
+                            }
+                        },
+                        onError: { error in
+                            DispatchQueue.main.async {
+                                self?.isLoading.accept(false)
+                                self?.saveResult.onNext(.failure(error))
+                            }
                         }
-                    },
-                    onError: { error in
-                        DispatchQueue.main.async {
-                            self?.isLoading.accept(false)
-                            self?.saveResult.onNext(.failure(error))
-                        }
-                    }
-                ).disposed(by: self?.disposeBag ?? DisposeBag())
+                    ).disposed(by: self?.disposeBag ?? DisposeBag())
                 
             case .failure(let error):
                 DispatchQueue.main.async {
@@ -144,21 +172,21 @@ final class HumanProfileViewModel {
                     )
                     
                     FirestoreManager.shared.updateDocument(collection: .humanProfile, documentId: userId, data: updatedProfile)
-                    .subscribe(
-                        onCompleted: {
-                            DispatchQueue.main.async {
-                                self?.isLoading.accept(false)
-                                self?.saveResult.onNext(.success(()))
+                        .subscribe(
+                            onCompleted: {
+                                DispatchQueue.main.async {
+                                    self?.isLoading.accept(false)
+                                    self?.saveResult.onNext(.success(()))
+                                }
+                            },
+                            onError: { error in
+                                DispatchQueue.main.async {
+                                    self?.isLoading.accept(false)
+                                    self?.saveResult.onNext(.failure(error))
+                                }
                             }
-                        },
-                        onError: { error in
-                            DispatchQueue.main.async {
-                                self?.isLoading.accept(false)
-                                self?.saveResult.onNext(.failure(error))
-                            }
-                        }
-                    )
-                    .disposed(by: self?.disposeBag ?? DisposeBag())
+                        )
+                        .disposed(by: self?.disposeBag ?? DisposeBag())
                     
                 case .failure(let error):
                     DispatchQueue.main.async {
@@ -175,18 +203,18 @@ final class HumanProfileViewModel {
             )
             
             FirestoreManager.shared.updateDocument(collection: .humanProfile, documentId: userId, data: updatedProfile)
-            .subscribe(onCompleted: { [weak self] in
-                DispatchQueue.main.async {
-                    self?.isLoading.accept(false)
-                    self?.saveResult.onNext(.success(()))
-                }
-            }, onError: { [weak self] error in
-                DispatchQueue.main.async {
-                    self?.isLoading.accept(false)
-                    self?.saveResult.onNext(.failure(error))
-                }
-            })
-            .disposed(by: self.disposeBag)
+                .subscribe(onCompleted: { [weak self] in
+                    DispatchQueue.main.async {
+                        self?.isLoading.accept(false)
+                        self?.saveResult.onNext(.success(()))
+                    }
+                }, onError: { [weak self] error in
+                    DispatchQueue.main.async {
+                        self?.isLoading.accept(false)
+                        self?.saveResult.onNext(.failure(error))
+                    }
+                })
+                .disposed(by: self.disposeBag)
         } else {
             saveResult.onNext(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "입력값이 부족합니다."])))
             return

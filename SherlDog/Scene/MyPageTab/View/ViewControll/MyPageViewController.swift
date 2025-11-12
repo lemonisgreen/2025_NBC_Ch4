@@ -207,6 +207,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 guard let self else { return }
                 
                 let archiveView = InvLogListViewController()
+                archiveView.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(archiveView, animated: true)
             })
             .disposed(by: disposeBag)
@@ -216,6 +217,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 guard let self else { return }
                 
                 let findMateViewController = FindMateViewController()
+                findMateViewController.hidesBottomBarWhenPushed = true
                 self.navigationController?
                     .pushViewController(findMateViewController, animated: true)
             })
@@ -224,6 +226,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         mypageSettingButton.rx.tap
             .bind { [weak self] in
                 let settingVC = SettingViewController()
+                settingVC.hidesBottomBarWhenPushed = true
                 self?.navigationController?.pushViewController(settingVC, animated: true)
             }
             .disposed(by: disposeBag)
@@ -250,6 +253,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
                 if let profile = humanProfile {
                     createAssistantVC.configure(with: profile)
                 }
+                createAssistantVC.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(createAssistantVC, animated: true)
             }
             .disposed(by: disposeBag)

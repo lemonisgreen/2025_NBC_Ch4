@@ -84,6 +84,7 @@ enum SDLiteral {
         static let navigationCancelButton: String = "취소"
         static let navigationUnblockButton: String = "차단 해제"
         static let emptyStateLabel: String = "차단한 사용자가 없습니다."
+        static let emptySelectedUnblockUsersAlertText: String = "선택된 차단 유저가 없습니다."
         static let unblcockAlertText: String = "선택한 사용자를\n차단 해제하시겠습니까?"
     }
     
@@ -106,5 +107,9 @@ enum SDLiteral {
     
     enum FindMateViewController {
         static let navigationTitle: String = "내가 쓴 탐정메이트"
+    }
+    
+    enum UserPostViewController {
+        static let navigationTitle: String = "작성 글 둘러보기"
     }
 }
