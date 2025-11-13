@@ -161,7 +161,7 @@ class WalkEndModalViewController : UIViewController {
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let day = self.dataTrackingViewModel.endDate.value else { return }
-
+                
                 let clueViewModel = ClueDetailViewModel(day: day)
                 
                 Observable.combineLatest(

@@ -288,11 +288,6 @@ extension CreateLogViewController {
                 $0.textColor = .textInverse
             }
         
-//        distanceLabel.text = "11.23km"
-//        durationLabel.text = "01:12:23"
-//        stepsLabel.text = "99999"
-//        clueLabel.text = "12개"
-        
         textView.font = .body3
         textView.textColor = .textPrimary
         textView.backgroundColor = .gray50

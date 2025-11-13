@@ -43,7 +43,7 @@ class DataTrackingViewModel {
                 guard let self,
                       let result,
                       let date = DateFormatter.yyyyMMdd.date(from: result.date) else { return }
-
+                
                 self.numberOfSteps.accept(result.steps)
                 self.distance.accept(result.distance)
                 self.duration.accept(result.duration)
