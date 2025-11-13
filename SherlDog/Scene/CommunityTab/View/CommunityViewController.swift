@@ -264,8 +264,13 @@ extension CommunityViewController {
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
                 let petProfile = dataSource.sectionModels[indexPath.section].model.petProfile
                 
-                cell.settingCell(item)
-                cell.settingPetProfile(profile: petProfile)
+                let category = CommunitySectionType.allCases[self.segmentedControl.selectedSegmentIndex]
+
+                cell.configureForCommunityPost(
+                    imageURL: item,
+                    petProfiles: petProfile,
+                    category: category
+                )
                 
                 cell.rx.mediaDoubleTap
                     .map { _ in dataSource.sectionModels[indexPath.section].model }
