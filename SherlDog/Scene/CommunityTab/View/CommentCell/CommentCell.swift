@@ -9,23 +9,41 @@ import UIKit
 import SnapKit
 import Kingfisher
 import FirebaseFirestore
+import RxSwift
+import RxCocoa
+
+enum CommentFixMode {
+    case fix
+    case done
+}
 
 final class CommentCell: UICollectionViewCell {
     static let identifier: String = "CommentCell"
     
+    var disposeBag = DisposeBag()
+    
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
     private let petNamesLabel = UILabel()
-    private let contentLabel = UITextField()
+    let contentLabel = UITextView()
     private let verticalStackView = UIStackView()
     private let horizontalStackView = UIStackView()
     private let configButton = UIButton()
+    private let saveButton = UIButton()
+    private let cancelButton = UIButton()
+    private let buttonStackView = UIStackView()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
         setupUI()
         configureUI()
+    }
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        updateTextViewHeight()
     }
     
     override func prepareForReuse() {
@@ -35,10 +53,34 @@ final class CommentCell: UICollectionViewCell {
         nameLabel.text = nil
         petNamesLabel.text = nil
         contentLabel.text = nil
+        contentLabel.layer.borderColor = UIColor.clear.cgColor
+        contentLabel.allowsEditingTextAttributes = false
+        contentLabel.isEditable = false
+        updateTextViewHeight()
+        disposeBag = DisposeBag()
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    func setFixMode(_ mode: CommentFixMode) {
+        switch mode {
+        case .fix:
+            contentLabel.layer.borderColor = UIColor.textPrimary.cgColor
+            contentLabel.allowsEditingTextAttributes = true
+            contentLabel.isEditable = true
+            contentLabel.isScrollEnabled = true
+            configButton.isHidden = true
+            buttonStackView.isHidden = false
+        case .done:
+            contentLabel.layer.borderColor = UIColor.clear.cgColor
+            contentLabel.allowsEditingTextAttributes = false
+            contentLabel.isEditable = false
+            updateTextViewHeight()
+            configButton.isHidden = false
+            buttonStackView.isHidden = true
+        }
     }
     
     func settingCell(data: CommentModel) {
@@ -75,6 +117,20 @@ final class CommentCell: UICollectionViewCell {
         return dateFormatter.string(from: date)
     }
     
+    private func updateTextViewHeight() {
+        let fixedWidth = contentLabel.bounds.width
+
+        let newSize = contentLabel.sizeThatFits(
+            CGSize(width: fixedWidth, height: .greatestFiniteMagnitude)
+        )
+
+        contentLabel.isScrollEnabled = false
+
+        contentLabel.snp.updateConstraints {
+            $0.height.equalTo(newSize.height)
+        }
+    }
+    
     // MARK: - UI
     private func setupUI() {
         [
@@ -88,9 +144,15 @@ final class CommentCell: UICollectionViewCell {
             verticalStackView
         ].forEach { horizontalStackView.addArrangedSubview($0) }
         
+        [
+            cancelButton,
+            saveButton
+        ].forEach { buttonStackView.addArrangedSubview($0) }
+        
         contentView.addSubviews([
             horizontalStackView,
-            configButton
+            configButton,
+            buttonStackView
         ])
         
         verticalStackView.axis = .vertical
@@ -100,6 +162,11 @@ final class CommentCell: UICollectionViewCell {
         horizontalStackView.axis = .horizontal
         horizontalStackView.spacing = 12
         horizontalStackView.alignment = .top
+        
+        buttonStackView.axis = .horizontal
+        buttonStackView.spacing = 8
+        buttonStackView.alignment = .trailing
+        buttonStackView.isHidden = true
         
         profileImageView.contentMode = .scaleAspectFill
         profileImageView.layer.cornerRadius = 8
@@ -111,8 +178,11 @@ final class CommentCell: UICollectionViewCell {
         petNamesLabel.font = .body6
         petNamesLabel.textColor = .gray400
         
-        contentLabel.borderStyle = .none
-        contentLabel.isEnabled = false
+        contentLabel.layer.borderColor = UIColor.clear.cgColor
+        contentLabel.layer.borderWidth = 1
+        contentLabel.allowsEditingTextAttributes = false
+        contentLabel.isEditable = false
+        contentLabel.backgroundColor = .clear
         contentLabel.font = .body6
         contentLabel.textColor = .textPrimary
         
@@ -120,6 +190,14 @@ final class CommentCell: UICollectionViewCell {
         configButton.setTitleColor(.textPrimary, for: .normal)
         configButton.titleLabel?.font = .body1
         configButton.showsMenuAsPrimaryAction = true
+        
+        saveButton.setTitle("저장", for: .normal)
+        saveButton.setTitleColor(.textPrimary, for: .normal)
+        saveButton.titleLabel?.font = .body4
+        
+        cancelButton.setTitle("취소", for: .normal)
+        cancelButton.setTitleColor(.textAlert, for: .normal)
+        cancelButton.titleLabel?.font = .body4
     }
     
     private func configureUI() {
@@ -128,12 +206,37 @@ final class CommentCell: UICollectionViewCell {
         }
         
         horizontalStackView.snp.makeConstraints {
-            $0.top.leading.bottom.equalToSuperview()
+            $0.edges.equalToSuperview()
         }
         
         configButton.snp.makeConstraints {
             $0.top.equalTo(nameLabel.snp.top)
             $0.trailing.equalToSuperview()
         }
+        
+        buttonStackView.snp.makeConstraints {
+            $0.top.equalTo(nameLabel.snp.top)
+            $0.trailing.equalToSuperview()
+        }
+    }
+}
+
+extension CommentCell {
+    fileprivate var saveButtonTap: ControlEvent<Void> {
+        saveButton.rx.tap
+    }
+    
+    fileprivate var cancelButtonTap: ControlEvent<Void> {
+        cancelButton.rx.tap
+    }
+}
+
+extension Reactive where Base: CommentCell {
+    var saveButtonTap: ControlEvent<Void> {
+        base.saveButtonTap
+    }
+    
+    var cancelButtonTap: ControlEvent<Void> {
+        base.cancelButtonTap
     }
 }

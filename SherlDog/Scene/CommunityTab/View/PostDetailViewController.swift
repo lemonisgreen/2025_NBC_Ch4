@@ -12,6 +12,11 @@ import RxCocoa
 import RxDataSources
 import FirebaseAuth
 
+enum MenuType {
+    case post(PostMenuEvent)
+    case comment(CommentEvent)
+}
+
 final class PostDetailViewController: UIViewController {
     
     private let viewModel: PostDetailViewModel
@@ -100,13 +105,18 @@ extension PostDetailViewController {
     private func myPostMenu(post: CommunityModel) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
+            let category: CommunitySectionType = {
+                CommunitySectionType.allCases.filter({ $0.name == post.category }).first ?? .invLogBoard
+            }()
             
-            // TODO: fixAction
+            let editView = AddNewContentViewController(category: category, post: post)
+            editView.hidesBottomBarWhenPushed = true
+            self?.navigationController?.pushViewController(editView, animated: true)
         }
         
         let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.delete)) { [weak self] _ in
-            self?.showMenuAlert(type: .delete(post.documentId))
+            self?.showMenuAlert(type: .post(.delete(post.documentId)))
         }
         
         return UIMenu(children: [fixAction, deleteAction])
@@ -115,12 +125,12 @@ extension PostDetailViewController {
     private func otherPostMenu(post: CommunityModel) -> UIMenu {
         let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                  SDLiteral.CommunityView.block)) { [weak self] _ in
-            self?.showMenuAlert(type: .block(post.userId))
+            self?.showMenuAlert(type: .post(.block(post.userId)))
         }
         
         let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
+            self?.showMenuAlert(type: .post(.report(post.documentId))) { [weak self] in
                 self?.blockMessageAfterReport(userId: post.userId)
             }
         }
@@ -128,16 +138,19 @@ extension PostDetailViewController {
         return UIMenu(children: [blockAction, reportAction])
     }
     
-    private func myCommentMenu(comment: CommentModel) -> UIMenu {
+    private func myCommentMenu(comment: CommentModel, indexPath: IndexPath) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
+            guard let cell = self?.postDetailCollectionView.cellForItem(at: indexPath) as? CommentCell else { return }
+            cell.setFixMode(.fix)
+            cell.contentLabel.becomeFirstResponder()
             
             // TODO: fixAction
         }
         
         let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.delete)) { [weak self] _ in
-            self?.showMenuAlert(type: .delete(comment.documentId))
+            self?.showMenuAlert(type: .comment(.delete(comment.documentId)))
         }
         
         return UIMenu(children: [fixAction, deleteAction])
@@ -146,12 +159,12 @@ extension PostDetailViewController {
     private func otherCommentMenu(comment: CommentModel) -> UIMenu {
         let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                  SDLiteral.CommunityView.block)) { [weak self] _ in
-            self?.showMenuAlert(type: .block(comment.userId))
+            self?.showMenuAlert(type: .comment(.block(comment.userId)))
         }
         
         let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                   SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(comment.documentId)) { [weak self] in
+            self?.showMenuAlert(type: .comment(.report(comment.documentId))) { [weak self] in
                 self?.blockMessageAfterReport(userId: comment.userId)
             }
         }
@@ -159,7 +172,52 @@ extension PostDetailViewController {
         return UIMenu(children: [blockAction, reportAction])
     }
     
-    private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
+    private func showMenuAlert(type: MenuType, completion: (() -> ())? = nil) {
+        switch type {
+        case .post(let event):
+            showPostMenuAlert(type: event, completion: completion)
+        case .comment(let event):
+            showCommentMenuAlert(type: event, completion: completion)
+        }
+    }
+    
+    private func showCommentMenuAlert(type: CommentEvent, completion: (() -> ())? = nil) {
+        switch type {
+        case .fix, .error:
+            return
+        default:
+            break
+        }
+        
+        var title: String {
+            switch type {
+            case .delete: return SDLiteral.CommunityView.delete
+            case .report: return SDLiteral.CommunityView.report
+            case .block: return  SDLiteral.CommunityView.block
+            default: return ""
+            }
+        }
+        
+        let alert = CustomAlertViewController(
+            message: String(format: SDLiteral.CommunityView.menuAlertMessage, title),
+            buttons: [
+                CustomAlertViewController.AlertButton(
+                    title: SDLiteral.AlertMessage.cancel,
+                    action: nil
+                ),
+                CustomAlertViewController.AlertButton(
+                    title: title,
+                    action: { [weak self] in
+                        self?.commentEvent.accept(type)
+                        completion?()
+                    }
+                )
+            ]
+        )
+        
+        self.present(alert, animated: true)
+    }
+    private func showPostMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
         switch type {
         case .fix, .error:
             return
@@ -296,9 +354,23 @@ extension PostDetailViewController {
                     cell.settingCell(data: comment)
                     cell.settingMenu(
                         menu: self.isWriter(comment.userId)
-                        ? self.myCommentMenu(comment: comment)
+                        ? self.myCommentMenu(comment: comment, indexPath: indexPath)
                         : self.otherCommentMenu(comment: comment)
                     )
+                    
+                    cell.rx.saveButtonTap
+                        .bind(onNext: { [weak self] in
+                            cell.setFixMode(.done)
+                            self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.contentLabel.text ?? ""))
+                            // TODO: 저장
+                        })
+                        .disposed(by: cell.disposeBag)
+                    
+                    cell.rx.cancelButtonTap
+                        .bind(onNext: {
+                            cell.setFixMode(.done)
+                        })
+                        .disposed(by: cell.disposeBag)
                     
                     return cell
                 }

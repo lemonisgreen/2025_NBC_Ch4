@@ -246,7 +246,7 @@ extension CommunityActionManager {
                 .document(postCode)
                 .collection(CommunityAction.comment.rawValue)
                 .document(commentDocumentId)
-                .updateData(["text": text]) { error in // FIXME: "text"를 commentModel의 내용을 담은 프로퍼티 이름으로 변경
+                .updateData(["content": text]) { error in // "content" 라는 이름의 프로퍼티의 내용을 text로 변경
                     if let error {
                         completable(.error(error))
                     } else {
