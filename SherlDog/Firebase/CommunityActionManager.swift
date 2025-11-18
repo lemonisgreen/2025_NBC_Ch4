@@ -130,6 +130,9 @@ extension CommunityActionManager {
                         if let error {
                             completable(.error(error))
                         } else {
+                            self.db.collection(collection.rawValue)
+                                .document(postCode)
+                                .updateData(["commentCount": FieldValue.increment(Int64(1))])
                             completable(.completed)
                         }
                     }
@@ -161,6 +164,9 @@ extension CommunityActionManager {
                     if let error {
                         completable(.error(error))
                     } else {
+                        self.db.collection(collection.rawValue)
+                            .document(postCode)
+                            .updateData(["commentCount": FieldValue.increment(Int64(-1))])
                         completable(.completed)
                     }
                 }

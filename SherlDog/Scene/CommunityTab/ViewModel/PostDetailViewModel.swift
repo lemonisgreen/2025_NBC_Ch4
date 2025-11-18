@@ -14,7 +14,7 @@ import FirebaseFirestore
 
 enum CommentEvent {
     case refresh
-    case create(String)
+    case create(content: String, isSecret: Bool)
     case fix(documentId: String, content: String)
     case delete(String)
     case block(String)
@@ -92,6 +92,18 @@ final class PostDetailViewModel {
             postDetailData: postDetailData,
             isUpdating: isUpdating
         )
+    }
+    
+    func isWriter(_ writerUserId: String) -> Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        
+        return writerUserId == currentUserId
+    }
+    
+    func isPosterOrCommenter(commentUserId: String) -> Bool {
+        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        
+        return self.originalPost.userId == currentUserId || commentUserId == currentUserId
     }
 }
 
@@ -185,7 +197,7 @@ extension PostDetailViewModel {
                 case .refresh:
                     return .just(state)
                     
-                case let .create(content):
+                case let .create(content, isSecret):
                     return FirestoreManager.shared.fetchQuery(
                         FirestoreQuery<HumanProfileModel>(
                             collection: .humanProfile,
@@ -200,7 +212,8 @@ extension PostDetailViewModel {
                             userId: myUserId,
                             user: humanProfile,
                             content: content,
-                            date: Timestamp(date: Date())
+                            date: Timestamp(date: Date()),
+                            isSecret: isSecret
                         )
                         
                         return CommunityActionManager.shared.createComment(collection: self.category,

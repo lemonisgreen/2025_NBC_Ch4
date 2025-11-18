@@ -32,6 +32,7 @@ final class PostDetailViewController: UIViewController {
     private lazy var postDetailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postDetailCollectionViewLayout())
     private let commentTextField = UITextField()
     private let saveButton = UIButton()
+    private let isSecretToggleButton = UIButton()
     private let commentStackView = UIStackView()
     
     // MARK: - Lifecycle
@@ -77,9 +78,15 @@ extension PostDetailViewController {
                 let text = self?.commentTextField.text ?? ""
                 self?.commentTextField.text = ""
                 
-                return CommentEvent.create(text)
+                return CommentEvent.create(content: text, isSecret: self?.isSecretToggleButton.isSelected ?? false)
             }
             .bind(to: self.commentEvent)
+            .disposed(by: disposeBag)
+        
+        self.isSecretToggleButton.rx.tap
+            .bind(onNext: { [weak self] in
+                self?.isSecretToggleButton.isSelected.toggle()
+            })
             .disposed(by: disposeBag)
         
         // MARK: - Output
@@ -96,11 +103,6 @@ extension PostDetailViewController {
 }
 
 extension PostDetailViewController {
-    private func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
-        return postUserId == currentUserId
-    }
-    
     // MARK: - Post Menu Button Setting
     private func myPostMenu(post: CommunityModel) -> UIMenu {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
@@ -351,9 +353,15 @@ extension PostDetailViewController {
                 case .comment(let comment):
                     guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CommentCell.identifier, for: indexPath) as? CommentCell else { return .init() }
                     
-                    cell.settingCell(data: comment)
+                    cell.settingCell(
+                        data: comment,
+                        canOpen: comment.isSecret
+                        ? self.viewModel.isPosterOrCommenter(commentUserId: comment.userId)
+                        : true
+                    )
+                    
                     cell.settingMenu(
-                        menu: self.isWriter(comment.userId)
+                        menu: self.viewModel.isWriter(comment.userId)
                         ? self.myCommentMenu(comment: comment, indexPath: indexPath)
                         : self.otherCommentMenu(comment: comment)
                     )
@@ -362,7 +370,6 @@ extension PostDetailViewController {
                         .bind(onNext: { [weak self] in
                             cell.setFixMode(.done)
                             self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.contentLabel.text ?? ""))
-                            // TODO: 저장
                         })
                         .disposed(by: cell.disposeBag)
                     
@@ -391,7 +398,7 @@ extension PostDetailViewController {
                         
                         header.settingCell(data: post)
                         header.settingMenu(
-                            menu: self.isWriter(post.userId)
+                            menu: self.viewModel.isWriter(post.userId)
                             ? self.myPostMenu(post: post)
                             : self.otherPostMenu(post: post)
                         )
@@ -599,12 +606,21 @@ extension PostDetailViewController {
         commentTextField.layer.cornerRadius = 8
         commentTextField.leftView = UIView(frame: .init(x: 0, y: 0, width: 8, height: 0))
         commentTextField.leftViewMode = .always
+        commentTextField.rightView = self.isSecretToggleButton
+        commentTextField.rightViewMode = .always
         commentTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         
         saveButton.setTitle(SDLiteral.PostDetailViewController.commentSaveButtonTitle,
                             for: .normal)
         saveButton.setTitleColor(.keycolorPrimary1, for: .normal)
         saveButton.titleLabel?.font = .body4
+        
+        isSecretToggleButton.setImage(UIImage(systemName: "lock.open"), for: .normal)
+        isSecretToggleButton.setImage(UIImage(systemName: "lock"), for: .selected)
+        var config = UIButton.Configuration.plain()
+        config.buttonSize = .mini
+        config.baseBackgroundColor = .clear
+        isSecretToggleButton.configuration = config
     }
     
     private func configureUI() {

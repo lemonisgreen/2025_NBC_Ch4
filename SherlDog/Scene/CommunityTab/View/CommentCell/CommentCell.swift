@@ -24,7 +24,8 @@ final class CommentCell: UICollectionViewCell {
     
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
-    private let petNamesLabel = UILabel()
+    private let postDateLabel = UILabel()
+    private let nameDateStackView = UIStackView()
     let contentLabel = UITextView()
     private let verticalStackView = UIStackView()
     private let horizontalStackView = UIStackView()
@@ -51,7 +52,7 @@ final class CommentCell: UICollectionViewCell {
         
         profileImageView.image = nil
         nameLabel.text = nil
-        petNamesLabel.text = nil
+        postDateLabel.text = nil
         contentLabel.text = nil
         contentLabel.layer.borderColor = UIColor.clear.cgColor
         contentLabel.allowsEditingTextAttributes = false
@@ -83,26 +84,30 @@ final class CommentCell: UICollectionViewCell {
         }
     }
     
-    func settingCell(data: CommentModel) {
-        self.nameLabel.text = data.user.nickname
-        self.contentLabel.text = data.content
-        self.petNamesLabel.text = ""
-        + SDLiteral.CommunityView.separateDot
-        + self.timestampToToday(timestamp: data.date)
-        
-        let processor = DownsamplingImageProcessor(size: .init(width: 40, height: 40)) // 크기 지정 다운 샘플링
-        
-        self.profileImageView.kf.indicatorType = .activity
-        KF.url(URL(string: data.user.image))
-            .placeholder(UIImage.petAvatar)
-            .setProcessor(processor)
-            .cacheOriginalImage()
-            .fade(duration: 0.25)
-            .onFailureImage(UIImage.secretProfile)
-            .onSuccess { result in }
-            .onFailure { error in }
-            .set(to: self.profileImageView)
-        
+    func settingCell(data: CommentModel, canOpen: Bool) {
+        if canOpen {
+            self.nameLabel.text = data.user.nickname
+            self.postDateLabel.text = SDLiteral.CommunityView.separateDot
+            + self.timestampToToday(timestamp: data.date)
+            self.contentLabel.text = data.content
+            
+            let processor = DownsamplingImageProcessor(size: .init(width: 40, height: 40)) // 크기 지정 다운 샘플링
+            
+            self.profileImageView.kf.indicatorType = .activity
+            KF.url(URL(string: data.user.image))
+                .placeholder(UIImage.petAvatar)
+                .setProcessor(processor)
+                .cacheOriginalImage()
+                .fade(duration: 0.25)
+                .onFailureImage(UIImage.secretProfile)
+                .onSuccess { result in }
+                .onFailure { error in }
+                .set(to: self.profileImageView)
+        } else {
+            self.postDateLabel.text = self.timestampToToday(timestamp: data.date)
+            self.contentLabel.text = SDLiteral.PostDetailViewController.secretCommentContent
+            self.profileImageView.image = .secretProfile
+        }
     }
     
     func settingMenu(menu: UIMenu) {
@@ -135,7 +140,11 @@ final class CommentCell: UICollectionViewCell {
     private func setupUI() {
         [
             nameLabel,
-            petNamesLabel,
+            postDateLabel
+        ].forEach { nameDateStackView.addArrangedSubview($0) }
+        
+        [
+            nameDateStackView,
             contentLabel
         ].forEach { verticalStackView.addArrangedSubview($0) }
         
@@ -154,6 +163,10 @@ final class CommentCell: UICollectionViewCell {
             configButton,
             buttonStackView
         ])
+        
+        nameDateStackView.axis = .horizontal
+        nameDateStackView.spacing = 2
+        nameDateStackView.alignment = .leading
         
         verticalStackView.axis = .vertical
         verticalStackView.spacing = 2
@@ -175,8 +188,8 @@ final class CommentCell: UICollectionViewCell {
         nameLabel.font = .body4
         nameLabel.textColor = .textPrimary
         
-        petNamesLabel.font = .body6
-        petNamesLabel.textColor = .gray400
+        postDateLabel.font = .body6
+        postDateLabel.textColor = .gray400
         
         contentLabel.layer.borderColor = UIColor.clear.cgColor
         contentLabel.layer.borderWidth = 1

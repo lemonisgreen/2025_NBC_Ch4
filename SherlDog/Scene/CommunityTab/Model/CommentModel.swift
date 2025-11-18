@@ -13,4 +13,5 @@ struct CommentModel: Codable {
     let content: String
     var documentId: String = ""
     let date: Timestamp
+    let isSecret: Bool
 }
