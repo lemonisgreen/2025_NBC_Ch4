@@ -608,12 +608,15 @@ extension PostDetailViewController {
         commentTextField.leftViewMode = .always
         commentTextField.rightView = self.isSecretToggleButton
         commentTextField.rightViewMode = .always
-        commentTextField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        // 설정 값이 낮을수록 우선적으로 늘려짐 -> 늘려지도록(버튼사이즈를 설정 후 남은 부분에 늘려져 빈 공간을 채우도록)
+        commentTextField.setContentHuggingPriority(.init(0), for: .horizontal)
         
         saveButton.setTitle(SDLiteral.PostDetailViewController.commentSaveButtonTitle,
                             for: .normal)
         saveButton.setTitleColor(.keycolorPrimary1, for: .normal)
         saveButton.titleLabel?.font = .body4
+        // 설정 값이 낮을수록 우선적으로 줄여짐 -> 줄여지지 않도록(텍스트필드가 늘려져도 버튼이 줄여지지 않도록)
+        saveButton.setContentCompressionResistancePriority(.init(1000), for: .horizontal)
         
         isSecretToggleButton.setImage(UIImage(systemName: "lock.open"), for: .normal)
         isSecretToggleButton.setImage(UIImage(systemName: "lock"), for: .selected)
