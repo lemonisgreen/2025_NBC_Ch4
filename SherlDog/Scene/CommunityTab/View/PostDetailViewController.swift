@@ -432,7 +432,7 @@ extension PostDetailViewController {
                             return collection ?? .invLogBoard
                         }()
                         
-                        footer.settingCell(data: post, collection: category)
+                        footer.settingCell(data: post, collection: category, isDetail: true)
                         footer.updatePage(total: count, current: 0)
                         
                         // footerViewModel

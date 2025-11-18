@@ -141,7 +141,7 @@ private extension UserPostsViewController {
                         return CommunitySectionType.allCases.indices.contains(index) ? CommunitySectionType.allCases[index].toFirestoreCollection : .invLogBoard
                     }()
                     
-                    footer.settingCell(data: sectionModel, collection: category)
+                    footer.settingCell(data: sectionModel, collection: category, isDetail: false)
                     footer.updatePage(total: count, current: 0)
                     
                     let footerVM = PostFooterViewModel(category: category, post: sectionModel)

@@ -163,7 +163,7 @@ private extension FindMateViewController {
                         for: indexPath
                     ) as? PostFooterView else { return UICollectionReusableView() }
                     let model = dataSource.sectionModels[indexPath.section].model
-                    footer.settingCell(data: model, collection: FirestoreCollection.detectiveMate )
+                    footer.settingCell(data: model, collection: FirestoreCollection.detectiveMate, isDetail: false)
                     footer.updatePage(total: dataSource.sectionModels[indexPath.section].items.count, current: 0)
                     return footer
                 default:

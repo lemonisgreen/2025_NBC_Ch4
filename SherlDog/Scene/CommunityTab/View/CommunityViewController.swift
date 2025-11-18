@@ -333,7 +333,7 @@ extension CommunityViewController {
                         : .invLogBoard
                     }()
                     
-                    footer.settingCell(data: sectionModel, collection: category)
+                    footer.settingCell(data: sectionModel, collection: category, isDetail: false)
                     footer.updatePage(total: count, current: 0)
 
                     // footerViewModel

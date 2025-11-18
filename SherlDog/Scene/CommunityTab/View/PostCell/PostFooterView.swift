@@ -67,7 +67,7 @@ final class PostFooterView: UICollectionReusableView {
             .disposed(by: disposeBag)
     }
     
-    func settingCell(data: CommunityModel, collection: FirestoreCollection) {
+    func settingCell(data: CommunityModel, collection: FirestoreCollection, isDetail: Bool) {
         captionLabel.text = data.content
         
         previewCommentButton.configuration?.attributedTitle = AttributedString(
@@ -75,6 +75,12 @@ final class PostFooterView: UICollectionReusableView {
             attributes: AttributeContainer([.font: UIFont.body6])
         )
         previewCommentButton.isHidden = (data.commentCount == 0 ? true : false)
+        
+        if isDetail {
+            captionLabel.numberOfLines = 0
+        } else {
+            captionLabel.numberOfLines = 2
+        }
     }
     
     // Update Page
