@@ -153,11 +153,14 @@ extension CommunityViewController {
             self?.showMenuAlert(type: .block(post.userId))
         }
         
-        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
+        let reportAction = UIAction(
+            title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                          SDLiteral.CommunityView.report)
+        ) { [weak self] _ in
+            guard let self else { return }
+            
+            self.showMenuAlert(type: .report(post.documentId)) { [weak self] in
                 self?.presentReportForPost(post)
-                self?.blockMessageAfterReport(userId: post.userId)
             }
         }
         
@@ -171,12 +174,17 @@ extension CommunityViewController {
                           documentId: post.documentId,
                           postUserId: post.userId)
         )
+        
+        reportVC.onReportCompleted = { [weak self] in
+                self?.blockMessageAfterReport(userId: post.userId)
+            }
         reportVC.modalPresentationStyle = .pageSheet
         reportVC.isModalInPresentation = true
         
         if let sheet = reportVC.sheetPresentationController {
             sheet.detents = [.large()]
             sheet.prefersGrabberVisible = false
+            sheet.preferredCornerRadius = 20
         }
         present(reportVC, animated: true)
     }
@@ -454,7 +462,6 @@ extension CommunityViewController {
             return section
         }
     }
-    
 }
 
 // MARK: - UI

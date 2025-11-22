@@ -331,10 +331,16 @@ extension UserPostsViewController {
                           documentId: post.documentId,
                           postUserId: post.userId)
         )
+        reportVC.onReportCompleted = { [weak self] in
+            self?.blockMessageAfterReport(userId: post.userId)
+        }
+        
         reportVC.modalPresentationStyle = .pageSheet
+        reportVC.isModalInPresentation = false
+        
         if let sheet = reportVC.sheetPresentationController {
             sheet.detents = [.large()]
-            sheet.prefersGrabberVisible = true
+            sheet.prefersGrabberVisible = false
         }
         present(reportVC, animated: true)
     }

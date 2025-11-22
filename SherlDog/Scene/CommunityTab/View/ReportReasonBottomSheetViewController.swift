@@ -68,7 +68,6 @@ final class ReportReasonBottomSheetViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
         
         containerView.backgroundColor = .white
         containerView.layer.cornerRadius = 24
@@ -77,7 +76,6 @@ final class ReportReasonBottomSheetViewController: UIViewController {
         
         stackView.axis = .vertical
         stackView.spacing = 0
-        //stackView.distribution = .fillEqually
         
         let topSpacer = UIView()
         topSpacer.snp.makeConstraints { $0.height.equalTo(4) }
@@ -106,7 +104,7 @@ final class ReportReasonBottomSheetViewController: UIViewController {
             }
         }
         
-        cancelButton.setTitle("취소", for: .normal)
+        cancelButton.setTitle(SDLiteral.AlertMessage.cancel, for: .normal)
         cancelButton.setTitleColor(.gray900, for: .normal)
         cancelButton.titleLabel?.font = .title3
         cancelButton.backgroundColor = .white

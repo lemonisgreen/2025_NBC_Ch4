@@ -30,6 +30,7 @@ enum FirestoreCollection: String, CaseIterable {
     case detectiveMate = "DetectiveMate"
     case invLogBoard = "InvLogBoard"
     case blockLog = "BlockLog"
+    case reportLog = "ReportLog"
 }
 
 enum FirestoreQueryType {
