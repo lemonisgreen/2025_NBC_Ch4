@@ -156,8 +156,8 @@ private extension UserPostsViewModel {
                         .catchAndReturn(.error)
                 case .report(let docId):
                     return FirestoreManager.shared.createDocument(
-                        collection: .reportLog,
-                        data: ReportModel(collection: collection.rawValue, documentId: docId),
+                        collection: .blockLog,
+                        data: BlockModel(collection: collection.rawValue, documentId: docId),
                         documentId: docId
                     )
                     .andThen(.just(.report(docId)))
