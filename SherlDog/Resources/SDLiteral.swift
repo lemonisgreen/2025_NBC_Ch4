@@ -105,4 +105,12 @@ enum SDLiteral {
     enum UserPostViewController {
         static let navigationTitle: String = "작성 글 둘러보기"
     }
+    
+    enum ReportViewController {
+        static let reportViewLabelTitle: String = "탐정 사무소"
+        static let closeButtonImageTitle: String = "xmark"
+        static let reportReasonButtonTitle: String = "신고 종류를 선택해 주세요"
+        static let textViewPlaceholderLabel: String = "신고 내용을 상세히 기입해 주세요."
+        static let reportConfirmButtonTitle: String = "신고하기"
+    }
 }
