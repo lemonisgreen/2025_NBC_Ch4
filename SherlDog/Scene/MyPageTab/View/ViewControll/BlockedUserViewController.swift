@@ -34,7 +34,6 @@ class BlockedUserViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
-        
         viewModel.fetchBlockedUsers()
     }
     
@@ -75,23 +74,33 @@ class BlockedUserViewController: UIViewController {
             .disposed(by: disposeBag)
         
         unblockButton.rx.tap
-            .bind { [weak self] in
-                let alert = CustomAlertViewController(
+            .withLatestFrom(viewModel.selectedIndexes.asObservable())
+            .observe(on: MainScheduler.instance)
+            .bind { [weak self] selected in
+                guard let self = self else { return }
+
+                if selected.isEmpty {
+                    let alert = CustomAlertViewController(
+                        message: SDLiteral.BlockedUserViewController.emptySelectedUnblockUsersAlertText,
+                        buttons: [
+                            .init(title: SDLiteral.AlertMessage.confirm, action: nil)
+                        ]
+                    )
+                    self.present(alert, animated: true)
+                    return
+                }
+
+                let confirm = CustomAlertViewController(
                     message: SDLiteral.BlockedUserViewController.unblcockAlertText,
                     buttons: [
-                        CustomAlertViewController.AlertButton(
-                            title: SDLiteral.AlertMessage.cancel,
-                            action: nil
-                        ),
-                        CustomAlertViewController.AlertButton(
-                            title: SDLiteral.AlertMessage.confirm,
-                            action: { [weak self] in
-                                self?.viewModel.unblockSelectedUsers()
-                                self?.viewModel.setEditing(false)
-                            }
-                        )
-                    ])
-                self?.present(alert, animated: true, completion: nil)
+                        .init(title: SDLiteral.AlertMessage.cancel, action: nil),
+                        .init(title: SDLiteral.AlertMessage.confirm, action: { [weak self] in
+                            self?.viewModel.unblockSelectedUsers()
+                            self?.viewModel.setEditing(false)
+                        })
+                    ]
+                )
+                self.present(confirm, animated: true)
             }
             .disposed(by: disposeBag)
         
