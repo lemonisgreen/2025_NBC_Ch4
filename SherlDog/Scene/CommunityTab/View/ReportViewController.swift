@@ -9,166 +9,153 @@ import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
-import FirebaseAuth
 
-class ReportViewController : UIViewController {
+final class ReportViewController: UIViewController {
     
-    enum Target {
-        case post(collection: FirestoreCollection, documentId: String, postUserId: String)
-        case user(userId: String)
-    }
+    var onReportCompleted: (() -> Void)?
     
-    private let target: Target
+    private let viewModel: ReportViewModel
     private let disposeBag = DisposeBag()
     
     private let reportViewLabel = UILabel()
     private let closeButton = UIButton()
-    
     private let reportReasonButton = UIButton()
-    
     private let contentTextView = UITextView()
     private let textViewPlaceholderLabel = UILabel()
     private let reportConfirmButton = ButtonFactory.makeButton(
         type: .main,
-        title: SDLiteral.ReportViewController.reportConfirmButtonTitle)
+        title: SDLiteral.ReportViewController.reportConfirmButtonTitle
+    )
     private let loadingIndicator = CustomLoadingIndicator()
     
     private var selectedReason: String? {
-           didSet { updateConfirmEnabled() }
-       }
+        didSet { updateConfirmEnabled() }
+    }
     
-    init(target: Target) {
-            self.target = target
-            super.init(nibName: nil, bundle: nil)
-        }
-        required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+    // MARK: - Init
+    init(target: ReportViewModel.Target) {
+        self.viewModel = ReportViewModel(target: target)
+        super.init(nibName: nil, bundle: nil)
+    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     
+    // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        bind()
         setupUI()
         configureUI()
+        bind()
     }
+}
+
+// MARK: - Bind
+private extension ReportViewController {
     
     func bind() {
-           closeButton.rx.tap
-               .bind { [weak self] in self?.dismiss(animated: true) }
-               .disposed(by: disposeBag)
-           
-           reportReasonButton.rx.tap
-               .bind { [weak self] in
-                   self?.presentReasonBottomSheet()
-               }
-               .disposed(by: disposeBag)
-           
-           contentTextView.rx.text.orEmpty
-               .subscribe(onNext: { [weak self] text in
-                   guard let self else { return }
-                   let isEmpty = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                   self.textViewPlaceholderLabel.isHidden = !isEmpty
-                   self.updateConfirmEnabled()
-               })
-               .disposed(by: disposeBag)
-           
-           reportConfirmButton.rx.tap
-               .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
-               .bind { [weak self] in
-                   self?.submitReport()
-               }
-               .disposed(by: disposeBag)
-       }
-       
-       func presentReasonBottomSheet() {
-           let sheet = ReportReasonBottomSheetViewController()
-           
-           sheet.selectedReason
-               .observe(on: MainScheduler.instance)
-               .subscribe(onNext: { [weak self] reason in
-                   guard let self else { return }
-                   
-                   let text = reason.rawValue
-                   
-                   self.selectedReason = text
-                   self.reportReasonButton.setTitle(text, for: .normal)
-               })
-               .disposed(by: disposeBag)
-           
-           if let sp = sheet.sheetPresentationController {
-               sp.detents = [.medium()]
-               sp.prefersGrabberVisible = true
-           }
-           present(sheet, animated: true)
-       }
-       
-       func updateConfirmEnabled() {
-           let hasReason = selectedReason != nil
-           let hasContent = !(contentTextView.text ?? "")
-               .trimmingCharacters(in: .whitespacesAndNewlines)
-               .isEmpty
-           
-           reportConfirmButton.isEnabled = hasReason && hasContent
-       }
-       
-       func submitReport() {
-           guard let reason = selectedReason else { return }
-           let detail = contentTextView.text ?? ""
-           let reporter = Auth.auth().currentUser?.uid ?? "anonymous"
-
-           let (collection, documentId): (FirestoreCollection, String) = {
-               switch target {
-               case let .post(collection, docId, _):
-                   return (collection, docId)
-               case let .user(userId):
-                   return (.humanProfile, userId)
-               }
-           }()
-           
-           let reportData = BlockModel(
-               collection: collection.rawValue,
-               documentId: documentId
-           )
+        closeButton.rx.tap
+            .bind { [weak self] in self?.dismiss(animated: true) }
+            .disposed(by: disposeBag)
         
-           FirestoreManager.shared.createDocument(
-               collection: .blockLog,
-               data: reportData,
-               documentId: documentId
-           )
-           .subscribe(onCompleted: { [weak self] in
-               guard let self else { return }
-               let alert = CustomAlertViewController(
-                   message: "신고가 접수되었습니다.",
-                   buttons: [
-                       .init(title: SDLiteral.AlertMessage.confirm, action: { [weak self] in
-                           self?.dismiss(animated: true)
-                       })
-                   ]
-               )
-               self.present(alert, animated: true)
-           }, onError: { error in
-               print("신고 실패:", error)
-           })
-           .disposed(by: disposeBag)
-       }
+        reportReasonButton.rx.tap
+            .bind { [weak self] in
+                self?.presentReasonBottomSheet()
+            }
+            .disposed(by: disposeBag)
+        
+        contentTextView.rx.text.orEmpty
+            .subscribe(onNext: { [weak self] text in
+                guard let self else { return }
+                let isEmpty = text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                self.textViewPlaceholderLabel.isHidden = !isEmpty
+                self.updateConfirmEnabled()
+            })
+            .disposed(by: disposeBag)
+        
+        reportConfirmButton.rx.tap
+            .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
+            .bind { [weak self] in
+                self?.submitReport()
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.isLoading
+            .observe(on: MainScheduler.instance)
+            .bind { [weak self] loading in
+                guard let self else { return }
+                self.loadingIndicator.isHidden = !loading
+                self.view.isUserInteractionEnabled = !loading
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.submitSuccess
+            .observe(on: MainScheduler.instance)
+            .bind { [weak self] in
+                guard let self else { return }
+                self.dismiss(animated: true) {
+                    self.onReportCompleted?()
+                }
+            }
+            .disposed(by: disposeBag)
+        
+        viewModel.output.submitError
+            .observe(on: MainScheduler.instance)
+            .bind { [weak self] _ in
+                guard let self else { return }
+                let alert = CustomAlertViewController(
+                    message: SDLiteral.ReportViewController.reportFailAlertMessageTitle,
+                    subMessage: nil,
+                    buttons: [
+                        .init(title: SDLiteral.AlertMessage.confirm, action: nil)
+                    ]
+                )
+                self.present(alert, animated: true)
+            }
+            .disposed(by: disposeBag)
+    }
     
-    private func presentReasonSheet() {
-        let sheet = ReportReasonBottomSheetViewController()
-        sheet.modalPresentationStyle = .overFullScreen
+    func presentReasonBottomSheet() {
+        let sheetVC = ReportReasonBottomSheetViewController()
         
-        sheet.selectedReason
+        sheetVC.modalPresentationStyle = .pageSheet
+        
+        if let sheet = sheetVC.sheetPresentationController {
+            sheet.detents = [
+                .medium()
+            ]
+            sheet.prefersGrabberVisible = false
+            sheet.preferredCornerRadius = 20
+        }
+        present(sheetVC, animated: true)
+        
+        sheetVC.selectedReason
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] reason in
                 guard let self else { return }
                 let text = reason.rawValue
-                
                 self.selectedReason = text
-                self.reportReasonButton.setTitle(reason.rawValue, for: .normal)
+                self.reportReasonButton.setTitle(text, for: .normal)
                 self.reportReasonButton.setTitleColor(.textPrimary, for: .normal)
-
             })
             .disposed(by: disposeBag)
-        present(sheet, animated: false)
     }
+    
+    func updateConfirmEnabled() {
+        let hasReason = selectedReason != nil
+        let hasContent = !(contentTextView.text ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
+        
+        reportConfirmButton.isEnabled = hasReason && hasContent
+    }
+    
+    func submitReport() {
+        guard let reason = selectedReason else { return }
+        let detail = contentTextView.text ?? ""
+        
+        viewModel.input.submit.accept((reason: reason, detail: detail))
+    }
+    
     
     private func setupUI() {
         view.backgroundColor = .keycolorBackground
