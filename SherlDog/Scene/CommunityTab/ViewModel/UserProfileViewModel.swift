@@ -55,10 +55,10 @@ final class UserProfileViewModel {
             .flatMapLatest { menu -> Observable<PostMenuEvent> in
                 switch menu {
                 case .report(let userId):
-                    let reportData = ReportModel(collection: FirestoreCollection.humanProfile.rawValue,
+                    let reportData = BlockModel(collection: FirestoreCollection.humanProfile.rawValue,
                                                  documentId: userId)
                     return FirestoreManager.shared.createDocument(
-                        collection: .reportLog,
+                        collection: .blockLog,
                         data: reportData,
                         documentId: userId
                     )
