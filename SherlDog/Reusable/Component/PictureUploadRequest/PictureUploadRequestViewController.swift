@@ -124,7 +124,12 @@ extension PictureUploadRequestViewController {
                         guard let self else { return }
                         switch isAllowed {
                         case true:
-                            let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: self.cameraViewModel))
+                            let cameraView = UINavigationController(
+                                rootViewController: CameraViewController(
+                                    viewModel: self.cameraViewModel,
+                                    invData: self.viewModel.output.invData.value
+                                )
+                            )
                             cameraView.modalPresentationStyle = .fullScreen
                             self.present(cameraView, animated: true)
                             
@@ -158,7 +163,11 @@ extension PictureUploadRequestViewController {
                         guard let self else { return }
                         switch isAllowed {
                         case true:
-                            let albumView = UINavigationController(rootViewController: AlbumViewController(viewModel: cameraViewModel))
+                            let albumView = UINavigationController(rootViewController: AlbumViewController(
+                                viewModel: cameraViewModel,
+                                invData: self.viewModel.output.invData.value
+                            )
+                            )
                             self.present(albumView, animated: true)
                             
                         case false:

@@ -4,6 +4,7 @@
 //
 //  Created by 전원식 on 6/17/25.
 //
+
 import UIKit
 import RxSwift
 import RxCocoa
@@ -42,7 +43,7 @@ class DataTrackingViewModel {
                 guard let self,
                       let result,
                       let date = DateFormatter.yyyyMMdd.date(from: result.date) else { return }
-
+                
                 self.numberOfSteps.accept(result.steps)
                 self.distance.accept(result.distance)
                 self.duration.accept(result.duration)
@@ -101,8 +102,6 @@ class DataTrackingViewModel {
             }
         }
     }
-    
-
     
     func saveWalkResult(selectedProfiles: [PetProfile]) {
         let dateString: String = {

@@ -71,7 +71,9 @@ extension CommunityViewController {
         self.addButton.rx.tap
             .asSignal()
             .emit(onNext: { [weak self] in
-                self?.navigationController?.pushViewController(AddNewContentViewController(), animated: true)
+                let addNewContentViewController = AddNewContentViewController()
+                addNewContentViewController.hidesBottomBarWhenPushed = true
+                self?.navigationController?.pushViewController(addNewContentViewController, animated: true)
             })
             .disposed(by: disposeBag)
         
@@ -133,6 +135,7 @@ extension CommunityViewController {
             }()
             
             let editView = AddNewContentViewController(category: category, post: post)
+            editView.hidesBottomBarWhenPushed = true
             self?.navigationController?.pushViewController(editView, animated: true)
         }
         
@@ -261,8 +264,13 @@ extension CommunityViewController {
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
                 let petProfile = dataSource.sectionModels[indexPath.section].model.petProfile
                 
-                cell.settingCell(item)
-                cell.settingPetProfile(profile: petProfile)
+                let category = CommunitySectionType.allCases[self.segmentedControl.selectedSegmentIndex]
+
+                cell.configureForCommunityPost(
+                    imageURL: item,
+                    petProfiles: petProfile,
+                    category: category
+                )
                 
                 cell.rx.mediaDoubleTap
                     .map { _ in dataSource.sectionModels[indexPath.section].model }
@@ -297,6 +305,7 @@ extension CommunityViewController {
                             // TODO: 프로필 뷰로 이동
                             let authorUserId = sectionModel.userId
                             let userProfileViewComtroll = UserProfileViewController(userId: authorUserId)
+                            userProfileViewComtroll.hidesBottomBarWhenPushed = true
                             self?.navigationController?.pushViewController(userProfileViewComtroll, animated: true)
                         })
                         .disposed(by: header.disposeBag)
