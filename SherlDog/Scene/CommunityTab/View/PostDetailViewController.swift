@@ -144,7 +144,7 @@ extension PostDetailViewController {
         let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
             guard let cell = self?.postDetailCollectionView.cellForItem(at: indexPath) as? CommentCell else { return }
-            cell.setFixMode(.fix)
+            cell.setFixMode(isFixMode: true)
             cell.contentLabel.becomeFirstResponder()
             
             // TODO: fixAction
@@ -368,14 +368,14 @@ extension PostDetailViewController {
                     
                     cell.rx.saveButtonTap
                         .bind(onNext: { [weak self] in
-                            cell.setFixMode(.done)
+                            cell.setFixMode(isFixMode: false)
                             self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.contentLabel.text ?? ""))
                         })
                         .disposed(by: cell.disposeBag)
                     
                     cell.rx.cancelButtonTap
                         .bind(onNext: {
-                            cell.setFixMode(.done)
+                            cell.setFixMode(isFixMode: false)
                         })
                         .disposed(by: cell.disposeBag)
                     
@@ -474,7 +474,7 @@ extension PostDetailViewController {
         
         return UICollectionViewCompositionalLayout { sectionIndex, env in
             switch sectionIndex {
-            case 0:
+            case 0: // 포스트 섹션
                 // 아이템(이미지 한 장)
                 let item = NSCollectionLayoutItem(
                     layoutSize: .init(widthDimension: .fractionalWidth(1.0),
@@ -529,8 +529,8 @@ extension PostDetailViewController {
                 }
                 
                 return section
-            case 1:
-                // FIXME: 레이아웃 설정
+                
+            case 1: // 댓글 섹션
                 let item = NSCollectionLayoutItem(
                     layoutSize: .init(widthDimension: .fractionalWidth(1),
                                       heightDimension: .fractionalHeight(1))
@@ -551,7 +551,7 @@ extension PostDetailViewController {
                 
                 let section = NSCollectionLayoutSection(group: group)
                 section.contentInsets = .init(top: 0, leading: inset, bottom: 0, trailing: inset)
-                section.interGroupSpacing = 0
+                section.interGroupSpacing = 30
                 section.boundarySupplementaryItems = [header]
                 
                 return section

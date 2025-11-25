@@ -12,15 +12,17 @@ import FirebaseFirestore
 import RxSwift
 import RxCocoa
 
-enum CommentFixMode {
-    case fix
-    case done
-}
-
 final class CommentCell: UICollectionViewCell {
     static let identifier: String = "CommentCell"
     
     var disposeBag = DisposeBag()
+    private lazy var maxContentHeight: CGFloat = {
+        let lineHeight = contentLabel.font?.lineHeight ?? 0
+        let textInset = contentLabel.textContainerInset.top + contentLabel.textContainerInset.bottom
+        let contentInset = contentLabel.contentInset.top + contentLabel.contentInset.bottom
+        // 3줄 + 인셋
+        return lineHeight * 3 + textInset + contentInset
+    }()
     
     private let profileImageView = UIImageView()
     private let nameLabel = UILabel()
@@ -39,6 +41,7 @@ final class CommentCell: UICollectionViewCell {
         
         setupUI()
         configureUI()
+        bind()
     }
     
     override func layoutSubviews() {
@@ -57,7 +60,6 @@ final class CommentCell: UICollectionViewCell {
         contentLabel.layer.borderColor = UIColor.clear.cgColor
         contentLabel.allowsEditingTextAttributes = false
         contentLabel.isEditable = false
-        updateTextViewHeight()
         disposeBag = DisposeBag()
     }
     
@@ -65,23 +67,21 @@ final class CommentCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    func setFixMode(_ mode: CommentFixMode) {
-        switch mode {
-        case .fix:
-            contentLabel.layer.borderColor = UIColor.textPrimary.cgColor
-            contentLabel.allowsEditingTextAttributes = true
-            contentLabel.isEditable = true
-            contentLabel.isScrollEnabled = true
-            configButton.isHidden = true
-            buttonStackView.isHidden = false
-        case .done:
-            contentLabel.layer.borderColor = UIColor.clear.cgColor
-            contentLabel.allowsEditingTextAttributes = false
-            contentLabel.isEditable = false
-            updateTextViewHeight()
-            configButton.isHidden = false
-            buttonStackView.isHidden = true
-        }
+    private func bind() {
+        self.contentLabel.rx.text.orEmpty
+            .bind(onNext: { [weak self] text in
+                self?.updateTextViewHeight()
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func setFixMode(isFixMode: Bool) {
+        contentLabel.layer.borderColor = isFixMode ? UIColor.textPrimary.cgColor : UIColor.clear.cgColor
+        contentLabel.allowsEditingTextAttributes = isFixMode
+        contentLabel.isEditable = isFixMode
+        contentLabel.isScrollEnabled = isFixMode
+        configButton.isHidden = isFixMode
+        buttonStackView.isHidden = !isFixMode
     }
     
     func settingCell(data: CommentModel, canOpen: Bool) {
@@ -124,15 +124,22 @@ final class CommentCell: UICollectionViewCell {
     
     private func updateTextViewHeight() {
         let fixedWidth = contentLabel.bounds.width
-
-        let newSize = contentLabel.sizeThatFits(
+        
+        contentLabel.isScrollEnabled = false
+        
+        let fittingSize = contentLabel.sizeThatFits(
             CGSize(width: fixedWidth, height: .greatestFiniteMagnitude)
         )
-
-        contentLabel.isScrollEnabled = false
-
+        let fullHeight = fittingSize.height
+        
+        
+        let cappedHeight = min(fullHeight, maxContentHeight)
+        
+        
+        contentLabel.isScrollEnabled = fullHeight > maxContentHeight
+        
         contentLabel.snp.updateConstraints {
-            $0.height.equalTo(newSize.height)
+            $0.height.equalTo(cappedHeight)
         }
     }
     
@@ -223,12 +230,12 @@ final class CommentCell: UICollectionViewCell {
         }
         
         configButton.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.top)
+            $0.centerY.equalTo(nameLabel)
             $0.trailing.equalToSuperview()
         }
         
         buttonStackView.snp.makeConstraints {
-            $0.top.equalTo(nameLabel.snp.top)
+            $0.centerY.equalTo(nameLabel)
             $0.trailing.equalToSuperview()
         }
     }
