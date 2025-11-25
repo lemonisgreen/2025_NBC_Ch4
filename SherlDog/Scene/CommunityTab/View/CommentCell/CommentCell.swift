@@ -124,17 +124,14 @@ final class CommentCell: UICollectionViewCell {
     
     private func updateTextViewHeight() {
         let fixedWidth = contentLabel.bounds.width
-        
-        contentLabel.isScrollEnabled = false
+//        contentLabel.isScrollEnabled = false
         
         let fittingSize = contentLabel.sizeThatFits(
             CGSize(width: fixedWidth, height: .greatestFiniteMagnitude)
         )
         let fullHeight = fittingSize.height
         
-        
         let cappedHeight = min(fullHeight, maxContentHeight)
-        
         
         contentLabel.isScrollEnabled = fullHeight > maxContentHeight
         
