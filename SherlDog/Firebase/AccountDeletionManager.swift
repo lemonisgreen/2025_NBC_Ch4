@@ -15,7 +15,6 @@ import UIKit
 
 final class AccountDeletionManager {
     static let shared = AccountDeletionManager()
-    
     private init() {}
     
     // MARK: - 메인 회원탈퇴 메서드
@@ -26,24 +25,36 @@ final class AccountDeletionManager {
         }
         
         let userId = currentUser.uid
+        let provider = AuthSession.currentProvider
         
-        // 재인증 먼저 수행
-        performReauthentication(from: viewController) { [weak self] reauthSuccess in
-            if !reauthSuccess {
+        // 1. 재인증
+        performReauthentication(provider: provider, from: viewController) { [weak self] reauthSuccess in
+            guard let self else { return }
+            
+            guard reauthSuccess else {
                 completion(false)
                 return
             }
             
-            // 재인증 성공 후 삭제 진행
-            self?.deleteUserData(userId: userId) { dataSuccess in
-                self?.unlinkSocialAccount { socialSuccess in
-                    // Firebase Auth 계정 삭제
+            // 2. Firestore 유저 데이터 삭제
+            self.deleteUserData(userId: userId) { dataSuccess in
+                
+                // 3. 소셜 계정 unlink / 로그아웃
+                self.unlinkSocialAccount(provider: provider) { _ in
+                    
+                    // 4. Firebase Auth 계정 삭제
                     Auth.auth().currentUser?.delete { error in
                         if let error = error {
                             print("Firebase Auth 계정 삭제 실패: \(error)")
                             completion(false)
                         } else {
-                            self?.clearAllUserDefaults()
+                            // provider 플래그 정리
+                            AuthSession.clearProvider()
+                            // Firestore 데이터가 일부 실패한 경우도 로그로만 남기고,
+                            // 회원탈퇴 UX는 일단 성공으로 처리
+                            if !dataSuccess {
+                                print("⚠️ Firestore 데이터 일부 삭제 실패")
+                            }
                             completion(true)
                         }
                     }
@@ -53,14 +64,19 @@ final class AccountDeletionManager {
     }
     
     // MARK: - 재인증
-    private func performReauthentication(from viewController: UIViewController, completion: @escaping (Bool) -> Void) {
-        if UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") {
+    private func performReauthentication(
+        provider: SocialLoginProvider,
+        from viewController: UIViewController,
+        completion: @escaping (Bool) -> Void
+    ) {
+        switch provider {
+        case .kakao:
             reauthenticateWithKakao(completion: completion)
-        } else if UserDefaults.standard.bool(forKey: "isGoogleLoggedIn") {
+        case .google:
             reauthenticateWithGoogle(from: viewController, completion: completion)
-        } else if UserDefaults.standard.bool(forKey: "isAppleLoggedIn") {
-            reauthenticateWithApple(from: viewController, completion: completion)
-        } else {
+        case .apple:
+            reauthenticateWithApple(completion: completion)
+        case .none:
             completion(false)
         }
     }
@@ -68,7 +84,7 @@ final class AccountDeletionManager {
     private func reauthenticateWithKakao(completion: @escaping (Bool) -> Void) {
         KakaoLoginManager.shared.login { result in
             switch result {
-            case .success(_):
+            case .success:
                 completion(true)
             case .failure(let error):
                 if case .userCancelled = error {
@@ -80,9 +96,13 @@ final class AccountDeletionManager {
         }
     }
     
-    private func reauthenticateWithGoogle(from viewController: UIViewController, completion: @escaping (Bool) -> Void) {
+    private func reauthenticateWithGoogle(
+        from viewController: UIViewController,
+        completion: @escaping (Bool) -> Void
+    ) {
         GIDSignIn.sharedInstance.signIn(withPresenting: viewController) { result, error in
             if let error = error {
+                print("Google 재인증 실패: \(error)")
                 completion(false)
                 return
             }
@@ -99,12 +119,17 @@ final class AccountDeletionManager {
             )
             
             Auth.auth().currentUser?.reauthenticate(with: credential) { _, error in
-                completion(error == nil)
+                if let error = error {
+                    print("Firebase Google 재인증 실패: \(error)")
+                    completion(false)
+                } else {
+                    completion(true)
+                }
             }
         }
     }
     
-    private func reauthenticateWithApple(from viewController: UIViewController, completion: @escaping (Bool) -> Void) {
+    private func reauthenticateWithApple(completion: @escaping (Bool) -> Void) {
         let nonce = randomNonceString()
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.requestedScopes = [.email]
@@ -117,83 +142,82 @@ final class AccountDeletionManager {
         authorizationController.performRequests()
     }
     
-    // MARK: - 데이터 삭제
+    // MARK: - Firestore 데이터 삭제
     private func deleteUserData(userId: String, completion: @escaping (Bool) -> Void) {
         let db = Firestore.firestore()
-        let collectionsToDelete = FirestoreCollection.allCases.map { $0.rawValue }
+        let collections = FirestoreCollection.allCases.map(\.rawValue)
         
-        var deletionTasks = 0
-        let totalTasks = collectionsToDelete.count
+        let group = DispatchGroup()
         var hasError = false
         
-        for collection in collectionsToDelete {
+        // 각 도메인 컬렉션에서 userId 기반 문서 삭제
+        for collection in collections {
+            group.enter()
             db.collection(collection)
                 .whereField("userId", isEqualTo: userId)
                 .getDocuments { snapshot, error in
-                    defer {
-                        deletionTasks += 1
-                        if deletionTasks == totalTasks {
-                            completion(!hasError)
-                        }
-                    }
                     
                     if let error = error {
                         print("컬렉션 \(collection) 조회 실패: \(error)")
                         hasError = true
+                        group.leave()
                         return
                     }
                     
-                    guard let documents = snapshot?.documents else { return }
-                    
-                    let batch = db.batch()
-                    for document in documents {
-                        batch.deleteDocument(document.reference)
+                    guard let documents = snapshot?.documents, !documents.isEmpty else {
+                        group.leave()
+                        return
                     }
                     
-                    if !documents.isEmpty {
-                        batch.commit { error in
-                            if let error = error {
-                                print("배치 삭제 실패: \(error)")
-                                hasError = true
-                            }
+                    let batch = db.batch()
+                    documents.forEach { batch.deleteDocument($0.reference) }
+                    
+                    batch.commit { error in
+                        if let error = error {
+                            print("컬렉션 \(collection) 배치 삭제 실패: \(error)")
+                            hasError = true
                         }
+                        group.leave()
                     }
                 }
         }
-        db.collection("users").document(userId).delete()
+        
+        // users 컬렉션 문서 삭제
+        group.enter()
+        db.collection("users").document(userId).delete { error in
+            if let error = error {
+                print("users 문서 삭제 실패: \(error)")
+                hasError = true
+            }
+            group.leave()
+        }
+        
+        group.notify(queue: .main) {
+            completion(!hasError)
+        }
     }
     
-    private func unlinkSocialAccount(completion: @escaping (Bool) -> Void) {
-        if UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") {
+    // MARK: - 소셜 계정 unlink / 로그아웃
+    private func unlinkSocialAccount(
+        provider: SocialLoginProvider,
+        completion: @escaping (Bool) -> Void
+    ) {
+        switch provider {
+        case .kakao:
             KakaoLoginManager.shared.unlink { success in
                 completion(success)
             }
-        } else if UserDefaults.standard.bool(forKey: "isGoogleLoggedIn") {
+        case .google:
+            // 구글은 Firebase 계정 삭제 전에 signOut 정도만 해주면 됨
             GIDSignIn.sharedInstance.signOut()
             completion(true)
-        } else if UserDefaults.standard.bool(forKey: "isAppleLoggedIn") {
-            completion(true)
-        } else {
+        case .apple, .none:
+            // 애플은 실제 "unlink" 개념이 애매해서, Firebase 계정 삭제로 정리
             completion(true)
         }
     }
     
-    private func clearAllUserDefaults() {
-        let keysToRemove = [
-            "isKakaoLoggedIn",
-            "isGoogleLoggedIn",
-            "isAppleLoggedIn",
-            "userNickname",
-            "userEmail",
-            "firebaseUID"
-        ]
-        
-        keysToRemove.forEach { key in
-            UserDefaults.standard.removeObject(forKey: key)
-        }
-    }
-    
-    // MARK: - 헬퍼 메서드들
+    // MARK: - 헬퍼 메서드들 (nonce / sha256)
     private func randomNonceString(length: Int = 32) -> String {
         precondition(length > 0)
         let charset: [Character] = Array("0123456789ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz-._")
@@ -210,8 +234,8 @@ final class AccountDeletionManager {
                 return random
             }
             
-            randoms.forEach { random in
-                if remainingLength == 0 { return }
+            for random in randoms {
+                if remainingLength == 0 { break }
                 if random < charset.count {
                     result.append(charset[Int(random)])
                     remainingLength -= 1
@@ -224,10 +248,7 @@ final class AccountDeletionManager {
     private func sha256(_ input: String) -> String {
         let inputData = Data(input.utf8)
         let hashedData = SHA256.hash(data: inputData)
-        let hashString = hashedData.compactMap {
-            String(format: "%02x", $0)
-        }.joined()
-        return hashString
+        return hashedData.map { String(format: "%02x", $0) }.joined()
     }
 }
 
@@ -243,31 +264,32 @@ private class AppleReauthDelegate: NSObject, ASAuthorizationControllerDelegate, 
         super.init()
     }
     
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        if let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential {
-            guard let appleIDToken = appleIDCredential.identityToken,
-                  let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-                completion(false)
-                return
-            }
-            
-            let credential = OAuthProvider.credential(
-                withProviderID: "apple.com",
-                idToken: idTokenString,
-                rawNonce: nonce
-            )
-            
-            Auth.auth().currentUser?.reauthenticate(with: credential) { _, error in
-                DispatchQueue.main.async {
-                    self.completion(error == nil)
-                }
-            }
-        } else {
+    func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let appleIDCredential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let appleIDToken = appleIDCredential.identityToken,
+              let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
             completion(false)
+            return
+        }
+        
+        let credential = OAuthProvider.credential(
+            withProviderID: "apple.com",
+            idToken: idTokenString,
+            rawNonce: nonce,
+        )
+        
+        Auth.auth().currentUser?.reauthenticate(with: credential) { _, error in
+            DispatchQueue.main.async {
+                self.completion(error == nil)
+            }
         }
     }
     
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        print("Apple 재인증 실패: \(error)")
         completion(false)
     }
     
