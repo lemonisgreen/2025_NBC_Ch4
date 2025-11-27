@@ -74,21 +74,21 @@ class DetectiveCardView: UIView {
         self.addSubview(menuButton)
         setupMenu()
         
-        self.layer.cornerRadius = 16
+        self.layer.cornerRadius = 12
         self.layer.masksToBounds = true
         self.layer.borderWidth = 1
-        self.layer.borderColor = UIColor.textTertiary.cgColor
-        self.backgroundColor = .keycolorSecondary4
+        self.layer.borderColor = UIColor.gray600.cgColor
+        self.backgroundColor = .keycolorSecondary3
         
-        detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary1
+        detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary2
         detectiveHeaderBackgroundView.layer.borderWidth = 1
-        detectiveHeaderBackgroundView.layer.borderColor = UIColor.textTertiary.cgColor
+        detectiveHeaderBackgroundView.layer.borderColor = UIColor.gray600.cgColor
         
-        detectiveCardLabel.text = "멍탐정 프로필 카드"
+        detectiveCardLabel.text = SDLiteral.DetectiveCardView.detectiveCardLabelTitle
         detectiveCardLabel.font = UIFont.cardTitle
         detectiveCardLabel.textColor = .textPrimary
         
-        detectiveNumberLabel.text = "탐정 번호"
+        detectiveNumberLabel.text = SDLiteral.DetectiveCardView.detectiveNumberLabeTitle
         detectiveNumberLabel.font = UIFont.alert2
         detectiveNumberLabel.textColor = .textPrimary
         
@@ -98,7 +98,7 @@ class DetectiveCardView: UIView {
         detectivePhotoImageView.layer.cornerRadius = 4
         detectivePhotoImageView.clipsToBounds = true
         
-        detectiveNameLabel.text = "탐정명"
+        detectiveNameLabel.text = SDLiteral.DetectiveCardView.detectiveNameLabelTitle
         detectiveNameLabel.verticalAlignment = .top
         detectiveNameLabel.font = UIFont.alert1
         detectiveNameLabel.textColor = .textSecondary
@@ -106,7 +106,7 @@ class DetectiveCardView: UIView {
         detectiveName.font = UIFont.body4
         detectiveName.textColor = .textPrimary
         
-        detectiveBreedLabel.text = "견종"
+        detectiveBreedLabel.text = SDLiteral.DetectiveCardView.detectiveBreedLabelTItle
         detectiveBreedLabel.verticalAlignment = .top
         detectiveBreedLabel.font = UIFont.alert1
         detectiveBreedLabel.textColor = .textSecondary
@@ -114,7 +114,7 @@ class DetectiveCardView: UIView {
         detectiveBreed.font = UIFont.body4
         detectiveBreed.textColor = .textPrimary
         
-        detectiveAgeLabel.text = "나이"
+        detectiveAgeLabel.text = SDLiteral.DetectiveCardView.detectiveAgeLabelTitle
         detectiveAgeLabel.verticalAlignment = .top
         detectiveAgeLabel.font = UIFont.alert1
         detectiveAgeLabel.textColor = .textSecondary
@@ -122,7 +122,7 @@ class DetectiveCardView: UIView {
         detectiveAge.font = UIFont.body4
         detectiveAge.textColor = .textPrimary
         
-        detectiveIntroduceLabel.text = "성격 및 특성"
+        detectiveIntroduceLabel.text = SDLiteral.DetectiveCardView.detectiveIntroduceLabelTitle
         detectiveIntroduceLabel.verticalAlignment = .top
         detectiveIntroduceLabel.font = UIFont.alert1
         detectiveIntroduceLabel.textColor = .textSecondary

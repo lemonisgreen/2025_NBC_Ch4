@@ -114,5 +114,14 @@ enum SDLiteral {
         static let reportConfirmButtonTitle: String = "신고하기"
         static let reportFailAlertMessageTitle: String = "신고 처리 중 오류가 발생했습니다."
     }
+    
+    enum DetectiveCardView {
+        static let detectiveCardLabelTitle: String = "멍탐정 프로필 카드"
+        static let detectiveNumberLabeTitle: String = "탐정 번호"
+        static let detectiveNameLabelTitle: String = "탐정명"
+        static let detectiveBreedLabelTItle: String = "견종"
+        static let detectiveAgeLabelTitle: String = "나이"
+        static let detectiveIntroduceLabelTitle: String = "성격 및 특성"
+    }
 }
 
