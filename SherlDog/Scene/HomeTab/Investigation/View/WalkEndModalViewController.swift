@@ -35,7 +35,7 @@ class WalkEndModalViewController : UIViewController {
     ]
     private let walkEndLabel = UILabel()
     private let showProfileButton = UIButton()
-    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "멍탐정과 남긴 단서")
+    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "수사 일지 공유하기")
     private let mapImageView = UIImageView()
     private let closeButton = UIButton()
     private let loadingIndicator = CustomLoadingIndicator()
@@ -161,25 +161,53 @@ class WalkEndModalViewController : UIViewController {
         self.walkShareButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 guard let self, let day = self.dataTrackingViewModel.endDate.value else { return }
-                //                let requestViewModel = PictureUploadRequestViewModel()
-                //                requestViewModel.input.accept(.sender(.pictureRequest))
-                //                let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
-                //
-                //                if let sheet = requestView.sheetPresentationController {
-                //                    sheet.detents = [.custom { _ in 320 }]
-                //                    sheet.selectedDetentIdentifier = .medium
-                //                    sheet.prefersGrabberVisible = true
-                //                    sheet.preferredCornerRadius = 20
-                //                }
-                //
-                //                self?.present(requestView, animated: true)
                 
-                let viewModel = ClueDetailViewModel(day: day)
-                let detailVC = ClueDetailViewController(viewModel: viewModel)
-                let nav = UINavigationController(rootViewController: detailVC)
-                nav.modalPresentationStyle = .pageSheet
-                nav.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
-                self.present(nav, animated: true)
+                let clueViewModel = ClueDetailViewModel(day: day)
+                
+                Observable.combineLatest(
+                    self.dataTrackingViewModel.numberOfSteps,
+                    self.dataTrackingViewModel.distance,
+                    self.dataTrackingViewModel.duration,
+                    self.dataTrackingViewModel.endDate,
+                    clueViewModel.clueCount
+                )
+                .take(1)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onNext: { [weak self, day] steps, distance, duration, endDate, clueCount in
+                    guard let self else { return }
+                    
+                    let inv = InvData(
+                        steps: steps,
+                        distanceMeters: distance,
+                        durationText: duration,
+                        endDate: endDate,
+                        clueCount: clueCount
+                    )
+                    
+                    let requestViewModel = PictureUploadRequestViewModel()
+                    requestViewModel.output.invData.accept(inv)
+                    requestViewModel.input.accept(.sender(.pictureRequest))
+                    
+                    let requestView = UINavigationController(rootViewController: PictureUploadRequestViewController(viewModel: requestViewModel))
+                    
+                    if let sheet = requestView.sheetPresentationController {
+                        sheet.setModalSize(type: .pictureWithoutAvatar, grabber: true)
+                        sheet.preferredCornerRadius = 20
+                    }
+                    
+                    self.present(requestView, animated: true)
+                    
+                    // 커뮤니티탭 개발 전, 이번 산책에서 남긴 단서 모아보기 기능
+                    
+                    //                let viewModel = ClueDetailViewModel(day: day)
+                    //                let detailVC = ClueDetailViewController(viewModel: viewModel)
+                    //                let nav = UINavigationController(rootViewController: detailVC)
+                    //                nav.modalPresentationStyle = .pageSheet
+                    //                nav.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
+                    //                self.present(nav, animated: true)
+                })
+                .disposed(by: self.disposeBag)
+                
             })
             .disposed(by: disposeBag)
         

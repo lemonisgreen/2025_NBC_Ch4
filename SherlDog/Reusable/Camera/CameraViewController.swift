@@ -16,6 +16,7 @@ import CoreLocation
 class CameraViewController: UIViewController {
     
     private let viewModel: CameraViewModel
+    private let invData: InvData?
     private let disposeBag = DisposeBag()
     
     private var viewControllerForPicture: UIViewController?
@@ -32,9 +33,10 @@ class CameraViewController: UIViewController {
     private let guideLabel = UILabel()
     
     // MARK: - Initialize
-    init(viewModel: CameraViewModel) {
+    init(viewModel: CameraViewModel, invData: InvData? = nil) {
         self.viewModel = viewModel
-        
+        self.invData = invData
+
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -120,7 +122,13 @@ extension CameraViewController {
                     self.guideLabel.isHidden = false
                     
                 case .communityShare:
-                    self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
+                    
+                    self.viewControllerForPicture = UINavigationController(
+                                          rootViewController: CreateLogViewController(
+                                              viewModel: self.viewModel,
+                                              invData: self.invData
+                                          )
+                                      )
                     
                 case .profile: return
                 }

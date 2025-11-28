@@ -141,26 +141,11 @@ private extension UserPostsViewController {
                         return CommunitySectionType.allCases.indices.contains(index) ? CommunitySectionType.allCases[index].toFirestoreCollection : .invLogBoard
                     }()
                     
-                    footer.settingCell(data: sectionModel, collection: category)
+                    footer.settingCell(data: sectionModel, collection: category, isDetail: false)
                     footer.updatePage(total: count, current: 0)
                     
                     let footerVM = PostFooterViewModel(category: category, post: sectionModel)
-                    let output = footerVM.transform(input: .init(
-                        likeTap: footer.rx.likeButtonTap
-                            .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
-                            .asSignal(onErrorSignalWith: .empty())
-                    ))
-                    
-                    output.state
-                        .drive(onNext: { [weak footer] state in
-                            footer?.updateLike(state)
-                        })
-                        .disposed(by: footer.disposeBag)
-                    
-                    footer.rx.likeButtonTap
-                        .map { sectionModel }
-                        .bind(to: self.likeButtonEvent)
-                        .disposed(by: footer.disposeBag)
+                    footer.bind(viewModel: footerVM)
                     
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
