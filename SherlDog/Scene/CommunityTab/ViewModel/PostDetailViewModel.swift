@@ -18,7 +18,7 @@ enum CommentEvent {
     case fix(documentId: String, content: String)
     case delete(String)
     case block(String)
-    case report(String)
+    case report(documentId: String, userId: String)
     case error
 }
 
@@ -43,6 +43,7 @@ final class PostDetailViewModel {
     struct Output {
         let postDetailData: Driver<[PostDetailSectionModel]>
         let isUpdating: Driver<Bool>
+        let showReport: Signal<ReportViewModel.Target>
     }
     
     typealias PostDetailSectionModel = SectionModel<PostDetailSectionModelType, PostDetailItem>
@@ -53,6 +54,7 @@ final class PostDetailViewModel {
             $0.rawValue == self.originalPost.category
         }.first ?? .invLogBoard
     }()
+    private let showReportSubject = PublishSubject<ReportViewModel.Target>()
     private let disposeBag = DisposeBag()
     
     init(post: CommunityModel) {
@@ -88,9 +90,32 @@ final class PostDetailViewModel {
         let isUpdating = self.isUpdating(start: refreshTrigger,
                                          end: fetchStream)
         
+        input.postMenuEvent
+            .subscribe(onNext: { [weak self] event in
+                guard let self else { return }
+                
+                switch event {
+                case let .report(documentId):
+                    let target = ReportViewModel.Target.post(
+                        collection: self.category,
+                        documentId: documentId,
+                        postUserId: self.originalPost.userId
+                    )
+                    self.showReportSubject.onNext(target)
+                    
+                default:
+                    break
+                }
+            })
+            .disposed(by: disposeBag)
+        
+        let showReport = showReportSubject
+            .asSignal(onErrorSignalWith: .empty())
+        
         return Output(
             postDetailData: postDetailData,
-            isUpdating: isUpdating
+            isUpdating: isUpdating,
+            showReport: showReport
         )
     }
     
@@ -226,9 +251,9 @@ extension PostDetailViewModel {
                     
                 case let .fix(documentId, content):
                     return CommunityActionManager.shared.updateComment(collection: self.category,
-                                                                postCode: self.originalPost.documentId,
-                                                                commentDocumentId: documentId,
-                                                                text: content)
+                                                                       postCode: self.originalPost.documentId,
+                                                                       commentDocumentId: documentId,
+                                                                       text: content)
                     .andThen(.just(state))
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
                     
@@ -238,23 +263,23 @@ extension PostDetailViewModel {
                                                                        commentDocumentId: documentId)
                     .andThen(.just(state))
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-
+                    
                     
                 case let .block(userId):
                     return BlockManager.shared.blockUser(userId)
                         .andThen(.just(state))
                         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-
                     
-                case let .report(documentId):
-                    let reportData = ReportModel(collection: "\(self.category.rawValue) -> \(self.originalPost.documentId)",
-                                                 documentId: documentId)
                     
-                    return FirestoreManager.shared.createDocument(collection: .reportLog,
-                                                           data: reportData,
-                                                           documentId: documentId)
-                    .andThen(.just(state))
-                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+                case let .report(documentId, userId):
+                    let target = ReportViewModel.Target.post(
+                        collection: self.category,
+                        documentId: documentId,
+                        postUserId: userId
+                    )
+                    self.showReportSubject.onNext(target)
+                    
+                    return .just(state)
                     
                 case .error:
                     return .error(FirestoreError.unknown)
