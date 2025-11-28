@@ -74,7 +74,7 @@ final class KakaoLoginManager {
     
     /// 카카오 로그인 진입점
     func login(completion: @escaping (KakaoLoginResult) -> Void) {
-        // 카카오톡 앱 로그인 가능하면 앱으로, 아니면 웹으로
+        
         if UserApi.isKakaoTalkLoginAvailable() {
             loginWithKakaoTalk(completion: completion)
         } else {

@@ -17,6 +17,9 @@ final class AccountDeletionManager {
     static let shared = AccountDeletionManager()
     private init() {}
     
+    private var appleReauthDelegate: AppleReauthDelegate?
+    private var appleAuthController: ASAuthorizationController?
+    
     // MARK: - 메인 회원탈퇴 메서드
     func deleteAccount(from viewController: UIViewController, completion: @escaping (Bool) -> Void) {
         guard let currentUser = Auth.auth().currentUser else {
@@ -48,10 +51,7 @@ final class AccountDeletionManager {
                             print("Firebase Auth 계정 삭제 실패: \(error)")
                             completion(false)
                         } else {
-                            // provider 플래그 정리
                             AuthSession.clearProvider()
-                            // Firestore 데이터가 일부 실패한 경우도 로그로만 남기고,
-                            // 회원탈퇴 UX는 일단 성공으로 처리
                             if !dataSuccess {
                                 print("⚠️ Firestore 데이터 일부 삭제 실패")
                             }
@@ -75,7 +75,7 @@ final class AccountDeletionManager {
         case .google:
             reauthenticateWithGoogle(from: viewController, completion: completion)
         case .apple:
-            reauthenticateWithApple(completion: completion)
+            reauthenticateWithApple(from: viewController, completion: completion)
         case .none:
             completion(false)
         }
@@ -129,17 +129,28 @@ final class AccountDeletionManager {
         }
     }
     
-    private func reauthenticateWithApple(completion: @escaping (Bool) -> Void) {
+    private func reauthenticateWithApple(from viewController: UIViewController,
+                                         completion: @escaping (Bool) -> Void) {
         let nonce = randomNonceString()
         let request = ASAuthorizationAppleIDProvider().createRequest()
         request.requestedScopes = [.email]
         request.nonce = sha256(nonce)
         
-        let authorizationController = ASAuthorizationController(authorizationRequests: [request])
-        let delegate = AppleReauthDelegate(nonce: nonce, completion: completion)
-        authorizationController.delegate = delegate
-        authorizationController.presentationContextProvider = delegate
-        authorizationController.performRequests()
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        
+        let delegate = AppleReauthDelegate(nonce: nonce) { [weak self] success in
+            completion(success)
+            self?.appleReauthDelegate = nil
+            self?.appleAuthController = nil
+        }
+        
+        controller.delegate = delegate
+        controller.presentationContextProvider = delegate
+        
+        self.appleReauthDelegate = delegate
+        self.appleAuthController = controller
+        
+        controller.performRequests()
     }
     
     // MARK: - Firestore 데이터 삭제
@@ -208,11 +219,11 @@ final class AccountDeletionManager {
                 completion(success)
             }
         case .google:
-            // 구글은 Firebase 계정 삭제 전에 signOut 정도만 해주면 됨
+            // 구글은 Firebase 계정 삭제 전에 signOut
             GIDSignIn.sharedInstance.signOut()
             completion(true)
         case .apple, .none:
-            // 애플은 실제 "unlink" 개념이 애매해서, Firebase 계정 삭제로 정리
+            // 애플은 실제 "unlink" 개념이 애매해서 Firebase 계정 삭제로 정리
             completion(true)
         }
     }
@@ -278,7 +289,7 @@ private class AppleReauthDelegate: NSObject, ASAuthorizationControllerDelegate, 
         let credential = OAuthProvider.credential(
             withProviderID: "apple.com",
             idToken: idTokenString,
-            rawNonce: nonce,
+            rawNonce: nonce
         )
         
         Auth.auth().currentUser?.reauthenticate(with: credential) { _, error in

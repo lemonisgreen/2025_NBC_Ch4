@@ -6,153 +6,124 @@
 //
 
 import UIKit
-import KakaoSDKAuth
 import FirebaseAuth
+import KakaoSDKUser
+import KakaoSDKAuth
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     var window: UIWindow?
     
-    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
-        guard let windowScene = (scene as? UIWindowScene) else { return }
+    func scene(_ scene: UIScene,
+               willConnectTo session: UISceneSession,
+               options connectionOptions: UIScene.ConnectionOptions) {
+        
+        if let url = connectionOptions.urlContexts.first?.url {
+            if AuthApi.isKakaoTalkLoginUrl(url) {
+                _ = AuthController.handleOpenUrl(url: url)
+            }
+        }
+        
+        guard let windowScene = scene as? UIWindowScene else { return }
         let window = UIWindow(windowScene: windowScene)
         self.window = window
         
         let splashVC = SplashViewController()
-        window.rootViewController = splashVC    // 스플래시를 root로 먼저 설정
-           window.makeKeyAndVisible()
+        window.rootViewController = splashVC
+        window.makeKeyAndVisible()
         
+        // 스플래시 끝나면 초기화면 결정
         splashVC.onSplashEnd = { [weak self] in
-            guard let self = self else { return }
-            let initialViewController = determineInitialViewController()
-            window.rootViewController = initialViewController
-            window.makeKeyAndVisible()
+            self?.restoreSessionIfNeeded { [weak self] in
+                guard let self else { return }
+                let vc = self.determineInitialViewController()
+                self.window?.rootViewController = vc
+                self.window?.makeKeyAndVisible()
+            }
         }
+    }
+    
+    // MARK: - 로그인 세션 복구
+    private func restoreSessionIfNeeded(completion: @escaping () -> Void) {
+        
+        // 1) Firebase 세션이 있는지 먼저 확인
+        if let currentUser = Auth.auth().currentUser {
+            let firebaseUID = currentUser.uid
+            
+            switch AuthSession.currentProvider {
+            case .kakao:
+                // Kakao 토큰 살아 있는지 체크
+                if AuthApi.hasToken() {
+                    // 카카오 유저 정보 -> AppUserID 복구
+                    UserApi.shared.me { user, error in
+                        if let id = user?.id {
+                            let appUserId = AppUserID.fromKakaoID(id)
+                            AuthSession.setAppUserId(appUserId)
+                            
+                            // 마이그레이션 호출
+                            UserDataMigrationManager.shared.migrateIfNeeded(
+                                firebaseUID: firebaseUID
+                            ) {
+                                completion()
+                            }
+                        } else {
+                            completion()
+                        }
+                    }
+                    return
+                } else {
+                    AuthSession.clearProvider()
+                    completion()
+                    return
+                }
+                
+            case .google, .apple:
+                
+                let appUserId = AppUserID.fromFirebaseUID(firebaseUID)
+                AuthSession.setAppUserId(appUserId)
+                completion()
+                return
+                
+            case .none:
+                completion()
+                return
+            }
+        }
+        completion()
     }
     
     // MARK: - 초기 화면 결정
     private func determineInitialViewController() -> UIViewController {
-        let onboardingCompletedKey = "onboardingCompleted"
-        let onboardingCompleted = UserDefaults.standard.bool(forKey: onboardingCompletedKey)
         
-        // Firebase 현재 사용자 확인
-        let hasFirebaseUser = Auth.auth().currentUser != nil
+        let isLoggedIn = AuthSession.currentProvider != .none
+        let hasAppUserId = AuthSession.currentAppUserId != nil
         
-        // 로컬 로그인 상태 확인
-        let isKakaoLoggedIn = UserDefaults.standard.bool(forKey: "isKakaoLoggedIn")
-        let isGoogleLoggedIn = UserDefaults.standard.bool(forKey: "isGoogleLoggedIn")
-        let isAppleLoggedIn = UserDefaults.standard.bool(forKey: "isAppleLoggedIn") // 추가
-        
-        // 온보딩이 완료되지 않은 경우 온보딩 화면을 초기 화면으로 설정
-        if !onboardingCompleted {
-            return OnboardingViewController()
+        guard isLoggedIn, hasAppUserId else {
+            return createLoginVC()
         }
         
-        // 카카오 토큰 유효성 확인 (카카오 로그인인 경우)
-        if isKakaoLoggedIn && hasFirebaseUser {
-            if KakaoLoginManager.shared.isLoggedIn() {
-                return createMainViewController()
-            } else {
-                clearExpiredLoginInfo()
-                return createLoginViewController()
-            }
-        }
-        
-        // 구글 로그인인 경우
-        if (isGoogleLoggedIn && hasFirebaseUser) {
-            return createMainViewController()
-        }
-        
-        // 애플 로그인인 경우 추가
-        if (isAppleLoggedIn && hasFirebaseUser) {
-            return createMainViewController()
-        }
-        
-        // 로그인되어 있지 않은 경우
-        return createLoginViewController()
+        return createMainVC()
     }
     
-    // MARK: - ViewController 생성
-    private func createLoginViewController() -> UIViewController {
-        let loginVC = LoginViewController()
-        let navigationController = UINavigationController(rootViewController: loginVC)
-        return navigationController
+    // MARK: - Factory
+    private func createLoginVC() -> UIViewController {
+        return UINavigationController(rootViewController: LoginViewController())
     }
     
-    private func createMainViewController() -> UIViewController {
-        // 여기서 메인 화면
+    private func createMainVC() -> UIViewController {
         return BottomTabBarController()
     }
-    // MARK: - 만료된 로그인 정보 정리
-    private func clearExpiredLoginInfo() {
-        let keysToRemove = [
-            "isKakaoLoggedIn",
-            "isGoogleLoggedIn",
-            "isAppleLoggedIn", // 추가
-            "userNickname",
-            "userEmail",
-            "firebaseUID"
-        ]
-        
-        keysToRemove.forEach { key in
-            UserDefaults.standard.removeObject(forKey: key)
-        }
-        
-        // Firebase 로그아웃
-        try? Auth.auth().signOut()
-    }
-    
-    // MARK: - Lifecycle Methods
-    func sceneDidDisconnect(_ scene: UIScene) {
-    }
-    
-    func sceneDidBecomeActive(_ scene: UIScene) {
-        // 앱이 활성화될 때 로그인 상태 재확인 (선택사항)
-        validateLoginState()
-    }
-    
-    func sceneWillResignActive(_ scene: UIScene) {
-    }
-    
-    func sceneWillEnterForeground(_ scene: UIScene) {
-    }
-    
-    func sceneDidEnterBackground(_ scene: UIScene) {
-    }
-    
-    // MARK: - 로그인 상태 검증 (선택사항)
-    private func validateLoginState() {
-        // 카카오 로그인 상태인 경우 토큰 유효성 재확인
-        if UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") {
-            KakaoLoginManager.shared.validateToken { isValid in
-                if !isValid {
-                    DispatchQueue.main.async {
-                        self.handleInvalidToken()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func handleInvalidToken() {
-        // 토큰이 무효한 경우 로그인 화면으로 이동
-        clearExpiredLoginInfo()
-        
-        let loginVC = createLoginViewController()
-        
-        // 부드럽게 화면 전환
-        UIView.transition(with: window!, duration: 0.3, options: .transitionCrossDissolve, animations: {
-            self.window?.rootViewController = loginVC
-        })
-    }
-    
-    // MARK: - URL Handling for Kakao Login
+}
+
+// MARK: - Kakao / 기타 URL 처리
+extension SceneDelegate {
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
-        if let url = URLContexts.first?.url {
-            
-            if (AuthApi.isKakaoTalkLoginUrl(url)) {
-                _ = AuthController.handleOpenUrl(url: url)
-            }
+        guard let url = URLContexts.first?.url else { return }
+        
+        //카카오 로그인 콜백 처리
+        if AuthApi.isKakaoTalkLoginUrl(url) {
+            _ = AuthController.handleOpenUrl(url: url)
+            return
         }
     }
 }
