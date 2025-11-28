@@ -14,33 +14,48 @@ enum SocialLoginProvider {
     case none
 }
 
-enum AuthUserDefaultsKey {
-    static let isKakaoLoggedIn = "isKakaoLoggedIn"
-    static let isGoogleLoggedIn = "isGoogleLoggedIn"
-    static let isAppleLoggedIn = "isAppleLoggedIn"
-}
-
-struct AuthSession {
+enum AuthSession {
+    
+    private static let providerKey = "auth.provider"
+    private static let appUserIdKey = "auth.appUserId"
     
     static var currentProvider: SocialLoginProvider {
-        let defaults = UserDefaults.standard
-        if defaults.bool(forKey: AuthUserDefaultsKey.isKakaoLoggedIn) { return .kakao }
-        if defaults.bool(forKey: AuthUserDefaultsKey.isGoogleLoggedIn) { return .google }
-        if defaults.bool(forKey: AuthUserDefaultsKey.isAppleLoggedIn) { return .apple }
-        return .none
+        let raw = UserDefaults.standard.string(forKey: providerKey)
+        switch raw {
+        case "kakao": return .kakao
+        case "google": return .google
+        case "apple": return .apple
+        default: return .none
+        }
     }
     
     static func setProvider(_ provider: SocialLoginProvider) {
-        let defaults = UserDefaults.standard
-        defaults.set(provider == .kakao, forKey: AuthUserDefaultsKey.isKakaoLoggedIn)
-        defaults.set(provider == .google, forKey: AuthUserDefaultsKey.isGoogleLoggedIn)
-        defaults.set(provider == .apple,  forKey: AuthUserDefaultsKey.isAppleLoggedIn)
+        let raw: String
+        switch provider {
+        case .kakao: raw = "kakao"
+        case .google: raw = "google"
+        case .apple: raw = "apple"
+        case .none: raw = "none"
+        }
+        UserDefaults.standard.set(raw, forKey: providerKey)
+    }
+    
+    /// 현재 로그인한 유저의 AppUserID 
+    static var currentAppUserId: String? {
+        return UserDefaults.standard.string(forKey: appUserIdKey)
+    }
+    
+    static func setAppUserId(_ id: String) {
+        UserDefaults.standard.set(id, forKey: appUserIdKey)
+    }
+    
+    static func clear() {
+        UserDefaults.standard.removeObject(forKey: providerKey)
+        UserDefaults.standard.removeObject(forKey: appUserIdKey)
     }
     
     static func clearProvider() {
-        let defaults = UserDefaults.standard
-        defaults.removeObject(forKey: AuthUserDefaultsKey.isKakaoLoggedIn)
-        defaults.removeObject(forKey: AuthUserDefaultsKey.isGoogleLoggedIn)
-        defaults.removeObject(forKey: AuthUserDefaultsKey.isAppleLoggedIn)
+        UserDefaults.standard.removeObject(forKey: providerKey)
+        UserDefaults.standard.removeObject(forKey: appUserIdKey)
     }
 }
