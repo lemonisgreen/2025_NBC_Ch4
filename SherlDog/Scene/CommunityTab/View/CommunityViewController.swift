@@ -293,7 +293,7 @@ extension CommunityViewController {
 
                 cell.configureForCommunityPost(
                     imageURL: item,
-                    petProfiles: petProfile,
+                    petProfiles: model.petProfile,
                     category: category
                 )
                 
@@ -371,11 +371,6 @@ extension CommunityViewController {
                     let viewModel = PostFooterViewModel(category: category, post: sectionModel)
                     
                     footer.bind(viewModel: viewModel)
-
-                    footer.rx.likeButtonTap
-                        .map { sectionModel }
-                        .bind(to: self.likeButtonEvent)
-                        .disposed(by: footer.disposeBag)
                     
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
