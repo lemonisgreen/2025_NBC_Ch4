@@ -99,6 +99,12 @@ extension PostDetailViewController {
         output.isUpdating
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
+        
+        output.showReport
+            .emit(onNext: { [weak self] target in
+                self?.presentReport(target: target)
+            })
+            .disposed(by: disposeBag)
     }
 }
 
@@ -131,11 +137,10 @@ extension PostDetailViewController {
         }
         
         let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .post(.report(post.documentId))) { [weak self] in
-                self?.blockMessageAfterReport(userId: post.userId)
-            }
+                          SDLiteral.CommunityView.report)) { [weak self] _ in
+            self?.showMenuAlert(type: .post(.report(post.documentId)))
         }
+        
         
         return UIMenu(children: [blockAction, reportAction])
     }
@@ -165,10 +170,11 @@ extension PostDetailViewController {
         }
         
         let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .comment(.report(comment.documentId))) { [weak self] in
-                self?.blockMessageAfterReport(userId: comment.userId)
-            }
+                          SDLiteral.CommunityView.report)) { [weak self] _ in
+            self?.showMenuAlert(
+                type: .comment(.report(documentId: comment.documentId,
+                                       userId: comment.userId))
+            )
         }
         
         return UIMenu(children: [blockAction, reportAction])
@@ -255,6 +261,36 @@ extension PostDetailViewController {
         )
         
         self.present(alert, animated: true)
+    }
+    
+    private func presentReport(target: ReportViewModel.Target) {
+        let reportVC = ReportViewController(target: target)
+        
+        let targetUserId: String? = {
+            switch target {
+            case let .post(_, _, postUserId):
+                return postUserId
+            case let .user(userId):
+                return userId
+            }
+        }()
+        
+        if let userId = targetUserId {
+            reportVC.onReportCompleted = { [weak self] in
+                self?.blockMessageAfterReport(userId: userId)
+            }
+        }
+        
+        reportVC.modalPresentationStyle = .pageSheet
+        reportVC.isModalInPresentation = true
+        
+        if let sheet = reportVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
+            sheet.preferredCornerRadius = 20
+        }
+        
+        present(reportVC, animated: true)
     }
     
     private func blockMessageAfterReport(userId: String) {
