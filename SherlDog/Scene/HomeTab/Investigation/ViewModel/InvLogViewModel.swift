@@ -57,7 +57,7 @@ class InvLogViewModel {
     }
     
     private func upload(image: String, content: String) {
-        guard let userId = Auth.auth().currentUser?.uid,
+        guard let userId = AuthSession.currentAppUserId,
               let humanProfile = output.humanProfile.value else { return }
         let petProfile = output.petProfile.value
         let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.invLogBoard.rawValue).document()
@@ -86,7 +86,7 @@ class InvLogViewModel {
     }
     
     private func fetchHumanProfile() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
             collection: .humanProfile,
@@ -104,7 +104,7 @@ class InvLogViewModel {
     }
     
     private func fetchPetProfile() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
             collection: .petProfile,

@@ -217,17 +217,23 @@ class SettingViewController : UIViewController {
     }
     
     private func updateLoginStatus() {
-        if UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") {
+        switch AuthSession.currentProvider {
+        case .kakao:
             loginLabel.text = "카카오 로그인"
-        } else if UserDefaults.standard.bool(forKey: "isGoogleLoggedIn") {
+            loginButton.setTitle("로그아웃", for: .normal)
+            
+        case .google:
             loginLabel.text = "구글 로그인"
-        } else if UserDefaults.standard.bool(forKey: "isAppleLoggedIn") {
+            loginButton.setTitle("로그아웃", for: .normal)
+            
+        case .apple:
             loginLabel.text = "Apple 로그인"
-        } else {
+            loginButton.setTitle("로그아웃", for: .normal)
+            
+        case .none:
             loginLabel.text = "로그인되지 않음"
-            return
+            loginButton.setTitle("로그인", for: .normal)
         }
-        loginButton.setTitle("로그아웃", for: .normal)
     }
     
     private func bind() {

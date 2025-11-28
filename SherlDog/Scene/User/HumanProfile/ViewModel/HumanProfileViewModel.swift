@@ -31,7 +31,7 @@ final class HumanProfileViewModel {
     
     var currentMode: Mode = .create
     let isEditMode = BehaviorRelay<Bool>(value: false)
-    let userId = Auth.auth().currentUser?.uid
+    let userId = AuthSession.currentAppUserId
     private let disposeBag = DisposeBag()
     
     func setEditMode(with profile: HumanProfileModel) {
@@ -109,7 +109,7 @@ final class HumanProfileViewModel {
         guard let image = imageForUpload.value,
               !nickname.value.isEmpty,
               !introduce.value.isEmpty,
-              let userId = Auth.auth().currentUser?.uid else {
+              let userId = AuthSession.currentAppUserId else {
             saveResult.onNext(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "입력값이 부족합니다."])))
             return
         }
@@ -154,7 +154,7 @@ final class HumanProfileViewModel {
         guard case .edit(_) = currentMode,
               !nickname.value.isEmpty,
               !introduce.value.isEmpty,
-              let userId = Auth.auth().currentUser?.uid else {
+              let userId = AuthSession.currentAppUserId else {
             saveResult.onNext(.failure(NSError(domain: "", code: -1, userInfo: [NSLocalizedDescriptionKey: "입력값이 부족합니다."])))
             return
         }

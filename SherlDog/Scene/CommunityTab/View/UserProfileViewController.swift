@@ -375,7 +375,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
 extension UserProfileViewController {
     /// 내 프로필인지 확인
     private func isMyProfile() -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return currentUserId == viewModel.userId
     }
     

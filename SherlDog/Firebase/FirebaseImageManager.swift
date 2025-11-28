@@ -65,7 +65,7 @@ class FirebaseImageManager {
     private let storageRef: StorageReference
     
     var userId: String {
-        return Auth.auth().currentUser?.uid ?? ""
+        return AuthSession.currentAppUserId ?? ""
     }
     
     private init() {
