@@ -137,10 +137,10 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
                 guard let self = self else { return }
                 switch event {
                 case .report(let userId):
-                    let reportData = ReportModel(collection: self.viewModel.userId,
+                    let reportData = BlockModel(collection: self.viewModel.userId,
                                                  documentId: userId)
                     FirestoreManager.shared.createDocument(
-                        collection: .reportLog,
+                        collection: .blockLog,
                         data: reportData,
                         documentId: userId
                     )
@@ -458,5 +458,15 @@ extension UserProfileViewController {
             ]
         )
         present(alert, animated: true)
+    }
+
+    private func presentReportForUser(userId: String) {
+        let reportVC = ReportViewController(target: .user(userId: userId))
+        reportVC.modalPresentationStyle = .pageSheet
+        if let sheet = reportVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+        }
+        present(reportVC, animated: true)
     }
 }

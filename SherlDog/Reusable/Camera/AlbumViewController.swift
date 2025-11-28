@@ -15,15 +15,17 @@ import CoreLocation
 class AlbumViewController: UIViewController {
     
     private let viewModel: CameraViewModel
+    private let invData: InvData?
     private let disposeBag = DisposeBag()
     
     private var viewControllerForPicture: UIViewController?
     private let pickerController = UIImagePickerController()
     
     // MARK: - Lifecycle
-    init(viewModel: CameraViewModel) {
+    init(viewModel: CameraViewModel, invData: InvData? = nil) {
         self.viewModel = viewModel
-        
+        self.invData = invData
+
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -55,7 +57,12 @@ class AlbumViewController: UIViewController {
                     )
                     
                 case .communityShare:
-                    self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
+                    self.viewControllerForPicture = UINavigationController(
+                                            rootViewController: CreateLogViewController(
+                                                viewModel: self.viewModel,
+                                                invData: self.invData
+                                            )
+                                        )
                     
                 case .profile: return
                 }
@@ -93,6 +100,7 @@ extension AlbumViewController: UIImagePickerControllerDelegate, UINavigationCont
             guard let viewControllerForPicture else { return }
             viewControllerForPicture.presentationController?.delegate = self
             viewControllerForPicture.sheetPresentationController?.prefersGrabberVisible = true
+            viewControllerForPicture.isModalInPresentation = true
             
             DispatchQueue.main.async {
                 self.present(viewControllerForPicture, animated: true)

@@ -63,7 +63,8 @@ class InvLogViewModel {
         let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.invLogBoard.rawValue).document()
         let documentId = newDocRef.documentID
         
-        let data = CommunityModel(userId: userId,
+        let data = CommunityModel(category: FirestoreCollection.invLogBoard.rawValue,
+                                  userId: userId,
                                   profileImage: humanProfile.image,
                                   name: humanProfile.nickname,
                                   petProfile: petProfile,

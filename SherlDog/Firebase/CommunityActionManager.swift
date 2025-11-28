@@ -104,10 +104,10 @@ extension CommunityActionManager {
     }
     
     // Create Comment
-    func createComment<T: Codable>(
+    func createComment(
         collection: FirestoreCollection,
         postCode: String,
-        data: T
+        data: CommentModel
     ) -> Completable {
         return Completable.create { [weak self] completable in
             guard let self else {
@@ -115,15 +115,24 @@ extension CommunityActionManager {
                 return Disposables.create()
             }
             
+            let newDocRef = self.db.collection(CommunityAction.comment.rawValue).document()
+            let documentId = newDocRef.documentID
+            
+            var data = data
+            data.documentId = documentId
+            
             do {
                 try self.db.collection(collection.rawValue)
                     .document(postCode)
                     .collection(CommunityAction.comment.rawValue)
-                    .document()
+                    .document(documentId)
                     .setData(from: data) { error in
                         if let error {
                             completable(.error(error))
                         } else {
+                            self.db.collection(collection.rawValue)
+                                .document(postCode)
+                                .updateData(["commentCount": FieldValue.increment(Int64(1))])
                             completable(.completed)
                         }
                     }
@@ -155,6 +164,9 @@ extension CommunityActionManager {
                     if let error {
                         completable(.error(error))
                     } else {
+                        self.db.collection(collection.rawValue)
+                            .document(postCode)
+                            .updateData(["commentCount": FieldValue.increment(Int64(-1))])
                         completable(.completed)
                     }
                 }
@@ -193,10 +205,10 @@ extension CommunityActionManager {
     }
 
     // 코멘트 리스트 불러오기
-    func fetchCommentsList<T: Codable>(
+    func fetchCommentsList(
         collection: FirestoreCollection,
         postCode: String
-    ) -> Single<[T]> {
+    ) -> Single<[CommentModel]> {
         return Single.create { [weak self] single in
             guard let self else {
                 single(.failure(FirestoreError.unknown))
@@ -207,9 +219,11 @@ extension CommunityActionManager {
                 .collection(collection.rawValue)
                 .document(postCode)
                 .collection(CommunityAction.comment.rawValue)
+                .order(by: SDLiteral.PostDetailViewController.commentDate,
+                       descending: false)
                 .getDocuments() { snapshot, error in
                     if let snapshot {
-                        single(.success(snapshot.documents.compactMap { try? $0.data(as: T.self) }))
+                        single(.success(snapshot.documents.compactMap { try? $0.data(as: CommentModel.self) }))
                     } else if let error {
                         single(.failure(error))
                     } else {
@@ -238,7 +252,7 @@ extension CommunityActionManager {
                 .document(postCode)
                 .collection(CommunityAction.comment.rawValue)
                 .document(commentDocumentId)
-                .updateData(["text": text]) { error in // FIXME: "text"를 commentModel의 내용을 담은 프로퍼티 이름으로 변경
+                .updateData(["content": text]) { error in // "content" 라는 이름의 프로퍼티의 내용을 text로 변경
                     if let error {
                         completable(.error(error))
                     } else {

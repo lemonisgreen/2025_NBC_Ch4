@@ -47,7 +47,7 @@ final class CommunityViewModel {
         let manualRefresh: Observable<Void>
         let fetchMore: Observable<Void>
         let menuEvent: Observable<PostMenuEvent>
-        let likeEvent: Observable<CommunityModel>
+//        let likeEvent: Observable<CommunityModel>
     }
     
     struct Output {
@@ -84,9 +84,6 @@ final class CommunityViewModel {
         // 업데이트 중인지 표시
         let isUpdating = makeIsUpdating(refreshTrigger: refreshTrigger,
                                         fetchStream: fetchStream)
-        
-        // Like Event
-        bindLikeSideEffect(input.likeEvent, category: selectedCategory)
         
         // mutations
         let refreshMutation = makeRefreshMutation(postsEvent: fetchStream,
@@ -247,10 +244,10 @@ private extension CommunityViewModel {
                     .catchAndReturn(.error)
                     
                 case .report(let documentId):
-                    let reportData = ReportModel(collection: category.toFirestoreCollection.rawValue,
+                    let reportData = BlockModel(collection: category.toFirestoreCollection.rawValue,
                                                  documentId: documentId)
                     
-                    return FirestoreManager.shared.createDocument(collection: .reportLog,
+                    return FirestoreManager.shared.createDocument(collection: .blockLog,
                                                                   data: reportData,
                                                                   documentId: documentId)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -335,24 +332,5 @@ private extension CommunityViewModel {
         
         return Single.zip(singles)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-    }
-}
-
-// MARK: - Like Event
-private extension CommunityViewModel {
-    func bindLikeSideEffect(_ input: Observable<CommunityModel>,
-                            category: Observable<CommunitySectionType>) {
-        input
-            .withLatestFrom(category) { ($0, $1) }
-            .flatMapFirst { (model, category) -> Completable in
-                let collection = category.toFirestoreCollection
-                return CommunityActionManager.shared.toggleLikeWithCount(
-                    collection: collection,
-                    postCode: model.documentId
-                )
-                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            }
-            .subscribe()
-            .disposed(by: disposeBag)
     }
 }

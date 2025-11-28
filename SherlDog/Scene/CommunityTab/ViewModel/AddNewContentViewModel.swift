@@ -277,7 +277,8 @@ final class AddNewContentViewModel {
             .flatMapCompletable { [weak self] urls in
                 guard let self else { return Completable.error(NSError(domain: "", code: 0, userInfo: nil)) }
                 
-                let uploadData = CommunityModel(userId: userId,
+                let uploadData = CommunityModel(category: FirestoreCollection.detectiveMate.rawValue,
+                                                userId: userId,
                                                 petProfile: selectedPets,
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
