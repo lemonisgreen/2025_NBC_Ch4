@@ -244,10 +244,10 @@ private extension CommunityViewModel {
                     .catchAndReturn(.error)
                     
                 case .report(let documentId):
-                    let reportData = ReportModel(collection: category.toFirestoreCollection.rawValue,
+                    let reportData = BlockModel(collection: category.toFirestoreCollection.rawValue,
                                                  documentId: documentId)
                     
-                    return FirestoreManager.shared.createDocument(collection: .reportLog,
+                    return FirestoreManager.shared.createDocument(collection: .blockLog,
                                                                   data: reportData,
                                                                   documentId: documentId)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))

@@ -29,6 +29,7 @@ enum FirestoreCollection: String, CaseIterable {
     case walkResult = "WalkResult"
     case detectiveMate = "DetectiveMate"
     case invLogBoard = "InvLogBoard"
+    case blockLog = "BlockLog"
     case reportLog = "ReportLog"
 }
 

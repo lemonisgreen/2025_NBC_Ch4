@@ -27,7 +27,7 @@ final class CommunityViewController: UIViewController {
 //    private let likeButtonEvent = PublishRelay<CommunityModel>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
     private let manualRefresh = PublishRelay<Void>()
-
+    
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
     
@@ -152,14 +152,40 @@ extension CommunityViewController {
             self?.showMenuAlert(type: .block(post.userId))
         }
         
-        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
-                self?.blockMessageAfterReport(userId: post.userId)
+        let reportAction = UIAction(
+            title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                          SDLiteral.CommunityView.report)
+        ) { [weak self] _ in
+            guard let self else { return }
+            
+            self.showMenuAlert(type: .report(post.documentId)) { [weak self] in
+                self?.presentReportForPost(post)
             }
         }
         
         return UIMenu(children: [blockAction, reportAction])
+    }
+    
+    func presentReportForPost(_ post: CommunityModel) {
+        let category: CommunitySectionType = .invLogBoard
+        let reportVC = ReportViewController(
+            target: .post(collection: category.toFirestoreCollection,
+                          documentId: post.documentId,
+                          postUserId: post.userId)
+        )
+        
+        reportVC.onReportCompleted = { [weak self] in
+                self?.blockMessageAfterReport(userId: post.userId)
+            }
+        reportVC.modalPresentationStyle = .pageSheet
+        reportVC.isModalInPresentation = true
+        
+        if let sheet = reportVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
+            sheet.preferredCornerRadius = 20
+        }
+        present(reportVC, animated: true)
     }
     
     private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
@@ -346,6 +372,11 @@ extension CommunityViewController {
                     
                     footer.bind(viewModel: viewModel)
 
+                    footer.rx.likeButtonTap
+                        .map { sectionModel }
+                        .bind(to: self.likeButtonEvent)
+                        .disposed(by: footer.disposeBag)
+                    
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
@@ -357,7 +388,7 @@ extension CommunityViewController {
                             self?.navigationController?.pushViewController(viewController, animated: true)
                         })
                         .disposed(by: footer.disposeBag)
-
+                    
                     return footer
                     
                 default:
@@ -430,7 +461,6 @@ extension CommunityViewController {
             return section
         }
     }
-    
 }
 
 // MARK: - UI
