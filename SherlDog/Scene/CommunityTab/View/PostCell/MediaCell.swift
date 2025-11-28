@@ -102,6 +102,32 @@ extension MediaCell {
             $0.leading.top.equalToSuperview().inset(12)
         }
     }
+    
+    func configureForCommunityPost(
+        imageURL: String,
+        petProfiles: [PetProfile],
+        category: CommunitySectionType
+    ) {
+        // 1) 이미지, 펫 프로필 세팅
+        self.settingCell(imageURL)
+        self.settingPetProfile(profile: petProfiles)
+        
+        // 2) 기본 값 (탐정메이트 등)
+        imageView.layer.contentsGravity = .resizeAspectFill
+        imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.layer.contentsRect = CGRect(x: 0, y: 0, width: 1, height: 1)
+        
+        // 3) 수사일지 게시판이면 하단 Crop 적용
+        if category == .invLogBoard {
+            imageView.layer.contentsRect = CGRect(
+                x: 0,
+                y: 0.35,   // 상단 35% 잘라내기
+                width: 1,
+                height: 0.65
+            )
+        }
+    }
 }
 
 extension MediaCell {
