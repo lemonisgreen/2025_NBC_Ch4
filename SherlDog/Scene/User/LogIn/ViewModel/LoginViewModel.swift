@@ -133,21 +133,15 @@ extension LoginViewModel {
 }
 
 // MARK: - Kakao Login
+// MARK: - Kakao Login
 extension LoginViewModel {
     
     /// 카카오 버튼 탭 처리
     private func loginWithKakao() {
         guard beginLoadingIfPossible() else { return }
         
-        // 로그인 완료 후 공통 처리 (유저 정보 받아서 Firebase 연동)
-        func handleKakaoUser(_ user: KakaoSDKUser.User) {
-            let userInfo = KakaoUserInfo(from: user)
-            let appUserId = AppUserID.fromKakaoID(userInfo.id)
-            self.linkKakaoToFirebase(userInfo: userInfo, appUserId: appUserId)
-        }
-        
         // Kakao SDK 로그인 completion
-        let completion: (KakaoSDKAuth.OAuthToken?, Error?) -> Void = { [weak self] token, error in
+        let completion: (OAuthToken?, Error?) -> Void = { [weak self] token, error in
             guard let self else { return }
             
             if let error = error {
@@ -172,8 +166,12 @@ extension LoginViewModel {
                 }
                 
                 let userInfo = KakaoUserInfo(from: user)
-                let appUserId = AppUserID.fromKakaoID(userInfo.id)
-                self.linkKakaoToFirebase(userInfo: userInfo, appUserId: appUserId)
+                let appUserId = AppUserID.fromKakaoID(userInfo.id)   // "kakao:\(id)" 형태
+                
+                self.linkKakaoToFirebase(
+                    userInfo: userInfo,
+                    appUserId: appUserId
+                )
             }
         }
         
@@ -186,7 +184,10 @@ extension LoginViewModel {
     }
     
     /// Kakao SDK 로그인 성공 후, Firebase 익명 로그인 (Firestore 접근용)
-    private func linkKakaoToFirebase(userInfo: KakaoUserInfo, appUserId: String) {
+    private func linkKakaoToFirebase(
+        userInfo: KakaoUserInfo,
+        appUserId: String
+    ) {
         Auth.auth().signInAnonymously { [weak self] authResult, error in
             guard let self else { return }
             
@@ -210,7 +211,7 @@ extension LoginViewModel {
         }
     }
     
-    /// Firestore users 컬렉션에 Kakao 유저 정보 저장
+    /// Firestore users 컬렉션에 Kakao 유저 정보 저장 + 로그인 후 마이그레이션
     private func saveKakaoUserToFirestore(
         firebaseUser: FirebaseAuth.User,
         kakaoUserInfo: KakaoUserInfo,
@@ -233,24 +234,26 @@ extension LoginViewModel {
             .document(firebaseUser.uid)
             .setData(userData, merge: true) { [weak self] error in
                 guard let self else { return }
-                self.endLoading()
                 
                 if let error = error {
+                    self.endLoading()
                     self.showErrorSubject.onNext(error.localizedDescription)
                     return
                 }
                 
+                // ✅ 이 세션의 provider / appUserId 설정
                 AuthSession.setProvider(.kakao)
                 AuthSession.setAppUserId(appUserId)
                 
-                // 현재 Firebase UID를 기반으로 마이그레이션 시도
-                if let uid = Auth.auth().currentUser?.uid {
-                    UserDataMigrationManager.shared.migrateIfNeeded(firebaseUID: uid) { [weak self] in
-                        // 마이그레이션이 끝난 뒤에 펫 프로필 체크
-                        self?.checkPetProfiles()
-                    }
-                } else {
-                    // UID가 없을 일은 거의 없지만, 혹시 몰라서 예비 처리
+                // ✅ 여기서 "로그인 후 레거시 마이그레이션" 실행
+                UserDataMigrationManager.shared.migrateAfterKakaoLogin(
+                    kakaoId: kakaoUserInfo.id,
+                    appUserId: appUserId
+                ) { [weak self] _ in
+                    guard let self else { return }
+                    
+                    // 마이그레이션이 끝난 뒤에 로딩 종료 + 펫 프로필 체크
+                    self.endLoading()
                     self.checkPetProfiles()
                 }
             }

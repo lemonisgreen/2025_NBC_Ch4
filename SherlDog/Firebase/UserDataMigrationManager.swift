@@ -6,8 +6,10 @@
 //
 
 import Foundation
-import FirebaseAuth
 import FirebaseFirestore
+
+/// 1.0.2 시절 "UID 기반" 데이터들을
+/// 새 버전의 AppUserID기반으로 옮겨주는 마이그레이션 매니저
 
 final class UserDataMigrationManager {
     
@@ -16,219 +18,179 @@ final class UserDataMigrationManager {
     
     private let db = Firestore.firestore()
     
-    /// 기존 Firebase UID 기반 userId를 AppUserID 기반으로 한 번만 옮겨주는 마이그레이션
-    func migrateIfNeeded(firebaseUID: String, completion: @escaping () -> Void) {
-        let userDocRef = db.collection(FirestoreCollection.users.rawValue)
-            .document(firebaseUID)
+    /// 카카오 로그인 직후 호출해서,
+    /// 해당 kakaoId 로 과거에 생성된 모든 UID 기반 데이터들을
+    /// appUserId 기준으로 업데이트한다.
+    ///
+    /// - Parameters:
+    ///   - kakaoId: Kakao SDK 에서 받은 카카오 유저 ID (예: 4303230810)
+    ///   - appUserId: "kakao:\(kakaoId)" 형태의 앱 기준 사용자 ID
+    ///   - completion: 전체 마이그레이션 성공 여부
+    
+    func migrateAfterKakaoLogin(
+        kakaoId: Int64,
+        appUserId: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard kakaoId != 0, !appUserId.isEmpty else {
+            completion(true) // 이상한 값이면 그냥 할 게 없음
+            return
+        }
         
-        userDocRef.getDocument { [weak self] snapshot, error in
-            guard let self else { completion(); return }
-            
-            if let error = error {
-                print("🔴 [Migration] users 문서 조회 실패:", error)
-                completion()
-                return
+        print("🔁 [Migration] 시작 - kakaoId: \(kakaoId), appUserId: \(appUserId)")
+        
+        // 1) users 컬렉션에서 kakaoId == 현재 kakaoId 인 문서들 조회
+        db.collection(FirestoreCollection.users.rawValue)
+            .whereField("kakaoId", isEqualTo: kakaoId)
+            .getDocuments { [weak self] snapshot, error in
+                guard let self else {
+                    completion(false)
+                    return
+                }
+                
+                if let error = error {
+                    print("❌ [Migration] users 조회 실패: \(error)")
+                    completion(false)
+                    return
+                }
+                
+                guard let docs = snapshot?.documents, !docs.isEmpty else {
+                    print("ℹ️ [Migration] kakaoId \(kakaoId)에 해당하는 기존 users 문서 없음")
+                    completion(true)
+                    return
+                }
+                
+                // 과거에 이 카카오 계정으로 로그인하면서 생성된 모든 Firebase UID 들
+                let legacyUIDs = docs.map { $0.documentID }
+                print("🧩 [Migration] legacyUIDs: \(legacyUIDs)")
+                
+                // 2) users 컬렉션 자체 필드도 appUserId 기준으로 정리
+                self.migrateUsersCollection(
+                    docs: docs,
+                    appUserId: appUserId
+                ) { usersSuccess in
+                    // 3) 나머지 컬렉션 마이그레이션
+                    self.migrateOtherCollections(
+                        legacyUIDs: legacyUIDs,
+                        appUserId: appUserId
+                    ) { othersSuccess in
+                        let allSuccess = usersSuccess && othersSuccess
+                        print(allSuccess
+                              ? "✅ [Migration] 전체 마이그레이션 완료"
+                              : "⚠️ [Migration] 일부 마이그레이션 실패")
+                        completion(allSuccess)
+                    }
+                }
             }
-            
-            guard let snapshot = snapshot, var data = snapshot.data() else {
-                print("ℹ️ [Migration] users 문서 없음 -> 마이그레이션 스킵")
-                completion()
-                return
-            }
-            
-            // 이미 마이그레이션 한 유저라면 종료
-            if let migrated = data["isUserIdMigrated"] as? Bool, migrated == true {
-                print("✅ [Migration] 이미 마이그레이션 완료된 유저")
-                completion()
-                return
-            }
-            
-            // provider 확인 (카카오 유저만 처리)
-            guard let provider = data["provider"] as? String, provider == "kakao" else {
-                print("ℹ️ [Migration] 카카오 유저가 아님 -> 스킵")
-                completion()
-                return
-            }
-            
-            // kakaoId 가져오기 (Int / Int64 / String 등 형 변환 방어)
-            let kakaoIdValue = data["kakaoId"]
-            let kakaoIdString: String?
-            
-            if let id = kakaoIdValue as? Int64 {
-                kakaoIdString = String(id)
-            } else if let id = kakaoIdValue as? Int {
-                kakaoIdString = String(id)
-            } else if let id = kakaoIdValue as? String {
-                kakaoIdString = id
-            } else {
-                kakaoIdString = nil
-            }
-            
-            guard let kakaoIdString else {
-                print("🔴 [Migration] kakaoId 없음 -> 마이그레이션 불가")
-                completion()
-                return
-            }
-            
-            // 🔑 여기서 AppUserID 생성 (프로젝트에 이미 있는 헬퍼 사용)
-            let appUserId: String
-            if let kakaoInt64 = Int64(kakaoIdString) {
-                appUserId = AppUserID.fromKakaoID(kakaoInt64)
-            } else {
-                // 문자열이지만 Int64로 변환 불가한 경우에도 안전하게 fallback
-                appUserId = "kakao:" + kakaoIdString
-            }
-            
-            // users 문서에 appUserId 및 마이그레이션 플래그 저장
-            var newFields: [String: Any] = [
-                "appUserId": appUserId,
-                "isUserIdMigrated": true
+    }
+    
+    // MARK: - users 컬렉션 마이그레이션
+    
+    /// users 문서들에 userId 필드를 appUserId로 맞춰주는 작업
+    private func migrateUsersCollection(
+        docs: [QueryDocumentSnapshot],
+        appUserId: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard !docs.isEmpty else {
+            completion(true)
+            return
+        }
+        
+        let batch = db.batch()
+        docs.forEach { doc in
+            var data: [String: Any] = [
+                "userId": appUserId,
+                "provider": "kakao",
+                "lastLoginAt": FieldValue.serverTimestamp()
             ]
-            
-            // 혹시 나중을 위해 "legacyUID" 같은 것도 남겨두고 싶으면:
-            if data["legacyFirebaseUID"] == nil {
-                newFields["legacyFirebaseUID"] = firebaseUID
-            }
-            
-            userDocRef.setData(newFields, merge: true)
-            
-            // 🔐 세션에도 AppUserID 반영
-            AuthSession.setAppUserId(appUserId)
-            
-            // 실제 컬렉션들 마이그레이션
-            self.migrateCollections(firebaseUID: firebaseUID, appUserId: appUserId) {
-                print("✅ [Migration] 모든 컬렉션 마이그레이션 완료")
-                completion()
+            // 필요하면 다른 필드도 통일해줄 수 있음
+            batch.updateData(data, forDocument: doc.reference)
+        }
+        
+        batch.commit { error in
+            if let error = error {
+                print("❌ [Migration] users 컬렉션 업데이트 실패: \(error)")
+                completion(false)
+            } else {
+                print("✅ [Migration] users 컬렉션 userId 업데이트 완료")
+                completion(true)
             }
         }
     }
     
-    /// userId == firebaseUID 로 저장돼 있던 문서들을 userId == appUserId 로 업데이트
-    private func migrateCollections(firebaseUID: String,
-                                    appUserId: String,
-                                    completion: @escaping () -> Void) {
+    // MARK: - 나머지 컬렉션 마이그레이션
+    
+    /// petProfile / walkResult / clues / reportLog / blockLog 등의
+    /// userId / userID / reporterId / targetUserId 등을 UID -> appUserId 로 변경
+    private func migrateOtherCollections(
+        legacyUIDs: [String],
+        appUserId: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        guard !legacyUIDs.isEmpty else {
+            completion(true)
+            return
+        }
         
         let group = DispatchGroup()
+        var allSuccess = true
         
-        // 멍탐정 프로필
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.petProfile.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
+        /// ✅ 여기서 마이그레이션할 컬렉션 + 필드 이름을 정의
+        /// 실제 Firestore 모델에 맞게 필드명을 확인해서 필요하면 수정해줘야 함!
+        let config: [(FirestoreCollection, [String])] = [
+            (.petProfile, ["userId"]),
+            (.walkResult, ["userID", "userId"]),
+            (.clues, ["userID", "userId"]),
+            (.reportLog, ["reporterId", "targetUserId"]),
+            (.blockLog, ["blockerId", "blockedId"]),
+            // 필요하다면 아래처럼 DetectiveMate / InvLogBoard 도 추가 가능
+            // (.detectiveMate, ["ownerId", "participantId"]),
+            // (.invLogBoard, ["writerId"])
+        ]
         
-        // 조수 프로필
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.humanProfile.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
-        
-        // 남긴 단서
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.clues.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
-        
-        // 커뮤니티 - 탐정 메이트
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.detectiveMate.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
-        
-        // 커뮤티니 - 수사일지
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.invLogBoard.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
-        
-        // 신고 기록
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.reportLog.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
-        
-        // 전체 수사일지
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.walkResult.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
-        }
-        
-        group.enter()
-        migrateUserId(
-            collection: FirestoreCollection.users.rawValue,
-            from: firebaseUID,
-            to: appUserId
-        ) {
-            group.leave()
+        for (collection, fields) in config {
+            for field in fields {
+                for legacyUID in legacyUIDs {
+                    group.enter()
+                    
+                    db.collection(collection.rawValue)
+                        .whereField(field, isEqualTo: legacyUID)
+                        .getDocuments { snapshot, error in
+                            
+                            if let error = error {
+                                print("❌ [Migration] \(collection.rawValue) 조회 실패 (\(field) == \(legacyUID)): \(error)")
+                                allSuccess = false
+                                group.leave()
+                                return
+                            }
+                            
+                            guard let docs = snapshot?.documents, !docs.isEmpty else {
+                                group.leave()
+                                return
+                            }
+                            
+                            let batch = self.db.batch()
+                            docs.forEach { doc in
+                                batch.updateData([field: appUserId], forDocument: doc.reference)
+                            }
+                            
+                            batch.commit { error in
+                                if let error = error {
+                                    print("❌ [Migration] \(collection.rawValue) 업데이트 실패 (\(field) == \(legacyUID)): \(error)")
+                                    allSuccess = false
+                                } else {
+                                    print("✅ [Migration] \(collection.rawValue).\(field) \(legacyUID) → \(appUserId), \(docs.count)개 문서 업데이트")
+                                }
+                                group.leave()
+                            }
+                        }
+                }
+            }
         }
         
         group.notify(queue: .main) {
-            completion()
-        }
-    }
-    
-    /// 특정 컬렉션에서 userId == from 인 문서들을 userId == to 로 업데이트
-    private func migrateUserId(collection: String,
-                               from oldUserId: String,
-                               to newUserId: String,
-                               completion: @escaping () -> Void) {
-        
-        let query = db.collection(collection)
-            .whereField("userId", isEqualTo: oldUserId)
-        
-        query.getDocuments { snapshot, error in
-            if let error = error {
-                print("🔴 [Migration] \(collection) 조회 실패:", error)
-                completion()
-                return
-            }
-            
-            guard let documents = snapshot?.documents, !documents.isEmpty else {
-                print("ℹ️ [Migration] \(collection) 에서 옮길 문서 없음")
-                completion()
-                return
-            }
-            
-            let batch = self.db.batch()
-            documents.forEach { doc in
-                batch.updateData(["userId": newUserId], forDocument: doc.reference)
-            }
-            
-            batch.commit { error in
-                if let error = error {
-                    print("🔴 [Migration] \(collection) 마이그레이션 실패:", error)
-                } else {
-                    print("✅ [Migration] \(collection) \(documents.count)개 문서 userId -> \(newUserId)")
-                }
-                completion()
-            }
+            completion(allSuccess)
         }
     }
 }

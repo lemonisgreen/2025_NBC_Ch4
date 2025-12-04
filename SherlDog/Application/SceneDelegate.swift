@@ -54,31 +54,42 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             case .kakao:
                 // Kakao 토큰 살아 있는지 체크
                 if AuthApi.hasToken() {
-                    // 카카오 유저 정보 -> AppUserID 복구
+                    // 카카오 유저 정보 -> kakaoId / AppUserID 복구
                     UserApi.shared.me { user, error in
-                        if let id = user?.id {
-                            let appUserId = AppUserID.fromKakaoID(id)
-                            AuthSession.setAppUserId(appUserId)
-                            
-                            // 마이그레이션 호출
-                            UserDataMigrationManager.shared.migrateIfNeeded(
-                                firebaseUID: firebaseUID
-                            ) {
-                                completion()
-                            }
-                        } else {
+                        if let error = error {
+                            print("⚠️ Kakao me() 실패: \(error)")
+                            completion()
+                            return
+                        }
+                        
+                        guard let kakaoId = user?.id else {
+                            print("⚠️ Kakao 사용자 ID를 가져오지 못했습니다.")
+                            completion()
+                            return
+                        }
+                        
+                        let appUserId = AppUserID.fromKakaoID(kakaoId)
+                        AuthSession.setAppUserId(appUserId)
+                        
+                        // ✅ 앱 시작 시에도 kakaoId 기반 마이그레이션 실행
+                        UserDataMigrationManager.shared.migrateAfterKakaoLogin(
+                            kakaoId: kakaoId,
+                            appUserId: appUserId
+                        ) { _ in
                             completion()
                         }
                     }
                     return
                 } else {
+                    // 카카오 토큰도 없으면 세션 클리어
                     AuthSession.clearProvider()
                     completion()
                     return
                 }
                 
             case .google, .apple:
-                
+                // 구글/애플은 UID 기반으로만 관리하고 있어서
+                // 로그인 유지된 경우에는 기존 방식대로 AppUserID를 UID에서 유도
                 let appUserId = AppUserID.fromFirebaseUID(firebaseUID)
                 AuthSession.setAppUserId(appUserId)
                 completion()
@@ -89,6 +100,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                 return
             }
         }
+        
+        // Firebase currentUser 자체가 없는 경우
         completion()
     }
     
