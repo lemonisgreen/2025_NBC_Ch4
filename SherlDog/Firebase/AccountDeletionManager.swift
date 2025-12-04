@@ -27,8 +27,18 @@ final class AccountDeletionManager {
             return
         }
         
-        let userId = currentUser.uid
+        let firebaseUID = currentUser.uid
         let provider = AuthSession.currentProvider
+        
+        // 🔑 실제 데이터 삭제에 사용할 ID (AppUserID 우선)
+        let appUserId: String = {
+            if let appId = AuthSession.currentAppUserId {
+                return appId
+            } else {
+                // 혹시 세션에 appUserId가 안 들어간 경우 대비
+                return firebaseUID
+            }
+        }()
         
         // 1. 재인증
         performReauthentication(provider: provider, from: viewController) { [weak self] reauthSuccess in
@@ -39,8 +49,8 @@ final class AccountDeletionManager {
                 return
             }
             
-            // 2. Firestore 유저 데이터 삭제
-            self.deleteUserData(userId: userId) { dataSuccess in
+            // 2. Firestore 유저 데이터 삭제 (AppUserID + legacy UID 둘 다)
+            self.deleteUserData(appUserId: appUserId, firebaseUID: firebaseUID) { dataSuccess in
                 
                 // 3. 소셜 계정 unlink / 로그아웃
                 self.unlinkSocialAccount(provider: provider) { _ in
@@ -154,57 +164,175 @@ final class AccountDeletionManager {
     }
     
     // MARK: - Firestore 데이터 삭제
-    private func deleteUserData(userId: String, completion: @escaping (Bool) -> Void) {
+    private func deleteUserData(
+        appUserId: String,
+        firebaseUID: String,
+        completion: @escaping (Bool) -> Void
+    ) {
         let db = Firestore.firestore()
-        let collections = FirestoreCollection.allCases.map(\.rawValue)
+        
+        // 🔑 삭제 대상이 될 ID 후보들 (AppUserID + 예전 UID)
+        let idCandidates = [appUserId, firebaseUID]
         
         let group = DispatchGroup()
         var hasError = false
         
-        // 각 도메인 컬렉션에서 userId 기반 문서 삭제
-        for collection in collections {
-            group.enter()
-            db.collection(collection)
-                .whereField("userId", isEqualTo: userId)
-                .getDocuments { snapshot, error in
-                    
-                    if let error = error {
-                        print("컬렉션 \(collection) 조회 실패: \(error)")
-                        hasError = true
-                        group.leave()
-                        return
-                    }
-                    
-                    guard let documents = snapshot?.documents, !documents.isEmpty else {
-                        group.leave()
-                        return
-                    }
-                    
-                    let batch = db.batch()
-                    documents.forEach { batch.deleteDocument($0.reference) }
-                    
-                    batch.commit { error in
-                        if let error = error {
-                            print("컬렉션 \(collection) 배치 삭제 실패: \(error)")
-                            hasError = true
-                        }
-                        group.leave()
-                    }
+        // 1) users 컬렉션 (문서 ID = Firebase UID)
+        group.enter()
+        db.collection(FirestoreCollection.users.rawValue)
+            .document(firebaseUID)
+            .delete { error in
+                if let error = error {
+                    print("users 문서 삭제 실패: \(error)")
+                    hasError = true
+                } else {
+                    print("✅ users 문서 삭제 완료 (\(firebaseUID))")
                 }
+                group.leave()
+            }
+        
+        // 2) HumanProfile 컬렉션 (문서 ID = userId(AppUserID))
+        group.enter()
+        deleteHumanProfileDocuments(
+            db: db,
+            appUserId: appUserId,
+            firebaseUID: firebaseUID
+        ) { success in
+            if !success { hasError = true }
+            group.leave()
         }
         
-        // users 컬렉션 문서 삭제
-        group.enter()
-        db.collection("users").document(userId).delete { error in
-            if let error = error {
-                print("users 문서 삭제 실패: \(error)")
-                hasError = true
+        // 3) 나머지 도메인 컬렉션들 (userId / userID / reporterId / targetUserId 필드 기준)
+        let domainCollections: [FirestoreCollection] = [
+            .petProfile,
+            .walkResult,
+            .clues,
+            .blockLog,
+            .reportLog,
+            .detectiveMate,
+            .invLogBoard
+        ]
+        
+        for collection in domainCollections {
+            group.enter()
+            deleteInCollection(
+                db: db,
+                collection: collection,
+                idCandidates: idCandidates
+            ) { success in
+                if !success { hasError = true }
+                group.leave()
             }
-            group.leave()
         }
         
         group.notify(queue: .main) {
             completion(!hasError)
+        }
+    }
+    
+    private func deleteHumanProfileDocuments(
+        db: Firestore,
+        appUserId: String,
+        firebaseUID: String,
+        completion: @escaping (Bool) -> Void
+    ) {
+        let docIds = [appUserId, firebaseUID]   // 혹시 예전에 UID로 저장된 문서가 있을 수도 있으니까
+        
+        let group = DispatchGroup()
+        var allSuccess = true
+        
+        for docId in docIds {
+            group.enter()
+            db.collection(FirestoreCollection.humanProfile.rawValue)
+                .document(docId)
+                .delete { error in
+                    if let error = error {
+                        // 문서가 없어서 나는 에러는 무시해도 됨
+                        let ns = error as NSError
+                        if !(ns.domain == FirestoreErrorDomain &&
+                             ns.code == FirestoreErrorCode.notFound.rawValue) {
+                            print("HumanProfile 문서 삭제 실패 (\(docId)):", error)
+                            allSuccess = false
+                        }
+                    } else {
+                        print("✅ HumanProfile 문서 삭제 완료 (\(docId))")
+                    }
+                    group.leave()
+                }
+        }
+        
+        group.notify(queue: .main) {
+            completion(allSuccess)
+        }
+    }
+    
+    private func deleteInCollection(
+        db: Firestore,
+        collection: FirestoreCollection,
+        idCandidates: [String],
+        completion: @escaping (Bool) -> Void
+    ) {
+        let fieldNames: [String]
+        
+        switch collection {
+        case .petProfile:
+            fieldNames = ["userId"]
+            
+        case .walkResult, .clues:
+            fieldNames = ["userID", "userId"]
+            
+        case .reportLog:
+            fieldNames = ["reporterId"]
+            
+            //        case .blockLog:
+            //            fieldNames = ["blockerId", "blockedId"]
+            //
+        default:
+            completion(true)
+            return
+        }
+        
+        let group = DispatchGroup()
+        var allSuccess = true
+        
+        for field in fieldNames {
+            for id in idCandidates {
+                group.enter()
+                
+                db.collection(collection.rawValue)
+                    .whereField(field, isEqualTo: id)
+                    .getDocuments { snapshot, error in
+                        
+                        if let error = error {
+                            print("⚠️ \(collection.rawValue) (\(field) == \(id)) 조회 실패:", error)
+                            allSuccess = false
+                            group.leave()
+                            return
+                        }
+                        
+                        guard let docs = snapshot?.documents, !docs.isEmpty else {
+                            group.leave()
+                            return
+                        }
+                        
+                        let batch = db.batch()
+                        docs.forEach { batch.deleteDocument($0.reference) }
+                        
+                        batch.commit { error in
+                            if let error = error {
+                                print("⚠️ \(collection.rawValue) (\(field) == \(id)) 삭제 실패:", error)
+                                allSuccess = false
+                            } else {
+                                print("✅ \(collection.rawValue) - \(field) == \(id) 문서 \(docs.count)개 삭제")
+                            }
+                            group.leave()
+                        }
+                    }
+            }
+        }
+        
+        group.notify(queue: .main) {
+            completion(allSuccess)
         }
     }
     
