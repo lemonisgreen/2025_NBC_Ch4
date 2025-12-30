@@ -23,6 +23,7 @@ final class PostDetailViewController: UIViewController {
     private let likeButtonEvent = PublishRelay<Void>()
     private let commentEvent = PublishRelay<CommentEvent>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
+//    private let firstLoad = PublishRelay<Void>()
     private let disposeBag = DisposeBag()
     
     private lazy var dataSource = self.postCollectionViewDataSource()
@@ -52,13 +53,6 @@ final class PostDetailViewController: UIViewController {
         setupUI()
         configureUI()
         bind()
-    }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        // 최초 데이터 불러오기
-        refreshControl.sendActions(for: .valueChanged)
     }
 }
 
@@ -97,6 +91,7 @@ extension PostDetailViewController {
             .disposed(by: disposeBag)
         
         output.isUpdating
+            .filter{ $0 == false }
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
@@ -150,7 +145,6 @@ extension PostDetailViewController {
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
             guard let cell = self?.postDetailCollectionView.cellForItem(at: indexPath) as? CommentCell else { return }
             cell.setFixMode(isFixMode: true)
-            cell.contentLabel.becomeFirstResponder()
             
             // TODO: fixAction
         }
@@ -405,7 +399,7 @@ extension PostDetailViewController {
                     cell.rx.saveButtonTap
                         .bind(onNext: { [weak self] in
                             cell.setFixMode(isFixMode: false)
-                            self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.contentLabel.text ?? ""))
+                            self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.loadFixedContent()))
                         })
                         .disposed(by: cell.disposeBag)
                     

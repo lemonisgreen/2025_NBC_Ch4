@@ -16,10 +16,11 @@ final class CommentCell: UICollectionViewCell {
     static let identifier: String = "CommentCell"
     
     var disposeBag = DisposeBag()
+    private let contentLabelFont = UIFont.body6
     private lazy var maxContentHeight: CGFloat = {
-        let lineHeight = contentLabel.font?.lineHeight ?? 0
-        let textInset = contentLabel.textContainerInset.top + contentLabel.textContainerInset.bottom
-        let contentInset = contentLabel.contentInset.top + contentLabel.contentInset.bottom
+        let lineHeight = contentLabelFont.lineHeight
+        let textInset = contentTextView.textContainerInset.top + contentTextView.textContainerInset.bottom
+        let contentInset = contentTextView.contentInset.top + contentTextView.contentInset.bottom
         // 3줄 + 인셋
         return lineHeight * 3 + textInset + contentInset
     }()
@@ -28,7 +29,8 @@ final class CommentCell: UICollectionViewCell {
     private let nameLabel = UILabel()
     private let postDateLabel = UILabel()
     private let nameDateStackView = UIStackView()
-    let contentLabel = UITextView()
+    private let contentLabel = UILabel()
+    private let contentTextView = UITextView()
     private let verticalStackView = UIStackView()
     private let horizontalStackView = UIStackView()
     private let configButton = UIButton()
@@ -41,13 +43,6 @@ final class CommentCell: UICollectionViewCell {
         
         setupUI()
         configureUI()
-        bind()
-    }
-    
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        
-        updateTextViewHeight()
     }
     
     override func prepareForReuse() {
@@ -57,9 +52,7 @@ final class CommentCell: UICollectionViewCell {
         nameLabel.text = nil
         postDateLabel.text = nil
         contentLabel.text = nil
-        contentLabel.layer.borderColor = UIColor.clear.cgColor
-        contentLabel.allowsEditingTextAttributes = false
-        contentLabel.isEditable = false
+        contentTextView.text = nil
         disposeBag = DisposeBag()
     }
     
@@ -67,21 +60,20 @@ final class CommentCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
-    private func bind() {
-        self.contentLabel.rx.text.orEmpty
-            .bind(onNext: { [weak self] text in
-                self?.updateTextViewHeight()
-            })
-            .disposed(by: disposeBag)
-    }
-    
     func setFixMode(isFixMode: Bool) {
-        contentLabel.layer.borderColor = isFixMode ? UIColor.textPrimary.cgColor : UIColor.clear.cgColor
-        contentLabel.allowsEditingTextAttributes = isFixMode
-        contentLabel.isEditable = isFixMode
-        contentLabel.isScrollEnabled = isFixMode
+        contentTextView.isHidden = !isFixMode
+        contentLabel.isHidden = isFixMode
         configButton.isHidden = isFixMode
         buttonStackView.isHidden = !isFixMode
+        
+        if isFixMode {
+            self.contentTextView.becomeFirstResponder()
+        }
+    }
+    
+    func loadFixedContent() -> String {
+        guard let text = self.contentTextView.text else { return "" }
+        return text
     }
     
     func settingCell(data: CommentModel, canOpen: Bool) {
@@ -90,6 +82,7 @@ final class CommentCell: UICollectionViewCell {
             self.postDateLabel.text = SDLiteral.CommunityView.separateDot
             + self.timestampToToday(timestamp: data.date)
             self.contentLabel.text = data.content
+            self.contentTextView.text = data.content
             
             let processor = DownsamplingImageProcessor(size: .init(width: 40, height: 40)) // 크기 지정 다운 샘플링
             
@@ -106,6 +99,7 @@ final class CommentCell: UICollectionViewCell {
         } else {
             self.postDateLabel.text = self.timestampToToday(timestamp: data.date)
             self.contentLabel.text = SDLiteral.PostDetailViewController.secretCommentContent
+            self.contentTextView.text = SDLiteral.PostDetailViewController.secretCommentContent
             self.profileImageView.image = .secretProfile
         }
     }
@@ -120,24 +114,6 @@ final class CommentCell: UICollectionViewCell {
         let dateFormatter = DateFormatter.todayStyle(date)
         
         return dateFormatter.string(from: date)
-    }
-    
-    private func updateTextViewHeight() {
-        let fixedWidth = contentLabel.bounds.width
-//        contentLabel.isScrollEnabled = false
-        
-        let fittingSize = contentLabel.sizeThatFits(
-            CGSize(width: fixedWidth, height: .greatestFiniteMagnitude)
-        )
-        let fullHeight = fittingSize.height
-        
-        let cappedHeight = min(fullHeight, maxContentHeight)
-        
-        contentLabel.isScrollEnabled = fullHeight > maxContentHeight
-        
-        contentLabel.snp.updateConstraints {
-            $0.height.equalTo(cappedHeight)
-        }
     }
     
     // MARK: - UI
@@ -164,13 +140,14 @@ final class CommentCell: UICollectionViewCell {
         
         contentView.addSubviews([
             horizontalStackView,
+            contentTextView,
             configButton,
             buttonStackView
         ])
         
         nameDateStackView.axis = .horizontal
         nameDateStackView.spacing = 2
-        nameDateStackView.alignment = .leading
+        nameDateStackView.alignment = .fill
         
         verticalStackView.axis = .vertical
         verticalStackView.spacing = 2
@@ -195,13 +172,16 @@ final class CommentCell: UICollectionViewCell {
         postDateLabel.font = .body6
         postDateLabel.textColor = .gray400
         
-        contentLabel.layer.borderColor = UIColor.clear.cgColor
-        contentLabel.layer.borderWidth = 1
-        contentLabel.allowsEditingTextAttributes = false
-        contentLabel.isEditable = false
-        contentLabel.backgroundColor = .clear
-        contentLabel.font = .body6
+        contentLabel.font = self.contentLabelFont
         contentLabel.textColor = .textPrimary
+        contentLabel.numberOfLines = 0
+        
+        contentTextView.layer.borderColor = UIColor.textPrimary.cgColor
+        contentTextView.layer.borderWidth = 1
+        contentTextView.backgroundColor = .clear
+        contentTextView.font = self.contentLabelFont
+        contentTextView.textColor = .textPrimary
+        contentTextView.isHidden = true
         
         configButton.setTitle(SDLiteral.CommunityView.dotdotdot, for: .normal)
         configButton.setTitleColor(.textPrimary, for: .normal)
@@ -234,6 +214,12 @@ final class CommentCell: UICollectionViewCell {
         buttonStackView.snp.makeConstraints {
             $0.centerY.equalTo(nameLabel)
             $0.trailing.equalToSuperview()
+        }
+        
+        contentTextView.snp.makeConstraints {
+            $0.top.leading.equalTo(contentLabel)
+            $0.trailing.equalToSuperview()
+            $0.height.equalTo(self.maxContentHeight)
         }
     }
 }

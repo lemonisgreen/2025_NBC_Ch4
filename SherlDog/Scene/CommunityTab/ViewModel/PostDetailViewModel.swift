@@ -50,9 +50,7 @@ final class PostDetailViewModel {
     
     private let originalPost: CommunityModel
     private lazy var category: FirestoreCollection = {
-        FirestoreCollection.allCases.filter {
-            $0.rawValue == self.originalPost.category
-        }.first ?? .invLogBoard
+        FirestoreCollection(rawValue: originalPost.category) ?? .invLogBoard
     }()
     private let showReportSubject = PublishSubject<ReportViewModel.Target>()
     private let disposeBag = DisposeBag()
@@ -62,7 +60,9 @@ final class PostDetailViewModel {
     }
     
     func transform(_ input: Input) -> Output {
-        let sharedRefresh = input.refreshPost.share()
+        let sharedRefresh = input.refreshPost
+            .startWith(())
+            .share(replay: 1)
         let commentRefreshTrigger = Observable.merge(
             input.commentEvent,
             sharedRefresh.map { CommentEvent.refresh }
@@ -71,11 +71,21 @@ final class PostDetailViewModel {
         let postData = fetchPost(sharedRefresh)
             .share(replay: 1)
         let commentData = commentEvent(commentRefreshTrigger)
+            .startWith(SectionModel(model: .comment(SDLiteral.PostDetailViewController.commentHeaderTitle), items: []))
             .share(replay: 1)
         
         let postDetailData = Observable
             .combineLatest(postData, commentData) { [$0, $1] }
-            .asDriver(onErrorDriveWith: .empty())
+            .do(onNext: { sections in
+                print("🔥 postDetailData emit sections:", sections.count,
+                      "postItems:", sections.first?.items.count ?? -1,
+                      "commentItems:", sections.last?.items.count ?? -1)
+            }, onError: { error in
+                print("🔥 postDetailData error:", error)
+            }, onCompleted: {
+                print("🔥 postDetailData completed")
+            })
+            .asDriver(onErrorJustReturn: [])
         
         let refreshTrigger = Observable.merge(
             sharedRefresh,
