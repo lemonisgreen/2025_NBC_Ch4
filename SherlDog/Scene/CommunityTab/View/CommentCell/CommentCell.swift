@@ -167,7 +167,7 @@ final class CommentCell: UICollectionViewCell {
         buttonStackView.isHidden = true
         
         profileImageView.contentMode = .scaleAspectFill
-        profileImageView.layer.cornerRadius = 8
+        profileImageView.layer.cornerRadius = 10
         profileImageView.clipsToBounds = true
         
         nameLabel.font = .body4
