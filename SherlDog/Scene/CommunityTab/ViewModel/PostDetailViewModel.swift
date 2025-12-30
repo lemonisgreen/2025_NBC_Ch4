@@ -76,15 +76,6 @@ final class PostDetailViewModel {
         
         let postDetailData = Observable
             .combineLatest(postData, commentData) { [$0, $1] }
-            .do(onNext: { sections in
-                print("🔥 postDetailData emit sections:", sections.count,
-                      "postItems:", sections.first?.items.count ?? -1,
-                      "commentItems:", sections.last?.items.count ?? -1)
-            }, onError: { error in
-                print("🔥 postDetailData error:", error)
-            }, onCompleted: {
-                print("🔥 postDetailData completed")
-            })
             .asDriver(onErrorJustReturn: [])
         
         let refreshTrigger = Observable.merge(
