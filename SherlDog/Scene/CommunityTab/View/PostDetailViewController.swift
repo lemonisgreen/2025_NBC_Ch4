@@ -398,14 +398,15 @@ extension PostDetailViewController {
                     
                     cell.rx.saveButtonTap
                         .bind(onNext: { [weak self] in
-                            cell.setFixMode(isFixMode: false)
                             self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.loadFixedContent()))
+                            cell.setFixMode(isFixMode: false)
                         })
                         .disposed(by: cell.disposeBag)
                     
                     cell.rx.cancelButtonTap
                         .bind(onNext: {
                             cell.setFixMode(isFixMode: false)
+                            cell.cancelEditMode()
                         })
                         .disposed(by: cell.disposeBag)
                     

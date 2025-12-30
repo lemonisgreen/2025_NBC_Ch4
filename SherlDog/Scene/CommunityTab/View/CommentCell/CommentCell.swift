@@ -71,6 +71,10 @@ final class CommentCell: UICollectionViewCell {
         }
     }
     
+    func cancelEditMode() {
+        self.contentTextView.text = self.contentLabel.text
+    }
+    
     func loadFixedContent() -> String {
         guard let text = self.contentTextView.text else { return "" }
         return text
