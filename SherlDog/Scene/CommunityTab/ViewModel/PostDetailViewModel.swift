@@ -183,10 +183,10 @@ extension PostDetailViewModel {
                 collection: .petProfile,
                 type: .document(id: pet.petProfileId)
             ))
-            .flatMap { profile -> Single<PetProfile> in
-                guard let profile = profile.first else { return .error(FirestoreError.noData) }
-                return .just(profile)
+            .flatMap { profile -> Single<PetProfile?> in
+                return .just(profile.first)
             }
+            .catchAndReturn(nil)
         }
         
         let human = FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
@@ -205,7 +205,7 @@ extension PostDetailViewModel {
                 var post = data
                 post.name = human.nickname
                 post.profileImage = human.image
-                post.petProfile = pet
+                post.petProfile = pet.compactMap { $0 }
                 
                 return post
             }
