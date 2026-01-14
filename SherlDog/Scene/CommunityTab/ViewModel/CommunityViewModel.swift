@@ -44,7 +44,6 @@ final class CommunityViewModel {
     struct Input {
         let segmentIndexChanged: Observable<Int>
         let pullToRefresh: Observable<Void>
-        let manualRefresh: Observable<Void>
         let fetchMore: Observable<Void>
         let menuEvent: Observable<PostMenuEvent>
 //        let likeEvent: Observable<CommunityModel>
@@ -73,9 +72,10 @@ final class CommunityViewModel {
         let refreshTrigger = makeRefreshTrigger(trigger: [
             selectedCategory.map { _ in () },
             input.pullToRefresh,
-            input.manualRefresh,
             menu.asObservable().map { _ in () }
         ])
+            .startWith(())
+            .share(replay: 1)
         
         // 데이터 불러오기
         let fetchStream = makeFetchStream(refreshTrigger: refreshTrigger,

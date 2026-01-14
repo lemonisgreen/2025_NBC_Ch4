@@ -91,7 +91,7 @@ extension PostDetailViewController {
             .disposed(by: disposeBag)
         
         output.isUpdating
-            .filter{ $0 == false }
+            .filter{ !$0 }
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
