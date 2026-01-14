@@ -564,12 +564,12 @@ extension PostDetailViewController {
             case 1: // 댓글 섹션
                 let item = NSCollectionLayoutItem(
                     layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                      heightDimension: .fractionalHeight(1))
+                                      heightDimension: .estimated(1))
                 )
                 
                 let group = NSCollectionLayoutGroup.vertical(
                     layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                      heightDimension: .estimated(80)),
+                                      heightDimension: .estimated(1)),
                     subitems: [item]
                 )
                 
