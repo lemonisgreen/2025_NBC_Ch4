@@ -95,6 +95,7 @@ enum SDLiteral {
         static let commentTextFieldPlaceholder: String = "댓글을 입력해주세요"
         static let commentSaveButtonTitle: String = "등록"
         static let secretCommentContent: String = "비밀 댓글입니다."
+        static let navigationTitle: String = "상세보기"
     }
     
     enum MyPageViewController {

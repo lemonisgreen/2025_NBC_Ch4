@@ -29,6 +29,8 @@ final class PostDetailViewController: UIViewController {
     private lazy var dataSource = self.postCollectionViewDataSource()
     
     // MARK: - UI property
+    private let navigationBackButton = UIButton()
+    private let navigationTitleLabel = UILabel()
     private let refreshControl = UIRefreshControl()
     private lazy var postDetailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postDetailCollectionViewLayout())
     private let commentTextField = UITextField()
@@ -72,6 +74,12 @@ extension PostDetailViewController {
             commentEvent: self.commentEvent.asObservable(),
             postMenuEvent: self.menuEvent.asObservable()
         )
+        
+        self.navigationBackButton.rx.tap
+            .bind(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: disposeBag)
         
         self.saveButton.rx.tap
             .map { [weak self] in
@@ -616,6 +624,59 @@ extension PostDetailViewController {
             postDetailCollectionView,
             commentStackView
         ])
+        
+        // 키보드 숨기기 활성화
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+        
+        // 제스쳐로 뒤로가기 활성화
+        self.navigationController?.interactivePopGestureRecognizer?.delegate = nil
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        
+//        // 리퀴드 글래스 적용 시
+//        var navigationButtonConfig = UIButton.Configuration.plain()
+//        navigationButtonConfig.image = UIImage(systemName: "chevron.backward")
+//        navigationButtonConfig.baseForegroundColor = .textPrimary
+//        navigationButtonConfig.imagePadding = 8
+//        navigationButtonConfig.contentInsets = .init(top: 0, leading: 4, bottom: 0, trailing: 4)
+//        navigationButtonConfig.attributedTitle = AttributedString(
+//            SDLiteral.PostDetailViewController.navigationTitle,
+//            attributes: AttributeContainer([.font: UIFont.highlight3])
+//        )
+//        
+//        navigationBackButton.configuration = navigationButtonConfig
+//        
+//        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        
+        // 리퀴드 글래스 미 적용 시
+        navigationTitleLabel.text = SDLiteral.PostDetailViewController.navigationTitle
+        navigationTitleLabel.textAlignment = .left
+        navigationTitleLabel.font = .highlight3
+        navigationTitleLabel.textColor = .textPrimary
+        
+        navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
+        navigationBackButton.imageView?.tintColor = .textPrimary
+        
+        let navigationStack = UIStackView()
+        let containerView = UIView()
+        
+        containerView.addSubview(navigationStack)
+        
+        navigationStack.addArrangedSubview(navigationBackButton)
+        navigationStack.addArrangedSubview(navigationTitleLabel)
+        navigationStack.axis = .horizontal
+        navigationStack.alignment = .center
+        navigationStack.spacing = 8
+        navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        
+        let navigationBarAppearance = UINavigationBarAppearance()
+        navigationBarAppearance.configureWithOpaqueBackground()
+        navigationBarAppearance.backgroundColor = .keycolorInverse
+        navigationBarAppearance.shadowColor = .clear
+        
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: containerView)
+        self.navigationItem.standardAppearance = navigationBarAppearance
+        self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
+        // 여기까지
         
         postDetailCollectionView.refreshControl = refreshControl
         postDetailCollectionView.backgroundColor = .keycolorInverse
