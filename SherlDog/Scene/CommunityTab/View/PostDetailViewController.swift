@@ -56,12 +56,6 @@ final class PostDetailViewController: UIViewController {
         configureUI()
         bind()
     }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        self.navigationController?.navigationBar.isHidden = false
-    }
 }
 
 // MARK: - bind
@@ -624,6 +618,8 @@ extension PostDetailViewController {
             postDetailCollectionView,
             commentStackView
         ])
+        
+        self.navigationController?.navigationBar.isHidden = false
         
         // 키보드 숨기기 활성화
         self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
