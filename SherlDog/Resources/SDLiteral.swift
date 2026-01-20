@@ -45,6 +45,7 @@ enum SDLiteral {
         static let separateDot: String = " · "
         static let documentId: String = "documentId"
         static let postDate: String = "postDate"
+        static let unknownUser: String = "삭제된 사용자"
     }
     
     enum AddNewContentView {

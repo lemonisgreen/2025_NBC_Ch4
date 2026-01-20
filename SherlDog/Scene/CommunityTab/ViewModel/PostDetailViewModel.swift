@@ -183,9 +183,7 @@ extension PostDetailViewModel {
                 collection: .petProfile,
                 type: .document(id: pet.petProfileId)
             ))
-            .flatMap { profile -> Single<PetProfile?> in
-                return .just(profile.first)
-            }
+            .map { $0.first }
             .catchAndReturn(nil)
         }
         
@@ -193,19 +191,17 @@ extension PostDetailViewModel {
             collection: .humanProfile,
             type: .document(id: data.userId)
         ))
-            .flatMap { profile -> Single<HumanProfileModel> in
-                guard let profile = profile.first else { return .error(FirestoreError.noData) }
-                return .just(profile)
-            }
+            .map { $0.first }
+            .catchAndReturn(nil)
         
-        let petZip = Single.zip(pets)
+        let petZip = Single.zip(pets).map { $0.compactMap { $0 } }
         
         return Single.zip(human, petZip)
             .map { human, pet in
                 var post = data
-                post.name = human.nickname
-                post.profileImage = human.image
-                post.petProfile = pet.compactMap { $0 }
+                post.name = human?.nickname ?? SDLiteral.CommunityView.unknownUser
+                post.profileImage = human?.image ?? ""
+                post.petProfile = pet
                 
                 return post
             }
