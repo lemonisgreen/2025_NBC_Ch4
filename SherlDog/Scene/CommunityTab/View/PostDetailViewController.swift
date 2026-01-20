@@ -54,6 +54,12 @@ final class PostDetailViewController: UIViewController {
         configureUI()
         bind()
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.navigationBar.isHidden = false
+    }
 }
 
 // MARK: - bind
@@ -70,9 +76,12 @@ extension PostDetailViewController {
         self.saveButton.rx.tap
             .map { [weak self] in
                 let text = self?.commentTextField.text ?? ""
-                self?.commentTextField.text = ""
+                let isSecret = self?.isSecretToggleButton.isSelected ?? false
                 
-                return CommentEvent.create(content: text, isSecret: self?.isSecretToggleButton.isSelected ?? false)
+                self?.commentTextField.text = ""
+                self?.isSecretToggleButton.isSelected = false
+                
+                return CommentEvent.create(content: text, isSecret: isSecret)
             }
             .bind(to: self.commentEvent)
             .disposed(by: disposeBag)
@@ -649,8 +658,8 @@ extension PostDetailViewController {
         // 설정 값이 낮을수록 우선적으로 줄여짐 -> 줄여지지 않도록(텍스트필드가 늘려져도 버튼이 줄여지지 않도록)
         saveButton.setContentCompressionResistancePriority(.init(1000), for: .horizontal)
         
-        isSecretToggleButton.setImage(UIImage(systemName: "lock.open"), for: .normal)
-        isSecretToggleButton.setImage(UIImage(systemName: "lock"), for: .selected)
+        isSecretToggleButton.setImage(.stateUnlock, for: .normal)
+        isSecretToggleButton.setImage(.stateLock, for: .selected)
         var config = UIButton.Configuration.plain()
         config.buttonSize = .mini
         config.baseBackgroundColor = .clear
