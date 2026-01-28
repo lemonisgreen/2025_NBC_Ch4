@@ -192,7 +192,7 @@ private extension ReportViewController {
         reportReasonButton.layer.cornerRadius = 6
         reportReasonButton.contentEdgeInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
         
-        keyboardDoneButton.title = "완료"
+        keyboardDoneButton.title = SDLiteral.ReportViewController.doneButtonTitle
         keyboardDoneButton.style = .done
         
         let toolbar = UIToolbar()
