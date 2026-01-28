@@ -18,6 +18,74 @@ final class UserDataMigrationManager {
     
     private let db = Firestore.firestore()
     
+    private let kakaoIndexCollection = "kakao_users"
+    private let targetMigrationVersion = 1
+    
+    /// kakao_users/{kakaoId} upsert + legacyUIDs 누적 + (legacyUIDs, migrationVersion) 반환
+    private func upsertKakaoIndexAndFetchState(
+        kakaoId: Int64,
+        appUserId: String,
+        currentFirebaseUID: String?,
+        completion: @escaping (_ legacyUIDs: [String], _ migrationVersion: Int, _ error: Error?) -> Void
+    ) {
+        let ref = db.collection(kakaoIndexCollection).document(String(kakaoId))
+        
+        db.runTransaction({ txn, errPtr -> Any? in
+            let snap: DocumentSnapshot
+            do {
+                snap = try txn.getDocument(ref)
+            } catch {
+                errPtr?.pointee = error as NSError
+                return nil
+            }
+            
+            var legacyUIDs = (snap.data()?["legacyFirebaseUIDs"] as? [String]) ?? []
+            if let uid = currentFirebaseUID, !uid.isEmpty, !legacyUIDs.contains(uid) {
+                legacyUIDs.append(uid)
+            }
+            
+            let currentVersion = (snap.data()?["migrationVersion"] as? Int) ?? 0
+            
+            if snap.exists {
+                txn.setData([
+                    "appUserId": appUserId,
+                    "legacyFirebaseUIDs": legacyUIDs,
+                    "lastLoginAt": FieldValue.serverTimestamp()
+                ], forDocument: ref, merge: true)
+            } else {
+                txn.setData([
+                    "appUserId": appUserId,
+                    "legacyFirebaseUIDs": legacyUIDs,
+                    "migrationVersion": 0,
+                    "createdAt": FieldValue.serverTimestamp(),
+                    "lastLoginAt": FieldValue.serverTimestamp()
+                ], forDocument: ref, merge: false)
+            }
+            
+            return [
+                "legacyUIDs": legacyUIDs,
+                "migrationVersion": currentVersion
+            ]
+        }) { result, error in
+            if let error = error {
+                completion([], 0, error)
+                return
+            }
+            let dict = result as? [String: Any]
+            let legacy = dict?["legacyUIDs"] as? [String] ?? []
+            let version = dict?["migrationVersion"] as? Int ?? 0
+            completion(legacy, version, nil)
+        }
+    }
+    
+    private func setMigrationDone(kakaoId: Int64) {
+        let ref = db.collection(kakaoIndexCollection).document(String(kakaoId))
+        ref.setData([
+            "migrationVersion": targetMigrationVersion,
+            "migratedAt": FieldValue.serverTimestamp()
+        ], merge: true)
+    }
+    
     /// 카카오 로그인 직후 호출 -> 해당 kakaoId 로 과거에 생성된 모든 UID 기반 데이터들을 appUserId 기준으로 업데이트
     ///
     /// - Parameters:
@@ -28,6 +96,7 @@ final class UserDataMigrationManager {
     func migrateAfterKakaoLogin(
         kakaoId: Int64,
         appUserId: String,
+        currentFirebaseUID: String? = nil,
         completion: @escaping (Bool) -> Void
     ) {
         guard kakaoId != 0, !appUserId.isEmpty else {
@@ -37,54 +106,83 @@ final class UserDataMigrationManager {
         
         print("🔁 [Migration] 시작 - kakaoId: \(kakaoId), appUserId: \(appUserId)")
         
-        // 1) users 컬렉션에서 kakaoId == 현재 kakaoId 인 문서들 조회
-        db.collection(FirestoreCollection.users.rawValue)
-            .whereField("kakaoId", isEqualTo: kakaoId)
-            .getDocuments(completion: { [weak self] snapshot, error in
-                guard let self else {
-                    completion(false)
-                    return
-                }
-                
-                if let error = error {
-                    print("❌ [Migration] users 조회 실패: \(error)")
-                    completion(false)
-                    return
-                }
-                
-                guard let docs = snapshot?.documents, !docs.isEmpty else {
-                    print("ℹ️ [Migration] kakaoId \(kakaoId)에 해당하는 기존 users 문서 없음")
-                    completion(true)
-                    return
-                }
-                
-                let legacyUIDs = docs.map { $0.documentID }
-                print("🧩 [Migration] legacyUIDs: \(legacyUIDs)")
-                
-                self.migrateUsersCollection(
-                    docs: docs,
-                    appUserId: appUserId
-                ) { usersSuccess in
+        // 0) kakao_users 인덱스 upsert + 상태 확인
+        upsertKakaoIndexAndFetchState(
+            kakaoId: kakaoId,
+            appUserId: appUserId,
+            currentFirebaseUID: currentFirebaseUID
+        ) { [weak self] indexLegacyUIDs, migrationVersion, error in
+            guard let self else { completion(false); return }
+            
+            if let error = error {
+                print("❌ [Migration] kakao_users upsert 실패: \(error)")
+                completion(false)
+                return
+            }
+            
+            // ✅ 이미 한 번 완료된 유저면 스킵
+            if migrationVersion >= self.targetMigrationVersion {
+                print("✅ [Migration] 이미 완료된 유저 (version: \(migrationVersion)) - 스킵")
+                completion(true)
+                return
+            }
+            
+            // 1) 기존 방식 유지: users 컬렉션에서 kakaoId로 legacyUIDs 찾기 (업뎃 직후 최초 1회용)
+            self.db.collection(FirestoreCollection.users.rawValue)
+                .whereField("kakaoId", isEqualTo: kakaoId)
+                .getDocuments { [weak self] snapshot, error in
+                    guard let self else { completion(false); return }
                     
-                    self.migrateOtherCollections(
-                        legacyUIDs: legacyUIDs,
-                        appUserId: appUserId
-                    ) { othersSuccess in
-                        
-                        self.migrateHumanProfileDocuments(
-                            legacyUIDs: legacyUIDs,
-                            appUserId: appUserId
-                        ) { humanSuccess in
-                            
-                            let allSuccess = usersSuccess && othersSuccess && humanSuccess
-                            print(allSuccess
-                                  ? "✅ [Migration] 전체 마이그레이션 완료"
-                                  : "⚠️ [Migration] 일부 마이그레이션 실패")
-                            completion(allSuccess)
+                    if let error = error {
+                        print("❌ [Migration] users 조회 실패: \(error)")
+                        completion(false)
+                        return
+                    }
+                    
+                    let docs = snapshot?.documents ?? []
+                    let legacyFromUsers = docs.map { $0.documentID }
+                    
+                    // ✅ legacyUIDs = (인덱스에 모아둔 것 + users에서 찾은 것) 합집합
+                    var legacyUIDs = Array(Set(indexLegacyUIDs + legacyFromUsers))
+                    
+                    // legacy가 아예 없으면 마이그레이션 할 게 없으니 완료 처리 + 버전 올려서 재실행 방지
+                    guard !legacyUIDs.isEmpty else {
+                        print("ℹ️ [Migration] legacyUIDs 없음 - 마이그레이션 스킵 & 완료 마킹")
+                        self.setMigrationDone(kakaoId: kakaoId)
+                        completion(true)
+                        return
+                    }
+                    
+                    print("🧩 [Migration] legacyUIDs: \(legacyUIDs)")
+                    
+                    // 1-1) legacyUIDs를 kakao_users에 다시 저장(누락 보완)
+                    self.db.collection(self.kakaoIndexCollection)
+                        .document(String(kakaoId))
+                        .setData([
+                            "legacyFirebaseUIDs": legacyUIDs,
+                            "updatedAt": FieldValue.serverTimestamp()
+                        ], merge: true)
+                    
+                    // 2) 마이그레이션 실행(기존 함수 재사용)
+                    self.migrateUsersCollection(docs: docs, appUserId: appUserId) { usersSuccess in
+                        self.migrateOtherCollections(legacyUIDs: legacyUIDs, appUserId: appUserId) { othersSuccess in
+                            self.migrateHumanProfileDocuments(legacyUIDs: legacyUIDs, appUserId: appUserId) { humanSuccess in
+                                
+                                let allSuccess = usersSuccess && othersSuccess && humanSuccess
+                                print(allSuccess
+                                      ? "✅ [Migration] 전체 마이그레이션 완료"
+                                      : "⚠️ [Migration] 일부 마이그레이션 실패")
+                                
+                                // ✅ 성공했을 때만 version 올려서 “최초 1회” 보장
+                                if allSuccess {
+                                    self.setMigrationDone(kakaoId: kakaoId)
+                                }
+                                completion(allSuccess)
+                            }
                         }
                     }
                 }
-            })
+        }
     }
     
     // MARK: - users 컬렉션 마이그레이션
@@ -145,7 +243,7 @@ final class UserDataMigrationManager {
             (.reportLog, ["reporterId", "targetUserId"]),
             (.blockLog, ["blockerId", "blockedId"]),
             (.detectiveMate, ["ownerId", "participantId"]),
-            //(.invLogBoard, ["writerId"])
+            (.invLogBoard, ["writerId"])
         ]
         
         for (collection, fields) in config {
@@ -207,54 +305,54 @@ final class UserDataMigrationManager {
         let group = DispatchGroup()
         var allSuccess = true
         
-        for legacyUID in legacyUIDs {
-            group.enter()
+        // ✅ 먼저 새 HumanProfile 상태 확인(1번만)
+        let newRef = db.collection(FirestoreCollection.humanProfile.rawValue).document(appUserId)
+        
+        newRef.getDocument { [weak self] newSnap, error in
+            guard let self else { completion(false); return }
             
-            // 예전: HumanProfile/{legacyUID}
-            let oldRef = db.collection(FirestoreCollection.humanProfile.rawValue)
-                .document(legacyUID)
+            let existingNickname = newSnap?.data()?["nickname"] as? String
+            let shouldProtectNickname = (existingNickname?.isEmpty == false)
             
-            oldRef.getDocument(completion: { [weak self] snapshot, error in
-                guard let self else {
-                    allSuccess = false
-                    group.leave()
-                    return
-                }
+            for legacyUID in legacyUIDs {
+                group.enter()
                 
-                if let error = error {
-                    print("❌ [Migration] HumanProfile 조회 실패 (\(legacyUID)): \(error)")
-                    allSuccess = false
-                    group.leave()
-                    return
-                }
-                
-                guard let snapshot = snapshot, snapshot.exists,
-                      let data = snapshot.data() else {
-                    // 이 UID로 휴먼프로필이 없으면 그냥 패스
-                    group.leave()
-                    return
-                }
-                
-                // 새: HumanProfile/{appUserId}
-                let newRef = self.db.collection(FirestoreCollection.humanProfile.rawValue)
-                    .document(appUserId)
-                
-                newRef.setData(data, merge: true) { error in
+                let oldRef = self.db.collection(FirestoreCollection.humanProfile.rawValue).document(legacyUID)
+                oldRef.getDocument { [weak self] snapshot, error in
+                    guard let self else { allSuccess = false; group.leave(); return }
+                    
                     if let error = error {
-                        print("❌ [Migration] HumanProfile 복사 실패 (\(legacyUID) → \(appUserId)): \(error)")
+                        print("❌ [Migration] HumanProfile 조회 실패 (\(legacyUID)): \(error)")
                         allSuccess = false
                         group.leave()
                         return
                     }
                     
-                    print("✅ [Migration] HumanProfile \(legacyUID) → \(appUserId) 복사 완료")
-                    group.leave()
+                    guard let snapshot = snapshot, snapshot.exists, var data = snapshot.data() else {
+                        group.leave()
+                        return
+                    }
+                    
+                    // ✅ 이미 appUserId 프로필이 있고 nickname이 있으면 덮지 않게 보호
+                    if shouldProtectNickname {
+                        data.removeValue(forKey: "nickname")
+                    }
+                    
+                    newRef.setData(data, merge: true) { error in
+                        if let error = error {
+                            print("❌ [Migration] HumanProfile 복사 실패 (\(legacyUID) → \(appUserId)): \(error)")
+                            allSuccess = false
+                        } else {
+                            print("✅ [Migration] HumanProfile \(legacyUID) → \(appUserId) 복사 완료 (protectNickname=\(shouldProtectNickname))")
+                        }
+                        group.leave()
+                    }
                 }
-            })
-        }
-        
-        group.notify(queue: .main) {
-            completion(allSuccess)
+            }
+            
+            group.notify(queue: .main) {
+                completion(allSuccess)
+            }
         }
     }
 }

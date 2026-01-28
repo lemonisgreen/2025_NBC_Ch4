@@ -248,7 +248,8 @@ extension LoginViewModel {
                 // ✅ 여기서 "로그인 후 레거시 마이그레이션" 실행
                 UserDataMigrationManager.shared.migrateAfterKakaoLogin(
                     kakaoId: kakaoUserInfo.id,
-                    appUserId: appUserId
+                    appUserId: appUserId,
+                    currentFirebaseUID: firebaseUser.uid
                 ) { [weak self] _ in
                     guard let self else { return }
                     

@@ -74,7 +74,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
                         // ✅ 앱 시작 시에도 kakaoId 기반 마이그레이션 실행
                         UserDataMigrationManager.shared.migrateAfterKakaoLogin(
                             kakaoId: kakaoId,
-                            appUserId: appUserId
+                            appUserId: appUserId,
+                            currentFirebaseUID: firebaseUID
                         ) { _ in
                             completion()
                         }
