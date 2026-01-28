@@ -121,7 +121,7 @@ private extension ReportViewController {
         
         if let sheet = sheetVC.sheetPresentationController {
             sheet.detents = [
-                .medium()
+                .custom { _ in 480 }
             ]
             sheet.prefersGrabberVisible = false
             sheet.preferredCornerRadius = 20
