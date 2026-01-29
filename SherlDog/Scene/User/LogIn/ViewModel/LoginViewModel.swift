@@ -130,9 +130,44 @@ extension LoginViewModel {
         })
         .disposed(by: disposeBag)
     }
+    
+    private func upsertUserDocumentPreservingCreatedAt(
+        firebaseUID: String,
+        userData: [String: Any],
+        completion: @escaping (Error?) -> Void
+    ) {
+        let db = Firestore.firestore()
+        let ref = db.collection("users").document(firebaseUID)
+        
+        db.runTransaction({ txn, errPtr -> Any? in
+            let snap: DocumentSnapshot
+            do {
+                snap = try txn.getDocument(ref)
+            } catch {
+                errPtr?.pointee = error as NSError
+                return nil
+            }
+            
+            var payload = userData
+            payload["lastLoginAt"] = FieldValue.serverTimestamp()
+            
+            if snap.exists {
+                //기존 문서면 createdAt은 절대 건드리지 않기
+                payload.removeValue(forKey: "createdAt")
+                txn.setData(payload, forDocument: ref, merge: true)
+            } else {
+                //최초 생성일만 기록
+                payload["createdAt"] = FieldValue.serverTimestamp()
+                txn.setData(payload, forDocument: ref, merge: false)
+            }
+            
+            return nil
+        }) { _, error in
+            completion(error)
+        }
+    }
 }
 
-// MARK: - Kakao Login
 // MARK: - Kakao Login
 extension LoginViewModel {
     
@@ -226,38 +261,31 @@ extension LoginViewModel {
             "email": kakaoUserInfo.email ?? "",
             "profileImageUrl": kakaoUserInfo.profileImageUrl ?? "",
             "provider": "kakao",
-            "createdAt": FieldValue.serverTimestamp(),
-            "lastLoginAt": FieldValue.serverTimestamp()
+            "createdAt": FieldValue.serverTimestamp()
         ]
         
-        db.collection("users")
-            .document(firebaseUser.uid)
-            .setData(userData, merge: true) { [weak self] error in
-                guard let self else { return }
-                
-                if let error = error {
-                    self.endLoading()
-                    self.showErrorSubject.onNext(error.localizedDescription)
-                    return
-                }
-                
-                // ✅ 이 세션의 provider / appUserId 설정
-                AuthSession.setProvider(.kakao)
-                AuthSession.setAppUserId(appUserId)
-                
-                // ✅ 여기서 "로그인 후 레거시 마이그레이션" 실행
-                UserDataMigrationManager.shared.migrateAfterKakaoLogin(
-                    kakaoId: kakaoUserInfo.id,
-                    appUserId: appUserId,
-                    currentFirebaseUID: firebaseUser.uid
-                ) { [weak self] _ in
-                    guard let self else { return }
-                    
-                    // 마이그레이션이 끝난 뒤에 로딩 종료 + 펫 프로필 체크
-                    self.endLoading()
-                    self.checkPetProfiles()
-                }
+        upsertUserDocumentPreservingCreatedAt(firebaseUID: firebaseUser.uid, userData: userData) { [weak self] error in
+            guard let self else { return }
+            
+            if let error = error {
+                self.endLoading()
+                self.showErrorSubject.onNext(error.localizedDescription)
+                return
             }
+            
+            AuthSession.setProvider(.kakao)
+            AuthSession.setAppUserId(appUserId)
+            
+            UserDataMigrationManager.shared.migrateAfterKakaoLogin(
+                kakaoId: kakaoUserInfo.id,
+                appUserId: appUserId,
+                currentFirebaseUID: firebaseUser.uid
+            ) { [weak self] _ in
+                guard let self else { return }
+                self.endLoading()
+                self.checkPetProfiles()
+            }
+        }
     }
 }
 
@@ -330,26 +358,24 @@ extension LoginViewModel {
             "email": firebaseUser.email ?? "",
             "profileImageUrl": firebaseUser.photoURL?.absoluteString ?? "",
             "provider": "google",
-            "createdAt": FieldValue.serverTimestamp(),
-            "lastLoginAt": FieldValue.serverTimestamp()
+            "createdAt": FieldValue.serverTimestamp()
         ]
         
-        db.collection("users")
-            .document(firebaseUser.uid)
-            .setData(userData, merge: true) { [weak self] error in
-                guard let self else { return }
+        upsertUserDocumentPreservingCreatedAt(firebaseUID: firebaseUser.uid, userData: userData) { [weak self] error in
+            guard let self else { return }
+
+            if let error = error {
                 self.endLoading()
-                
-                if let error = error {
-                    self.showErrorSubject.onNext(error.localizedDescription)
-                    return
-                }
-                
-                AuthSession.setProvider(.google)
-                AuthSession.setAppUserId(appUserId)
-                
-                self.checkPetProfiles()
+                self.showErrorSubject.onNext(error.localizedDescription)
+                return
             }
+
+            AuthSession.setProvider(.google)
+            AuthSession.setAppUserId(appUserId)
+
+            self.endLoading()
+            self.checkPetProfiles()
+        }
     }
 }
 
@@ -386,26 +412,24 @@ extension LoginViewModel {
             "email": appleUserInfo.email ?? firebaseUser.email ?? "",
             "profileImageUrl": "",
             "provider": "apple",
-            "createdAt": FieldValue.serverTimestamp(),
-            "lastLoginAt": FieldValue.serverTimestamp()
+            "createdAt": FieldValue.serverTimestamp()
         ]
         
-        db.collection("users")
-            .document(firebaseUser.uid)
-            .setData(userData, merge: true) { [weak self] error in
-                guard let self else { return }
+        upsertUserDocumentPreservingCreatedAt(firebaseUID: firebaseUser.uid, userData: userData) { [weak self] error in
+            guard let self else { return }
+
+            if let error = error {
                 self.endLoading()
-                
-                if let error = error {
-                    self.showErrorSubject.onNext(error.localizedDescription)
-                    return
-                }
-                
-                AuthSession.setProvider(.apple)
-                AuthSession.setAppUserId(appUserId)
-                
-                self.checkPetProfiles()
+                self.showErrorSubject.onNext(error.localizedDescription)
+                return
             }
+
+            AuthSession.setProvider(.apple)
+            AuthSession.setAppUserId(appUserId)
+
+            self.endLoading()
+            self.checkPetProfiles()
+        }
     }
 }
 

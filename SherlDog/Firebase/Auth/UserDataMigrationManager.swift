@@ -104,9 +104,9 @@ final class UserDataMigrationManager {
             return
         }
         
-        print("🔁 [Migration] 시작 - kakaoId: \(kakaoId), appUserId: \(appUserId)")
+        print("[Migration] 시작 - kakaoId: \(kakaoId), appUserId: \(appUserId)")
         
-        // 0) kakao_users 인덱스 upsert + 상태 확인
+        // kakao_users 인덱스 upsert + 상태 확인
         upsertKakaoIndexAndFetchState(
             kakaoId: kakaoId,
             appUserId: appUserId,
@@ -115,14 +115,14 @@ final class UserDataMigrationManager {
             guard let self else { completion(false); return }
             
             if let error = error {
-                print("❌ [Migration] kakao_users upsert 실패: \(error)")
+                print("[Migration] kakao_users upsert 실패: \(error)")
                 completion(false)
                 return
             }
             
-            // ✅ 이미 한 번 완료된 유저면 스킵
+            // 이미 한 번 완료된 유저면 스킵
             if migrationVersion >= self.targetMigrationVersion {
-                print("✅ [Migration] 이미 완료된 유저 (version: \(migrationVersion)) - 스킵")
+                print("[Migration] 이미 완료된 유저 (version: \(migrationVersion)) - 스킵")
                 completion(true)
                 return
             }
@@ -134,7 +134,7 @@ final class UserDataMigrationManager {
                     guard let self else { completion(false); return }
                     
                     if let error = error {
-                        print("❌ [Migration] users 조회 실패: \(error)")
+                        print("[Migration] users 조회 실패: \(error)")
                         completion(false)
                         return
                     }
@@ -142,18 +142,18 @@ final class UserDataMigrationManager {
                     let docs = snapshot?.documents ?? []
                     let legacyFromUsers = docs.map { $0.documentID }
                     
-                    // ✅ legacyUIDs = (인덱스에 모아둔 것 + users에서 찾은 것) 합집합
+                    // legacyUIDs = (인덱스에 모아둔 것 + users에서 찾은 것) 합집합
                     var legacyUIDs = Array(Set(indexLegacyUIDs + legacyFromUsers))
                     
                     // legacy가 아예 없으면 마이그레이션 할 게 없으니 완료 처리 + 버전 올려서 재실행 방지
                     guard !legacyUIDs.isEmpty else {
-                        print("ℹ️ [Migration] legacyUIDs 없음 - 마이그레이션 스킵 & 완료 마킹")
+                        print("[Migration] legacyUIDs 없음 - 마이그레이션 스킵 & 완료 마킹")
                         self.setMigrationDone(kakaoId: kakaoId)
                         completion(true)
                         return
                     }
                     
-                    print("🧩 [Migration] legacyUIDs: \(legacyUIDs)")
+                    print("[Migration] legacyUIDs: \(legacyUIDs)")
                     
                     // 1-1) legacyUIDs를 kakao_users에 다시 저장(누락 보완)
                     self.db.collection(self.kakaoIndexCollection)
@@ -170,10 +170,10 @@ final class UserDataMigrationManager {
                                 
                                 let allSuccess = usersSuccess && othersSuccess && humanSuccess
                                 print(allSuccess
-                                      ? "✅ [Migration] 전체 마이그레이션 완료"
-                                      : "⚠️ [Migration] 일부 마이그레이션 실패")
+                                      ? "[Migration] 전체 마이그레이션 완료"
+                                      : "[Migration] 일부 마이그레이션 실패")
                                 
-                                // ✅ 성공했을 때만 version 올려서 “최초 1회” 보장
+                                // 성공했을 때만 version 올려서 “최초 1회” 보장
                                 if allSuccess {
                                     self.setMigrationDone(kakaoId: kakaoId)
                                 }
@@ -210,10 +210,10 @@ final class UserDataMigrationManager {
         
         batch.commit { error in
             if let error = error {
-                print("❌ [Migration] users 컬렉션 업데이트 실패: \(error)")
+                print("[Migration] users 컬렉션 업데이트 실패: \(error)")
                 completion(false)
             } else {
-                print("✅ [Migration] users 컬렉션 userId 업데이트 완료")
+                print("[Migration] users 컬렉션 userId 업데이트 완료")
                 completion(true)
             }
         }
@@ -256,7 +256,7 @@ final class UserDataMigrationManager {
                         .getDocuments(completion: { snapshot, error in
                             
                             if let error = error {
-                                print("❌ [Migration] \(collection.rawValue) 조회 실패 (\(field) == \(legacyUID)): \(error)")
+                                print("[Migration] \(collection.rawValue) 조회 실패 (\(field) == \(legacyUID)): \(error)")
                                 allSuccess = false
                                 group.leave()
                                 return
@@ -274,10 +274,10 @@ final class UserDataMigrationManager {
                             
                             batch.commit { error in
                                 if let error = error {
-                                    print("❌ [Migration] \(collection.rawValue) 업데이트 실패 (\(field) == \(legacyUID)): \(error)")
+                                    print("[Migration] \(collection.rawValue) 업데이트 실패 (\(field) == \(legacyUID)): \(error)")
                                     allSuccess = false
                                 } else {
-                                    print("✅ [Migration] \(collection.rawValue).\(field) \(legacyUID) → \(appUserId), \(docs.count)개 문서 업데이트")
+                                    print("[Migration] \(collection.rawValue).\(field) \(legacyUID) → \(appUserId), \(docs.count)개 문서 업데이트")
                                 }
                                 group.leave()
                             }
@@ -305,47 +305,64 @@ final class UserDataMigrationManager {
         let group = DispatchGroup()
         var allSuccess = true
         
-        // ✅ 먼저 새 HumanProfile 상태 확인(1번만)
         let newRef = db.collection(FirestoreCollection.humanProfile.rawValue).document(appUserId)
         
+        // appUserId 문서의 "기존값"을 읽어서 보호 기준을 만든다
         newRef.getDocument { [weak self] newSnap, error in
             guard let self else { completion(false); return }
             
-            let existingNickname = newSnap?.data()?["nickname"] as? String
-            let shouldProtectNickname = (existingNickname?.isEmpty == false)
+            let existing = newSnap?.data() ?? [:]
+            
+            func hasNonEmptyString(_ key: String) -> Bool {
+                guard let s = existing[key] as? String else { return false }
+                return !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            }
+            
+            let protectKeys: Set<String> = [
+                // 유저가 수정 가능한 값 및 생성시각 보호
+                "nickname", "image", "introduce", "createdAt"
+            ]
+            
+            let shouldProtectNickname = hasNonEmptyString("nickname")
+            let shouldProtectImage = hasNonEmptyString("image")
+            let shouldProtectIntroduce = hasNonEmptyString("introduce")
+            let shouldProtectCreatedAt = (existing["createdAt"] != nil)
             
             for legacyUID in legacyUIDs {
                 group.enter()
                 
                 let oldRef = self.db.collection(FirestoreCollection.humanProfile.rawValue).document(legacyUID)
-                oldRef.getDocument { [weak self] snapshot, error in
-                    guard let self else { allSuccess = false; group.leave(); return }
+                oldRef.getDocument { snapshot, error in
+                    defer { group.leave() }
                     
                     if let error = error {
-                        print("❌ [Migration] HumanProfile 조회 실패 (\(legacyUID)): \(error)")
+                        print("[Migration] HumanProfile 조회 실패 (\(legacyUID)): \(error)")
                         allSuccess = false
-                        group.leave()
                         return
                     }
                     
                     guard let snapshot = snapshot, snapshot.exists, var data = snapshot.data() else {
-                        group.leave()
                         return
                     }
                     
-                    // ✅ 이미 appUserId 프로필이 있고 nickname이 있으면 덮지 않게 보호
-                    if shouldProtectNickname {
-                        data.removeValue(forKey: "nickname")
-                    }
+                    if protectKeys.contains("nickname"), shouldProtectNickname { data.removeValue(forKey: "nickname") }
+                    if protectKeys.contains("image"), shouldProtectImage { data.removeValue(forKey: "image") }
+                    if protectKeys.contains("introduce"), shouldProtectIntroduce { data.removeValue(forKey: "introduce") }
                     
+                    // createdAt 보호(있으면 덮지 않음)
+                    if protectKeys.contains("createdAt"), shouldProtectCreatedAt { data.removeValue(forKey: "createdAt") }
+                    
+                    // 아무 것도 남지 않으면 setData 호출할 필요 없음
+                    if data.isEmpty { return }
+                    
+                    // 3) merge로 “비어있는 값만 채움”
                     newRef.setData(data, merge: true) { error in
                         if let error = error {
-                            print("❌ [Migration] HumanProfile 복사 실패 (\(legacyUID) → \(appUserId)): \(error)")
+                            print("[Migration] HumanProfile 복사 실패 (\(legacyUID) → \(appUserId)): \(error)")
                             allSuccess = false
                         } else {
-                            print("✅ [Migration] HumanProfile \(legacyUID) → \(appUserId) 복사 완료 (protectNickname=\(shouldProtectNickname))")
+                            print("[Migration] HumanProfile \(legacyUID) → \(appUserId) merge 완료")
                         }
-                        group.leave()
                     }
                 }
             }
