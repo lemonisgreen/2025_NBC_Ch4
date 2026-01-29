@@ -17,6 +17,7 @@ final class AccountDeletionManager {
     static let shared = AccountDeletionManager()
     private init() {}
     
+    private let kakaoIndexCollectionName = "kakaoUsers"
     private var appleReauthDelegate: AppleReauthDelegate?
     private var appleAuthController: ASAuthorizationController?
     
@@ -171,38 +172,89 @@ final class AccountDeletionManager {
     ) {
         let db = Firestore.firestore()
         
-        // 🔑 삭제 대상이 될 ID 후보들 (AppUserID + 예전 UID)
-        let idCandidates = [appUserId, firebaseUID]
+        // ✅ 카카오면 kakaoUsers/{kakaoId}에서 legacyFirebaseUIDs까지 읽어온다
+        if let kakaoId = extractKakaoId(from: appUserId) {
+            let indexRef = db.collection(kakaoIndexCollectionName).document(kakaoId)
+            
+            indexRef.getDocument { [weak self] snapshot, error in
+                guard let self else { completion(false); return }
+                
+                if let error = error {
+                    print("⚠️ kakaoUsers(\(kakaoId)) 조회 실패:", error)
+                    // 조회 실패해도 "현재 id들"로 최대한 삭제는 시도
+                }
+                
+                let legacyUIDs = (snapshot?.data()?["legacyFirebaseUIDs"] as? [String]) ?? []
+                self.deleteUserDataInternal(
+                    db: db,
+                    appUserId: appUserId,
+                    firebaseUID: firebaseUID,
+                    legacyFirebaseUIDs: legacyUIDs,
+                    kakaoId: kakaoId,
+                    completion: completion
+                )
+            }
+            
+        } else {
+            // ✅ 구글/애플은 인덱스 없음 (현재 구조 기준)
+            deleteUserDataInternal(
+                db: db,
+                appUserId: appUserId,
+                firebaseUID: firebaseUID,
+                legacyFirebaseUIDs: [],
+                kakaoId: nil,
+                completion: completion
+            )
+        }
+    }
+    
+    private func deleteUserDataInternal(
+        db: Firestore,
+        appUserId: String,
+        firebaseUID: String,
+        legacyFirebaseUIDs: [String],
+        kakaoId: String?,
+        completion: @escaping (Bool) -> Void
+    ) {
+        // ✅ 삭제 대상 ID 후보
+        // - 도메인 컬렉션 필드(userId/userID 등)에 들어있을 수 있는 값들(appUserId + legacy UID들)
+        let idCandidates = Array(Set([appUserId, firebaseUID] + legacyFirebaseUIDs))
         
         let group = DispatchGroup()
         var hasError = false
         
-        // 1) users 컬렉션 (문서 ID = Firebase UID)
-        group.enter()
-        db.collection(FirestoreCollection.users.rawValue)
-            .document(firebaseUID)
-            .delete { error in
-                if let error = error {
-                    print("users 문서 삭제 실패: \(error)")
-                    hasError = true
-                } else {
-                    print("✅ users 문서 삭제 완료 (\(firebaseUID))")
+        // 1) users 컬렉션: 문서ID가 firebaseUID(raw)라서 legacyUID들도 전부 삭제해야 함
+        let userDocIdsToDelete = Array(Set([firebaseUID] + legacyFirebaseUIDs))
+        for uid in userDocIdsToDelete {
+            group.enter()
+            db.collection(FirestoreCollection.users.rawValue)
+                .document(uid)
+                .delete { error in
+                    if let error = error {
+                        let ns = error as NSError
+                        if !(ns.domain == FirestoreErrorDomain &&
+                             ns.code == FirestoreErrorCode.notFound.rawValue) {
+                            print("users 문서 삭제 실패(\(uid)):", error)
+                            hasError = true
+                        }
+                    } else {
+                        print("✅ users 문서 삭제 완료 (\(uid))")
+                    }
+                    group.leave()
                 }
-                group.leave()
-            }
+        }
         
-        // 2) HumanProfile 컬렉션 (문서 ID = userId(AppUserID))
+        // 2) HumanProfile: appUserId + legacyUID들까지 삭제
         group.enter()
         deleteHumanProfileDocuments(
             db: db,
-            appUserId: appUserId,
-            firebaseUID: firebaseUID
+            docIds: Array(Set([appUserId, firebaseUID] + legacyFirebaseUIDs))
         ) { success in
             if !success { hasError = true }
             group.leave()
         }
         
-        // 3) 나머지 도메인 컬렉션들 (userId / userID / reporterId / targetUserId 필드 기준)
+        // 3) 나머지 도메인 컬렉션들: idCandidates로 전부 whereField 삭제
         let domainCollections: [FirestoreCollection] = [
             .petProfile,
             .walkResult,
@@ -225,6 +277,26 @@ final class AccountDeletionManager {
             }
         }
         
+        // 4) kakao_users/{kakaoId} 삭제 (카카오 유저일 때만)
+        if let kakaoId = kakaoId {
+            group.enter()
+            db.collection(kakaoIndexCollectionName)
+                .document(kakaoId)
+                .delete { error in
+                    if let error = error {
+                        let ns = error as NSError
+                        if !(ns.domain == FirestoreErrorDomain &&
+                             ns.code == FirestoreErrorCode.notFound.rawValue) {
+                            print("kakaoUsers 문서 삭제 실패(\(kakaoId)):", error)
+                            hasError = true
+                        }
+                    } else {
+                        print("✅ kakaoUsers 문서 삭제 완료 (\(kakaoId))")
+                    }
+                    group.leave()
+                }
+        }
+        
         group.notify(queue: .main) {
             completion(!hasError)
         }
@@ -232,12 +304,9 @@ final class AccountDeletionManager {
     
     private func deleteHumanProfileDocuments(
         db: Firestore,
-        appUserId: String,
-        firebaseUID: String,
+        docIds: [String],
         completion: @escaping (Bool) -> Void
     ) {
-        let docIds = [appUserId, firebaseUID]   // 혹시 예전에 UID로 저장된 문서가 있을 수도 있으니까
-        
         let group = DispatchGroup()
         var allSuccess = true
         
@@ -247,7 +316,6 @@ final class AccountDeletionManager {
                 .document(docId)
                 .delete { error in
                     if let error = error {
-                        // 문서가 없어서 나는 에러는 무시해도 됨
                         let ns = error as NSError
                         if !(ns.domain == FirestoreErrorDomain &&
                              ns.code == FirestoreErrorCode.notFound.rawValue) {
@@ -273,67 +341,68 @@ final class AccountDeletionManager {
         completion: @escaping (Bool) -> Void
     ) {
         let fieldNames: [String]
-        
         switch collection {
-        case .petProfile:
-            fieldNames = ["userId"]
-            
-        case .walkResult, .clues:
-            fieldNames = ["userID", "userId"]
-            
-        case .reportLog:
-            fieldNames = ["reporterId"]
-            
-            //        case .blockLog:
-            //            fieldNames = ["blockerId", "blockedId"]
-            //
+        case .petProfile: fieldNames = ["userId"]
+        case .walkResult, .clues: fieldNames = ["userID", "userId"]
+        case .reportLog: fieldNames = ["reporterId", "targetUserId"]
+        case .blockLog: fieldNames = ["blockerId", "blockedId"]
+        case .detectiveMate: fieldNames = ["ownerId", "participantId"]
+        case .invLogBoard: fieldNames = ["userId"] // writerId 안 쓰면 OK
         default:
-            completion(true)
-            return
+            completion(true); return
         }
         
         let group = DispatchGroup()
         var allSuccess = true
         
+        func queryAndDelete(field: String, id: String) {
+            group.enter()
+            db.collection(collection.rawValue)
+                .whereField(field, isEqualTo: id)
+                .getDocuments { (snapshot: QuerySnapshot?, error: Error?) in
+                    if let error = error {
+                        print("⚠️ \(collection.rawValue) (\(field) == \(id)) 조회 실패:", error)
+                        allSuccess = false
+                        group.leave()
+                        return
+                    }
+                    
+                    let docs = snapshot?.documents ?? []
+                    guard !docs.isEmpty else {
+                        group.leave()
+                        return
+                    }
+                    
+                    let batch = db.batch()
+                    docs.forEach { batch.deleteDocument($0.reference) }
+                    
+                    batch.commit { (error: Error?) in
+                        if let error = error {
+                            print("⚠️ \(collection.rawValue) (\(field) == \(id)) 삭제 실패:", error)
+                            allSuccess = false
+                        } else {
+                            print("✅ \(collection.rawValue) - \(field) == \(id) 문서 \(docs.count)개 삭제")
+                        }
+                        group.leave()
+                    }
+                }
+        }
+        
         for field in fieldNames {
             for id in idCandidates {
-                group.enter()
-                
-                db.collection(collection.rawValue)
-                    .whereField(field, isEqualTo: id)
-                    .getDocuments { snapshot, error in
-                        
-                        if let error = error {
-                            print("⚠️ \(collection.rawValue) (\(field) == \(id)) 조회 실패:", error)
-                            allSuccess = false
-                            group.leave()
-                            return
-                        }
-                        
-                        guard let docs = snapshot?.documents, !docs.isEmpty else {
-                            group.leave()
-                            return
-                        }
-                        
-                        let batch = db.batch()
-                        docs.forEach { batch.deleteDocument($0.reference) }
-                        
-                        batch.commit { error in
-                            if let error = error {
-                                print("⚠️ \(collection.rawValue) (\(field) == \(id)) 삭제 실패:", error)
-                                allSuccess = false
-                            } else {
-                                print("✅ \(collection.rawValue) - \(field) == \(id) 문서 \(docs.count)개 삭제")
-                            }
-                            group.leave()
-                        }
-                    }
+                queryAndDelete(field: field, id: id)
             }
         }
         
         group.notify(queue: .main) {
             completion(allSuccess)
         }
+    }
+    
+    private func extractKakaoId(from appUserId: String) -> String? {
+        // appUserId 예: "kakao:4303230810"
+        guard appUserId.hasPrefix("kakao:") else { return nil }
+        return String(appUserId.dropFirst("kakao:".count))
     }
     
     // MARK: - 소셜 계정 unlink / 로그아웃

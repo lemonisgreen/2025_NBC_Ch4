@@ -18,10 +18,10 @@ final class UserDataMigrationManager {
     
     private let db = Firestore.firestore()
     
-    private let kakaoIndexCollection = "kakao_users"
+    private let kakaoIndexCollection = "kakaoUsers"
     private let targetMigrationVersion = 1
     
-    /// kakao_users/{kakaoId} upsert + legacyUIDs 누적 + (legacyUIDs, migrationVersion) 반환
+    /// kakaoUsers/{kakaoId} upsert + legacyUIDs 누적 + (legacyUIDs, migrationVersion) 반환
     private func upsertKakaoIndexAndFetchState(
         kakaoId: Int64,
         appUserId: String,
@@ -106,7 +106,7 @@ final class UserDataMigrationManager {
         
         print("[Migration] 시작 - kakaoId: \(kakaoId), appUserId: \(appUserId)")
         
-        // kakao_users 인덱스 upsert + 상태 확인
+        // kakaoUsers 인덱스 upsert + 상태 확인
         upsertKakaoIndexAndFetchState(
             kakaoId: kakaoId,
             appUserId: appUserId,
@@ -115,7 +115,7 @@ final class UserDataMigrationManager {
             guard let self else { completion(false); return }
             
             if let error = error {
-                print("[Migration] kakao_users upsert 실패: \(error)")
+                print("[Migration] kakaoUsers upsert 실패: \(error)")
                 completion(false)
                 return
             }
@@ -155,7 +155,7 @@ final class UserDataMigrationManager {
                     
                     print("[Migration] legacyUIDs: \(legacyUIDs)")
                     
-                    // 1-1) legacyUIDs를 kakao_users에 다시 저장(누락 보완)
+                    // 1-1) legacyUIDs를 kakaoUsers에 다시 저장(누락 보완)
                     self.db.collection(self.kakaoIndexCollection)
                         .document(String(kakaoId))
                         .setData([
