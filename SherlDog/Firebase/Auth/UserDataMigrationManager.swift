@@ -241,9 +241,9 @@ final class UserDataMigrationManager {
             (.walkResult, ["userID", "userId"]),
             (.clues, ["userID", "userId"]),
             (.reportLog, ["reporterId", "targetUserId"]),
-            (.blockLog, ["blockerId", "blockedId"]),
-            (.detectiveMate, ["ownerId", "participantId"]),
-            (.invLogBoard, ["writerId"])
+            (.blockLog, ["documentId"]),
+            (.detectiveMate, ["userId"]),
+            (.invLogBoard, ["userId"])
         ]
         
         for (collection, fields) in config {
@@ -307,8 +307,7 @@ final class UserDataMigrationManager {
         
         let newRef = db.collection(FirestoreCollection.humanProfile.rawValue).document(appUserId)
         
-        // appUserId 문서의 "기존값"을 읽어서 보호 기준을 만든다
-        newRef.getDocument { [weak self] newSnap, error in
+            newRef.getDocument { [weak self] newSnap, error in
             guard let self else { completion(false); return }
             
             let existing = newSnap?.data() ?? [:]
@@ -355,7 +354,7 @@ final class UserDataMigrationManager {
                     // 아무 것도 남지 않으면 setData 호출할 필요 없음
                     if data.isEmpty { return }
                     
-                    // 3) merge로 “비어있는 값만 채움”
+                    // 3) merge로 비어있는 값만 채움
                     newRef.setData(data, merge: true) { error in
                         if let error = error {
                             print("[Migration] HumanProfile 복사 실패 (\(legacyUID) → \(appUserId)): \(error)")

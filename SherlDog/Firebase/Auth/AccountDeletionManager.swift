@@ -31,7 +31,7 @@ final class AccountDeletionManager {
         let firebaseUID = currentUser.uid
         let provider = AuthSession.currentProvider
         
-        // 🔑 실제 데이터 삭제에 사용할 ID (AppUserID 우선)
+        // 실제 데이터 삭제에 사용할 ID (AppUserID 우선)
         let appUserId: String = {
             if let appId = AuthSession.currentAppUserId {
                 return appId
@@ -41,7 +41,7 @@ final class AccountDeletionManager {
             }
         }()
         
-        // 1. 재인증
+        // 재인증
         performReauthentication(provider: provider, from: viewController) { [weak self] reauthSuccess in
             guard let self else { return }
             
@@ -50,22 +50,22 @@ final class AccountDeletionManager {
                 return
             }
             
-            // 2. Firestore 유저 데이터 삭제 (AppUserID + legacy UID 둘 다)
             self.deleteUserData(appUserId: appUserId, firebaseUID: firebaseUID) { dataSuccess in
-                
-                // 3. 소셜 계정 unlink / 로그아웃
+
+                guard dataSuccess else {
+                    print("Firestore 데이터 삭제 실패. 탈퇴 중단")
+                    completion(false)
+                    return
+                }
+
                 self.unlinkSocialAccount(provider: provider) { _ in
-                    
-                    // 4. Firebase Auth 계정 삭제
+
                     Auth.auth().currentUser?.delete { error in
                         if let error = error {
                             print("Firebase Auth 계정 삭제 실패: \(error)")
                             completion(false)
                         } else {
                             AuthSession.clearProvider()
-                            if !dataSuccess {
-                                print("⚠️ Firestore 데이터 일부 삭제 실패")
-                            }
                             completion(true)
                         }
                     }
@@ -172,7 +172,7 @@ final class AccountDeletionManager {
     ) {
         let db = Firestore.firestore()
         
-        // ✅ 카카오면 kakaoUsers/{kakaoId}에서 legacyFirebaseUIDs까지 읽어온다
+        // 카카오면 kakaoUsers/{kakaoId}에서 legacyFirebaseUIDs까지 읽어온다
         if let kakaoId = extractKakaoId(from: appUserId) {
             let indexRef = db.collection(kakaoIndexCollectionName).document(kakaoId)
             
@@ -181,7 +181,6 @@ final class AccountDeletionManager {
                 
                 if let error = error {
                     print("⚠️ kakaoUsers(\(kakaoId)) 조회 실패:", error)
-                    // 조회 실패해도 "현재 id들"로 최대한 삭제는 시도
                 }
                 
                 let legacyUIDs = (snapshot?.data()?["legacyFirebaseUIDs"] as? [String]) ?? []
@@ -196,7 +195,7 @@ final class AccountDeletionManager {
             }
             
         } else {
-            // ✅ 구글/애플은 인덱스 없음 (현재 구조 기준)
+        
             deleteUserDataInternal(
                 db: db,
                 appUserId: appUserId,
@@ -216,8 +215,7 @@ final class AccountDeletionManager {
         kakaoId: String?,
         completion: @escaping (Bool) -> Void
     ) {
-        // ✅ 삭제 대상 ID 후보
-        // - 도메인 컬렉션 필드(userId/userID 등)에 들어있을 수 있는 값들(appUserId + legacy UID들)
+
         let idCandidates = Array(Set([appUserId, firebaseUID] + legacyFirebaseUIDs))
         
         let group = DispatchGroup()
@@ -254,16 +252,7 @@ final class AccountDeletionManager {
             group.leave()
         }
         
-        // 3) 나머지 도메인 컬렉션들: idCandidates로 전부 whereField 삭제
-        let domainCollections: [FirestoreCollection] = [
-            .petProfile,
-            .walkResult,
-            .clues,
-            .blockLog,
-            .reportLog,
-            .detectiveMate,
-            .invLogBoard
-        ]
+        let domainCollections: [FirestoreCollection] = FirestoreCollection.allCases
         
         for collection in domainCollections {
             group.enter()
@@ -345,9 +334,9 @@ final class AccountDeletionManager {
         case .petProfile: fieldNames = ["userId"]
         case .walkResult, .clues: fieldNames = ["userID", "userId"]
         case .reportLog: fieldNames = ["reporterId", "targetUserId"]
-        case .blockLog: fieldNames = ["blockerId", "blockedId"]
-        case .detectiveMate: fieldNames = ["ownerId", "participantId"]
-        case .invLogBoard: fieldNames = ["userId"] // writerId 안 쓰면 OK
+        case .blockLog: fieldNames = ["documentId"]
+        case .detectiveMate: fieldNames = ["userId"]
+        case .invLogBoard: fieldNames = ["userId"]
         default:
             completion(true); return
         }
