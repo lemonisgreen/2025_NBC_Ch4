@@ -266,6 +266,13 @@ final class AccountDeletionManager {
             }
         }
         
+        // 3.5) 모든 comment 서브컬렉션에서 내가 단 댓글 삭제
+        group.enter()
+        deleteCommentsInCollectionGroup(db: db, idCandidates: idCandidates) { success in
+            if !success { hasError = true }
+            group.leave()
+        }
+        
         // 4) kakao_users/{kakaoId} 삭제 (카카오 유저일 때만)
         if let kakaoId = kakaoId {
             group.enter()
@@ -446,6 +453,54 @@ final class AccountDeletionManager {
         let inputData = Data(input.utf8)
         let hashedData = SHA256.hash(data: inputData)
         return hashedData.map { String(format: "%02x", $0) }.joined()
+    }
+    
+    private func deleteCommentsInCollectionGroup(
+        db: Firestore,
+        idCandidates: [String],
+        completion: @escaping (Bool) -> Void
+    ) {
+        // comment 서브컬렉션은 nested 필드로 조회
+        let group = DispatchGroup()
+        var allSuccess = true
+
+        for id in idCandidates {
+            group.enter()
+
+            db.collectionGroup("comment")
+                .whereField("user.userId", isEqualTo: id)
+                .getDocuments { (snapshot: QuerySnapshot?, error: Error?) in
+                    if let error = error {
+                        print("⚠️ comment collectionGroup 조회 실패 (user.userId == \(id)):", error)
+                        allSuccess = false
+                        group.leave()
+                        return
+                    }
+
+                    let docs = snapshot?.documents ?? []
+                    guard !docs.isEmpty else {
+                        group.leave()
+                        return
+                    }
+
+                    let batch = db.batch()
+                    docs.forEach { batch.deleteDocument($0.reference) }
+
+                    batch.commit { (error: Error?) in
+                        if let error = error {
+                            print("⚠️ comment collectionGroup 삭제 실패 (user.userId == \(id)):", error)
+                            allSuccess = false
+                        } else {
+                            print("✅ comment collectionGroup - user.userId == \(id) 문서 \(docs.count)개 삭제")
+                        }
+                        group.leave()
+                    }
+                }
+        }
+
+        group.notify(queue: .main) {
+            completion(allSuccess)
+        }
     }
 }
 
