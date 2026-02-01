@@ -64,6 +64,9 @@ class MainViewController: UIViewController {
     private let walkStartButton = UIButton()
     private let locationButton = UIButton()
     
+    // 그라디언트 레이어
+    private let gradientLayer = CAGradientLayer()
+    
     // 거리 측정 함수 뷰모델
     private let dataTrackingViewModel = DataTrackingViewModel()
     
@@ -160,6 +163,12 @@ class MainViewController: UIViewController {
         self.navigationController?.setNavigationBarHidden(true, animated: false)
         loadSavedClues()
         requestViewModel.fetchPetProfiles()
+    }
+    
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        
+        gradientLayer.frame = mapView.bounds
     }
     
     // 저장된 단서들을 Firebase에서 불러와서 마커로 표시
@@ -527,6 +536,7 @@ class MainViewController: UIViewController {
     private func configureInitialVisibility() {
         // 시작 시 상태 뷰 및 버튼 숨김
         statusView.isHidden = true
+        gradientLayer.isHidden = true
         clueButton.isHidden = true
         endButton.isHidden = true
     }
@@ -534,6 +544,7 @@ class MainViewController: UIViewController {
     private func setInvestigation(active: Bool) {
         hasSetInitialCamera = false
         statusView.isHidden = !active
+        gradientLayer.isHidden = !active
         clueButton.isHidden = !active
         endButton.isHidden = !active
         walkStartButton.isHidden = active
@@ -587,6 +598,16 @@ class MainViewController: UIViewController {
         
         valueStack.axis = .horizontal
         valueStack.distribution = .fillEqually
+        
+        // gradientLayer 설정
+        mapView.layer.addSublayer(gradientLayer)
+        
+        gradientLayer.colors = [
+            UIColor.black.withAlphaComponent(1).cgColor,
+            UIColor.clear.cgColor
+        ]
+        gradientLayer.startPoint = .init(x: 0.5, y: 0.0)
+        gradientLayer.endPoint = .init(x: 0.5, y: 0.3)
         
         // detectiveImageStack 설정
         detectiveImageStack.axis = .horizontal

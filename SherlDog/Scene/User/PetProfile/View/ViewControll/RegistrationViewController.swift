@@ -40,6 +40,7 @@ class RegistrationViewController: UIViewController {
     private let registImage = UIButton()
     private let registImageStamp = UIImageView()
     private let registedProfileImage = UIImageView()
+    private let imagePlusButton = UIImageView()
     private let registImageShadow = UIImageView()
     private let registNameLabel = UILabel()
     private let registNameCountLabel = UILabel()
@@ -564,7 +565,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredFalse,
         ].forEach { registNeuteredStackView.addArrangedSubview($0) }
         
-        registImage.addSubviews([registImageStamp, registedProfileImage])
+        registImage.addSubviews([registImageStamp, registedProfileImage, imagePlusButton])
         
         contentView.addSubviews([
             registImageShadow,
@@ -632,6 +633,10 @@ class RegistrationViewController: UIViewController {
         registedProfileImage.layer.cornerRadius = 4
         registedProfileImage.clipsToBounds = true
         registedProfileImage.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
+        
+        imagePlusButton.image = .petProfileImagePlus
+        imagePlusButton.contentMode = .scaleAspectFit
+        imagePlusButton.alpha = 0.6
         
         //MARK: 이름 --
         registNameLabel.text = "이름"
@@ -796,6 +801,11 @@ class RegistrationViewController: UIViewController {
             $0.width.equalTo(104)
             $0.centerX.equalToSuperview().offset(1) // 이게
             $0.centerY.equalToSuperview().offset(2) // 최선입니다.
+        }
+        
+        imagePlusButton.snp.makeConstraints {
+            $0.centerX.equalToSuperview().offset(1)
+            $0.centerY.equalToSuperview().offset(3)
         }
         
         registImageShadow.snp.makeConstraints {
