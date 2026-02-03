@@ -24,9 +24,7 @@ class MainViewController: UIViewController {
     private var input: MainViewModel.Input { viewModel.input }
     private var output: MainViewModel.Output { viewModel.output }
     private var hasSetInitialCamera = false
-    
-    // 경로 배열
-    private var pathOverlays: [NMFPath] = []
+    private var pathRenderer: PathRenderer!
     
     // 단서 마커 배열
     private var clueMarkers: [NMFMarker] = []
@@ -144,6 +142,8 @@ class MainViewController: UIViewController {
     
     private func setupMapAndStartLocation() {
         locationManager.startUpdatingLocation()
+        pathRenderer = PathRenderer(mapView: mapView)
+
         setupUI()
         setupConstraints()
         bind()
@@ -317,8 +317,7 @@ class MainViewController: UIViewController {
                         }
                     }
                     
-                    self.pathOverlays.forEach { $0.mapView = nil }
-                    self.pathOverlays.removeAll()
+                    self.pathRenderer.clear()
                     self.setInvestigation(active: false)
                     self.output.coordinates.accept([])
                 }
@@ -327,19 +326,8 @@ class MainViewController: UIViewController {
         
         output.coordinates
             .observe(on: MainScheduler.instance)
-            .subscribe(onNext: { [weak self] (coords: [CLLocationCoordinate2D]) in
-                guard let self = self else { return }
-                guard coords.count >= 2 else { return }
-                
-                let nmfCoords = coords.map { NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject }
-                let path = NMGLineString(points: nmfCoords)
-                
-                let pathOverlay = NMFPath()
-                pathOverlay.path = path
-                pathOverlay.color = .keycolorPrimary1
-                pathOverlay.width = 4
-                pathOverlay.mapView = self.mapView
-                self.pathOverlays.append(pathOverlay)
+            .subscribe(onNext: { [weak self] coords in
+                self?.pathRenderer.render(coords: coords)
             })
             .disposed(by: disposeBag)
         
