@@ -24,10 +24,9 @@ class MainViewController: UIViewController {
     private var input: MainViewModel.Input { viewModel.input }
     private var output: MainViewModel.Output { viewModel.output }
     private var hasSetInitialCamera = false
-    private var pathRenderer: PathRenderer!
     
-    // 단서 마커 배열
-    private var clueMarkers: [NMFMarker] = []
+    private var pathRenderer: PathRenderer!
+    private var clueMarkerRenderer: ClueMarkerRenderer!
     
     // 지도 배경
     private let mapView = NMFMapView()
@@ -142,7 +141,17 @@ class MainViewController: UIViewController {
     
     private func setupMapAndStartLocation() {
         locationManager.startUpdatingLocation()
+        
         pathRenderer = PathRenderer(mapView: mapView)
+        clueMarkerRenderer = ClueMarkerRenderer(mapView: mapView)
+        clueMarkerRenderer.onTapMarker = { [weak self] clue in
+            guard let self else { return }
+            let vm = ClueDetailViewModel(clue: clue)
+            let detailVC = ClueDetailViewController(viewModel: vm)
+            detailVC.modalPresentationStyle = .pageSheet
+            detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
+            self.present(detailVC, animated: true)
+        }
 
         setupUI()
         setupConstraints()
@@ -169,8 +178,7 @@ class MainViewController: UIViewController {
         }
         
         // 기존 단서 마커들 제거
-        clueMarkers.forEach { $0.mapView = nil }
-        clueMarkers.removeAll()
+        clueMarkerRenderer.clear()
         
         // Firestore에서 내 단서들 가져오기
         FirestoreManager.shared.fetchQuery(FirestoreQuery<ClueModel>(
@@ -185,45 +193,13 @@ class MainViewController: UIViewController {
                 if myClues.isEmpty {
                     print("저장된 단서가 없습니다")
                 } else {
-                    self?.addClueMarkers(clues: myClues)
-                }
+                    self?.clueMarkerRenderer.render(clues: myClues)                }
             },
             onFailure: { error in
                 print("단서 불러오기 실패: \(error.localizedDescription)")
             }
         )
         .disposed(by: disposeBag)
-    }
-    
-    private func addClueMarkers(clues: [ClueModel]) {
-        
-        for (index, clue) in clues.enumerated() {
-            let marker = NMFMarker()
-            marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
-            marker.userInfo = ["clue": clue]
-            marker.iconImage = NMFOverlayImage(name: "clueMark")
-            marker.width = 60
-            marker.height = 60
-            marker.mapView = mapView
-            
-            marker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
-                guard let self = self,
-                      let marker = overlay as? NMFMarker else { return false }
-                
-                // 마커 위치 정보 가져오기
-                let markerPosition = marker.position
-                guard let clue = marker.userInfo["clue"] as? ClueModel else { return false }
-                let viewModel = ClueDetailViewModel(clue: clue)
-                let detailVC = ClueDetailViewController(viewModel: viewModel)
-                //                let nav = UINavigationController(rootViewController: detailVC)
-                detailVC.modalPresentationStyle = .pageSheet
-                detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
-                self.present(detailVC, animated: true)
-                return true
-            }
-            
-            clueMarkers.append(marker)
-        }
     }
     
     private func trackingBind() {
@@ -319,7 +295,6 @@ class MainViewController: UIViewController {
                     
                     self.pathRenderer.clear()
                     self.setInvestigation(active: false)
-                    self.output.coordinates.accept([])
                 }
             })
             .disposed(by: disposeBag)
@@ -340,41 +315,13 @@ class MainViewController: UIViewController {
     }
     
     private func inputBind() {
+        
         self.clueButton.rx.tap
             .subscribe(onNext: { [weak self] _ in
                 PermissionManager.requestPermission(type: .camera) { [weak self] isAllowed in
                     guard let self else { return }
-                    switch isAllowed {
-                    case true:
-                        guard let currentLocation = self.locationManager.location else { return }
-                        let clueMarker = NMFMarker()
-                        clueMarker.position = NMGLatLng(lat: currentLocation.coordinate.latitude,
-                                                        lng: currentLocation.coordinate.longitude)
-                        clueMarker.iconImage = NMFOverlayImage(name: "clueMark")
-                        clueMarker.width = 60
-                        clueMarker.height = 60
-                        clueMarker.mapView = self.mapView
-                        clueMarker.touchHandler = { [weak self] (overlay: NMFOverlay) -> Bool in
-                            guard let self = self else { return false }
-                            let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
-                            let detailVC = ClueDetailViewController(viewModel: viewModel)
-                            let nav = UINavigationController(rootViewController: detailVC)
-                            nav.modalPresentationStyle = .pageSheet
-                            nav.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
-                            self.present(nav, animated: true)
-                            return true
-                        }
-                        self.clueMarkers.append(clueMarker)
-                        
-                        let cameraViewModel = CameraViewModel()
-                        cameraViewModel.input.accept(.sender(.clueLeave))
-                        cameraViewModel.markerLocation = currentLocation.coordinate
-                        
-                        let cameraView = UINavigationController(rootViewController: CameraViewController(viewModel: cameraViewModel))
-                        cameraView.modalPresentationStyle = .fullScreen
-                        self.present(cameraView, animated: true)
-                        
-                    case false:
+
+                    guard isAllowed else {
                         let alert = CustomAlertViewController(
                             message: "카메라 권한이 필요합니다.",
                             subMessage: "설정에서 변경해주세요.",
@@ -388,15 +335,44 @@ class MainViewController: UIViewController {
                                     action: {
                                         if let settingsURL = URL(string: UIApplication.openSettingsURLString),
                                            UIApplication.shared.canOpenURL(settingsURL) {
-                                            UIApplication.shared.open(settingsURL, options: [:], completionHandler: nil)
+                                            UIApplication.shared.open(
+                                                settingsURL,
+                                                options: [:],
+                                                completionHandler: nil
+                                            )
                                         }
                                     }
                                 )
                             ]
                         )
-                        
                         self.present(alert, animated: true)
+                        return
                     }
+
+                    guard let currentLocation = self.locationManager.location else { return }
+
+                    self.clueMarkerRenderer.addTemporaryMarker(
+                        latitude: currentLocation.coordinate.latitude,
+                        longitude: currentLocation.coordinate.longitude
+                    ) { [weak self] in
+                        guard let self else { return }
+                        let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
+                        let detailVC = ClueDetailViewController(viewModel: viewModel)
+                        let nav = UINavigationController(rootViewController: detailVC)
+                        nav.modalPresentationStyle = .pageSheet
+                        nav.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
+                        self.present(nav, animated: true)
+                    }
+
+                    let cameraViewModel = CameraViewModel()
+                    cameraViewModel.input.accept(.sender(.clueLeave))
+                    cameraViewModel.markerLocation = currentLocation.coordinate
+
+                    let cameraView = UINavigationController(
+                        rootViewController: CameraViewController(viewModel: cameraViewModel)
+                    )
+                    cameraView.modalPresentationStyle = .fullScreen
+                    self.present(cameraView, animated: true)
                 }
             })
             .disposed(by: disposeBag)
