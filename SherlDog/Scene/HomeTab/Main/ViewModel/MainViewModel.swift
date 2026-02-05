@@ -12,90 +12,100 @@ import NMapsMap
 import FirebaseAuth
 
 final class MainViewModel {
-    
+
+    // MARK: - Input / Output
     struct Input {
         let startTracking: PublishRelay<Void>
         let stopTracking: PublishRelay<Void>
         let reloadClues: PublishRelay<Void>
     }
-    
+
     struct Output {
         let fullSideOfCourse: PublishRelay<NMGLatLngBounds>
+
         let isTracking: BehaviorRelay<Bool>
         let coordinates: BehaviorRelay<[CLLocationCoordinate2D]>
         let steps: BehaviorRelay<Int>
         let distanceMeters: BehaviorRelay<Double>
         let elapsedSeconds: BehaviorRelay<Int>
+
         let clues: BehaviorRelay<[ClueModel]>
     }
-    
+
     let input: Input
     let output: Output
-    
-    // input relays
+
+    // MARK: - Inputs
+
     let startTracking = PublishRelay<Void>()
     let stopTracking = PublishRelay<Void>()
     let reloadClues = PublishRelay<Void>()
-    
-    // output relays
+
+    // MARK: - Outputs
+
     private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
+
     private let isTracking = BehaviorRelay<Bool>(value: false)
     private let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])
-    
     private let steps = BehaviorRelay<Int>(value: 0)
     private let distanceMeters = BehaviorRelay<Double>(value: 0)
     private let elapsedSeconds = BehaviorRelay<Int>(value: 0)
-    
+
     private let clues = BehaviorRelay<[ClueModel]>(value: [])
-    
+
+    // MARK: - Dependencies
+
     private let walkSession: WalkSession
     private let disposeBag = DisposeBag()
-    
+
+    // MARK: - Init
+
     init(locationManager: CLLocationManager) {
-            self.walkSession = WalkSession(locationManager: locationManager)
+        self.walkSession = WalkSession(locationManager: locationManager)
 
-            self.input = Input(
-                startTracking: startTracking,
-                stopTracking: stopTracking,
-                reloadClues: reloadClues
-            )
+        self.input = Input(
+            startTracking: startTracking,
+            stopTracking: stopTracking,
+            reloadClues: reloadClues
+        )
 
-            self.output = Output(
-                fullSideOfCourse: fullSideOfCourse,
-                isTracking: isTracking,
-                coordinates: coordinates,
-                steps: steps,
-                distanceMeters: distanceMeters,
-                elapsedSeconds: elapsedSeconds,
-                clues: clues
-            )
+        self.output = Output(
+            fullSideOfCourse: fullSideOfCourse,
+            isTracking: isTracking,
+            coordinates: coordinates,
+            steps: steps,
+            distanceMeters: distanceMeters,
+            elapsedSeconds: elapsedSeconds,
+            clues: clues
+        )
 
-            bindInputs()
-            bindSessionOutputs()
-            // bindClues()  // <- 3번에서 여기 붙일 거야
-        }
-    
+        bindInputs()
+        bindSession()
+    }
+
+    // MARK: - Bind
+
     private func bindInputs() {
         input.startTracking
             .subscribe(onNext: { [weak self] in
-                self?.output.isTracking.accept(true)
+                self?.walkSession.start()
             })
             .disposed(by: disposeBag)
-        
+
         input.stopTracking
             .subscribe(onNext: { [weak self] in
                 self?.walkSession.stop()
             })
             .disposed(by: disposeBag)
-        
+
         input.reloadClues
             .subscribe(onNext: { [weak self] in
                 self?.fetchClues()
             })
             .disposed(by: disposeBag)
     }
-    
-    private func bindSessionOutputs() {
+
+    private func bindSession() {
         walkSession.state
             .subscribe(onNext: { [weak self] state in
                 guard let self else { return }
@@ -106,12 +116,14 @@ final class MainViewModel {
                 self.elapsedSeconds.accept(state.elapsedSeconds)
             })
             .disposed(by: disposeBag)
-        
+
         walkSession.fullSideOfCourse
             .bind(to: fullSideOfCourse)
             .disposed(by: disposeBag)
     }
-    
+
+    // MARK: - Clues
+
     private func fetchClues() {
         guard let userId = Auth.auth().currentUser?.uid else {
             self.clues.accept([])
@@ -124,6 +136,7 @@ final class MainViewModel {
                 type: .whereField(field: "userId", value: userId)
             )
         )
+        .observe(on: MainScheduler.instance)
         .subscribe(
             onSuccess: { [weak self] myClues in
                 self?.clues.accept(myClues)
