@@ -77,7 +77,7 @@ class MainViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(true, animated: false)
-        loadSavedClues()
+        input.reloadClues.accept(())
         requestViewModel.fetchPetProfiles()
     }
 }
@@ -118,7 +118,6 @@ class MainViewController: UIViewController {
             bind()
             inputBind()
             configureInitialVisibility()
-            loadSavedClues()
             
             requestViewModel.fetchPetProfiles()
         }
@@ -137,39 +136,7 @@ class MainViewController: UIViewController {
             }
         }
     }
-    
-    // MARK: - Data
-    private extension MainViewController {
-        
-        /// 저장된 단서들을 Firebase에서 불러와서 마커로 표시
-        func loadSavedClues() {
-            guard let userId = Auth.auth().currentUser?.uid else { return }
-            
-            clueMarkerRenderer.clear()
-            
-            FirestoreManager.shared.fetchQuery(
-                FirestoreQuery<ClueModel>(
-                    collection: .clues,
-                    type: .whereField(field: "userId", value: userId)
-                )
-            )
-            .observe(on: MainScheduler.instance)
-            .subscribe(
-                onSuccess: { [weak self] myClues in
-                    if myClues.isEmpty {
-                        print("저장된 단서가 없습니다")
-                    } else {
-                        self?.clueMarkerRenderer.render(clues: myClues)
-                    }
-                },
-                onFailure: { error in
-                    print("단서 불러오기 실패: \(error.localizedDescription)")
-                }
-            )
-            .disposed(by: disposeBag)
-        }
-    }
-    
+
     // MARK: - Bindings
     private extension MainViewController {
         
@@ -187,6 +154,14 @@ class MainViewController: UIViewController {
                     self?.pathRenderer.render(coords: coords)
                 })
                 .disposed(by: disposeBag)
+            
+            output.clues
+              .observe(on: MainScheduler.instance)
+              .subscribe(onNext: { [weak self] clues in
+                  self?.clueMarkerRenderer.clear()
+                  self?.clueMarkerRenderer.render(clues: clues)
+              })
+              .disposed(by: disposeBag)
             
             requestViewModel.output.petIndex
                 .subscribe(onNext: { [weak self] _ in

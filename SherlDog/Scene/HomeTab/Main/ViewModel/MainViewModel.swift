@@ -8,14 +8,15 @@
 import RxSwift
 import RxCocoa
 import CoreLocation
-import RxCoreLocation
 import NMapsMap
+import FirebaseAuth
 
 final class MainViewModel {
     
     struct Input {
         let startTracking: PublishRelay<Void>
         let stopTracking: PublishRelay<Void>
+        let reloadClues: PublishRelay<Void>
     }
     
     struct Output {
@@ -25,15 +26,16 @@ final class MainViewModel {
         let steps: BehaviorRelay<Int>
         let distanceMeters: BehaviorRelay<Double>
         let elapsedSeconds: BehaviorRelay<Int>
+        let clues: BehaviorRelay<[ClueModel]>
     }
     
     let input: Input
     let output: Output
     
-    
     // input relays
-    private let startTracking = PublishRelay<Void>()
-    private let stopTracking = PublishRelay<Void>()
+    let startTracking = PublishRelay<Void>()
+    let stopTracking = PublishRelay<Void>()
+    let reloadClues = PublishRelay<Void>()
     
     // output relays
     private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
@@ -44,25 +46,34 @@ final class MainViewModel {
     private let distanceMeters = BehaviorRelay<Double>(value: 0)
     private let elapsedSeconds = BehaviorRelay<Int>(value: 0)
     
+    private let clues = BehaviorRelay<[ClueModel]>(value: [])
+    
     private let walkSession: WalkSession
     private let disposeBag = DisposeBag()
     
     init(locationManager: CLLocationManager) {
-        self.walkSession = WalkSession(locationManager: locationManager)
-        
-        self.input = Input(startTracking: startTracking, stopTracking: stopTracking)
-        self.output = Output(
-            fullSideOfCourse: fullSideOfCourse,
-            isTracking: isTracking,
-            coordinates: coordinates,
-            steps: steps,
-            distanceMeters: distanceMeters,
-            elapsedSeconds: elapsedSeconds
-        )
-        
-        bindInputs()
-        bindSessionOutputs()
-    }
+            self.walkSession = WalkSession(locationManager: locationManager)
+
+            self.input = Input(
+                startTracking: startTracking,
+                stopTracking: stopTracking,
+                reloadClues: reloadClues
+            )
+
+            self.output = Output(
+                fullSideOfCourse: fullSideOfCourse,
+                isTracking: isTracking,
+                coordinates: coordinates,
+                steps: steps,
+                distanceMeters: distanceMeters,
+                elapsedSeconds: elapsedSeconds,
+                clues: clues
+            )
+
+            bindInputs()
+            bindSessionOutputs()
+            // bindClues()  // <- 3번에서 여기 붙일 거야
+        }
     
     private func bindInputs() {
         input.startTracking
@@ -74,6 +85,12 @@ final class MainViewModel {
         input.stopTracking
             .subscribe(onNext: { [weak self] in
                 self?.walkSession.stop()
+            })
+            .disposed(by: disposeBag)
+        
+        input.reloadClues
+            .subscribe(onNext: { [weak self] in
+                self?.fetchClues()
             })
             .disposed(by: disposeBag)
     }
@@ -95,6 +112,26 @@ final class MainViewModel {
             .disposed(by: disposeBag)
     }
     
-    
-    
+    private func fetchClues() {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            self.clues.accept([])
+            return
+        }
+
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<ClueModel>(
+                collection: .clues,
+                type: .whereField(field: "userId", value: userId)
+            )
+        )
+        .subscribe(
+            onSuccess: { [weak self] myClues in
+                self?.clues.accept(myClues)
+            },
+            onFailure: { error in
+                print("단서 불러오기 실패: \(error.localizedDescription)")
+            }
+        )
+        .disposed(by: disposeBag)
+    }
 }
