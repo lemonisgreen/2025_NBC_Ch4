@@ -41,7 +41,7 @@ class SettingViewController : UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .keycolorInverse
+        view.backgroundColor = .keycolorTertiaryBG
         setupUI()
         configureUI()
         bind()

@@ -302,7 +302,7 @@ extension CreateAssistantProfileViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         profileimageSetbutton.addSubviews([profileImageView, profileCameraButtonImageView])
         nicknameTextField.addSubview(nickNameConstraintsLabel)
@@ -344,7 +344,7 @@ extension CreateAssistantProfileViewController {
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationController?.navigationBar.isHidden = false

@@ -294,7 +294,7 @@ final class AddNewContentViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         scrollView.addSubview(contentView)
         
@@ -342,7 +342,7 @@ final class AddNewContentViewController: UIViewController {
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationItem.titleView = nil
