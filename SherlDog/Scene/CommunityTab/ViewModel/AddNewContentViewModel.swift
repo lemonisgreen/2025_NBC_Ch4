@@ -267,7 +267,7 @@ final class AddNewContentViewModel {
     }
     
     private func addPost() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         let selectedPets = self.output.selectedProfile.value
         let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.detectiveMate.rawValue).document()
         let documentId = newDocRef.documentID
@@ -382,7 +382,7 @@ final class AddNewContentViewModel {
     }
     
     private func fetchProfiles() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
             collection: .petProfile,

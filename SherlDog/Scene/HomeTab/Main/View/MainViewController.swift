@@ -173,7 +173,7 @@ class MainViewController: UIViewController {
     
     // 저장된 단서들을 Firebase에서 불러와서 마커로 표시
     private func loadSavedClues() {
-        guard let userId = Auth.auth().currentUser?.uid else {
+        guard let userId = AuthSession.currentAppUserId else {
             return
         }
         

@@ -36,7 +36,7 @@ final class PostFooterViewModel {
     }
     
     func transform(input: Input) -> Output {
-        let userId = Auth.auth().currentUser?.uid ?? ""
+        let userId = AuthSession.currentAppUserId ?? ""
         
         let isLiked = CommunityActionManager.shared
             .observeIsLiked(collection: category,

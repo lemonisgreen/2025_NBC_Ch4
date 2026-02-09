@@ -93,7 +93,7 @@ private extension FindMateViewController {
             }
             .disposed(by: disposeBag)
         
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        guard let currentUserId = AuthSession.currentAppUserId else { return }
         
         let input = CommunityViewModel.Input(
                     segmentIndexChanged: Observable.just(

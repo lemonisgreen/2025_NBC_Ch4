@@ -266,7 +266,7 @@ private extension UserPostsViewController {
 
 extension UserPostsViewController {
     func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return postUserId == currentUserId
     }
     

@@ -14,7 +14,7 @@ final class BlockManager {
     static let shared = BlockManager()
     
     private let db = Firestore.firestore()
-    private let myUserId = Auth.auth().currentUser?.uid ?? ""
+    private let myUserId = AuthSession.currentAppUserId ?? ""
     private let collectionName = "blockedUsers"
     private let profileCollection = "HumanProfile"
     

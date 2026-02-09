@@ -48,6 +48,10 @@ class SettingViewController : UIViewController {
         setupNavigationBar()
         navigationController?.navigationBar.prefersLargeTitles = false
         navigationItem.largeTitleDisplayMode = .never
+        
+#if DEBUG
+  setupDebugButton()
+  #endif
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -217,17 +221,23 @@ class SettingViewController : UIViewController {
     }
     
     private func updateLoginStatus() {
-        if UserDefaults.standard.bool(forKey: "isKakaoLoggedIn") {
+        switch AuthSession.currentProvider {
+        case .kakao:
             loginLabel.text = "카카오 로그인"
-        } else if UserDefaults.standard.bool(forKey: "isGoogleLoggedIn") {
+            loginButton.setTitle("로그아웃", for: .normal)
+            
+        case .google:
             loginLabel.text = "구글 로그인"
-        } else if UserDefaults.standard.bool(forKey: "isAppleLoggedIn") {
+            loginButton.setTitle("로그아웃", for: .normal)
+            
+        case .apple:
             loginLabel.text = "Apple 로그인"
-        } else {
+            loginButton.setTitle("로그아웃", for: .normal)
+            
+        case .none:
             loginLabel.text = "로그인되지 않음"
-            return
+            loginButton.setTitle("로그인", for: .normal)
         }
-        loginButton.setTitle("로그아웃", for: .normal)
     }
     
     private func bind() {
@@ -363,5 +373,64 @@ class SettingViewController : UIViewController {
         spacer.width = 8
         navigationItem.leftBarButtonItems = [spacer, barItem]
     }
-
 }
+
+// MARK: - Debug 메뉴
+#if DEBUG
+extension SettingViewController {
+    
+    private func setupDebugButton() {
+        let debugButton = UIBarButtonItem(
+            title: "DBG",
+            style: .plain,
+            target: self,
+            action: #selector(didTapDebugButton)
+        )
+        debugButton.tintColor = .systemRed
+        
+        // 기존 leftBarButtonItems는 그대로 두고, 오른쪽에만 디버그 버튼 추가
+        navigationItem.rightBarButtonItem = debugButton
+    }
+    
+    @objc private func didTapDebugButton() {
+        // kakaoId 입력받는 간단한 Alert
+        let alert = UIAlertController(
+            title: "디버그: 카카오 데이터 삭제",
+            message: "정말 테스트 계정 데이터를 삭제할 거라면 카카오 아이디를 숫자로 입력해줘!",
+            preferredStyle: .alert
+        )
+        
+        alert.addTextField { textField in
+            textField.placeholder = "예: 4303230810"
+            textField.keyboardType = .numberPad
+        }
+        
+        let cancel = UIAlertAction(title: "취소", style: .cancel, handler: nil)
+        
+        let delete = UIAlertAction(title: "삭제", style: .destructive) { _ in
+            guard let text = alert.textFields?.first?.text,
+                  let kakaoId = Int64(text) else {
+                return
+            }
+            
+            // 진짜 삭제 호출
+            TestDataCleaner.shared.deleteAllData(forKakaoId: kakaoId) {
+                DispatchQueue.main.async {
+                    let done = UIAlertController(
+                        title: "완료",
+                        message: "카카오 아이디 \(kakaoId)의 테스트 데이터 정리를 시도했습니다.\n콘솔 로그도 확인해봐!",
+                        preferredStyle: .alert
+                    )
+                    done.addAction(UIAlertAction(title: "확인", style: .default))
+                    self.present(done, animated: true)
+                }
+            }
+        }
+        
+        alert.addAction(cancel)
+        alert.addAction(delete)
+        
+        present(alert, animated: true)
+    }
+}
+#endif
