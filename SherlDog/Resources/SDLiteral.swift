@@ -123,6 +123,7 @@ enum SDLiteral {
         static let textViewPlaceholderLabel: String = "신고 내용을 상세히 기입해 주세요."
         static let reportConfirmButtonTitle: String = "신고하기"
         static let reportFailAlertMessageTitle: String = "신고 처리 중 오류가 발생했습니다."
+        static let doneButtonTitle: String = "완료"
     }
 }
 

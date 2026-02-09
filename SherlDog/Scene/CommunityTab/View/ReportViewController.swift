@@ -27,6 +27,7 @@ final class ReportViewController: UIViewController {
         title: SDLiteral.ReportViewController.reportConfirmButtonTitle
     )
     private let loadingIndicator = CustomLoadingIndicator()
+    private let keyboardDoneButton = UIBarButtonItem()
     
     private var selectedReason: String? {
         didSet { updateConfirmEnabled() }
@@ -79,6 +80,12 @@ private extension ReportViewController {
             }
             .disposed(by: disposeBag)
         
+        keyboardDoneButton.rx.tap
+            .bind(onNext: { [weak self] _ in
+                self?.view.endEditing(true)
+            })
+            .disposed(by: disposeBag)
+        
         viewModel.output.isLoading
             .observe(on: MainScheduler.instance)
             .bind { [weak self] loading in
@@ -121,7 +128,7 @@ private extension ReportViewController {
         
         if let sheet = sheetVC.sheetPresentationController {
             sheet.detents = [
-                .medium()
+                .custom { _ in 480 }
             ]
             sheet.prefersGrabberVisible = false
             sheet.preferredCornerRadius = 20
@@ -185,11 +192,22 @@ private extension ReportViewController {
         reportReasonButton.layer.cornerRadius = 6
         reportReasonButton.contentEdgeInsets = .init(top: 0, left: 12, bottom: 0, right: 12)
         
+        keyboardDoneButton.title = SDLiteral.ReportViewController.doneButtonTitle
+        keyboardDoneButton.style = .done
+        
+        let toolbar = UIToolbar()
+        toolbar.sizeToFit()
+        toolbar.items = [
+            UIBarButtonItem.flexibleSpace(),
+            keyboardDoneButton
+        ]
+        
         contentTextView.font = .body3
         contentTextView.backgroundColor = .gray50
         contentTextView.layer.cornerRadius = 6
         contentTextView.textContainerInset = .init(top: 12, left: 4, bottom: 12, right: 4)
         contentTextView.textColor = .textPrimary
+        contentTextView.inputAccessoryView = toolbar
         
         textViewPlaceholderLabel.text = SDLiteral.ReportViewController.textViewPlaceholderLabel
         textViewPlaceholderLabel.font = .body6
@@ -239,3 +257,4 @@ private extension ReportViewController {
         }
     }
 }
+
