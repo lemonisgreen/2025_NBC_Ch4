@@ -65,6 +65,7 @@ final class MainViewModel {
         
         bindInputs()
         bindSession()
+        bindClues()
     }
     
     // MARK: - Bind
@@ -105,24 +106,20 @@ final class MainViewModel {
     private func fetchClues() {
         guard let userId = Auth.auth().currentUser?.uid else {
             self.clues.accept([])
+            print("fetchClues uid:", Auth.auth().currentUser?.uid as Any)
+
             return
         }
         
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
                 collection: .clues,
-                type: .whereField(field: "userId", value: userId)
+                type: .whereField(field: "userID", value: userId)
             )
         )
-        .observe(on: MainScheduler.instance)
-        .subscribe(
-            onSuccess: { [weak self] myClues in
-                self?.clues.accept(myClues)
-            },
-            onFailure: { error in
-                print("단서 불러오기 실패: \(error.localizedDescription)")
-            }
-        )
-        .disposed(by: disposeBag)
+        .subscribe(onSuccess: { [weak self] myClues in
+              self?.clues.accept(myClues)
+          })
+          .disposed(by: disposeBag)
     }
 }
