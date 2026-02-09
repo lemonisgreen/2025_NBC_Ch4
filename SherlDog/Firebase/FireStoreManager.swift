@@ -70,6 +70,7 @@ final class FirestoreManager {
                 self?.db.collection(query.collection.rawValue).document(documentId).getDocument { snapshot, error in
                     if let error = error { single(.failure(error)) }
                     else if let snapshot = snapshot, let data = try? snapshot.data(as: T.self) { single(.success([data])) }
+                    else if let snapshot, snapshot.exists == false { single(.success([])) }
                     else { single(.failure(NSError(domain: "NoData", code: -1))) }
                 }
                 return Disposables.create()

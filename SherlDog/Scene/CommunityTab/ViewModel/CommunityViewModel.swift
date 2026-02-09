@@ -44,7 +44,6 @@ final class CommunityViewModel {
     struct Input {
         let segmentIndexChanged: Observable<Int>
         let pullToRefresh: Observable<Void>
-        let manualRefresh: Observable<Void>
         let fetchMore: Observable<Void>
         let menuEvent: Observable<PostMenuEvent>
 //        let likeEvent: Observable<CommunityModel>
@@ -73,9 +72,10 @@ final class CommunityViewModel {
         let refreshTrigger = makeRefreshTrigger(trigger: [
             selectedCategory.map { _ in () },
             input.pullToRefresh,
-            input.manualRefresh,
             menu.asObservable().map { _ in () }
         ])
+            .startWith(())
+            .share(replay: 1)
         
         // 데이터 불러오기
         let fetchStream = makeFetchStream(refreshTrigger: refreshTrigger,
@@ -307,7 +307,7 @@ private extension CommunityViewModel {
                     type: .document(id: pet.petProfileId)
                 ))
                 .map { $0.first }
-                .catch { _ in .just(nil) }
+                .catchAndReturn(nil)
             }
             
             let human: Single<HumanProfileModel?> =
@@ -316,14 +316,14 @@ private extension CommunityViewModel {
                 type: .document(id: postData.userId)
             ))
             .map { $0.first }
-            .catch { _ in .just(nil) }
+            .catchAndReturn(nil)
             
             let petZip: Single<[PetProfile]> = Single.zip(pets).map { $0.compactMap { $0 } }
             
             return Single.zip(human, petZip)
                 .map { humanOpt, pet in
                     var post = postData
-                    post.name = humanOpt?.nickname ?? "사용자"
+                    post.name = humanOpt?.nickname ?? SDLiteral.CommunityView.unknownUser
                     post.profileImage = humanOpt?.image ?? ""
                     post.petProfile = pet
                     return post
