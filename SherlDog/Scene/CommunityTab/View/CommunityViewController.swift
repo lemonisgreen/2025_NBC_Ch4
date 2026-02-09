@@ -462,7 +462,7 @@ extension CommunityViewController {
 extension CommunityViewController {
     
     private func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .keycolorTertiaryBG
         view.addSubviews([
             segmentedControl,
             collectionView,
@@ -478,7 +478,7 @@ extension CommunityViewController {
         collectionView.register(PostFooterView.self,
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
                                 withReuseIdentifier: PostFooterView.identifier)
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.refreshControl = refreshControl
         
         addButton.setImage(.postAdd, for: .normal)

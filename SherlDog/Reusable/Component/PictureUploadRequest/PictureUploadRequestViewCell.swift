@@ -60,14 +60,14 @@ class PictureUploadRequestViewCell: UICollectionViewCell {
         
         let selectedCell = UIView()
         selectedCell.layer.cornerRadius = cornerRadius
-        selectedCell.backgroundColor = .gray100
-        selectedCell.layer.borderColor = UIColor.gray300.cgColor
+        selectedCell.backgroundColor = .keycolorPrimary1Opacity
+        selectedCell.layer.borderColor = UIColor.keycolorPrimary2.cgColor
         selectedCell.layer.borderWidth = 1
         
         self.selectedBackgroundView = selectedCell
         
         contentView.layer.cornerRadius = cornerRadius
-        contentView.layer.borderColor = UIColor.gray200.cgColor
+        contentView.layer.borderColor = UIColor.gray300.cgColor
         contentView.layer.borderWidth = 1
         
         if self.isSelected {

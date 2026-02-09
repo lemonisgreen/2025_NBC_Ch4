@@ -41,7 +41,7 @@ class LoginViewController: UIViewController {
     
     // MARK: - UI Setup
     private func configureUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         logo.image = UIImage(named: "bigLogo")
         logo.contentMode = .scaleAspectFit

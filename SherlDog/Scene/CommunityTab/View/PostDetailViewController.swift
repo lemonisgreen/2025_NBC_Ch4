@@ -601,7 +601,7 @@ extension PostDetailViewController {
 // MARK: - UI Setup
 extension PostDetailViewController {
     private func setupUI() {
-        view.backgroundColor = .keycolorInverse
+        view.backgroundColor = .keycolorTertiaryBG
         
         [
             commentTextField,

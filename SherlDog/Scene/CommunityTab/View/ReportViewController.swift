@@ -158,7 +158,7 @@ private extension ReportViewController {
     
     
     private func setupUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         view.addSubviews([
             reportViewLabel,
