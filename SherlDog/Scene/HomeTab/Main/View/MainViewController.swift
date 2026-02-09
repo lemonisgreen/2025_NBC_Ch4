@@ -26,9 +26,6 @@ class MainViewController: UIViewController {
     private var input: MainViewModel.Input { viewModel.input }
     private var output: MainViewModel.Output { viewModel.output }
     
-    // 거리 측정 함수 뷰모델 (결과 저장 등)
-    private let dataTrackingViewModel = DataTrackingViewModel()
-    
     //State
     private var hasSetInitialCamera = false
     private var didSetup = false
@@ -148,7 +145,8 @@ private extension MainViewController {
             })
             .disposed(by: disposeBag)
         
-        output.coordinates
+        output.sessionState
+            .map { $0.coordinates }
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] coords in
                 self?.pathRenderer.render(coords: coords)
@@ -156,15 +154,15 @@ private extension MainViewController {
             .disposed(by: disposeBag)
         
         output.clues
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] clues in
-                    guard let self else { return }
-                    self.clueMarkerRenderer.clear()
-                    if !clues.isEmpty {
-                        self.clueMarkerRenderer.render(clues: clues)
-                    }
-                })
-                .disposed(by: disposeBag)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] clues in
+                guard let self else { return }
+                self.clueMarkerRenderer.clear()
+                if !clues.isEmpty {
+                    self.clueMarkerRenderer.render(clues: clues)
+                }
+            })
+            .disposed(by: disposeBag)
         
         requestViewModel.output.petIndex
             .subscribe(onNext: { [weak self] _ in
@@ -178,22 +176,23 @@ private extension MainViewController {
     }
     
     func bindMetrics() {
-        output.steps
-            .map { "\($0)" }
+        output.sessionState
+            .map { "\($0.steps)" }
             .bind(to: stepCountLabel.rx.text)
             .disposed(by: disposeBag)
         
-        output.distanceMeters
-            .map { String(format: "%.2f", $0 / 1000.0) }
+        output.sessionState
+            .map { String(format: "%.2f", $0.distanceMeters / 1000.0) }
             .bind(to: distanceValueLabel.rx.text)
             .disposed(by: disposeBag)
         
-        output.elapsedSeconds
-            .map { seconds -> String in
-                let h = seconds / 3600
-                let m = (seconds % 3600) / 60
-                let s = seconds % 60
-                return String(format: "%02d:%02d:%02d", h, m, s)
+        output.sessionState
+            .map { state -> String in
+                let s = state.elapsedSeconds
+                let h = s / 3600
+                let m = (s % 3600) / 60
+                let sec = s % 60
+                return String(format: "%02d:%02d:%02d", h, m, sec)
             }
             .bind(to: trackingTimeLabel.rx.text)
             .disposed(by: disposeBag)
@@ -642,16 +641,18 @@ private extension MainViewController {
         guard let screenshot = captureScreen() else { return }
         
         let selectedProfiles = requestViewModel.output.selectedPetProfiles.value
+        let session = output.sessionState.value   //MainVM에서 받은 스냅샷
+        
         let walkEndModal = WalkEndModalViewController(
-            dataTrackingViewModel: dataTrackingViewModel,
-            selectedProfiles: selectedProfiles
+            screenshot: screenshot,
+            session: session,
+            selectedProfiles: selectedProfiles,
+            viewModel: WalkResultViewModel()
         )
         
         let nav = UINavigationController(rootViewController: walkEndModal)
         nav.modalPresentationStyle = .overFullScreen
-        present(nav, animated: true) { [weak self] in
-            self?.dataTrackingViewModel.fullScreenImage.accept(screenshot)
-        }
+        present(nav, animated: true)
     }
     
     func captureScreen() -> UIImage? {

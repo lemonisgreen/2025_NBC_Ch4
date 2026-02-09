@@ -151,3 +151,15 @@ final class WalkSession {
         return NMGLatLngBounds(latLngs: latLngs)
     }
 }
+
+extension WalkSession.State {
+    static let initial = WalkSession.State(
+        isActive: false,
+        startDate: nil,
+        endDate: nil,
+        elapsedSeconds: 0,
+        steps: 0,
+        distanceMeters: 0,
+        coordinates: []
+    )
+}
