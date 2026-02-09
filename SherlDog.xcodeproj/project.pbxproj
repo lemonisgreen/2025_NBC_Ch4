@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		390947272DF8FF6700D8B28E /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = F1CC70C92DF718270038A80C /* FirebaseCore */; };
+		390947652DF94C8800D8B28E /* KakaoSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 390947642DF94C8800D8B28E /* KakaoSDK */; };
+		390947672DF94C8800D8B28E /* KakaoSDKAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 390947662DF94C8800D8B28E /* KakaoSDKAuth */; };
+		390947692DF94C8800D8B28E /* KakaoSDKCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 390947682DF94C8800D8B28E /* KakaoSDKCommon */; };
+		3909476B2DF94C8800D8B28E /* KakaoSDKUser in Frameworks */ = {isa = PBXBuildFile; productRef = 3909476A2DF94C8800D8B28E /* KakaoSDKUser */; };
 		39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2DC52DF03B3C0008A54D /* RxCocoa */; };
 		39BA2DC82DF03B3C0008A54D /* RxRelay in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2DC72DF03B3C0008A54D /* RxRelay */; };
 		39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2DC92DF03B3C0008A54D /* RxSwift */; };
@@ -15,6 +20,13 @@
 		39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E522DF0455C0008A54D /* FirebaseAuth */; };
 		39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E542DF0455C0008A54D /* FirebaseFirestore */; };
 		39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 39BA2E562DF0455C0008A54D /* FirebaseStorage */; };
+		39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 39EF106F2DFAD67200646675 /* GoogleSignIn */; };
+		3A3896122E38ADFA003D9C9A /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 3A3896112E38ADFA003D9C9A /* Kingfisher */; };
+		3A3896152E38AEA9003D9C9A /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 3A3896142E38AEA9003D9C9A /* Lottie */; };
+		3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BECE2DF7FAF700397F6C /* Differentiator */; };
+		3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */ = {isa = PBXBuildFile; productRef = 3B40BED02DF7FAF700397F6C /* RxDataSources */; };
+		938AE7972E0450920005C73D /* RxCoreLocation in Frameworks */ = {isa = PBXBuildFile; productRef = 938AE7962E0450920005C73D /* RxCoreLocation */; };
+		F14F6CBF2E03EA9100FFCD80 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,10 +34,10 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
+		39EF10742DFAE08800646675 /* Exceptions for "SherlDog" folder in "SherlDog" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Resources/Info.plist,
 			);
 			target = 39BA2DAB2DF03A030008A54D /* SherlDog */;
 		};
@@ -35,7 +47,7 @@
 		39BA2DAE2DF03A030008A54D /* SherlDog */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				39BA2DBE2DF03A050008A54D /* Exceptions for "SherlDog" folder in "SherlDog" target */,
+				39EF10742DFAE08800646675 /* Exceptions for "SherlDog" folder in "SherlDog" target */,
 			);
 			path = SherlDog;
 			sourceTree = "<group>";
@@ -47,13 +59,25 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				390947672DF94C8800D8B28E /* KakaoSDKAuth in Frameworks */,
+				39EF10702DFAD67200646675 /* GoogleSignIn in Frameworks */,
+				390947272DF8FF6700D8B28E /* FirebaseCore in Frameworks */,
 				39BA2DCA2DF03B3C0008A54D /* RxSwift in Frameworks */,
+				F14F6CBF2E03EA9100FFCD80 /* IQKeyboardManagerSwift in Frameworks */,
 				39BA2E532DF0455C0008A54D /* FirebaseAuth in Frameworks */,
 				39BA2DCD2DF03B660008A54D /* SnapKit in Frameworks */,
 				39BA2E192DF03ECB0008A54D /* NMapsMap in Frameworks */,
+				390947652DF94C8800D8B28E /* KakaoSDK in Frameworks */,
 				39BA2DC82DF03B3C0008A54D /* RxRelay in Frameworks */,
+				3909476B2DF94C8800D8B28E /* KakaoSDKUser in Frameworks */,
+				390947692DF94C8800D8B28E /* KakaoSDKCommon in Frameworks */,
+				3B40BED12DF7FAF700397F6C /* RxDataSources in Frameworks */,
 				39BA2E572DF0455C0008A54D /* FirebaseStorage in Frameworks */,
+				938AE7972E0450920005C73D /* RxCoreLocation in Frameworks */,
+				3A3896152E38AEA9003D9C9A /* Lottie in Frameworks */,
+				3B40BECF2DF7FAF700397F6C /* Differentiator in Frameworks */,
 				39BA2DC62DF03B3C0008A54D /* RxCocoa in Frameworks */,
+				3A3896122E38ADFA003D9C9A /* Kingfisher in Frameworks */,
 				39BA2E552DF0455C0008A54D /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -105,6 +129,18 @@
 				39BA2E522DF0455C0008A54D /* FirebaseAuth */,
 				39BA2E542DF0455C0008A54D /* FirebaseFirestore */,
 				39BA2E562DF0455C0008A54D /* FirebaseStorage */,
+				F1CC70C92DF718270038A80C /* FirebaseCore */,
+				3B40BECE2DF7FAF700397F6C /* Differentiator */,
+				3B40BED02DF7FAF700397F6C /* RxDataSources */,
+				390947642DF94C8800D8B28E /* KakaoSDK */,
+				390947662DF94C8800D8B28E /* KakaoSDKAuth */,
+				390947682DF94C8800D8B28E /* KakaoSDKCommon */,
+				3909476A2DF94C8800D8B28E /* KakaoSDKUser */,
+				39EF106F2DFAD67200646675 /* GoogleSignIn */,
+				F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */,
+				938AE7962E0450920005C73D /* RxCoreLocation */,
+				3A3896112E38ADFA003D9C9A /* Kingfisher */,
+				3A3896142E38AEA9003D9C9A /* Lottie */,
 			);
 			productName = SherlDog;
 			productReference = 39BA2DAC2DF03A030008A54D /* SherlDog.app */;
@@ -126,10 +162,10 @@
 				};
 			};
 			buildConfigurationList = 39BA2DA72DF03A030008A54D /* Build configuration list for PBXProject "SherlDog" */;
-			developmentRegion = en;
+			developmentRegion = ko;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				ko,
 				Base,
 			);
 			mainGroup = 39BA2DA32DF03A030008A54D;
@@ -139,6 +175,13 @@
 				39BA2DCB2DF03B660008A54D /* XCRemoteSwiftPackageReference "SnapKit" */,
 				39BA2E172DF03ECB0008A54D /* XCRemoteSwiftPackageReference "SPM-NMapsMap" */,
 				39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */,
+				390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */,
+				39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
+				938AE7952E0450920005C73D /* XCRemoteSwiftPackageReference "RxCoreLocation" */,
+				3A3896102E38ADFA003D9C9A /* XCRemoteSwiftPackageReference "Kingfisher" */,
+				3A3896132E38AEA9003D9C9A /* XCRemoteSwiftPackageReference "lottie-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 39BA2DAD2DF03A030008A54D /* Products */;
@@ -174,63 +217,101 @@
 		39BA2DC02DF03A050008A54D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 39BA2DAE2DF03A030008A54D /* SherlDog */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Resources/Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = SherlDog/SherlDog.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = YM7ARGY64W;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SherlDog/Info.plist;
+				INFOPLIST_FILE = SherlDog/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "멍탐정 산책일지";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "프로필 사진을 설정하거나 단서를 촬영하고, 게시글 등록 시 사진을 직접 찍기 위해 카메라 접근 권한이 필요합니다.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "앱 사용 중과 백그라운드 모두에서 산책 경로를 추적할 수 있도록 허용해 주세요.\n";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "앱이 백그라운드에 있을 때도 산책 경로를 추적하기 위해 위치 접근이 필요합니다.\n";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "산책 경로를 기록하기 위해 위치 접근이 필요합니다.\n";
+				INFOPLIST_KEY_NSMotionUsageDescription = "산책 데이터를 기록하기 위해 움직임 데이터를 사용합니다.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "프로필 사진을 설정하거나 게시글 등록시 기기에 저장된 사진을 불러오기 위해 사진 보관함 접근 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rak.SherlDog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SherlDogKey;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
 		39BA2DC12DF03A050008A54D /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 39BA2DAE2DF03A030008A54D /* SherlDog */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Resources/Config.xcconfig;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_STYLE = Automatic;
+				CODE_SIGN_ENTITLEMENTS = SherlDog/SherlDog.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = YM7ARGY64W;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = SherlDog/Info.plist;
+				INFOPLIST_FILE = SherlDog/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "멍탐정 산책일지";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "프로필 사진을 설정하거나 단서를 촬영하고, 게시글 등록 시 사진을 직접 찍기 위해 카메라 접근 권한이 필요합니다.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "앱 사용 중과 백그라운드 모두에서 산책 경로를 추적할 수 있도록 허용해 주세요.\n";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "앱이 백그라운드에 있을 때도 산책 경로를 추적하기 위해 위치 접근이 필요합니다.\n";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "산책 경로를 기록하기 위해 위치 접근이 필요합니다.\n";
+				INFOPLIST_KEY_NSMotionUsageDescription = "산책 데이터를 기록하기 위해 움직임 데이터를 사용합니다.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "프로필 사진을 설정하거나 게시글 등록시 기기에 저장된 사진을 불러오기 위해 사진 보관함 접근 권한이 필요합니다.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rak.SherlDog;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = SherlDogKey;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
 		39BA2DC22DF03A050008A54D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 39BA2DAE2DF03A030008A54D /* SherlDog */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Resources/Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -295,7 +376,7 @@
 		39BA2DC32DF03A050008A54D /* Release */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReferenceAnchor = 39BA2DAE2DF03A030008A54D /* SherlDog */;
-			baseConfigurationReferenceRelativePath = Config.xcconfig;
+			baseConfigurationReferenceRelativePath = Resources/Config.xcconfig;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -374,6 +455,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kakao/kakao-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.24.4;
+			};
+		};
 		39BA2DC42DF03B3C0008A54D /* XCRemoteSwiftPackageReference "RxSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
@@ -406,9 +495,77 @@
 				minimumVersion = 11.14.0;
 			};
 		};
+		39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
+		3A3896102E38ADFA003D9C9A /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.5.0;
+			};
+		};
+		3A3896132E38AEA9003D9C9A /* XCRemoteSwiftPackageReference "lottie-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/lottie-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.5.2;
+			};
+		};
+		3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxDataSources.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.2;
+			};
+		};
+		938AE7952E0450920005C73D /* XCRemoteSwiftPackageReference "RxCoreLocation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RxSwiftCommunity/RxCoreLocation.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.5.1;
+			};
+		};
+		F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/hackiftekhar/IQKeyboardManager.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.1;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		390947642DF94C8800D8B28E /* KakaoSDK */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDK;
+		};
+		390947662DF94C8800D8B28E /* KakaoSDKAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDKAuth;
+		};
+		390947682DF94C8800D8B28E /* KakaoSDKCommon */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDKCommon;
+		};
+		3909476A2DF94C8800D8B28E /* KakaoSDKUser */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 390947632DF94C8800D8B28E /* XCRemoteSwiftPackageReference "kakao-ios-sdk" */;
+			productName = KakaoSDKUser;
+		};
 		39BA2DC52DF03B3C0008A54D /* RxCocoa */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 39BA2DC42DF03B3C0008A54D /* XCRemoteSwiftPackageReference "RxSwift" */;
@@ -448,6 +605,46 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseStorage;
+		};
+		39EF106F2DFAD67200646675 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39EF106E2DFAD67200646675 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		3A3896112E38ADFA003D9C9A /* Kingfisher */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3A3896102E38ADFA003D9C9A /* XCRemoteSwiftPackageReference "Kingfisher" */;
+			productName = Kingfisher;
+		};
+		3A3896142E38AEA9003D9C9A /* Lottie */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3A3896132E38AEA9003D9C9A /* XCRemoteSwiftPackageReference "lottie-ios" */;
+			productName = Lottie;
+		};
+		3B40BECE2DF7FAF700397F6C /* Differentiator */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */;
+			productName = Differentiator;
+		};
+		3B40BED02DF7FAF700397F6C /* RxDataSources */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3B40BECD2DF7FAF700397F6C /* XCRemoteSwiftPackageReference "RxDataSources" */;
+			productName = RxDataSources;
+		};
+		938AE7962E0450920005C73D /* RxCoreLocation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 938AE7952E0450920005C73D /* XCRemoteSwiftPackageReference "RxCoreLocation" */;
+			productName = RxCoreLocation;
+		};
+		F14F6CBE2E03EA9100FFCD80 /* IQKeyboardManagerSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F14F6CBD2E03EA9100FFCD80 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */;
+			productName = IQKeyboardManagerSwift;
+		};
+		F1CC70C92DF718270038A80C /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 39BA2E512DF0455C0008A54D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
