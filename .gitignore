@@ -137,4 +137,3 @@ iOSInjectionProject/
 # End of https://www.toptal.com/developers/gitignore/api/xcode,swift,macos
 
 Resources/Config.xcconfig
-Resources/Info.plist
