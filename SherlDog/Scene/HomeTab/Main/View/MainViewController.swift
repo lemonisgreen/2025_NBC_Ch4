@@ -79,7 +79,6 @@ class MainViewController: UIViewController {
         self.navigationController?.setNavigationBarHidden(true, animated: false)
         
         input.reloadClues.accept(())
-        requestViewModel.fetchPetProfiles()
     }
 }
 // MARK: - Setup & Permissions
@@ -130,11 +129,7 @@ private extension MainViewController {
         bind()
         inputBind()
         configureInitialVisibility()
-        
-        input.reloadClues.accept(())
-        
-        requestViewModel.fetchPetProfiles()
-    }
+        }
 }
 
 // MARK: - Bindings
