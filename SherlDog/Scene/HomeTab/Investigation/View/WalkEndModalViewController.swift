@@ -57,7 +57,12 @@ final class WalkEndModalViewController: UIViewController {
 
     private let walkEndLabel = UILabel()
     private let showProfileButton = UIButton()
-    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "수사 일지 공유하기")
+    
+    // 수사일지 공유
+    // private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "수사 일지 공유하기")
+
+    // 단서 보기
+    private let walkShareButton = ButtonFactory.makeButton(type: .main, title: "단서 확인하기")
 
     private let infoStack = UIStackView()
     private let distanceStack = UIStackView()
@@ -135,10 +140,16 @@ private extension WalkEndModalViewController {
         showProfileButton.rx.tap
             .bind { [weak self] in self?.presentSelectedProfilesSheet() }
             .disposed(by: disposeBag)
-
+        
+        // 남긴 단서 보기
         walkShareButton.rx.tap
-            .bind { [weak self] in self?.presentShareFlow() }
+            .bind { [weak self] in self?.presentCluesFlow() }
             .disposed(by: disposeBag)
+
+        // 수사일지 공유 flow
+//        walkShareButton.rx.tap
+//            .bind { [weak self] in self?.presentShareFlow() }
+//            .disposed(by: disposeBag)
 
         viewModel.saveResult
             .observe(on: MainScheduler.instance)
@@ -315,7 +326,31 @@ private extension WalkEndModalViewController {
 
         present(nav, animated: true)
     }
+    
+    func presentCluesFlow() {
+        let day: Date = {
+            switch mode {
+            case let .live(_, session, _):
+                return session.endDate ?? Date()
+            case let .history(result, _):
+                if let d = DateFormatter.yyyyMMdd.date(from: result.date) { return d }
+                if let d = DateFormatter.yyyyMMddSlash.date(from: result.date) { return d }
+                return Date()
+            }
+        }()
+        
+        let clueViewModel = ClueDetailViewModel(day: day)
+        let clueVC = ClueDetailViewController(viewModel: clueViewModel)
 
+        let nav = UINavigationController(rootViewController: clueVC)
+        if let sheet = nav.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 20
+        }
+        present(nav, animated: true)
+    }
+/*
     func presentShareFlow() {
         let day: Date = {
             switch mode {
@@ -374,6 +409,7 @@ private extension WalkEndModalViewController {
         })
         .disposed(by: disposeBag)
     }
+ */
 }
 
 // MARK: - UI Setup
@@ -422,7 +458,8 @@ private extension WalkEndModalViewController {
             $0.textColor = UIColor(named: "textTertiary")
             $0.font = .body6
         }
-        stepCountLabel.textAlignment = .right
+        //stepCountLabel.textAlignment = .right
+        //stepCountContentLabel.textAlignment = .right
 
         [distanceContentLabel, timeContentLabel, stepCountContentLabel].forEach {
             $0.textColor = UIColor(named: "textSecondary")
@@ -449,8 +486,8 @@ private extension WalkEndModalViewController {
         infoStack.axis = .horizontal
         infoStack.distribution = .fillEqually
         infoStack.addArrangedSubview(distanceStack)
-        infoStack.addArrangedSubview(timeStack)
-        infoStack.addArrangedSubview(stepCountStack)
+        infoStack.addArrangedSubview(padded(timeStack, left: 4))
+        infoStack.addArrangedSubview(padded(stepCountStack, left: 12))
 
         walkEndLabel.textColor = UIColor(named: "textSecondary")
         walkEndLabel.font = .title1
@@ -556,7 +593,7 @@ private extension WalkEndModalViewController {
     }
 }
 
-// MARK: - Helpers (Dogs / Separators)
+// MARK: - Helpers
 private extension WalkEndModalViewController {
 
     func setPetImages() {
@@ -627,5 +664,19 @@ private extension WalkEndModalViewController {
             line.name = "vLine"
             infoBox.layer.addSublayer(line)
         }
+    }
+    
+    private func padded(_ view: UIView, left: CGFloat) -> UIView {
+        let wrapper = UIView()
+        wrapper.addSubview(view)
+        wrapper.layoutMargins = UIEdgeInsets(top: 0, left: left, bottom: 0, right: 0)
+        wrapper.preservesSuperviewLayoutMargins = true
+
+        view.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            make.leading.equalTo(wrapper.layoutMarginsGuide.snp.leading)
+            make.trailing.equalToSuperview()
+        }
+        return wrapper
     }
 }

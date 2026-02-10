@@ -41,7 +41,7 @@ final class WalkResultViewModel {
         selectedProfiles: [PetProfile],
         walkingPathImageURL: String
     ) {
-        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+        let userId = AuthSession.currentAppUserId ?? ""
         let profileIds = selectedProfiles.map { $0.petProfileId }
 
         let endDate = session.endDate ?? Date()
