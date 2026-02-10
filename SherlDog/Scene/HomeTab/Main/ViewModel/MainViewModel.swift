@@ -104,12 +104,11 @@ final class MainViewModel {
     // MARK: - Clues
     
     private func fetchClues() {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            self.clues.accept([])
-            print("fetchClues uid:", Auth.auth().currentUser?.uid as Any)
-
-            return
-        }
+        guard let userId = AuthSession.currentAppUserId,
+                 !userId.isEmpty else {
+               self.clues.accept([])
+               return
+           }
         
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
@@ -117,9 +116,13 @@ final class MainViewModel {
                 type: .whereField(field: "userID", value: userId)
             )
         )
-        .subscribe(onSuccess: { [weak self] myClues in
-              self?.clues.accept(myClues)
-          })
-          .disposed(by: disposeBag)
+        .subscribe(
+            onSuccess: { [weak self] clues in
+                self?.clues.accept(clues)
+            },
+            onFailure: { error in }
+        )
+        .disposed(by: disposeBag)
     }
 }
+
