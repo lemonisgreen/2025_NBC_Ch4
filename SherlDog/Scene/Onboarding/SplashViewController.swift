@@ -30,7 +30,7 @@ class SplashViewController: UIViewController {
     
     private func setUpUI() {
         view.addSubview(logoImageView)
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
 
         logoImageView.snp.makeConstraints { make in
             make.centerX.equalToSuperview()

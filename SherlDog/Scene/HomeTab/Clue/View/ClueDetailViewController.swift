@@ -46,7 +46,7 @@ final class ClueDetailViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .keycolorInverse
+        view.backgroundColor = .white
         
         view.addSubviews([
             collectionView,
@@ -60,7 +60,7 @@ final class ClueDetailViewController: UIViewController {
         // 로딩 인디케이터 설정
         loadingIndicator.isHidden = true
       
-        collectionView.backgroundColor = .keycolorInverse
+        collectionView.backgroundColor = .clear
         collectionView.register(ClueDetailCell.self, forCellWithReuseIdentifier: ClueDetailCell.identifier)
         
         pageControl.numberOfPages = 0

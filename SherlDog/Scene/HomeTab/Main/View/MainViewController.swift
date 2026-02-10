@@ -64,6 +64,9 @@ class MainViewController: UIViewController {
     private let walkStartButton = UIButton()
     private let locationButton = UIButton()
     
+    // 그라디언트 레이어
+    private let gradientLayer = CAGradientLayer()
+    
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -353,6 +356,7 @@ private extension MainViewController {
     
     func configureInitialVisibility() {
         statusView.isHidden = true
+        gradientLayer.isHidden = true
         clueButton.isHidden = true
         endButton.isHidden = true
     }
@@ -360,6 +364,7 @@ private extension MainViewController {
     func setInvestigation(active: Bool) {
         hasSetInitialCamera = false
         statusView.isHidden = !active
+        gradientLayer.isHidden = !active
         clueButton.isHidden = !active
         endButton.isHidden = !active
         walkStartButton.isHidden = active
@@ -410,6 +415,17 @@ private extension MainViewController {
         valueStack.axis = .horizontal
         valueStack.distribution = .fillEqually
         
+        // gradientLayer 설정
+        mapView.layer.addSublayer(gradientLayer)
+        
+        gradientLayer.colors = [
+            UIColor.black.withAlphaComponent(1).cgColor,
+            UIColor.clear.cgColor
+        ]
+        gradientLayer.startPoint = .init(x: 0.5, y: 0.0)
+        gradientLayer.endPoint = .init(x: 0.5, y: 0.3)
+        
+        // detectiveImageStack 설정
         detectiveImageStack.axis = .horizontal
         detectiveImageStack.alignment = .center
         

@@ -23,11 +23,14 @@ final class PostDetailViewController: UIViewController {
     private let likeButtonEvent = PublishRelay<Void>()
     private let commentEvent = PublishRelay<CommentEvent>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
+//    private let firstLoad = PublishRelay<Void>()
     private let disposeBag = DisposeBag()
     
     private lazy var dataSource = self.postCollectionViewDataSource()
     
     // MARK: - UI property
+    private let navigationBackButton = UIButton()
+    private let navigationTitleLabel = UILabel()
     private let refreshControl = UIRefreshControl()
     private lazy var postDetailCollectionView = UICollectionView(frame: .zero, collectionViewLayout: postDetailCollectionViewLayout())
     private let commentTextField = UITextField()
@@ -53,13 +56,6 @@ final class PostDetailViewController: UIViewController {
         configureUI()
         bind()
     }
-    
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        
-        // 최초 데이터 불러오기
-        refreshControl.sendActions(for: .valueChanged)
-    }
 }
 
 // MARK: - bind
@@ -73,12 +69,21 @@ extension PostDetailViewController {
             postMenuEvent: self.menuEvent.asObservable()
         )
         
+        self.navigationBackButton.rx.tap
+            .bind(onNext: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            })
+            .disposed(by: disposeBag)
+        
         self.saveButton.rx.tap
             .map { [weak self] in
                 let text = self?.commentTextField.text ?? ""
-                self?.commentTextField.text = ""
+                let isSecret = self?.isSecretToggleButton.isSelected ?? false
                 
-                return CommentEvent.create(content: text, isSecret: self?.isSecretToggleButton.isSelected ?? false)
+                self?.commentTextField.text = ""
+                self?.isSecretToggleButton.isSelected = false
+                
+                return CommentEvent.create(content: text, isSecret: isSecret)
             }
             .bind(to: self.commentEvent)
             .disposed(by: disposeBag)
@@ -97,6 +102,7 @@ extension PostDetailViewController {
             .disposed(by: disposeBag)
         
         output.isUpdating
+            .filter{ !$0 }
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
@@ -150,7 +156,6 @@ extension PostDetailViewController {
                                                SDLiteral.CommunityView.fix)) { [weak self] action in
             guard let cell = self?.postDetailCollectionView.cellForItem(at: indexPath) as? CommentCell else { return }
             cell.setFixMode(isFixMode: true)
-            cell.contentLabel.becomeFirstResponder()
             
             // TODO: fixAction
         }
@@ -404,14 +409,15 @@ extension PostDetailViewController {
                     
                     cell.rx.saveButtonTap
                         .bind(onNext: { [weak self] in
+                            self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.loadFixedContent()))
                             cell.setFixMode(isFixMode: false)
-                            self?.commentEvent.accept(.fix(documentId: comment.documentId, content: cell.contentLabel.text ?? ""))
                         })
                         .disposed(by: cell.disposeBag)
                     
                     cell.rx.cancelButtonTap
                         .bind(onNext: {
                             cell.setFixMode(isFixMode: false)
+                            cell.cancelEditMode()
                         })
                         .disposed(by: cell.disposeBag)
                     
@@ -569,12 +575,12 @@ extension PostDetailViewController {
             case 1: // 댓글 섹션
                 let item = NSCollectionLayoutItem(
                     layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                      heightDimension: .fractionalHeight(1))
+                                      heightDimension: .estimated(1))
                 )
                 
                 let group = NSCollectionLayoutGroup.vertical(
                     layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                      heightDimension: .estimated(80)),
+                                      heightDimension: .estimated(1)),
                     subitems: [item]
                 )
                 
@@ -601,7 +607,7 @@ extension PostDetailViewController {
 // MARK: - UI Setup
 extension PostDetailViewController {
     private func setupUI() {
-        view.backgroundColor = .keycolorInverse
+        view.backgroundColor = .keycolorTertiaryBG
         
         [
             commentTextField,
@@ -612,6 +618,61 @@ extension PostDetailViewController {
             postDetailCollectionView,
             commentStackView
         ])
+        
+        self.navigationController?.navigationBar.isHidden = false
+        
+        // 키보드 숨기기 활성화
+        self.hideKeyboardWhenTappedAroundRx(disposeBag: disposeBag)
+        
+        // 제스쳐로 뒤로가기 활성화
+        self.navigationController?.interactivePopGestureRecognizer?.delegate = nil
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+        
+//        // 리퀴드 글래스 적용 시
+//        var navigationButtonConfig = UIButton.Configuration.plain()
+//        navigationButtonConfig.image = UIImage(systemName: "chevron.backward")
+//        navigationButtonConfig.baseForegroundColor = .textPrimary
+//        navigationButtonConfig.imagePadding = 8
+//        navigationButtonConfig.contentInsets = .init(top: 0, leading: 4, bottom: 0, trailing: 4)
+//        navigationButtonConfig.attributedTitle = AttributedString(
+//            SDLiteral.PostDetailViewController.navigationTitle,
+//            attributes: AttributeContainer([.font: UIFont.highlight3])
+//        )
+//        
+//        navigationBackButton.configuration = navigationButtonConfig
+//        
+//        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        
+        // 리퀴드 글래스 미 적용 시
+        navigationTitleLabel.text = SDLiteral.PostDetailViewController.navigationTitle
+        navigationTitleLabel.textAlignment = .left
+        navigationTitleLabel.font = .highlight3
+        navigationTitleLabel.textColor = .textPrimary
+        
+        navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
+        navigationBackButton.imageView?.tintColor = .textPrimary
+        
+        let navigationStack = UIStackView()
+        let containerView = UIView()
+        
+        containerView.addSubview(navigationStack)
+        
+        navigationStack.addArrangedSubview(navigationBackButton)
+        navigationStack.addArrangedSubview(navigationTitleLabel)
+        navigationStack.axis = .horizontal
+        navigationStack.alignment = .center
+        navigationStack.spacing = 8
+        navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
+        
+        let navigationBarAppearance = UINavigationBarAppearance()
+        navigationBarAppearance.configureWithOpaqueBackground()
+        navigationBarAppearance.backgroundColor = .keycolorInverse
+        navigationBarAppearance.shadowColor = .clear
+        
+        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: containerView)
+        self.navigationItem.standardAppearance = navigationBarAppearance
+        self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
+        // 여기까지
         
         postDetailCollectionView.refreshControl = refreshControl
         postDetailCollectionView.backgroundColor = .keycolorInverse
@@ -654,8 +715,8 @@ extension PostDetailViewController {
         // 설정 값이 낮을수록 우선적으로 줄여짐 -> 줄여지지 않도록(텍스트필드가 늘려져도 버튼이 줄여지지 않도록)
         saveButton.setContentCompressionResistancePriority(.init(1000), for: .horizontal)
         
-        isSecretToggleButton.setImage(UIImage(systemName: "lock.open"), for: .normal)
-        isSecretToggleButton.setImage(UIImage(systemName: "lock"), for: .selected)
+        isSecretToggleButton.setImage(.stateUnlock, for: .normal)
+        isSecretToggleButton.setImage(.stateLock, for: .selected)
         var config = UIButton.Configuration.plain()
         config.buttonSize = .mini
         config.baseBackgroundColor = .clear

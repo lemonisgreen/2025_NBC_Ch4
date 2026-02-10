@@ -50,9 +50,7 @@ final class PostDetailViewModel {
     
     private let originalPost: CommunityModel
     private lazy var category: FirestoreCollection = {
-        FirestoreCollection.allCases.filter {
-            $0.rawValue == self.originalPost.category
-        }.first ?? .invLogBoard
+        FirestoreCollection(rawValue: originalPost.category) ?? .invLogBoard
     }()
     private let showReportSubject = PublishSubject<ReportViewModel.Target>()
     private let disposeBag = DisposeBag()
@@ -62,7 +60,9 @@ final class PostDetailViewModel {
     }
     
     func transform(_ input: Input) -> Output {
-        let sharedRefresh = input.refreshPost.share()
+        let sharedRefresh = input.refreshPost
+            .startWith(())
+            .share(replay: 1)
         let commentRefreshTrigger = Observable.merge(
             input.commentEvent,
             sharedRefresh.map { CommentEvent.refresh }
@@ -71,11 +71,12 @@ final class PostDetailViewModel {
         let postData = fetchPost(sharedRefresh)
             .share(replay: 1)
         let commentData = commentEvent(commentRefreshTrigger)
+            .startWith(SectionModel(model: .comment(SDLiteral.PostDetailViewController.commentHeaderTitle), items: []))
             .share(replay: 1)
         
         let postDetailData = Observable
             .combineLatest(postData, commentData) { [$0, $1] }
-            .asDriver(onErrorDriveWith: .empty())
+            .asDriver(onErrorJustReturn: [])
         
         let refreshTrigger = Observable.merge(
             sharedRefresh,
@@ -182,28 +183,24 @@ extension PostDetailViewModel {
                 collection: .petProfile,
                 type: .document(id: pet.petProfileId)
             ))
-            .flatMap { profile -> Single<PetProfile> in
-                guard let profile = profile.first else { return .error(FirestoreError.noData) }
-                return .just(profile)
-            }
+            .map { $0.first }
+            .catchAndReturn(nil)
         }
         
         let human = FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
             collection: .humanProfile,
             type: .document(id: data.userId)
         ))
-            .flatMap { profile -> Single<HumanProfileModel> in
-                guard let profile = profile.first else { return .error(FirestoreError.noData) }
-                return .just(profile)
-            }
+            .map { $0.first }
+            .catchAndReturn(nil)
         
-        let petZip = Single.zip(pets)
+        let petZip = Single.zip(pets).map { $0.compactMap { $0 } }
         
         return Single.zip(human, petZip)
             .map { human, pet in
                 var post = data
-                post.name = human.nickname
-                post.profileImage = human.image
+                post.name = human?.nickname ?? SDLiteral.CommunityView.unknownUser
+                post.profileImage = human?.image ?? ""
                 post.petProfile = pet
                 
                 return post

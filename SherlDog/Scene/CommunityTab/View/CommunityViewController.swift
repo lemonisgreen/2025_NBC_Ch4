@@ -26,7 +26,6 @@ final class CommunityViewController: UIViewController {
     
 //    private let likeButtonEvent = PublishRelay<CommunityModel>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
-    private let manualRefresh = PublishRelay<Void>()
     
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
@@ -52,7 +51,6 @@ final class CommunityViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
-        manualRefresh.accept(())
     }
 }
 
@@ -63,7 +61,6 @@ extension CommunityViewController {
         // MARK: - Inputs
         let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
                                              pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
-                                             manualRefresh: manualRefresh.asObservable(),
                                              fetchMore: Observable.empty(),
                                              menuEvent: self.menuEvent.asObservable())
         
@@ -103,6 +100,7 @@ extension CommunityViewController {
             .disposed(by: disposeBag)
         
         output.isUpdating
+            .filter { !$0 }
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
@@ -122,7 +120,7 @@ extension CommunityViewController {
 // MARK: - Cell Menu Button Setting
 extension CommunityViewController {
     private func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return postUserId == currentUserId
     }
     
@@ -462,7 +460,7 @@ extension CommunityViewController {
 extension CommunityViewController {
     
     private func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .keycolorTertiaryBG
         view.addSubviews([
             segmentedControl,
             collectionView,
@@ -478,7 +476,7 @@ extension CommunityViewController {
         collectionView.register(PostFooterView.self,
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
                                 withReuseIdentifier: PostFooterView.identifier)
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.refreshControl = refreshControl
         
         addButton.setImage(.postAdd, for: .normal)

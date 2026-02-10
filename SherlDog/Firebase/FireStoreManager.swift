@@ -45,7 +45,7 @@ final class FirestoreManager {
     let db = Firestore.firestore()
     
     var userId: String {
-        return Auth.auth().currentUser?.uid ?? ""
+        return AuthSession.currentAppUserId ?? ""
     }
     
     private init() {}
@@ -70,6 +70,7 @@ final class FirestoreManager {
                 self?.db.collection(query.collection.rawValue).document(documentId).getDocument { snapshot, error in
                     if let error = error { single(.failure(error)) }
                     else if let snapshot = snapshot, let data = try? snapshot.data(as: T.self) { single(.success([data])) }
+                    else if let snapshot, snapshot.exists == false { single(.success([])) }
                     else { single(.failure(NSError(domain: "NoData", code: -1))) }
                 }
                 return Disposables.create()
@@ -117,12 +118,12 @@ final class FirestoreManager {
                 
                 queryByCollection
                     .getDocuments { snapshot, error in
-                    if let error = error { single(.failure(error)) }
-                    else if let snapshot = snapshot {
-                        let items = snapshot.documents.compactMap { try? $0.data(as: T.self) }
-                        single(.success(items))
-                    } else { single(.failure(NSError(domain: "NoData", code: -1))) }
-                }
+                        if let error = error { single(.failure(error)) }
+                        else if let snapshot = snapshot {
+                            let items = snapshot.documents.compactMap { try? $0.data(as: T.self) }
+                            single(.success(items))
+                        } else { single(.failure(NSError(domain: "NoData", code: -1))) }
+                    }
                 return Disposables.create()
             }
             
@@ -231,11 +232,11 @@ final class FirestoreManager {
                 return Disposables.create()
             }
             let docId = (documentId == nil || documentId!.isEmpty) ? self.userId : documentId!
-
+            
             do {
                 let encoded = try Firestore.Encoder().encode(data)
                 let ref = self.db.collection(collection.rawValue).document(docId)
-
+                
                 ref.updateData(encoded) { error in
                     if let ns = error as NSError? {
                         if ns.domain == FirestoreErrorDomain,
@@ -257,7 +258,7 @@ final class FirestoreManager {
             return Disposables.create()
         }
     }
-
+    
     //문서 삭제
     func deleteDocument(
         collection: FirestoreCollection,

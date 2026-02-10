@@ -18,7 +18,6 @@ final class FindMateViewController: UIViewController {
     private let viewModel = CommunityViewModel()
     private lazy var dataSource = setDataSource()
     private let refreshControl = UIRefreshControl()
-    private let manualRefresh = PublishRelay<Void>()
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
@@ -37,7 +36,6 @@ final class FindMateViewController: UIViewController {
         super.viewWillAppear(animated)
         
         //self.navigationController?.navigationBar.isHidden = true
-        manualRefresh.accept(())
     }
 }
 
@@ -95,14 +93,13 @@ private extension FindMateViewController {
             }
             .disposed(by: disposeBag)
         
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        guard let currentUserId = AuthSession.currentAppUserId else { return }
         
         let input = CommunityViewModel.Input(
                     segmentIndexChanged: Observable.just(
                         CommunitySectionType.allCases.firstIndex(of: .detectiveMateBoard) ?? 1
                     ),
                     pullToRefresh: refreshControl.rx.controlEvent(.valueChanged).asObservable(),
-                    manualRefresh: manualRefresh.asObservable(),
                     fetchMore: Observable.empty(),
                     menuEvent: menuEvent.asObservable(),
 //                    likeEvent: Observable.never()

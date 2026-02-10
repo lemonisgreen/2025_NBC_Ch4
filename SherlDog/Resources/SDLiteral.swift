@@ -45,6 +45,7 @@ enum SDLiteral {
         static let separateDot: String = " · "
         static let documentId: String = "documentId"
         static let postDate: String = "postDate"
+        static let unknownUser: String = "삭제된 사용자"
     }
     
     enum AddNewContentView {
@@ -94,6 +95,7 @@ enum SDLiteral {
         static let commentTextFieldPlaceholder: String = "댓글을 입력해주세요"
         static let commentSaveButtonTitle: String = "등록"
         static let secretCommentContent: String = "비밀 댓글입니다."
+        static let navigationTitle: String = "상세보기"
     }
     
     enum MyPageViewController {
@@ -121,6 +123,7 @@ enum SDLiteral {
         static let textViewPlaceholderLabel: String = "신고 내용을 상세히 기입해 주세요."
         static let reportConfirmButtonTitle: String = "신고하기"
         static let reportFailAlertMessageTitle: String = "신고 처리 중 오류가 발생했습니다."
+        static let doneButtonTitle: String = "완료"
     }
 }
 

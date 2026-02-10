@@ -271,11 +271,11 @@ extension PictureUploadRequestViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .white
         view.addSubview(collectionView)
         view.addSubview(setButton)
         
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.register(PictureUploadRequestViewCell.self,
                                 forCellWithReuseIdentifier: PictureUploadRequestViewCell.identifier)
         collectionView.register(PictureUploadRequestViewHeader.self,

@@ -216,7 +216,7 @@ private extension UserPostsViewController {
 // MARK: - UI
 private extension UserPostsViewController {
     func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .white
         view.addSubviews([ segmentedControl, collectionView ])
         
         navigationBackButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationBackButtonImage), for: .normal)
@@ -244,7 +244,7 @@ private extension UserPostsViewController {
         collectionView.register(PostHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PostHeaderView.identifier)
         collectionView.register(PostFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: PostFooterView.identifier)
         
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.refreshControl = refreshControl
         segmentedControl.selectedSegmentIndex = 0
     }
@@ -266,7 +266,7 @@ private extension UserPostsViewController {
 
 extension UserPostsViewController {
     func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return postUserId == currentUserId
     }
     

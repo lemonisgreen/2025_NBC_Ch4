@@ -83,7 +83,7 @@ extension InvLogListViewModel {
     }
     
     private func fetchWalkResultData() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         self.data = []
         self.originalData = []
         

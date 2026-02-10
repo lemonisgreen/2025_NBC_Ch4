@@ -229,7 +229,7 @@ extension InvLogListViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .gray50
+        view.backgroundColor = .keycolorTertiaryBG
         
         view.addSubviews([
             separatorView,
@@ -261,7 +261,7 @@ extension InvLogListViewController {
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .gray50
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         navigationRightButtonStackView.axis = .horizontal
@@ -276,7 +276,7 @@ extension InvLogListViewController {
         
         separatorView.backgroundColor = .gray100
         
-        collectionView.backgroundColor = .gray50
+        collectionView.backgroundColor = .clear
         collectionView.register(InvLogListCell.self, forCellWithReuseIdentifier: InvLogListCell.identifier)
         collectionView.allowsMultipleSelection = true
         

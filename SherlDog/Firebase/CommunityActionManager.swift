@@ -18,7 +18,7 @@ final class CommunityActionManager {
     }
     
     private let db = Firestore.firestore()
-    private let myUserId = Auth.auth().currentUser?.uid ?? ""
+    private let myUserId = AuthSession.currentAppUserId ?? ""
     
     private init() {}
 }
@@ -260,9 +260,7 @@ extension CommunityActionManager {
                     }
                 }
             
-            
             return Disposables.create()
         }
     }
-    
 }

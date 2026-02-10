@@ -251,7 +251,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
             view.addSubview($0)
         }
         
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         navigationBackButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationBackButtonImage), for: .normal)
         navigationBackButton.imageView?.tintColor = .textPrimary
@@ -268,7 +268,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationController?.navigationBar.isHidden = false
@@ -310,7 +310,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
-        collectionView.backgroundColor = .keycolorBackground
+        collectionView.backgroundColor = .clear
         collectionView.isUserInteractionEnabled = true
         collectionView.allowsSelection = true
         collectionView.rx.setDelegate(self).disposed(by: disposeBag)
@@ -375,7 +375,7 @@ class UserProfileViewController: UIViewController, UICollectionViewDelegate, UIS
 extension UserProfileViewController {
     /// 내 프로필인지 확인
     private func isMyProfile() -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return currentUserId == viewModel.userId
     }
     

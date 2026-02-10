@@ -28,7 +28,7 @@ class MyPageViewModel {
     let input = Input()
     let output = Output()
     
-    let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+    let userId = AuthSession.currentAppUserId ?? "anonymous"
     
     // 페이지 계산을 위한 설정값들
     private let cardWidth: CGFloat = 336
