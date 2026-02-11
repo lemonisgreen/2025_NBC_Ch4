@@ -8,99 +8,121 @@
 import RxSwift
 import RxCocoa
 import CoreLocation
-import RxCoreLocation
 import NMapsMap
+import FirebaseAuth
 
 final class MainViewModel {
     
+    // MARK: - Input / Output
     struct Input {
         let startTracking: PublishRelay<Void>
         let stopTracking: PublishRelay<Void>
+        let reloadClues: PublishRelay<Void>
     }
-
+    
     struct Output {
         let fullSideOfCourse: PublishRelay<NMGLatLngBounds>
-        let isTracking: BehaviorRelay<Bool>
-        let coordinates: BehaviorRelay<[CLLocationCoordinate2D]>
+        let clues: BehaviorRelay<[ClueModel]>
+        let sessionState: BehaviorRelay<WalkSession.State>
     }
-
+    
     let input: Input
     let output: Output
-
+    
+    // MARK: - Inputs
+    
     let startTracking = PublishRelay<Void>()
     let stopTracking = PublishRelay<Void>()
+    let reloadClues = PublishRelay<Void>()
+    
+    // MARK: - Outputs
+    
     private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
-    private let isTracking = BehaviorRelay<Bool>(value: false)
-    private let coordinates = BehaviorRelay<[CLLocationCoordinate2D]>(value: [])
-
-    private let locationManager: CLLocationManager
+    private let clues = BehaviorRelay<[ClueModel]>(value: [])
+    private let sessionState = BehaviorRelay<WalkSession.State>(value: .initial)
+    
+    // MARK: - Dependencies
+    
+    private let walkSession: WalkSession
     private let disposeBag = DisposeBag()
-
+    
+    // MARK: - Init
+    
     init(locationManager: CLLocationManager) {
-        self.locationManager = locationManager
-        self.input = Input(startTracking: startTracking, stopTracking: stopTracking)
-        self.output = Output(fullSideOfCourse: fullSideOfCourse, isTracking: isTracking, coordinates: coordinates)
-
-        setupLocationUpdates()
+        self.walkSession = WalkSession(locationManager: locationManager)
+        
+        self.input = Input(
+            startTracking: startTracking,
+            stopTracking: stopTracking,
+            reloadClues: reloadClues
+        )
+        
+        self.output = Output(
+            fullSideOfCourse: fullSideOfCourse,
+            clues: clues,
+            sessionState: sessionState
+        )
+        
         bindInputs()
+        bindSession()
+        bindClues()
     }
+    
+    // MARK: - Bind
     
     private func bindInputs() {
         input.startTracking
             .subscribe(onNext: { [weak self] in
-                self?.output.isTracking.accept(true)
+                self?.walkSession.start()
             })
             .disposed(by: disposeBag)
         
         input.stopTracking
             .subscribe(onNext: { [weak self] in
-                guard let self = self else { return }
-                self.output.isTracking.accept(false)
-                let coords = self.output.coordinates.value
-                if coords.count < 2 {
-                    self.output.fullSideOfCourse.accept(NMGLatLngBounds())
-                } else {
-                    self.output.fullSideOfCourse.accept(self.fetchFullSide())
-                }
-            })
-            .disposed(by: disposeBag)
-    }
-
-    private func setupLocationUpdates() {
-        locationManager.distanceFilter = 10
-        locationManager.allowsBackgroundLocationUpdates = true
-        locationManager.pausesLocationUpdatesAutomatically = false
-        locationManager.startUpdatingLocation()
-
-        locationManager.rx.didUpdateLocations
-            .throttle(.seconds(2), latest: true, scheduler: MainScheduler.instance)
-            .compactMap { $0.locations.last }
-            .subscribe(onNext: { [weak self] newLocation in
-                guard let self = self else { return }
-                let current = newLocation.coordinate
-                let previous = self.output.coordinates.value.last
-
-                if let prev = previous {
-                    let distance = CLLocation(latitude: prev.latitude, longitude: prev.longitude)
-                        .distance(from: CLLocation(latitude: current.latitude, longitude: current.longitude))
-                    
-                    if self.output.isTracking.value && distance >= 5 && distance < 50 {
-                        self.output.coordinates.accept(self.output.coordinates.value + [current])
-                    }
-                } else if self.output.isTracking.value {
-                    self.output.coordinates.accept(self.output.coordinates.value + [current])
-                }
+                self?.walkSession.stop()
             })
             .disposed(by: disposeBag)
     }
     
-    private func fetchFullSide() -> NMGLatLngBounds {
-        var latLng = [NMGLatLng]()
+    private func bindSession() {
+        walkSession.state
+            .bind(to: sessionState)
+            .disposed(by: disposeBag)
         
-        self.output.coordinates.value.forEach {
-            latLng.append(NMGLatLng(lat: $0.latitude, lng: $0.longitude))
-        }
+        walkSession.fullSideOfCourse
+            .bind(to: fullSideOfCourse)
+            .disposed(by: disposeBag)
+    }
+    
+    private func bindClues() {
+        input.reloadClues
+            .subscribe(onNext: { [weak self] in
+                self?.fetchClues()
+            })
+            .disposed(by: disposeBag)
+    }
+    // MARK: - Clues
+    
+    private func fetchClues() {
+        guard let userId = AuthSession.currentAppUserId,
+                 !userId.isEmpty else {
+               self.clues.accept([])
+               return
+           }
         
-        return NMGLatLngBounds(latLngs: latLng)
+        FirestoreManager.shared.fetchQuery(
+            FirestoreQuery<ClueModel>(
+                collection: .clues,
+                type: .whereField(field: "userID", value: userId)
+            )
+        )
+        .subscribe(
+            onSuccess: { [weak self] clues in
+                self?.clues.accept(clues)
+            },
+            onFailure: { error in }
+        )
+        .disposed(by: disposeBag)
     }
 }
+

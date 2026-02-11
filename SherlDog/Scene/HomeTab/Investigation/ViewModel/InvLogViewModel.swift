@@ -125,7 +125,7 @@ class InvLogViewModel {
             case .success(let value):
                 self?.upload(image: value, content: data.content)
                 
-            case .failure(let error):
+            case .failure(_):
                 self?.output.isLoading.accept(false)
                 self?.output.uploadError.accept(())
                 return

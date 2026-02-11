@@ -52,16 +52,16 @@ extension InvLogListViewController {
     
     private func bind() {
         self.viewModel.output.cellData
-                .observe(on: MainScheduler.instance)
-                .subscribe(onNext: { [weak self] sections in
-                    guard let self = self else { return }
-                    let itemCount = sections.first?.items.count ?? 0
-                    let isEmpty = (itemCount == 0)
-
-                    self.emptyView.isHidden = !isEmpty
-                    self.collectionView.isHidden = isEmpty
-                })
-                .disposed(by: disposeBag)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] sections in
+                guard let self = self else { return }
+                let itemCount = sections.first?.items.count ?? 0
+                let isEmpty = (itemCount == 0)
+                
+                self.emptyView.isHidden = !isEmpty
+                self.collectionView.isHidden = isEmpty
+            })
+            .disposed(by: disposeBag)
         
         self.viewModel.output.cellData
             .bind(to: self.collectionView.rx.items(dataSource: dataSource))
@@ -171,7 +171,7 @@ extension InvLogListViewController {
         self.deleteButton.rx.tap
             .map { [weak self] _ -> [IndexPath] in
                 guard let self,
-                       let indexPaths = self.collectionView.indexPathsForSelectedItems else { return [] }
+                      let indexPaths = self.collectionView.indexPathsForSelectedItems else { return [] }
                 
                 return indexPaths
             }
@@ -181,11 +181,11 @@ extension InvLogListViewController {
                 if indexPaths.count > 0 {
                     buttons = [
                         CustomAlertViewController.AlertButton(
-                           title: SDLiteral.AlertMessage.cancel,
+                            title: SDLiteral.AlertMessage.cancel,
                             action: nil
                         ),
                         CustomAlertViewController.AlertButton(
-                           title: SDLiteral.AlertMessage.confirm,
+                            title: SDLiteral.AlertMessage.confirm,
                             action: { [weak self] in
                                 self?.viewModel.input.accept(.delete(indexPaths))
                             }
@@ -204,8 +204,8 @@ extension InvLogListViewController {
                     message: indexPaths.count > 0
                     ? SDLiteral.InvLogListView.requestDelete
                     : SDLiteral.InvLogListView.requestDeleteWithoutList,
-                     buttons: buttons
-                 )
+                    buttons: buttons
+                )
                 
                 self?.present(alert, animated: true)
             }
@@ -248,7 +248,7 @@ extension InvLogListViewController {
         
         let navigationStack = UIStackView()
         let containerView = UIView()
-
+        
         containerView.addSubview(navigationStack)
         
         containerView.addSubview(navigationStack)
@@ -327,15 +327,17 @@ extension InvLogListViewController {
                     .subscribe(onNext: { [weak self] in
                         guard let self else { return }
                         
-                        let originalData = self.viewModel.originalData[indexPath.row]
+                        let (walkResult, petProfiles) = self.viewModel.originalData[indexPath.row]
                         
-                        let walkResultViewModel = DataTrackingViewModel()
-                        let walkEndView = WalkEndModalViewController(dataTrackingViewModel: walkResultViewModel)
-                        let nav = UINavigationController(rootViewController: walkEndView)
+                        let vm = WalkResultViewModel()
+                        let walkEndVC = WalkEndModalViewController(
+                            result: walkResult,
+                            selectedProfiles: petProfiles,
+                            viewModel: vm
+                        )
+                        
+                        let nav = UINavigationController(rootViewController: walkEndVC)
                         nav.modalPresentationStyle = .overFullScreen
-                        
-                        walkResultViewModel.fetchResult.accept(originalData.0)
-                        
                         self.present(nav, animated: true)
                     })
                     .disposed(by: cell.disposeBag)
