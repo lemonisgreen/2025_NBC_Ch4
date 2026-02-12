@@ -16,6 +16,7 @@ class DetectiveCardView: UIView {
     var onDeleteTapped: (() -> Void)?
     
     let detectiveHeaderBackgroundView = UIView()
+    let detectiveCardStampImageView = UIImageView()
     let detectiveCardLabel = UILabel()
     let detectivePhotoImageView = UIImageView()
     let detectiveNumberLabel = VerticalAlignedLabel()
@@ -69,6 +70,7 @@ class DetectiveCardView: UIView {
             detectiveAge,
             detectiveIntroduceLabel,
             detectiveIntroduceBackgroundView,
+            detectiveCardStampImageView,
         ])
         
         self.addSubview(menuButton)
@@ -84,6 +86,9 @@ class DetectiveCardView: UIView {
         detectiveHeaderBackgroundView.layer.borderWidth = 1
         detectiveHeaderBackgroundView.layer.borderColor = UIColor.gray600Opacity.cgColor
         
+        detectiveCardStampImageView.image = UIImage(named: "cardStamp")
+        detectiveCardStampImageView.contentMode = .scaleAspectFit
+        
         detectiveCardLabel.text = SDLiteral.DetectiveCardView.detectiveCardLabelTitle
         detectiveCardLabel.font = UIFont.cardTitle
         detectiveCardLabel.textColor = .white
@@ -95,7 +100,7 @@ class DetectiveCardView: UIView {
         detectiveNumber.font = UIFont.cardTitle
         detectiveNumber.textColor = .white
         
-        detectivePhotoImageView.layer.cornerRadius = 4
+        detectivePhotoImageView.layer.cornerRadius = 12
         detectivePhotoImageView.clipsToBounds = true
         detectivePhotoImageView.layer.borderWidth = 1
         detectivePhotoImageView.layer.borderColor = UIColor.gray600Opacity.cgColor
@@ -137,17 +142,15 @@ class DetectiveCardView: UIView {
         detectiveIntroduce.textColor = .textSecondary
     }
     
-    // 메뉴 버튼 설정
+    // 메뉴 버튼
     private func setupMenu() {
         let editAction = UIAction(title: "수정하기", image: UIImage(systemName: "pencil")) { [weak self] _ in
             self?.onEditTapped?()
-            print("✅ 수정하기 눌림") // 테스트 로그 출력
         }
         
         let deleteAction = UIAction(title: "삭제하기", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             guard let self = self else { return }
             
-            // 삭제 확인 커스텀 알럿 생성
             let alert = CustomAlertViewController(
                 message: "정말 삭제하시겠습니까?",
                 subMessage: "삭제된 프로필은 되돌릴 수 없습니다.",
@@ -180,6 +183,10 @@ class DetectiveCardView: UIView {
             $0.top.equalToSuperview()
             $0.horizontalEdges.equalToSuperview()
             $0.height.equalTo(36)
+        }
+        
+        detectiveCardStampImageView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
         
         detectiveCardLabel.snp.makeConstraints {
