@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "m.png",
+      "filename" : "endInvBG.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "m@2x.png",
+      "filename" : "endInvBG@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "m@3x.png",
+      "filename" : "endInvBG@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

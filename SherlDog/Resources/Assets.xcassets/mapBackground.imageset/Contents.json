@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "mini2.png",
+      "filename" : "MapBG.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "mini2@2x.png",
+      "filename" : "MapBG@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "mini2@3x.png",
+      "filename" : "MapBG@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
