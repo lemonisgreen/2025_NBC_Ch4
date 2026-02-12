@@ -41,7 +41,7 @@ class LoginViewController: UIViewController {
     
     // MARK: - UI Setup
     private func configureUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         logo.image = UIImage(named: "bigLogo")
         logo.contentMode = .scaleAspectFit
@@ -168,7 +168,7 @@ class LoginViewController: UIViewController {
     // MARK: - Navigation, Alert
     private func navigateToNextScreen() {
         // 현재 사용자가 펫 프로필을 가지고 있는지 확인
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<PetProfile>(

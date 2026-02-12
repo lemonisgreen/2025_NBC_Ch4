@@ -267,7 +267,7 @@ final class AddNewContentViewModel {
     }
     
     private func addPost() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         let selectedPets = self.output.selectedProfile.value
         let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.detectiveMate.rawValue).document()
         let documentId = newDocRef.documentID
@@ -277,7 +277,8 @@ final class AddNewContentViewModel {
             .flatMapCompletable { [weak self] urls in
                 guard let self else { return Completable.error(NSError(domain: "", code: 0, userInfo: nil)) }
                 
-                let uploadData = CommunityModel(userId: userId,
+                let uploadData = CommunityModel(category: FirestoreCollection.detectiveMate.rawValue,
+                                                userId: userId,
                                                 petProfile: selectedPets,
                                                 postDate: Timestamp(date: Date()),
                                                 contentImage: urls,
@@ -381,7 +382,7 @@ final class AddNewContentViewModel {
     }
     
     private func fetchProfiles() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
             collection: .petProfile,

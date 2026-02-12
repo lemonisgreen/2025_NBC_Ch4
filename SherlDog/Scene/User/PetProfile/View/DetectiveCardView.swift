@@ -82,54 +82,56 @@ class DetectiveCardView: UIView {
         
         detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary2
         detectiveHeaderBackgroundView.layer.borderWidth = 1
-        detectiveHeaderBackgroundView.layer.borderColor = UIColor.gray600.cgColor
+        detectiveHeaderBackgroundView.layer.borderColor = UIColor.gray600Opacity.cgColor
         
         detectiveCardLabel.text = SDLiteral.DetectiveCardView.detectiveCardLabelTitle
         detectiveCardLabel.font = UIFont.cardTitle
-        detectiveCardLabel.textColor = .textPrimary
+        detectiveCardLabel.textColor = .white
         
         detectiveNumberLabel.text = SDLiteral.DetectiveCardView.detectiveNumberLabeTitle
         detectiveNumberLabel.font = UIFont.alert2
-        detectiveNumberLabel.textColor = .textPrimary
+        detectiveNumberLabel.textColor = .white
         
         detectiveNumber.font = UIFont.cardTitle
-        detectiveNumber.textColor = .textPrimary
+        detectiveNumber.textColor = .white
         
         detectivePhotoImageView.layer.cornerRadius = 4
         detectivePhotoImageView.clipsToBounds = true
+        detectivePhotoImageView.layer.borderWidth = 1
+        detectivePhotoImageView.layer.borderColor = UIColor.gray600Opacity.cgColor
         
         detectiveNameLabel.text = SDLiteral.DetectiveCardView.detectiveNameLabelTitle
         detectiveNameLabel.verticalAlignment = .top
         detectiveNameLabel.font = UIFont.alert1
-        detectiveNameLabel.textColor = .textSecondary
+        detectiveNameLabel.textColor = .gray700
         
         detectiveName.font = UIFont.body4
-        detectiveName.textColor = .textPrimary
+        detectiveName.textColor = .gray900
         
         detectiveBreedLabel.text = SDLiteral.DetectiveCardView.detectiveBreedLabelTItle
         detectiveBreedLabel.verticalAlignment = .top
         detectiveBreedLabel.font = UIFont.alert1
-        detectiveBreedLabel.textColor = .textSecondary
+        detectiveBreedLabel.textColor = .gray700
         
         detectiveBreed.font = UIFont.body4
-        detectiveBreed.textColor = .textPrimary
+        detectiveBreed.textColor = .gray900
         
         detectiveAgeLabel.text = SDLiteral.DetectiveCardView.detectiveAgeLabelTitle
         detectiveAgeLabel.verticalAlignment = .top
         detectiveAgeLabel.font = UIFont.alert1
-        detectiveAgeLabel.textColor = .textSecondary
+        detectiveAgeLabel.textColor = .gray700
         
         detectiveAge.font = UIFont.body4
-        detectiveAge.textColor = .textPrimary
+        detectiveAge.textColor = .gray900
         
         detectiveIntroduceLabel.text = SDLiteral.DetectiveCardView.detectiveIntroduceLabelTitle
         detectiveIntroduceLabel.verticalAlignment = .top
         detectiveIntroduceLabel.font = UIFont.alert1
-        detectiveIntroduceLabel.textColor = .textSecondary
+        detectiveIntroduceLabel.textColor = .gray700
         
         detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
-        detectiveIntroduceBackgroundView.backgroundColor = .gray50
+        detectiveIntroduceBackgroundView.backgroundColor = .keycolorOpacity
         
         detectiveIntroduce.font = UIFont.title5
         detectiveIntroduce.textColor = .textSecondary

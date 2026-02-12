@@ -141,26 +141,11 @@ private extension UserPostsViewController {
                         return CommunitySectionType.allCases.indices.contains(index) ? CommunitySectionType.allCases[index].toFirestoreCollection : .invLogBoard
                     }()
                     
-                    footer.settingCell(data: sectionModel, collection: category)
+                    footer.settingCell(data: sectionModel, collection: category, isDetail: false)
                     footer.updatePage(total: count, current: 0)
                     
                     let footerVM = PostFooterViewModel(category: category, post: sectionModel)
-                    let output = footerVM.transform(input: .init(
-                        likeTap: footer.rx.likeButtonTap
-                            .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
-                            .asSignal(onErrorSignalWith: .empty())
-                    ))
-                    
-                    output.state
-                        .drive(onNext: { [weak footer] state in
-                            footer?.updateLike(state)
-                        })
-                        .disposed(by: footer.disposeBag)
-                    
-                    footer.rx.likeButtonTap
-                        .map { sectionModel }
-                        .bind(to: self.likeButtonEvent)
-                        .disposed(by: footer.disposeBag)
+                    footer.bind(viewModel: footerVM)
                     
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
@@ -231,7 +216,7 @@ private extension UserPostsViewController {
 // MARK: - UI
 private extension UserPostsViewController {
     func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .white
         view.addSubviews([ segmentedControl, collectionView ])
         
         navigationBackButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationBackButtonImage), for: .normal)
@@ -259,7 +244,7 @@ private extension UserPostsViewController {
         collectionView.register(PostHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PostHeaderView.identifier)
         collectionView.register(PostFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: PostFooterView.identifier)
         
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.refreshControl = refreshControl
         segmentedControl.selectedSegmentIndex = 0
     }
@@ -281,7 +266,7 @@ private extension UserPostsViewController {
 
 extension UserPostsViewController {
     func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return postUserId == currentUserId
     }
     

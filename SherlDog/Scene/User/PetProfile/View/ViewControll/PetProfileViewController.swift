@@ -225,7 +225,7 @@ final class PetProfileViewController: UIViewController {
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationController?.navigationBar.isHidden = false
@@ -234,7 +234,7 @@ final class PetProfileViewController: UIViewController {
         self.navigationItem.standardAppearance = navigationBarAppearance
         self.navigationItem.scrollEdgeAppearance = navigationBarAppearance
         
-        view.backgroundColor = UIColor.keycolorBackground
+        view.backgroundColor = UIColor.keycolorTertiaryBG
         
         dogImageView.image = UIImage(named: "sherlDog")
         dogImageView.contentMode = .scaleAspectFit

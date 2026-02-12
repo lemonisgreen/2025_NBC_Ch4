@@ -112,7 +112,7 @@ class DataTrackingViewModel {
             }
         }()
         
-        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+        let userId = AuthSession.currentAppUserId ?? "anonymous"
         let profileIds = selectedProfiles.map { $0.petProfileId }
         
         let newWalkResult = WalkResult(

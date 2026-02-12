@@ -68,6 +68,7 @@ final class ReportReasonBottomSheetViewController: UIViewController {
     }
     
     private func setupUI() {
+        view.backgroundColor = .white
         
         containerView.backgroundColor = .white
         containerView.layer.cornerRadius = 24

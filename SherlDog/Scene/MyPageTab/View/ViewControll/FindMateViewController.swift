@@ -18,7 +18,6 @@ final class FindMateViewController: UIViewController {
     private let viewModel = CommunityViewModel()
     private lazy var dataSource = setDataSource()
     private let refreshControl = UIRefreshControl()
-    private let manualRefresh = PublishRelay<Void>()
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
@@ -37,7 +36,6 @@ final class FindMateViewController: UIViewController {
         super.viewWillAppear(animated)
         
         //self.navigationController?.navigationBar.isHidden = true
-        manualRefresh.accept(())
     }
 }
 
@@ -95,17 +93,16 @@ private extension FindMateViewController {
             }
             .disposed(by: disposeBag)
         
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return }
+        guard let currentUserId = AuthSession.currentAppUserId else { return }
         
         let input = CommunityViewModel.Input(
                     segmentIndexChanged: Observable.just(
                         CommunitySectionType.allCases.firstIndex(of: .detectiveMateBoard) ?? 1
                     ),
                     pullToRefresh: refreshControl.rx.controlEvent(.valueChanged).asObservable(),
-                    manualRefresh: manualRefresh.asObservable(),
                     fetchMore: Observable.empty(),
                     menuEvent: menuEvent.asObservable(),
-                    likeEvent: Observable.never()
+//                    likeEvent: Observable.never()
                 )
         
         let output = viewModel.transform(input)
@@ -163,7 +160,7 @@ private extension FindMateViewController {
                         for: indexPath
                     ) as? PostFooterView else { return UICollectionReusableView() }
                     let model = dataSource.sectionModels[indexPath.section].model
-                    footer.settingCell(data: model, collection: FirestoreCollection.detectiveMate )
+                    footer.settingCell(data: model, collection: FirestoreCollection.detectiveMate, isDetail: false)
                     footer.updatePage(total: dataSource.sectionModels[indexPath.section].items.count, current: 0)
                     return footer
                 default:

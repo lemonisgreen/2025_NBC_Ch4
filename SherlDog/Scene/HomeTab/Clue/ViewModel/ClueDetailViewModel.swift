@@ -70,20 +70,47 @@ final class ClueDetailViewModel {
     }
     
     private func fetchCluesData(day: Date) {
+        let userId = AuthSession.currentAppUserId
+        
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: day)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
                 collection: .clues,
-                type: .dateRange(field: "userId", value: nil, orderBy: "date", day: day)
+                type: .whereField(field: "userID", value: userId)
             )
         )
-        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-        .subscribe(onSuccess: { [weak self] clues in
-            clues.forEach {
-                self?.data.append(ClueCellData(imageURL: $0.image, content: $0.content))
+        .map { clues in
+            let calendar = Calendar.current
+            let start = calendar.startOfDay(for: day)
+            let end = calendar.date(byAdding: .day, value: 1, to: start)!
+
+            return clues.filter {
+                let clueDate = $0.date.dateValue()
+                return clueDate >= start && clueDate < end
             }
-            self?.clueCount.accept(clues.count)
-            self?.output.isLoading.accept(false)
-        })
+        }
+        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .subscribe(
+            onSuccess: { [weak self] clues in
+                guard let self else { return }
+                
+                self.data = clues.map {
+                    ClueCellData(
+                        imageURL: $0.image,
+                        content: $0.content
+                    )
+                }
+                self.clueCount.accept(clues.count)
+                self.output.isLoading.accept(false)
+            },
+            onFailure: { [weak self] error in
+                self?.output.isLoading.accept(false)
+                self?.output.errorMessage.accept(error.localizedDescription)
+            }
+        )
         .disposed(by: disposeBag)
     }
 }
