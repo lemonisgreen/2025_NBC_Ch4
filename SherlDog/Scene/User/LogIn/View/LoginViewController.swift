@@ -72,47 +72,53 @@ class LoginViewController: UIViewController {
     
     private func setupConstraints() {
         logo.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(24)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(140)
+            $0.top.equalTo(view.snp.top).offset(87)
+            $0.leading.equalToSuperview().inset(112)
+            $0.trailing.equalToSuperview().offset(-127)
+            $0.width.greaterThanOrEqualTo(130)
+            $0.width.lessThanOrEqualTo(180)
         }
-        
+
         helloLabel.snp.makeConstraints {
-            $0.top.equalTo(logo.snp.bottom).offset(12)
+            $0.top.equalTo(logo.snp.bottom).offset(16)
             $0.centerX.equalToSuperview()
         }
-        
+
         helloLabel2.snp.makeConstraints {
             $0.top.equalTo(helloLabel.snp.bottom).offset(6)
             $0.centerX.equalToSuperview()
         }
-        
-        joinImage.snp.makeConstraints {
-            $0.top.equalTo(helloLabel2.snp.bottom).offset(12)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(80)
-            $0.width.equalToSuperview().multipliedBy(0.75)
-        }
-        
+
         appleButton.snp.makeConstraints {
-            $0.top.equalTo(joinImage.snp.bottom).offset(16)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.85)
         }
+
         kakaoButton.snp.makeConstraints {
             $0.top.equalTo(appleButton.snp.bottom).offset(12)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.85)
         }
+
         googleButton.snp.makeConstraints {
             $0.top.equalTo(kakaoButton.snp.bottom).offset(12)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.85)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(24)
         }
-        
+
+        joinImage.snp.makeConstraints {
+            $0.bottom.equalTo(appleButton.snp.top).offset(-16)
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(80)
+            $0.width.equalToSuperview().multipliedBy(0.75)
+
+            $0.top.greaterThanOrEqualTo(helloLabel2.snp.bottom).offset(24)
+        }
+
         loadingIndicator.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }

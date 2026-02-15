@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "join.png",
+      "filename" : "loginBalloon.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "loginBalloon@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "loginBalloon@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }
