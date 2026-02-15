@@ -294,7 +294,7 @@ final class AddNewContentViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         scrollView.addSubview(contentView)
         
@@ -337,12 +337,27 @@ final class AddNewContentViewController: UIViewController {
         navigationStack.spacing = 8
         navigationStack.snp.makeConstraints { $0.edges.equalToSuperview() }
         
+//        // 리퀴드 글래스 적용 시
+//        var navigationButtonConfig = UIButton.Configuration.plain()
+//        navigationButtonConfig.image = UIImage(systemName: "chevron.backward")
+//        navigationButtonConfig.baseForegroundColor = .textPrimary
+//        navigationButtonConfig.imagePadding = 8
+//        navigationButtonConfig.contentInsets = .init(top: 0, leading: 4, bottom: 0, trailing: 4)
+//        navigationButtonConfig.attributedTitle = AttributedString(
+//            "", // 이 부분 editModeSetting(), addModeSetting()에서 "글 작성" or "글 수정" 변경되도록 처리하기
+//            attributes: AttributeContainer([.font: UIFont.highlight3])
+//        )
+//
+//        navigationBackButton.configuration = navigationButtonConfig
+//
+//        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: navigationBackButton)
+        
         navigationAddButton.setTitleColor(.textAlert, for: .normal)
         navigationAddButton.titleLabel?.font = .highlight3
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationItem.titleView = nil

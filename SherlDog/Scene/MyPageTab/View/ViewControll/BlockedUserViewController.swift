@@ -22,6 +22,7 @@ class BlockedUserViewController: UIViewController {
     private let unblockButton = UIButton()
     private let editButton = UIButton()
     private let navigationRightButtonStackView = UIStackView()
+    private let emptyStateImageView = UIImageView()
     private let emptyStateLabel = UILabel()
     private let tableView = UITableView()
     
@@ -44,13 +45,15 @@ class BlockedUserViewController: UIViewController {
     }
     
     private func bind() {
-
+        
         viewModel.blockedUserIds
             .map { !$0.isEmpty }
             .subscribe(onNext: { [weak self] hasUsers in
                 guard let self = self else { return }
                 self.editButton.isEnabled = hasUsers
                 self.editButton.setTitleColor(hasUsers ? .keycolorPrimary2 : .gray500, for: .normal)
+                
+                self.emptyStateImageView.isHidden = hasUsers
                 self.emptyStateLabel.isHidden = hasUsers
             })
             .disposed(by: disposeBag)
@@ -78,7 +81,7 @@ class BlockedUserViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .bind { [weak self] selected in
                 guard let self = self else { return }
-
+                
                 if selected.isEmpty {
                     let alert = CustomAlertViewController(
                         message: SDLiteral.BlockedUserViewController.emptySelectedUnblockUsersAlertText,
@@ -89,7 +92,7 @@ class BlockedUserViewController: UIViewController {
                     self.present(alert, animated: true)
                     return
                 }
-
+                
                 let confirm = CustomAlertViewController(
                     message: SDLiteral.BlockedUserViewController.unblcockAlertText,
                     buttons: [
@@ -204,19 +207,33 @@ class BlockedUserViewController: UIViewController {
         navigationRightButtonStackView.addArrangedSubview(editButton)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: navigationRightButtonStackView)
         
+        emptyStateImageView.image = UIImage(named: "sherlDog")
+        emptyStateImageView.contentMode = .scaleAspectFit
+        emptyStateImageView.tintColor = .gray200
+        emptyStateImageView.isHidden = true
+        
         emptyStateLabel.text = SDLiteral.BlockedUserViewController.emptyStateLabel
-        emptyStateLabel.font = .title3
+        emptyStateLabel.textColor = .textDisabled
+        emptyStateLabel.font = .body2
         emptyStateLabel.textAlignment = .center
-        emptyStateLabel.textColor = .black
         emptyStateLabel.isHidden = true
         
         let emptyContainerView = UIView()
-         emptyContainerView.addSubview(emptyStateLabel)
-         
-         emptyStateLabel.snp.makeConstraints {
-             $0.centerX.equalToSuperview()
-             $0.centerY.equalToSuperview().offset(-50)
-         }
+        emptyContainerView.addSubviews(
+            [emptyStateLabel,
+             emptyStateImageView]
+        )
+        
+        emptyStateImageView.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.centerY.equalToSuperview().offset(-110)
+            $0.size.equalTo(80)
+        }
+        
+        emptyStateLabel.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.centerY.equalToSuperview().offset(-50)
+        }
         
         tableView.register(BlockedUserListCell.self, forCellReuseIdentifier: BlockedUserListCell.reuseIdentifier)
         tableView.rowHeight = 63

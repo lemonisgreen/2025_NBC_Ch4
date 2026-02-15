@@ -24,10 +24,9 @@ enum PostMenuEvent {
 // MARK: - CommunityViewController
 final class CommunityViewController: UIViewController {
     
-    private let likeButtonEvent = PublishRelay<CommunityModel>()
+//    private let likeButtonEvent = PublishRelay<CommunityModel>()
     private let menuEvent = PublishRelay<PostMenuEvent>()
-    private let manualRefresh = PublishRelay<Void>()
-
+    
     private let viewModel = CommunityViewModel()
     private let disposeBag = DisposeBag()
     
@@ -52,7 +51,6 @@ final class CommunityViewController: UIViewController {
         super.viewWillAppear(animated)
         
         self.navigationController?.navigationBar.isHidden = true
-        manualRefresh.accept(())
     }
 }
 
@@ -63,10 +61,8 @@ extension CommunityViewController {
         // MARK: - Inputs
         let input = CommunityViewModel.Input(segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
                                              pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
-                                             manualRefresh: manualRefresh.asObservable(),
                                              fetchMore: Observable.empty(),
-                                             menuEvent: self.menuEvent.asObservable(),
-                                             likeEvent: likeButtonEvent.asObservable())
+                                             menuEvent: self.menuEvent.asObservable())
         
         self.addButton.rx.tap
             .asSignal()
@@ -104,6 +100,7 @@ extension CommunityViewController {
             .disposed(by: disposeBag)
         
         output.isUpdating
+            .filter { !$0 }
             .drive(self.refreshControl.rx.isRefreshing)
             .disposed(by: disposeBag)
         
@@ -123,7 +120,7 @@ extension CommunityViewController {
 // MARK: - Cell Menu Button Setting
 extension CommunityViewController {
     private func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return postUserId == currentUserId
     }
     
@@ -153,14 +150,40 @@ extension CommunityViewController {
             self?.showMenuAlert(type: .block(post.userId))
         }
         
-        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                  SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
-                self?.blockMessageAfterReport(userId: post.userId)
+        let reportAction = UIAction(
+            title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                          SDLiteral.CommunityView.report)
+        ) { [weak self] _ in
+            guard let self else { return }
+            
+            self.showMenuAlert(type: .report(post.documentId)) { [weak self] in
+                self?.presentReportForPost(post)
             }
         }
         
         return UIMenu(children: [blockAction, reportAction])
+    }
+    
+    func presentReportForPost(_ post: CommunityModel) {
+        let category: CommunitySectionType = .invLogBoard
+        let reportVC = ReportViewController(
+            target: .post(collection: category.toFirestoreCollection,
+                          documentId: post.documentId,
+                          postUserId: post.userId)
+        )
+        
+        reportVC.onReportCompleted = { [weak self] in
+                self?.blockMessageAfterReport(userId: post.userId)
+            }
+        reportVC.modalPresentationStyle = .pageSheet
+        reportVC.isModalInPresentation = true
+        
+        if let sheet = reportVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
+            sheet.preferredCornerRadius = 20
+        }
+        present(reportVC, animated: true)
     }
     
     private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
@@ -262,14 +285,29 @@ extension CommunityViewController {
             configureCell: { dataSource, collectionView, indexPath, item in
                 // item == String (이미지 URL)
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: MediaCell.identifier, for: indexPath) as? MediaCell else { return .init() }
-                let petProfile = dataSource.sectionModels[indexPath.section].model.petProfile
+                let model = dataSource.sectionModels[indexPath.section].model
                 
-                cell.settingCell(item)
-                cell.settingPetProfile(profile: petProfile)
+                let category = CommunitySectionType.allCases[self.segmentedControl.selectedSegmentIndex]
+
+                cell.configureForCommunityPost(
+                    imageURL: item,
+                    petProfiles: model.petProfile,
+                    category: category
+                )
                 
                 cell.rx.mediaDoubleTap
-                    .map { _ in dataSource.sectionModels[indexPath.section].model }
-                    .bind(to: self.likeButtonEvent)
+                    .filter { $0.state == .ended }
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak collectionView] _ in
+                        guard let collectionView else { return }
+                        let footerIndex = IndexPath(item: 0, section: indexPath.section)
+                        if let footer = collectionView.supplementaryView(
+                            forElementKind: UICollectionView.elementKindSectionFooter,
+                            at: footerIndex
+                        ) as? PostFooterView {
+                            footer.externalLikeEvent.accept(())
+                        }
+                    })
                     .disposed(by: cell.disposeBag)
                 
                 return cell
@@ -324,46 +362,26 @@ extension CommunityViewController {
                         : .invLogBoard
                     }()
                     
-                    footer.settingCell(data: sectionModel, collection: category)
+                    footer.settingCell(data: sectionModel, collection: category, isDetail: false)
                     footer.updatePage(total: count, current: 0)
 
-                    // ViewModel for footer
+                    // footerViewModel
                     let viewModel = PostFooterViewModel(category: category, post: sectionModel)
-                    let output = viewModel.transform(
-                        input: .init(
-                            likeTap: footer.rx.likeButtonTap
-                                .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
-                                .asSignal(onErrorSignalWith: .empty())
-                        )
-                    )
-                    output.state
-                        .drive(onNext: { [weak footer] state in
-                            footer?.updateLike(state)
-                        })
-                        .disposed(by: footer.disposeBag)
                     
-                    footer.rx.likeButtonTap
-                        .map { sectionModel }
-                        .bind(to: self.likeButtonEvent)
-                        .disposed(by: footer.disposeBag)
-
+                    footer.bind(viewModel: viewModel)
+                    
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
                         .subscribe(onNext: { [weak self] in
                             // TODO: 상세 뷰로 이동
-                            let alert = CustomAlertViewController(
-                                message: "Test alert",
-                                subMessage: "Move to detail view",
-                                buttons: [CustomAlertViewController.AlertButton(
-                                    title: SDLiteral.AlertMessage.confirm,
-                                    action: nil
-                                )]
-                            )
-
-                            self?.present(alert, animated: true)
+                            let viewModel = PostDetailViewModel(post: sectionModel)
+                            let viewController = PostDetailViewController(viewModel: viewModel)
+                            viewController.hidesBottomBarWhenPushed = true
+                            
+                            self?.navigationController?.pushViewController(viewController, animated: true)
                         })
                         .disposed(by: footer.disposeBag)
-
+                    
                     return footer
                     
                 default:
@@ -436,14 +454,13 @@ extension CommunityViewController {
             return section
         }
     }
-    
 }
 
 // MARK: - UI
 extension CommunityViewController {
     
     private func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .keycolorTertiaryBG
         view.addSubviews([
             segmentedControl,
             collectionView,
@@ -459,7 +476,7 @@ extension CommunityViewController {
         collectionView.register(PostFooterView.self,
                                 forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter,
                                 withReuseIdentifier: PostFooterView.identifier)
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.refreshControl = refreshControl
         
         addButton.setImage(.postAdd, for: .normal)

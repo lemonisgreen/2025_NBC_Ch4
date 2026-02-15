@@ -50,7 +50,7 @@ final class PetProfileViewModel {
                 self?.output.isLoading.accept(true)
             })
             .flatMapLatest { _ -> Observable<[PetProfile]> in
-                guard let uid = Auth.auth().currentUser?.uid else {
+                guard let uid = AuthSession.currentAppUserId else {
                     return .just([])
                 }
                 return FirestoreManager.shared.fetchQuery(

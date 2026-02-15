@@ -70,18 +70,9 @@ final class PostHeaderView: UICollectionReusableView {
 extension PostHeaderView {
     private func timestampToDate(_ time: Timestamp) -> String {
         let date = time.dateValue()
-        let formatter = checkToday(date)
-        ? DateFormatter.todayStyle(date)
-        : DateFormatter.yyyyMMddDot
+        let formatter = DateFormatter.todayStyle(date)
         
         return formatter.string(from: date)
-    }
-    
-    private func checkToday(_ date: Date) -> Bool {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let otherDay = calendar.startOfDay(for: date)
-        return today == otherDay
     }
     
     private func petProfilesToNames(_ data: [PetProfile]) -> String {

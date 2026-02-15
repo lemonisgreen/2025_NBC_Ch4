@@ -16,6 +16,7 @@ import CoreLocation
 class CameraViewController: UIViewController {
     
     private let viewModel: CameraViewModel
+    private let invData: InvData?
     private let disposeBag = DisposeBag()
     
     private var viewControllerForPicture: UIViewController?
@@ -30,16 +31,24 @@ class CameraViewController: UIViewController {
     private let shutterButton = UIButton()
     private let cancelButton = UIButton()
     private let guideLabel = UILabel()
+    private let gradientLayer = CAGradientLayer()
     
     // MARK: - Initialize
-    init(viewModel: CameraViewModel) {
+    init(viewModel: CameraViewModel, invData: InvData? = nil) {
         self.viewModel = viewModel
-        
+        self.invData = invData
+
         super.init(nibName: nil, bundle: nil)
     }
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func viewWillLayoutSubviews() {
+        super.viewWillLayoutSubviews()
+        
+        gradientLayer.frame = cameraView.bounds
     }
 }
 
@@ -120,7 +129,13 @@ extension CameraViewController {
                     self.guideLabel.isHidden = false
                     
                 case .communityShare:
-                    self.viewControllerForPicture = UINavigationController(rootViewController: CreateLogViewController(viewModel: viewModel))
+                    
+                    self.viewControllerForPicture = UINavigationController(
+                                          rootViewController: CreateLogViewController(
+                                              viewModel: self.viewModel,
+                                              invData: self.invData
+                                          )
+                                      )
                     
                 case .profile: return
                 }
@@ -194,6 +209,14 @@ extension CameraViewController {
         
         cameraView.layer.insertSublayer(previewLayer, at: 0)
         cameraView.addGestureRecognizer(pinchGesture)
+        
+        cameraView.layer.addSublayer(gradientLayer)
+        gradientLayer.colors = [
+            UIColor.black.withAlphaComponent(1).cgColor,
+            UIColor.clear.cgColor
+        ]
+        gradientLayer.startPoint = .init(x: 0.5, y: 0.0)
+        gradientLayer.endPoint = .init(x: 0.5, y: 0.3)
         
         previewLayer.videoGravity = .resizeAspectFill
         

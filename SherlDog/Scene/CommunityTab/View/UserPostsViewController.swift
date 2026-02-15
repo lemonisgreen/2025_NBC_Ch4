@@ -26,7 +26,7 @@ final class UserPostsViewController: UIViewController {
     
     private let navigationBackButton = UIButton()
     private let navigationTitleLabel = UILabel()
-    private lazy var segmentedControl = CommunitySegmentedControl(items: CommunitySectionType.allCases.map { $0.name })
+    lazy var segmentedControl = CommunitySegmentedControl(items: CommunitySectionType.allCases.map { $0.name })
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: collectionViewCompositionalLayout())
     
     init(userId: String) {
@@ -59,7 +59,7 @@ private extension UserPostsViewController {
                 self?.navigationController?.popViewController(animated: true)
             }
             .disposed(by: disposeBag)
-
+        
         let input = UserPostsViewModel.Input(
             segmentIndexChanged: self.segmentedControl.rx.selectedSegmentIndex.asObservable(),
             pullToRefresh: self.refreshControl.rx.controlEvent(.valueChanged).asObservable(),
@@ -141,26 +141,11 @@ private extension UserPostsViewController {
                         return CommunitySectionType.allCases.indices.contains(index) ? CommunitySectionType.allCases[index].toFirestoreCollection : .invLogBoard
                     }()
                     
-                    footer.settingCell(data: sectionModel, collection: category)
+                    footer.settingCell(data: sectionModel, collection: category, isDetail: false)
                     footer.updatePage(total: count, current: 0)
                     
                     let footerVM = PostFooterViewModel(category: category, post: sectionModel)
-                    let output = footerVM.transform(input: .init(
-                        likeTap: footer.rx.likeButtonTap
-                            .throttle(.milliseconds(500), scheduler: MainScheduler.instance)
-                            .asSignal(onErrorSignalWith: .empty())
-                    ))
-                    
-                    output.state
-                        .drive(onNext: { [weak footer] state in
-                            footer?.updateLike(state)
-                        })
-                        .disposed(by: footer.disposeBag)
-                    
-                    footer.rx.likeButtonTap
-                        .map { sectionModel }
-                        .bind(to: self.likeButtonEvent)
-                        .disposed(by: footer.disposeBag)
+                    footer.bind(viewModel: footerVM)
                     
                     footer.rx.containerTap
                         .observe(on: MainScheduler.instance)
@@ -231,7 +216,7 @@ private extension UserPostsViewController {
 // MARK: - UI
 private extension UserPostsViewController {
     func setupUI() {
-        view.backgroundColor = .textInverse
+        view.backgroundColor = .white
         view.addSubviews([ segmentedControl, collectionView ])
         
         navigationBackButton.setImage(UIImage(systemName: SDLiteral.UserProfileViewController.navigationBackButtonImage), for: .normal)
@@ -259,7 +244,7 @@ private extension UserPostsViewController {
         collectionView.register(PostHeaderView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: PostHeaderView.identifier)
         collectionView.register(PostFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: PostFooterView.identifier)
         
-        collectionView.backgroundColor = .textInverse
+        collectionView.backgroundColor = .clear
         collectionView.refreshControl = refreshControl
         segmentedControl.selectedSegmentIndex = 0
     }
@@ -279,9 +264,9 @@ private extension UserPostsViewController {
     }
 }
 
-private extension UserPostsViewController {
+extension UserPostsViewController {
     func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         return postUserId == currentUserId
     }
     
@@ -298,15 +283,51 @@ private extension UserPostsViewController {
     }
     
     func otherPostMenu(post: CommunityModel) -> UIMenu {
-        let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle, SDLiteral.CommunityView.block)) { [weak self] _ in
+        let blockAction = UIAction(
+            title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                          SDLiteral.CommunityView.block)
+        ) { [weak self] _ in
             self?.showMenuAlert(type: .block(post.userId))
         }
-        let reportAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle, SDLiteral.CommunityView.report)) { [weak self] _ in
-            self?.showMenuAlert(type: .report(post.documentId)) { [weak self] in
-                self?.blockMessageAfterReport(userId: post.userId)
-            }
+        
+        let reportAction = UIAction(
+            title: String(format: SDLiteral.CommunityView.menuButtonTitle,
+                          SDLiteral.CommunityView.report)
+        ) { [weak self] _ in
+            self?.presentReportForPost(post)
         }
+        
         return UIMenu(children: [blockAction, reportAction])
+    }
+    
+    /// 현재 세그먼트(탭)에 맞는 컬렉션 계산
+    func currentCommunityCollection() -> FirestoreCollection {
+        let index = segmentedControl.selectedSegmentIndex
+        let type = CommunitySectionType.allCases.indices.contains(index)
+        ? CommunitySectionType.allCases[index]
+        : .invLogBoard
+        return type.toFirestoreCollection
+    }
+    
+    func presentReportForPost(_ post: CommunityModel) {
+        let collection = currentCommunityCollection()
+        let reportVC = ReportViewController(
+            target: .post(collection: collection,
+                          documentId: post.documentId,
+                          postUserId: post.userId)
+        )
+        reportVC.onReportCompleted = { [weak self] in
+            self?.blockMessageAfterReport(userId: post.userId)
+        }
+        
+        reportVC.modalPresentationStyle = .pageSheet
+        reportVC.isModalInPresentation = false
+        
+        if let sheet = reportVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = false
+        }
+        present(reportVC, animated: true)
     }
     
     func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {

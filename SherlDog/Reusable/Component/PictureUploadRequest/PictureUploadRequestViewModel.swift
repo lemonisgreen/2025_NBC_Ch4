@@ -53,6 +53,7 @@ class PictureUploadRequestViewModel {
         let petProfiles = BehaviorRelay<[PetProfile]>(value: [])
         // 선택된 강아지 정보 저장
         let selectedPetProfiles = BehaviorRelay<[PetProfile]>(value: [])
+        let invData = BehaviorRelay<InvData?>(value: nil)
     }
     
     typealias RequestDataSource = SectionModel<String, CellList>
@@ -176,7 +177,7 @@ class PictureUploadRequestViewModel {
     
     // Firestore에서 강아지 프로필 불러오기
     func fetchPetProfiles() {
-        let userId = Auth.auth().currentUser?.uid ?? ""
+        let userId = AuthSession.currentAppUserId ?? ""
         
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<PetProfile>(

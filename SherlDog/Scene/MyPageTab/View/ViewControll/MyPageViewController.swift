@@ -37,7 +37,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .keycolorInverse
+        view.backgroundColor = .keycolorTertiaryBG
         setupUI()
         configureUI()
         bind()
@@ -111,7 +111,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         collectionView.isPagingEnabled = false
         collectionView.showsHorizontalScrollIndicator = false
         collectionView.decelerationRate = UIScrollView.DecelerationRate.fast
-        collectionView.backgroundColor = .keycolorInverse
+        collectionView.backgroundColor = .clear
         collectionView.isUserInteractionEnabled = true
         collectionView.allowsSelection = true
         collectionView.delegate = self

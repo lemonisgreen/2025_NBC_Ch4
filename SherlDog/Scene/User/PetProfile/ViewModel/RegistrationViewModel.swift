@@ -12,9 +12,6 @@ import UIKit
 import FirebaseAuth
 
 class RegistrationViewModel {
-    let disposeBag = DisposeBag()
-    
-    let profileDidUpdate = PublishSubject<Void>()
     
     struct Input {
             let selectedImage = PublishRelay<UIImage?>()
@@ -37,6 +34,10 @@ class RegistrationViewModel {
            let newPetProfileId = BehaviorSubject<String?>(value: nil)
            let editingProfile = PublishSubject<PetProfile>()
        }
+    
+    let disposeBag = DisposeBag()
+    
+    let profileDidUpdate = PublishSubject<Void>()
     
     let imageURL = BehaviorRelay<String>(value: "")
     var imageDocumentId: String = ""
@@ -99,6 +100,10 @@ class RegistrationViewModel {
         return DateFormatter.yyyyMMdd.date(from: dateString)
     }
     
+    private func currentAppUserId() -> String? {
+        return AuthSession.currentAppUserId
+    }
+
     func uploadImageAndSaveProfile(image: UIImage) {
         self.output.isLoading.accept(true)
         
@@ -145,11 +150,20 @@ class RegistrationViewModel {
         // 날짜 포맷 헬퍼 사용
         let dateString = formatDateToString(input.selectedAge.value)
         
-        let userId = Auth.auth().currentUser?.uid ?? "anonymous"
+        guard let appUserId = currentAppUserId() else {
+              print("⚠️ AppUserID가 없습니다. 로그인 상태를 확인해주세요.")
+              output.saveResult.onNext(.failure(
+                  NSError(domain: "RegistrationViewModel",
+                          code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "로그인 정보가 없습니다. 다시 로그인 해주세요."])
+              ))
+              output.isLoading.accept(false)
+              return
+          }
         
         let newProfile = PetProfile(
             petProfileId: petProfileID,
-            userId: userId,
+            userId: appUserId,
             name: input.name.value,
             age: dateString,
             size: input.selectedSize.value,
@@ -221,3 +235,27 @@ class RegistrationViewModel {
         .disposed(by: disposeBag)
     }
 }
+
+private func currentAppUserId() -> String? {
+    switch AuthSession.currentProvider {
+    case .kakao:
+        // KakaoLoginManager가 로그인 시점에 캐싱해둔 정보 사용
+        guard let kakaoId = KakaoLoginManager.shared.getCurrentUserInfo()?.id else {
+            print("⚠️ Kakao user info not found")
+            return nil
+        }
+        return AppUserID.fromKakaoID(kakaoId)
+        
+    case .google, .apple:
+        guard let uid = AuthSession.currentAppUserId else {
+            print("⚠️ Firebase UID not found")
+            return nil
+        }
+        return AppUserID.fromFirebaseUID(uid)
+        
+    case .none:
+        print("⚠️ No social login provider in AuthSession")
+        return nil
+    }
+}
+

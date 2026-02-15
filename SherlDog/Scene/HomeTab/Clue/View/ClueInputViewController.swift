@@ -192,7 +192,7 @@ class ClueInputViewController: UIViewController {
     private func saveClue() {
         guard let image = imageView.image,
               let text = textView.text, !text.isEmpty,
-              let userId = Auth.auth().currentUser?.uid else {
+              let userId = AuthSession.currentAppUserId else {
             showSimpleAlert("이미지와 텍스트를 확인해주세요.")
             return
         }

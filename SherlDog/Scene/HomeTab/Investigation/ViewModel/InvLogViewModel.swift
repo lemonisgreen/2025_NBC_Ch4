@@ -57,13 +57,14 @@ class InvLogViewModel {
     }
     
     private func upload(image: String, content: String) {
-        guard let userId = Auth.auth().currentUser?.uid,
+        guard let userId = AuthSession.currentAppUserId,
               let humanProfile = output.humanProfile.value else { return }
         let petProfile = output.petProfile.value
         let newDocRef = FirestoreManager.shared.db.collection(FirestoreCollection.invLogBoard.rawValue).document()
         let documentId = newDocRef.documentID
         
-        let data = CommunityModel(userId: userId,
+        let data = CommunityModel(category: FirestoreCollection.invLogBoard.rawValue,
+                                  userId: userId,
                                   profileImage: humanProfile.image,
                                   name: humanProfile.nickname,
                                   petProfile: petProfile,
@@ -86,7 +87,7 @@ class InvLogViewModel {
     }
     
     private func fetchHumanProfile() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
             collection: .humanProfile,
@@ -104,7 +105,7 @@ class InvLogViewModel {
     }
     
     private func fetchPetProfile() {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
+        guard let userId = AuthSession.currentAppUserId else { return }
         
         FirestoreManager.shared.fetchQuery(FirestoreQuery<PetProfile>(
             collection: .petProfile,
@@ -124,7 +125,7 @@ class InvLogViewModel {
             case .success(let value):
                 self?.upload(image: value, content: data.content)
                 
-            case .failure(let error):
+            case .failure(_):
                 self?.output.isLoading.accept(false)
                 self?.output.uploadError.accept(())
                 return

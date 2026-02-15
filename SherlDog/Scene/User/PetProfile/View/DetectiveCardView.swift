@@ -16,6 +16,7 @@ class DetectiveCardView: UIView {
     var onDeleteTapped: (() -> Void)?
     
     let detectiveHeaderBackgroundView = UIView()
+    let detectiveCardStampImageView = UIImageView()
     let detectiveCardLabel = UILabel()
     let detectivePhotoImageView = UIImageView()
     let detectiveNumberLabel = VerticalAlignedLabel()
@@ -69,83 +70,87 @@ class DetectiveCardView: UIView {
             detectiveAge,
             detectiveIntroduceLabel,
             detectiveIntroduceBackgroundView,
+            detectiveCardStampImageView,
         ])
         
         self.addSubview(menuButton)
         setupMenu()
         
-        self.layer.cornerRadius = 16
+        self.layer.cornerRadius = 12
         self.layer.masksToBounds = true
         self.layer.borderWidth = 1
-        self.layer.borderColor = UIColor.textTertiary.cgColor
-        self.backgroundColor = .keycolorSecondary4
+        self.layer.borderColor = UIColor.gray600.cgColor
+        self.backgroundColor = .keycolorSecondary3
         
-        detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary1
+        detectiveHeaderBackgroundView.backgroundColor = .keycolorSecondary2
         detectiveHeaderBackgroundView.layer.borderWidth = 1
-        detectiveHeaderBackgroundView.layer.borderColor = UIColor.textTertiary.cgColor
+        detectiveHeaderBackgroundView.layer.borderColor = UIColor.gray600Opacity.cgColor
         
-        detectiveCardLabel.text = "멍탐정 프로필 카드"
+        detectiveCardStampImageView.image = UIImage(named: "cardStamp")
+        detectiveCardStampImageView.contentMode = .scaleAspectFit
+        
+        detectiveCardLabel.text = SDLiteral.DetectiveCardView.detectiveCardLabelTitle
         detectiveCardLabel.font = UIFont.cardTitle
-        detectiveCardLabel.textColor = .textPrimary
+        detectiveCardLabel.textColor = .white
         
-        detectiveNumberLabel.text = "탐정 번호"
+        detectiveNumberLabel.text = SDLiteral.DetectiveCardView.detectiveNumberLabeTitle
         detectiveNumberLabel.font = UIFont.alert2
-        detectiveNumberLabel.textColor = .textPrimary
+        detectiveNumberLabel.textColor = .white
         
         detectiveNumber.font = UIFont.cardTitle
-        detectiveNumber.textColor = .textPrimary
+        detectiveNumber.textColor = .white
         
-        detectivePhotoImageView.layer.cornerRadius = 4
+        detectivePhotoImageView.layer.cornerRadius = 12
         detectivePhotoImageView.clipsToBounds = true
+        detectivePhotoImageView.layer.borderWidth = 1
+        detectivePhotoImageView.layer.borderColor = UIColor.gray600Opacity.cgColor
         
-        detectiveNameLabel.text = "탐정명"
+        detectiveNameLabel.text = SDLiteral.DetectiveCardView.detectiveNameLabelTitle
         detectiveNameLabel.verticalAlignment = .top
         detectiveNameLabel.font = UIFont.alert1
-        detectiveNameLabel.textColor = .textSecondary
+        detectiveNameLabel.textColor = .gray700
         
         detectiveName.font = UIFont.body4
-        detectiveName.textColor = .textPrimary
+        detectiveName.textColor = .gray900
         
-        detectiveBreedLabel.text = "견종"
+        detectiveBreedLabel.text = SDLiteral.DetectiveCardView.detectiveBreedLabelTItle
         detectiveBreedLabel.verticalAlignment = .top
         detectiveBreedLabel.font = UIFont.alert1
-        detectiveBreedLabel.textColor = .textSecondary
+        detectiveBreedLabel.textColor = .gray700
         
         detectiveBreed.font = UIFont.body4
-        detectiveBreed.textColor = .textPrimary
+        detectiveBreed.textColor = .gray900
         
-        detectiveAgeLabel.text = "나이"
+        detectiveAgeLabel.text = SDLiteral.DetectiveCardView.detectiveAgeLabelTitle
         detectiveAgeLabel.verticalAlignment = .top
         detectiveAgeLabel.font = UIFont.alert1
-        detectiveAgeLabel.textColor = .textSecondary
+        detectiveAgeLabel.textColor = .gray700
         
         detectiveAge.font = UIFont.body4
-        detectiveAge.textColor = .textPrimary
+        detectiveAge.textColor = .gray900
         
-        detectiveIntroduceLabel.text = "성격 및 특성"
+        detectiveIntroduceLabel.text = SDLiteral.DetectiveCardView.detectiveIntroduceLabelTitle
         detectiveIntroduceLabel.verticalAlignment = .top
         detectiveIntroduceLabel.font = UIFont.alert1
-        detectiveIntroduceLabel.textColor = .textSecondary
+        detectiveIntroduceLabel.textColor = .gray700
         
         detectiveIntroduceBackgroundView.layer.cornerRadius = 24 / 2
         detectiveIntroduceBackgroundView.layer.masksToBounds = true
-        detectiveIntroduceBackgroundView.backgroundColor = .gray50
+        detectiveIntroduceBackgroundView.backgroundColor = .keycolorOpacity
         
         detectiveIntroduce.font = UIFont.title5
         detectiveIntroduce.textColor = .textSecondary
     }
     
-    // 메뉴 버튼 설정
+    // 메뉴 버튼
     private func setupMenu() {
         let editAction = UIAction(title: "수정하기", image: UIImage(systemName: "pencil")) { [weak self] _ in
             self?.onEditTapped?()
-            print("✅ 수정하기 눌림") // 테스트 로그 출력
         }
         
         let deleteAction = UIAction(title: "삭제하기", image: UIImage(systemName: "trash"), attributes: .destructive) { [weak self] _ in
             guard let self = self else { return }
             
-            // 삭제 확인 커스텀 알럿 생성
             let alert = CustomAlertViewController(
                 message: "정말 삭제하시겠습니까?",
                 subMessage: "삭제된 프로필은 되돌릴 수 없습니다.",
@@ -178,6 +183,10 @@ class DetectiveCardView: UIView {
             $0.top.equalToSuperview()
             $0.horizontalEdges.equalToSuperview()
             $0.height.equalTo(36)
+        }
+        
+        detectiveCardStampImageView.snp.makeConstraints {
+            $0.edges.equalToSuperview()
         }
         
         detectiveCardLabel.snp.makeConstraints {

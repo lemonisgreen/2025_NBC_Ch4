@@ -13,6 +13,8 @@ import RxCocoa
 final class PostFooterView: UICollectionReusableView {
     static let identifier = "PostFooterView"
     
+    private var viewModelRef: PostFooterViewModel?
+    let externalLikeEvent = PublishRelay<Void>()
     var disposeBag = DisposeBag()
     
     private let container = UIStackView()
@@ -44,7 +46,28 @@ final class PostFooterView: UICollectionReusableView {
     }
     
     // MARK: - Method
-    func settingCell(data: CommunityModel, collection: FirestoreCollection) {
+    func bind(viewModel: PostFooterViewModel) {
+        self.viewModelRef = viewModel
+        
+        let buttonTap = likeButton.rx.tap
+            .map { () }
+        
+        let externalTap = externalLikeEvent
+            .asObservable()
+        
+        let input = PostFooterViewModel.Input(
+            likeTap: Observable.merge(buttonTap, externalTap)
+        )
+        
+        let output = viewModel.transform(input: input)
+        output.state
+            .drive(onNext: { [weak self] state in
+                self?.updateLike(state)
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    func settingCell(data: CommunityModel, collection: FirestoreCollection, isDetail: Bool) {
         captionLabel.text = data.content
         
         previewCommentButton.configuration?.attributedTitle = AttributedString(
@@ -52,6 +75,12 @@ final class PostFooterView: UICollectionReusableView {
             attributes: AttributeContainer([.font: UIFont.body6])
         )
         previewCommentButton.isHidden = (data.commentCount == 0 ? true : false)
+        
+        if isDetail {
+            captionLabel.numberOfLines = 0
+        } else {
+            captionLabel.numberOfLines = 2
+        }
     }
     
     // Update Page
@@ -151,10 +180,6 @@ extension PostFooterView {
 }
 
 extension PostFooterView {
-    fileprivate var likeButtonTap: ControlEvent<Void> {
-        self.likeButton.rx.tap
-    }
-    
     fileprivate var containerTap: ControlEvent<Void> {
         return ControlEvent<Void>(events: Observable.merge(
             self.tap.rx.event
@@ -166,10 +191,6 @@ extension PostFooterView {
 }
 
 extension Reactive where Base: PostFooterView {
-    var likeButtonTap: ControlEvent<Void> {
-        base.likeButtonTap
-    }
-    
     var containerTap: ControlEvent<Void> {
         base.containerTap
     }

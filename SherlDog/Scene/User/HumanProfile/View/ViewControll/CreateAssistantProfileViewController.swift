@@ -302,7 +302,7 @@ extension CreateAssistantProfileViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .keycolorBackground
+        view.backgroundColor = .keycolorTertiaryBG
         
         profileimageSetbutton.addSubviews([profileImageView, profileCameraButtonImageView])
         nicknameTextField.addSubview(nickNameConstraintsLabel)
@@ -344,7 +344,7 @@ extension CreateAssistantProfileViewController {
         
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithOpaqueBackground()
-        navigationBarAppearance.backgroundColor = .keycolorBackground
+        navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
         
         self.navigationController?.navigationBar.isHidden = false
@@ -362,11 +362,13 @@ extension CreateAssistantProfileViewController {
         profileCameraButtonImageView.image = .profileCamera
         profileCameraButtonImageView.contentMode = .scaleAspectFit
         
-        separatorView.backgroundColor = .gray200
+        separatorView.backgroundColor = .gray100
         
         nicknameTextField.placeholder = "탐정님이 부를 닉네임을 입력해주세요!"
         nicknameTextField.backgroundColor = .gray50
-        nicknameTextField.layer.cornerRadius = 6
+        nicknameTextField.layer.cornerRadius = 8
+        nicknameTextField.layer.borderColor = UIColor.gray200.cgColor
+        nicknameTextField.layer.borderWidth = 1
         nicknameTextField.leftView = UIView(frame: .init(x: 0, y: 0, width: 12, height: 0))
         nicknameTextField.leftViewMode = .always
         nicknameTextField.textColor = .textPrimary
@@ -398,13 +400,15 @@ extension CreateAssistantProfileViewController {
         
         introduceTextView.font = .body3
         introduceTextView.backgroundColor = .gray50
-        introduceTextView.layer.cornerRadius = 6
+        introduceTextView.layer.cornerRadius = 8
+        introduceTextView.layer.borderColor = UIColor.gray200.cgColor
+        introduceTextView.layer.borderWidth = 1
         introduceTextView.textContainerInset = .init(top: 12, left: 8, bottom: 12, right: 8)
         introduceTextView.textColor = .textPrimary
         
         introduceConstraintsLabel.text = "0 / 150자"
         introduceConstraintsLabel.font = .alert2
-        introduceConstraintsLabel.textColor = .gray400
+        introduceConstraintsLabel.textColor = .gray300
         
         self.nextButton.isEnabled = false
     }

@@ -33,6 +33,14 @@ extension DateFormatter {
     }()
     
     static func todayStyle(_ date: Date) -> DateFormatter {
+        let formatter = self.checkToday(date)
+        ? self.setTodayStyle(date)
+        : self.yyyyMMddDot
+        
+        return formatter
+    }
+    
+    private static func setTodayStyle(_ date: Date) -> DateFormatter {
         let formatter = DateFormatter()
         
         let now = Date()
@@ -50,5 +58,12 @@ extension DateFormatter {
         
         formatter.dateFormat = format
         return formatter
+    }
+    
+    private static func checkToday(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let otherDay = calendar.startOfDay(for: date)
+        return today == otherDay
     }
 }

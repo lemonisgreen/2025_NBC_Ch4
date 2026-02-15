@@ -1,4 +1,9 @@
-
+//
+//  FirebaseImageManager.swift
+//  SherlDog
+//
+//  Created by 최영락 on 6/10/25.
+//
 
 import UIKit
 import Firebase
@@ -60,8 +65,8 @@ class FirebaseImageManager {
     private let storageRef: StorageReference
     
     var userId: String {
-            return Auth.auth().currentUser?.uid ?? ""
-        }
+        return AuthSession.currentAppUserId ?? ""
+    }
     
     private init() {
         storageRef = storage.reference()
@@ -84,7 +89,7 @@ class FirebaseImageManager {
             completion(.failure(ImageError.noUserId))
             return
         }
-
+        
         var imagePath: String
         if type == .petProfile {
             guard let petId = petId else {
@@ -96,11 +101,11 @@ class FirebaseImageManager {
             let uuid = UUID().uuidString
             imagePath = "\(type.folder)/\(userId)/\(type.filePrefix)\(uuid).jpg"
         }
-
+        
         let imageRef = storageRef.child(imagePath)
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
-
+        
         imageRef.putData(imageData, metadata: metadata) { _, error in
             if let error = error {
                 completion(.failure(error))
@@ -124,37 +129,37 @@ class FirebaseImageManager {
         type: UploadImageType,
         petId: String? = nil,
         completion: @escaping (URL?) -> Void) {
-                let actualUserId = userId ?? self.userId
-                guard !actualUserId.isEmpty else {
-                    completion(nil)
-                    return
-                }
-        var path: String
-        if type == .assistant || type == .clue || type == .invLogBoard || type == .walkResult {
-            path = "\(type.folder)/\(actualUserId)"
-            completion(nil)
-            return
-        }
-        else if type == .petProfile {
-            guard let petId = petId else {
+            let actualUserId = userId ?? self.userId
+            guard !actualUserId.isEmpty else {
                 completion(nil)
                 return
             }
-            path = "pets/\(actualUserId)/\(petId)/profile.jpg"
-        } else {
-            completion(nil)
-            return
-        }
-        
-        let imageRef = storageRef.child(path)
-        imageRef.downloadURL { url, error in
-            if let _ = error {
+            var path: String
+            if type == .assistant || type == .clue || type == .invLogBoard || type == .walkResult {
+                path = "\(type.folder)/\(actualUserId)"
                 completion(nil)
+                return
+            }
+            else if type == .petProfile {
+                guard let petId = petId else {
+                    completion(nil)
+                    return
+                }
+                path = "pets/\(actualUserId)/\(petId)/profile.jpg"
             } else {
-                completion(url)
+                completion(nil)
+                return
+            }
+            
+            let imageRef = storageRef.child(path)
+            imageRef.downloadURL { url, error in
+                if let _ = error {
+                    completion(nil)
+                } else {
+                    completion(url)
+                }
             }
         }
-    }
     
     // MARK: - 이미지 삭제
     func deleteImageByURL(_ urlString: String) -> Completable {

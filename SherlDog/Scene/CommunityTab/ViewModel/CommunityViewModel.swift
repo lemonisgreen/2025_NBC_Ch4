@@ -44,10 +44,9 @@ final class CommunityViewModel {
     struct Input {
         let segmentIndexChanged: Observable<Int>
         let pullToRefresh: Observable<Void>
-        let manualRefresh: Observable<Void>
         let fetchMore: Observable<Void>
         let menuEvent: Observable<PostMenuEvent>
-        let likeEvent: Observable<CommunityModel>
+//        let likeEvent: Observable<CommunityModel>
     }
     
     struct Output {
@@ -73,9 +72,10 @@ final class CommunityViewModel {
         let refreshTrigger = makeRefreshTrigger(trigger: [
             selectedCategory.map { _ in () },
             input.pullToRefresh,
-            input.manualRefresh,
             menu.asObservable().map { _ in () }
         ])
+            .startWith(())
+            .share(replay: 1)
         
         // 데이터 불러오기
         let fetchStream = makeFetchStream(refreshTrigger: refreshTrigger,
@@ -84,9 +84,6 @@ final class CommunityViewModel {
         // 업데이트 중인지 표시
         let isUpdating = makeIsUpdating(refreshTrigger: refreshTrigger,
                                         fetchStream: fetchStream)
-        
-        // Like Event
-        bindLikeSideEffect(input.likeEvent, category: selectedCategory)
         
         // mutations
         let refreshMutation = makeRefreshMutation(postsEvent: fetchStream,
@@ -247,10 +244,10 @@ private extension CommunityViewModel {
                     .catchAndReturn(.error)
                     
                 case .report(let documentId):
-                    let reportData = ReportModel(collection: category.toFirestoreCollection.rawValue,
+                    let reportData = BlockModel(collection: category.toFirestoreCollection.rawValue,
                                                  documentId: documentId)
                     
-                    return FirestoreManager.shared.createDocument(collection: .reportLog,
+                    return FirestoreManager.shared.createDocument(collection: .blockLog,
                                                                   data: reportData,
                                                                   documentId: documentId)
                     .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
@@ -310,7 +307,7 @@ private extension CommunityViewModel {
                     type: .document(id: pet.petProfileId)
                 ))
                 .map { $0.first }
-                .catch { _ in .just(nil) }
+                .catchAndReturn(nil)
             }
             
             let human: Single<HumanProfileModel?> =
@@ -319,14 +316,14 @@ private extension CommunityViewModel {
                 type: .document(id: postData.userId)
             ))
             .map { $0.first }
-            .catch { _ in .just(nil) }
+            .catchAndReturn(nil)
             
             let petZip: Single<[PetProfile]> = Single.zip(pets).map { $0.compactMap { $0 } }
             
             return Single.zip(human, petZip)
                 .map { humanOpt, pet in
                     var post = postData
-                    post.name = humanOpt?.nickname ?? "사용자"
+                    post.name = humanOpt?.nickname ?? SDLiteral.CommunityView.unknownUser
                     post.profileImage = humanOpt?.image ?? ""
                     post.petProfile = pet
                     return post
@@ -335,24 +332,5 @@ private extension CommunityViewModel {
         
         return Single.zip(singles)
             .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-    }
-}
-
-// MARK: - Like Event
-private extension CommunityViewModel {
-    func bindLikeSideEffect(_ input: Observable<CommunityModel>,
-                            category: Observable<CommunitySectionType>) {
-        input
-            .withLatestFrom(category) { ($0, $1) }
-            .flatMapFirst { (model, category) -> Completable in
-                let collection = category.toFirestoreCollection
-                return CommunityActionManager.shared.toggleLikeWithCount(
-                    collection: collection,
-                    postCode: model.documentId
-                )
-                .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-            }
-            .subscribe()
-            .disposed(by: disposeBag)
     }
 }
