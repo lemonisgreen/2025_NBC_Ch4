@@ -23,6 +23,7 @@ enum SDLiteral {
     }
     
     enum LoginView {
+        static let headerLabel: String = "로그인"
         static let helloLabelLarge: String = "반가워요!"
         static let helloLabelSmall: String = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
         static let loginErrorMessageTitle: String = "로그인 실패"
