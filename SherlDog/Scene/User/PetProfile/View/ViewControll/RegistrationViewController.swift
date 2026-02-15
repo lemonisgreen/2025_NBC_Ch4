@@ -93,7 +93,6 @@ class RegistrationViewController: UIViewController {
         bind()
     }
     
-    /// Configures the view for the specified mode. If mode is .edit, sets up the viewModel with the profile.
     func configure(for mode: Mode) {
         self.mode = mode
         

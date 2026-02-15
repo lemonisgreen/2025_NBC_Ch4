@@ -228,11 +228,11 @@ private extension WalkEndModalViewController {
         if let url = URL(string: result.walkingPathImage), !result.walkingPathImage.isEmpty {
             mapImageView.kf.setImage(
                 with: url,
-                placeholder: UIImage(named: "mapPolaroid"),
+                placeholder: UIImage(named: "mapBackground"),
                 options: [.transition(.fade(0.25)), .cacheOriginalImage]
             )
         } else {
-            mapImageView.image = UIImage(named: "mapPolaroid")
+            mapImageView.image = UIImage(named: "mapBackground")
         }
         
         setLoading(false)
