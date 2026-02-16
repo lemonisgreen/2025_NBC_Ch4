@@ -265,21 +265,30 @@ private extension MainViewController {
         walkStartButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 guard let self else { return }
-                
-                self.requestViewModel.fetchPetProfiles()
+
                 self.requestViewModel.input.accept(.sender(.sherlDogRequest))
-                let requestView = PictureUploadRequestViewController(viewModel: self.requestViewModel)
-                requestView.modalPresentationStyle = .pageSheet
-                
-                let petCount = self.requestViewModel.output.petProfiles.value.count
-                switch petCount {
-                case 1: requestView.sheetPresentationController?.setModalSize(type: .onePet, grabber: true)
-                case 2: requestView.sheetPresentationController?.setModalSize(type: .twoPet, grabber: true)
-                case 3: requestView.sheetPresentationController?.setModalSize(type: .thrPet, grabber: true)
-                default: requestView.sheetPresentationController?.setModalSize(type: .thrPet, grabber: true)
-                }
-                
-                self.present(requestView, animated: true)
+
+                self.requestViewModel.output.petProfiles
+                    .skip(1)
+                    .take(1)
+                    .observe(on: MainScheduler.instance)
+                    .subscribe(onNext: { [weak self] profiles in
+                        guard let self else { return }
+
+                        let requestView = PictureUploadRequestViewController(viewModel: self.requestViewModel)
+                        requestView.modalPresentationStyle = .pageSheet
+
+                        switch profiles.count {
+                        case 1: requestView.sheetPresentationController?.setModalSize(type: .onePet, grabber: true)
+                        case 2: requestView.sheetPresentationController?.setModalSize(type: .twoPet, grabber: true)
+                        default: requestView.sheetPresentationController?.setModalSize(type: .thrPet, grabber: true)
+                        }
+
+                        self.present(requestView, animated: true)
+                    })
+                    .disposed(by: self.disposeBag)
+
+                self.requestViewModel.fetchPetProfiles()
             })
             .disposed(by: disposeBag)
     }

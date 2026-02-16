@@ -76,6 +76,7 @@ final class WalkEndModalViewController: UIViewController {
     private let labelAndButtonStack = UIStackView()
     private let todayInvPathLabel = UIImageView()
     private let mapBackgroundImageView = UIImageView()
+    private var mapBGHeight: Constraint?
     
     // MARK: - Init
     init(
@@ -228,11 +229,11 @@ private extension WalkEndModalViewController {
         if let url = URL(string: result.walkingPathImage), !result.walkingPathImage.isEmpty {
             mapImageView.kf.setImage(
                 with: url,
-                placeholder: UIImage(named: "mapBackground"),
+                placeholder: nil,
                 options: [.transition(.fade(0.25)), .cacheOriginalImage]
             )
         } else {
-            mapImageView.image = UIImage(named: "mapBackground")
+            mapImageView.image = nil
         }
         
         setLoading(false)
@@ -243,6 +244,8 @@ private extension WalkEndModalViewController {
         closeButton.isEnabled = !isLoading
         showProfileButton.isEnabled = !isLoading
         loadingIndicator.isHidden = !isLoading
+        mapBackgroundImageView.isHidden = isLoading
+
     }
     
     func formatDuration(seconds: Int) -> String {
@@ -595,6 +598,8 @@ private extension WalkEndModalViewController {
         mapBackgroundImageView.snp.makeConstraints {
             $0.top.equalTo(dividerLine.snp.bottom).offset(40)
             $0.leading.trailing.equalToSuperview().inset(24)
+            self.mapBGHeight = $0.height.equalTo(view.snp.height).multipliedBy(0.32).constraint
+
             $0.bottom.equalTo(walkShareButton.snp.top).offset(UIScreen.isIPhoneSE ? -8 : -20)
         }
         
