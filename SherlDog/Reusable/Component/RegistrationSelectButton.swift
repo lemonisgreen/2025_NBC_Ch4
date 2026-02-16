@@ -30,6 +30,8 @@ class RegistrationSelectButton: UIButton {
         self.setTitleColor(.textPrimary, for: .selected)
         self.titleLabel?.textAlignment = .center
         self.titleLabel?.font = .title3
+        self.layer.borderColor = UIColor.gray200.cgColor
+        self.layer.borderWidth = 1
         self.layer.cornerRadius = 6
         self.snp.makeConstraints {
             $0.height.equalTo(48)

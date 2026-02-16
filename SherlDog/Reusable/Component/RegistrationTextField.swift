@@ -25,12 +25,14 @@ class RegistrationTextField: UITextField {
     }
     
     func setConfig() {
-        self.backgroundColor = .gray50
+        self.backgroundColor = .textInverse
         self.font = .body3
         self.textColor = .textPrimary
         self.leftView = UIView(frame: CGRect(x: 0, y: 0, width: 12, height: 0))
         self.leftViewMode = .always
         self.layer.cornerRadius = 6
+        self.layer.borderColor = UIColor.gray200.cgColor
+        self.layer.borderWidth = 1
         self.snp.makeConstraints {
             $0.height.equalTo(44)
         }

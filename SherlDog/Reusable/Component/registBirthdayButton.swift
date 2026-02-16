@@ -44,10 +44,12 @@ class registBirthdayButton: UIButton {
     }
     
     func setConfig() {
-        self.backgroundColor = .gray50
+        self.backgroundColor = .textInverse
         self.setTitleColor(.textDisabled, for: .normal)
         self.contentHorizontalAlignment = .leading
         self.titleLabel?.font = .body3
+        self.layer.borderColor = UIColor.gray200.cgColor
+        self.layer.borderWidth = 1
         self.layer.cornerRadius = 6
         self.contentEdgeInsets = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
         self.snp.makeConstraints {
