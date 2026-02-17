@@ -26,7 +26,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     let assistantLabel = UILabel()
     let assistantButton = UIButton()
     let archiveButton = UIButton()
-    let findMateButton = UIButton()
+//    let findMateButton = UIButton()
     let buttonStack = UIStackView()
     
     // 멍탐정 카드 collectionItem
@@ -57,10 +57,10 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        let topLine = CALayer()
-        topLine.backgroundColor = UIColor(named: "gray200")?.cgColor
-        topLine.frame = CGRect(x: 0, y: 0, width: findMateButton.bounds.width, height: 1)
-        findMateButton.layer.addSublayer(topLine)
+//        let topLine = CALayer()
+//        topLine.backgroundColor = UIColor(named: "gray200")?.cgColor
+//        topLine.frame = CGRect(x: 0, y: 0, width: findMateButton.bounds.width, height: 1)
+//        findMateButton.layer.addSublayer(topLine)
     }
     
     private func setupUI() {
@@ -72,7 +72,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             collectionView,
             pageControl,
             archiveButton,
-            findMateButton,
+//            findMateButton,
             buttonStack,
             mypageSettingButton
         ].forEach {
@@ -125,7 +125,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.distribution = .fillEqually
         buttonStack.spacing = 0
         buttonStack.addArrangedSubview(archiveButton)
-        buttonStack.addArrangedSubview(findMateButton)
+//        buttonStack.addArrangedSubview(findMateButton)
         
         archiveButton.setTitle(SDLiteral.MyPageViewController.archiveButtonTitle, for: .normal)
         archiveButton.titleLabel?.font = .body3
@@ -136,22 +136,22 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         archiveButton.contentHorizontalAlignment = .left
         archiveButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         archiveButton.layer.cornerRadius = 12
-        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+//        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
         archiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
         
-        findMateButton.setTitle(SDLiteral.MyPageViewController.findMateButtonTitle, for: .normal)
-        findMateButton.titleLabel?.font = .body3
-        findMateButton.setTitleColor(.textPrimary, for: .normal)
-        findMateButton.setTitleColor(.textPrimary, for: .highlighted)
-        findMateButton.backgroundColor = .gray100
-        findMateButton.setImage(UIImage(named: SDLiteral.MyPageViewController.findMateButtonImage), for: .normal)
-        findMateButton.contentHorizontalAlignment = .left
-        findMateButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
-        findMateButton.layer.cornerRadius = 12
-        findMateButton.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
-        findMateButton.clipsToBounds = true
-        findMateButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
+//        findMateButton.setTitle(SDLiteral.MyPageViewController.findMateButtonTitle, for: .normal)
+//        findMateButton.titleLabel?.font = .body3
+//        findMateButton.setTitleColor(.textPrimary, for: .normal)
+//        findMateButton.setTitleColor(.textPrimary, for: .highlighted)
+//        findMateButton.backgroundColor = .gray100
+//        findMateButton.setImage(UIImage(named: SDLiteral.MyPageViewController.findMateButtonImage), for: .normal)
+//        findMateButton.contentHorizontalAlignment = .left
+//        findMateButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
+//        findMateButton.layer.cornerRadius = 12
+//        findMateButton.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+//        findMateButton.clipsToBounds = true
+//        findMateButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
     }
     
     private func configureUI() {
@@ -197,7 +197,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(pageControl.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo(120)
+            $0.height.equalTo/*(120)*/(60)
         }
     }
     
@@ -212,16 +212,16 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             })
             .disposed(by: disposeBag)
         
-        findMateButton.rx.tap
-            .bind(onNext: { [weak self] in
-                guard let self else { return }
-                
-                let findMateViewController = FindMateViewController()
-                findMateViewController.hidesBottomBarWhenPushed = true
-                self.navigationController?
-                    .pushViewController(findMateViewController, animated: true)
-            })
-            .disposed(by: disposeBag)
+//        findMateButton.rx.tap
+//            .bind(onNext: { [weak self] in
+//                guard let self else { return }
+//                
+//                let findMateViewController = FindMateViewController()
+//                findMateViewController.hidesBottomBarWhenPushed = true
+//                self.navigationController?
+//                    .pushViewController(findMateViewController, animated: true)
+//            })
+//            .disposed(by: disposeBag)
         
         mypageSettingButton.rx.tap
             .bind { [weak self] in
