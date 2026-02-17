@@ -26,9 +26,9 @@ class SettingViewController : UIViewController {
     private let withdrawStack = UIStackView()
     private let withdrawLabel = UILabel()
     private let withdrawButton = UIButton()
-    private let blockedUserStack = UIStackView()
-    private let blockedUserLabel = UILabel()
-    private let blockedUserButton = UIButton()
+//    private let blockedUserStack = UIStackView()
+//    private let blockedUserLabel = UILabel()
+//    private let blockedUserButton = UIButton()
     private let spacer = UIBarButtonItem(barButtonSystemItem: .fixedSpace, target: nil, action: nil)
     private let settingBackStack = UIStackView()
     private let settingBackButton = UIButton()
@@ -75,9 +75,9 @@ class SettingViewController : UIViewController {
             withdrawStack,
             withdrawLabel,
             withdrawButton,
-            blockedUserStack,
-            blockedUserLabel,
-            blockedUserButton
+//            blockedUserStack,
+//            blockedUserLabel,
+//            blockedUserButton
         ].forEach {
             view.addSubview($0)
         }
@@ -138,16 +138,16 @@ class SettingViewController : UIViewController {
         withdrawStack.addArrangedSubview(withdrawLabel)
         withdrawStack.addArrangedSubview(withdrawButton)
         
-        blockedUserLabel.text = "차단한 사용자 목록"
-        blockedUserLabel.font = .body1
-        blockedUserLabel.textColor = .textPrimary
-        blockedUserButton.setImage(UIImage(named: "rightChevron"), for: .normal)
-        
-        blockedUserStack.axis = .horizontal
-        blockedUserStack.spacing = 50
-        blockedUserStack.alignment = .leading
-        blockedUserStack.addArrangedSubview(blockedUserLabel)
-        blockedUserStack.addArrangedSubview(blockedUserButton)
+//        blockedUserLabel.text = "차단한 사용자 목록"
+//        blockedUserLabel.font = .body1
+//        blockedUserLabel.textColor = .textPrimary
+//        blockedUserButton.setImage(UIImage(named: "rightChevron"), for: .normal)
+//        
+//        blockedUserStack.axis = .horizontal
+//        blockedUserStack.spacing = 50
+//        blockedUserStack.alignment = .leading
+//        blockedUserStack.addArrangedSubview(blockedUserLabel)
+//        blockedUserStack.addArrangedSubview(blockedUserButton)
         
         spacer.width = -8
         
@@ -168,7 +168,7 @@ class SettingViewController : UIViewController {
         
         withdrawStack.addSubview(withdrawWholeButton)
         
-        blockedUserStack.addSubview(blockedUserWholeButton)
+//        blockedUserStack.addSubview(blockedUserWholeButton)
         
     }
     
@@ -198,10 +198,10 @@ class SettingViewController : UIViewController {
             $0.leading.trailing.equalToSuperview().inset(16)
         }
         
-        blockedUserStack.snp.makeConstraints {
-            $0.top.equalTo(withdrawStack.snp.bottom).offset(34)
-            $0.leading.trailing.equalToSuperview().inset(16)
-        }
+//        blockedUserStack.snp.makeConstraints {
+//            $0.top.equalTo(withdrawStack.snp.bottom).offset(34)
+//            $0.leading.trailing.equalToSuperview().inset(16)
+//        }
 
         clauseWholeButton.snp.makeConstraints {
             $0.edges.equalToSuperview()
@@ -215,9 +215,9 @@ class SettingViewController : UIViewController {
             $0.edges.equalToSuperview()
         }
         
-        blockedUserWholeButton.snp.makeConstraints {
-            $0.edges.equalToSuperview()
-        }
+//        blockedUserWholeButton.snp.makeConstraints {
+//            $0.edges.equalToSuperview()
+//        }
     }
     
     private func updateLoginStatus() {
