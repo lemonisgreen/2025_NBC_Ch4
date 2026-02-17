@@ -10,13 +10,13 @@ import UIKit
 class BottomTabBarController: UITabBarController {
     
     let mainVC = UINavigationController(rootViewController: MainViewController())
-    let communityVC = UINavigationController(rootViewController: CommunityViewController())
+    // let communityVC = UINavigationController(rootViewController: CommunityViewController())
     let myPageVC = UINavigationController(rootViewController: MyPageViewController())
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        let controllers = [mainVC, communityVC, myPageVC]
+        let controllers = [mainVC,/*communityVC,*/ myPageVC]
         self.viewControllers = controllers
         
         self.navigationItem.hidesBackButton = true
@@ -31,9 +31,9 @@ class BottomTabBarController: UITabBarController {
                                       image: UIImage(named: "home")?.resized(to: CGSize(width: 32, height: 32)),tag: 0)
         mainVC.tabBarItem.selectedImage = UIImage(named: "homeGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
         
-        communityVC.tabBarItem = UITabBarItem(title: "수사일지",
-                                      image: UIImage(named: "community")?.resized(to: CGSize(width: 32, height: 32)),tag: 1)
-        communityVC.tabBarItem.selectedImage = UIImage(named: "communityGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
+//        communityVC.tabBarItem = UITabBarItem(title: "수사일지",
+//                                      image: UIImage(named: "community")?.resized(to: CGSize(width: 32, height: 32)),tag: 1)
+//        communityVC.tabBarItem.selectedImage = UIImage(named: "communityGreen")?.resized(to: CGSize(width: 32, height: 32)).withRenderingMode(.alwaysOriginal)
         
         myPageVC.tabBarItem = UITabBarItem(title: "마이",
                                       image: UIImage(named: "myPage")?.resized(to: CGSize(width: 32, height: 32)),tag: 2)
