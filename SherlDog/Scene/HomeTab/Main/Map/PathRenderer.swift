@@ -29,7 +29,9 @@ final class PathRenderer {
         let nmfPoints: [AnyObject] = coords.map {
             NMGLatLng(lat: $0.latitude, lng: $0.longitude) as AnyObject
         }
+        
         overlay.path = NMGLineString(points: nmfPoints)
+        overlay.mapView = mapView
     }
 
     func clear() {
@@ -43,7 +45,6 @@ final class PathRenderer {
         let overlay = NMFPath()
         overlay.color = .keycolorPrimary1
         overlay.width = 4
-        overlay.mapView = mapView
         self.pathOverlay = overlay
         return overlay
     }
