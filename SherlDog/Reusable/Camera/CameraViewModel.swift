@@ -48,7 +48,9 @@ class CameraViewModel {
     
     private func transform() {
         
-        input.bind { input in
+        input.bind { [weak self] input in
+            guard let self else { return }
+            
             switch input {
             case .sender(let sender):
                 self.output.sender.accept(sender)

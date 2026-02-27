@@ -41,7 +41,9 @@ class SelectAvatarViewModel {
     
     private func transform() {
         self.input
-            .bind { input in
+            .bind { [weak self] input in
+                guard let self else { return }
+                
                 switch input {
                 case .avatarSelect(let index):
                     self.output.selectedAvatar.accept(self.data[index])

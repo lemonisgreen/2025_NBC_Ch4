@@ -127,13 +127,13 @@ final class HumanProfileViewModel {
                 
                 FirestoreManager.shared.createDocument(collection: .humanProfile, data: data, documentId: userId)
                     .subscribe(
-                        onCompleted: {
+                        onCompleted: { [weak self] in
                             DispatchQueue.main.async {
                                 self?.isLoading.accept(false)
                                 self?.saveResult.onNext(.success(()))
                             }
                         },
-                        onError: { error in
+                        onError: { [weak self] error in
                             DispatchQueue.main.async {
                                 self?.isLoading.accept(false)
                                 self?.saveResult.onNext(.failure(error))
@@ -173,13 +173,13 @@ final class HumanProfileViewModel {
                     
                     FirestoreManager.shared.updateDocument(collection: .humanProfile, documentId: userId, data: updatedProfile)
                         .subscribe(
-                            onCompleted: {
+                            onCompleted: { [weak self] in
                                 DispatchQueue.main.async {
                                     self?.isLoading.accept(false)
                                     self?.saveResult.onNext(.success(()))
                                 }
                             },
-                            onError: { error in
+                            onError: { [weak self] error in
                                 DispatchQueue.main.async {
                                     self?.isLoading.accept(false)
                                     self?.saveResult.onNext(.failure(error))

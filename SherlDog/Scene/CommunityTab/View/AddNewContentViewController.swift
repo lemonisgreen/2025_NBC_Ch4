@@ -133,8 +133,12 @@ final class AddNewContentViewController: UIViewController {
         
         viewModel.output.picturesCellDisplay
             .asDriver(onErrorJustReturn: [])
-            .drive(self.picturesCollectionView.rx.items) { collectionView, row, item in
-                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: PicturesCollectionViewCell.identifier, for: IndexPath(item: row, section: 0)) as? PicturesCollectionViewCell else { return .init() }
+            .drive(self.picturesCollectionView.rx.items) { [weak self] collectionView, row, item in
+                guard let self,
+                      let cell = collectionView.dequeueReusableCell(
+                    withReuseIdentifier: PicturesCollectionViewCell.identifier,
+                    for: IndexPath(item: row, section: 0)
+                ) as? PicturesCollectionViewCell else { return .init() }
                 
                 cell.setImage(item)
                 
