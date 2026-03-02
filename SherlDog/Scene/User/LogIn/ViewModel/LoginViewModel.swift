@@ -9,11 +9,6 @@ import Foundation
 import UIKit
 import RxSwift
 import RxCocoa
-import FirebaseAuth
-import FirebaseFirestore
-import GoogleSignIn
-import KakaoSDKUser
-import KakaoSDKAuth
 import AuthenticationServices
 import CryptoKit
 
@@ -130,160 +125,25 @@ extension LoginViewModel {
         })
         .disposed(by: disposeBag)
     }
-    
-    private func upsertUserDocumentPreservingCreatedAt(
-        firebaseUID: String,
-        userData: [String: Any],
-        completion: @escaping (Error?) -> Void
-    ) {
-        let db = Firestore.firestore()
-        let ref = db.collection("users").document(firebaseUID)
-        
-        db.runTransaction({ txn, errPtr -> Any? in
-            let snap: DocumentSnapshot
-            do {
-                snap = try txn.getDocument(ref)
-            } catch {
-                errPtr?.pointee = error as NSError
-                return nil
-            }
-            
-            var payload = userData
-            payload["lastLoginAt"] = FieldValue.serverTimestamp()
-            
-            if snap.exists {
-                //기존 문서면 createdAt은 절대 건드리지 않기
-                payload.removeValue(forKey: "createdAt")
-                txn.setData(payload, forDocument: ref, merge: true)
-            } else {
-                //최초 생성일만 기록
-                payload["createdAt"] = FieldValue.serverTimestamp()
-                txn.setData(payload, forDocument: ref, merge: false)
-            }
-            
-            return nil
-        }) { _, error in
-            completion(error)
-        }
-    }
 }
 
 // MARK: - Kakao Login
 extension LoginViewModel {
     
-    /// 카카오 버튼 탭 처리
     private func loginWithKakao() {
         guard beginLoadingIfPossible() else { return }
         
-        // Kakao SDK 로그인 completion
-        let completion: (OAuthToken?, Error?) -> Void = { [weak self] token, error in
+        AuthManager.shared.loginWithKakao { [weak self] result in
             guard let self else { return }
+            self.endLoading()
             
-            if let error = error {
-                self.endLoading()
-                let msg = error.localizedDescription.lowercased()
-                if msg.contains("cancel") || msg.contains("취소") { return }
-                self.showErrorSubject.onNext(error.localizedDescription)
-                return
-            }
-            
-            UserApi.shared.me { user, error in
-                if let error = error {
-                    self.endLoading()
-                    self.showErrorSubject.onNext(error.localizedDescription)
-                    return
-                }
-                
-                guard let user = user else {
-                    self.endLoading()
-                    self.showErrorSubject.onNext("사용자 정보를 가져올 수 없습니다.")
-                    return
-                }
-                
-                let userInfo = KakaoUserInfo(from: user)
-                let appUserId = AppUserID.fromKakaoID(userInfo.id)   // "kakao:\(id)" 형태
-                
-                self.linkKakaoToFirebase(
-                    userInfo: userInfo,
-                    appUserId: appUserId
-                )
-            }
-        }
-        
-        // 카카오톡 앱 가능하면 톡으로, 아니면 계정 로그인
-        if UserApi.isKakaoTalkLoginAvailable() {
-            UserApi.shared.loginWithKakaoTalk(completion: completion)
-        } else {
-            UserApi.shared.loginWithKakaoAccount(completion: completion)
-        }
-    }
-    
-    /// Kakao SDK 로그인 성공 후, Firebase 익명 로그인 (Firestore 접근용)
-    private func linkKakaoToFirebase(
-        userInfo: KakaoUserInfo,
-        appUserId: String
-    ) {
-        Auth.auth().signInAnonymously { [weak self] authResult, error in
-            guard let self else { return }
-            
-            if let error = error {
-                self.endLoading()
-                self.showErrorSubject.onNext(error.localizedDescription)
-                return
-            }
-            
-            guard let firebaseUser = authResult?.user else {
-                self.endLoading()
-                self.showErrorSubject.onNext("Firebase 인증 실패")
-                return
-            }
-            
-            self.saveKakaoUserToFirestore(
-                firebaseUser: firebaseUser,
-                kakaoUserInfo: userInfo,
-                appUserId: appUserId
-            )
-        }
-    }
-    
-    /// Firestore users 컬렉션에 Kakao 유저 정보 저장 + 로그인 후 마이그레이션
-    private func saveKakaoUserToFirestore(
-        firebaseUser: FirebaseAuth.User,
-        kakaoUserInfo: KakaoUserInfo,
-        appUserId: String
-    ) {
-        let db = Firestore.firestore()
-        
-        let userData: [String: Any] = [
-            "userId": appUserId,
-            "kakaoId": kakaoUserInfo.id,
-            "nickname": kakaoUserInfo.nickname ?? "",
-            "email": kakaoUserInfo.email ?? "",
-            "profileImageUrl": kakaoUserInfo.profileImageUrl ?? "",
-            "provider": "kakao",
-            "createdAt": FieldValue.serverTimestamp()
-        ]
-        
-        upsertUserDocumentPreservingCreatedAt(firebaseUID: firebaseUser.uid, userData: userData) { [weak self] error in
-            guard let self else { return }
-            
-            if let error = error {
-                self.endLoading()
-                self.showErrorSubject.onNext(error.localizedDescription)
-                return
-            }
-            
-            AuthSession.setProvider(.kakao)
-            AuthSession.setAppUserId(appUserId)
-            
-            UserDataMigrationManager.shared.migrateAfterKakaoLogin(
-                kakaoId: kakaoUserInfo.id,
-                appUserId: appUserId,
-                currentFirebaseUID: firebaseUser.uid
-            ) { [weak self] _ in
-                guard let self else { return }
-                self.endLoading()
+            switch result {
+            case .success:
                 self.checkPetProfiles()
+            case .failure(let error):
+                let message = error.localizedDescription.lowercased()
+                if message.contains("cancel") || message.contains("취소") { return }
+                self.showErrorSubject.onNext(error.localizedDescription)
             }
         }
     }
@@ -303,78 +163,16 @@ extension LoginViewModel {
             return
         }
         
-        GIDSignIn.sharedInstance.signIn(withPresenting: rootVC) { [weak self] result, error in
+        AuthManager.shared.loginWithGoogle(presentingViewController: rootVC) { [weak self] result in
             guard let self else { return }
-            
-            if let error = error {
-                self.endLoading()
-                self.showErrorSubject.onNext(error.localizedDescription)
-                return
-            }
-            
-            guard
-                let user = result?.user,
-                let idToken = user.idToken?.tokenString
-            else {
-                self.endLoading()
-                self.showErrorSubject.onNext("인증 토큰을 가져오지 못했습니다")
-                return
-            }
-            
-            let credential = GoogleAuthProvider.credential(
-                withIDToken: idToken,
-                accessToken: user.accessToken.tokenString
-            )
-            
-            Auth.auth().signIn(with: credential) { authResult, error in
-                if let error = error {
-                    self.endLoading()
-                    self.showErrorSubject.onNext(error.localizedDescription)
-                    return
-                }
-                
-                guard let firebaseUser = authResult?.user else {
-                    self.endLoading()
-                    self.showErrorSubject.onNext("Firebase 사용자 정보를 가져오지 못했습니다")
-                    return
-                }
-                
-                self.saveGoogleUserToFirestore(firebaseUser: firebaseUser, googleUser: user)
-            }
-        }
-    }
-    
-    private func saveGoogleUserToFirestore(
-        firebaseUser: FirebaseAuth.User,
-        googleUser: GIDGoogleUser
-    ) {
-        let db = Firestore.firestore()
-        let appUserId = AppUserID.fromFirebaseUID(firebaseUser.uid)
-        
-        let userData: [String: Any] = [
-            "userId": appUserId,
-            "googleId": googleUser.userID ?? "",
-            "nickname": firebaseUser.displayName ?? "",
-            "email": firebaseUser.email ?? "",
-            "profileImageUrl": firebaseUser.photoURL?.absoluteString ?? "",
-            "provider": "google",
-            "createdAt": FieldValue.serverTimestamp()
-        ]
-        
-        upsertUserDocumentPreservingCreatedAt(firebaseUID: firebaseUser.uid, userData: userData) { [weak self] error in
-            guard let self else { return }
-
-            if let error = error {
-                self.endLoading()
-                self.showErrorSubject.onNext(error.localizedDescription)
-                return
-            }
-
-            AuthSession.setProvider(.google)
-            AuthSession.setAppUserId(appUserId)
-
             self.endLoading()
-            self.checkPetProfiles()
+            
+            switch result {
+            case .success:
+                self.checkPetProfiles()
+            case .failure(let error):
+                self.showErrorSubject.onNext(error.localizedDescription)
+            }
         }
     }
 }
@@ -397,40 +195,6 @@ extension LoginViewModel {
         authorizationController.presentationContextProvider = self
         authorizationController.performRequests()
     }
-    
-    private func saveAppleUserToFirestore(
-        firebaseUser: FirebaseAuth.User,
-        appleUserInfo: AppleUserInfo
-    ) {
-        let db = Firestore.firestore()
-        let appUserId = AppUserID.fromFirebaseUID(firebaseUser.uid)
-        
-        let userData: [String: Any] = [
-            "userId": appUserId,
-            "appleId": appleUserInfo.userIdentifier,
-            "nickname": appleUserInfo.fullName ?? firebaseUser.displayName ?? "",
-            "email": appleUserInfo.email ?? firebaseUser.email ?? "",
-            "profileImageUrl": "",
-            "provider": "apple",
-            "createdAt": FieldValue.serverTimestamp()
-        ]
-        
-        upsertUserDocumentPreservingCreatedAt(firebaseUID: firebaseUser.uid, userData: userData) { [weak self] error in
-            guard let self else { return }
-
-            if let error = error {
-                self.endLoading()
-                self.showErrorSubject.onNext(error.localizedDescription)
-                return
-            }
-
-            AuthSession.setProvider(.apple)
-            AuthSession.setAppUserId(appUserId)
-
-            self.endLoading()
-            self.checkPetProfiles()
-        }
-    }
 }
 
 // MARK: - Apple SignIn Delegate
@@ -452,52 +216,16 @@ extension LoginViewModel: ASAuthorizationControllerDelegate {
             return
         }
         
-        guard let appleIDToken = appleIDCredential.identityToken else {
-            endLoading()
-            showErrorSubject.onNext("Unable to fetch identity token")
-            return
-        }
-        
-        guard let idTokenString = String(data: appleIDToken, encoding: .utf8) else {
-            endLoading()
-            showErrorSubject.onNext("Unable to serialize token string from data")
-            return
-        }
-        
-        let credential = OAuthProvider.credential(
-            providerID: .apple,
-            idToken: idTokenString,
-            rawNonce: nonce
-        )
-        
-        Auth.auth().signIn(with: credential) { [weak self] authResult, error in
+        AuthManager.shared.loginWithApple(appleIDCredential: appleIDCredential, rawNonce: nonce) { [weak self] result in
             guard let self else { return }
+            self.endLoading()
             
-            if let error = error {
-                self.endLoading()
+            switch result {
+            case .success:
+                self.checkPetProfiles()
+            case .failure(let error):
                 self.showErrorSubject.onNext(error.localizedDescription)
-                return
             }
-            
-            guard let firebaseUser = authResult?.user else {
-                self.endLoading()
-                self.showErrorSubject.onNext("Firebase 사용자 정보를 가져오지 못했습니다")
-                return
-            }
-            
-            let fullName = PersonNameComponentsFormatter()
-                .string(from: appleIDCredential.fullName ?? PersonNameComponents())
-            
-            let appleUserInfo = AppleUserInfo(
-                userIdentifier: appleIDCredential.user,
-                fullName: fullName.isEmpty ? nil : fullName,
-                email: appleIDCredential.email
-            )
-            
-            self.saveAppleUserToFirestore(
-                firebaseUser: firebaseUser,
-                appleUserInfo: appleUserInfo
-            )
         }
     }
     
@@ -516,7 +244,7 @@ extension LoginViewModel: ASAuthorizationControllerDelegate {
                 showErrorSubject.onNext("요청을 처리할 수 없습니다")
             case .unknown:
                 showErrorSubject.onNext("알 수 없는 오류가 발생했습니다")
-            @unknown default:
+            default:
                 showErrorSubject.onNext("애플 로그인 오류: \(error.localizedDescription)")
             }
         } else {
@@ -535,13 +263,6 @@ extension LoginViewModel: ASAuthorizationControllerPresentationContextProviding 
         }
         return window
     }
-}
-
-// MARK: - Apple User Info
-struct AppleUserInfo {
-    let userIdentifier: String
-    let fullName: String?
-    let email: String?
 }
 
 // MARK: - Nonce Helpers
@@ -579,8 +300,4 @@ extension LoginViewModel {
         let hashedData = SHA256.hash(data: inputData)
         return hashedData.map { String(format: "%02x", $0) }.joined()
     }
-}
-
-private func currentAppUserId() -> String? {
-    return AuthSession.currentAppUserId
 }
