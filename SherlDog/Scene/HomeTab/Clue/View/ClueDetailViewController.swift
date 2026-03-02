@@ -51,8 +51,8 @@ final class ClueDetailViewController: UIViewController {
         view.addSubviews([
             collectionView,
             pageControl,
-            loadingIndicator,
-            emptyView
+            emptyView,
+            loadingIndicator
         ])
         
         emptyView.isHidden = true

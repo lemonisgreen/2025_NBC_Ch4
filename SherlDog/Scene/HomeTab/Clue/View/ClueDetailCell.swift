@@ -30,10 +30,18 @@ class ClueDetailCell: UICollectionViewCell {
     
     func settingCell(imageURL: String, content: String) {
         if let url = URL(string: imageURL) {
-            clueImageView.kf.setImage(with: url,
-                                      placeholder: UIImage(named:"placeholder"),
-                                      options: [.transition(.fade(0.2)),
-                                                .cacheOriginalImage])
+            let processor = DownsamplingImageProcessor(size: self.clueImageView.bounds.size) // 크기 지정 다운 샘플링
+            
+            self.clueImageView.kf.indicatorType = .activity
+            KF.url(url)
+                .placeholder(UIImage.emptyClueDog)
+                .setProcessor(processor)
+                .cacheOriginalImage()
+                .fade(duration: 0.25)
+                .onFailureImage(UIImage.emptyClueDog)
+                .onSuccess { result in }
+                .onFailure { error in }
+                .set(to: self.clueImageView)
         }
         clueTextView.text = content
     }
