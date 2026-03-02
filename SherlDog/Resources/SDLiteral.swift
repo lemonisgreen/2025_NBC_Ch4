@@ -23,6 +23,7 @@ enum SDLiteral {
     }
     
     enum LoginView {
+        static let headerLabel: String = "로그인"
         static let helloLabelLarge: String = "반가워요!"
         static let helloLabelSmall: String = "멍탐정과 함께 오늘의 수사를 시작해볼까요?"
         static let loginErrorMessageTitle: String = "로그인 실패"
@@ -124,6 +125,15 @@ enum SDLiteral {
         static let reportConfirmButtonTitle: String = "신고하기"
         static let reportFailAlertMessageTitle: String = "신고 처리 중 오류가 발생했습니다."
         static let doneButtonTitle: String = "완료"
+    }
+    
+    enum DetectiveCardView {
+        static let detectiveCardLabelTitle: String = "멍탐정 프로필 카드"
+        static let detectiveNumberLabeTitle: String = "탐정 번호"
+        static let detectiveNameLabelTitle: String = "탐정명"
+        static let detectiveBreedLabelTItle: String = "견종"
+        static let detectiveAgeLabelTitle: String = "나이"
+        static let detectiveIntroduceLabelTitle: String = "성격 및 특성"
     }
 }
 

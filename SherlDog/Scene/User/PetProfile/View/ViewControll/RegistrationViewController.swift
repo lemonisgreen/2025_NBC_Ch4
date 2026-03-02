@@ -40,7 +40,6 @@ class RegistrationViewController: UIViewController {
     private let registImage = UIButton()
     private let registImageStamp = UIImageView()
     private let registedProfileImage = UIImageView()
-    private let imagePlusButton = UIImageView()
     private let registImageShadow = UIImageView()
     private let registNameLabel = UILabel()
     private let registNameCountLabel = UILabel()
@@ -93,7 +92,6 @@ class RegistrationViewController: UIViewController {
         bind()
     }
     
-    /// Configures the view for the specified mode. If mode is .edit, sets up the viewModel with the profile.
     func configure(for mode: Mode) {
         self.mode = mode
         
@@ -319,33 +317,15 @@ class RegistrationViewController: UIViewController {
         .bind(to: viewModel.input.selectedSize)
         .disposed(by: disposeBag)
         
-        self.registSizeSmallButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.registSizeSmallButton.isSelected = true
-                self?.registSizeMediumButton.isSelected = false
-                self?.registSizeLargeButton.isSelected = false
-                self?.updateSizeSelectionButtons(selected: "small")
-                self?.viewModel.input.selectedSize.accept("small")
-            })
-            .disposed(by: disposeBag)
-        
-        self.registSizeMediumButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.registSizeSmallButton.isSelected = false
-                self?.registSizeMediumButton.isSelected = true
-                self?.registSizeLargeButton.isSelected = false
-                self?.updateSizeSelectionButtons(selected: "medium")
-                self?.viewModel.input.selectedSize.accept("medium")
-            })
-            .disposed(by: disposeBag)
-        
-        self.registSizeLargeButton.rx.tap
-            .subscribe(onNext: { [weak self] _ in
-                self?.registSizeSmallButton.isSelected = false
-                self?.registSizeMediumButton.isSelected = false
-                self?.registSizeLargeButton.isSelected = true
-                self?.updateSizeSelectionButtons(selected: "large")
-                self?.viewModel.input.selectedSize.accept("large")
+        viewModel.input.selectedSize
+            .distinctUntilChanged()
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] selected in
+                guard let self else { return }
+                self.registSizeSmallButton.isSelected = (selected == "small")
+                self.registSizeMediumButton.isSelected = (selected == "medium")
+                self.registSizeLargeButton.isSelected = (selected == "large")
+                self.updateSizeSelectionButtons(selected: selected)
             })
             .disposed(by: disposeBag)
         
@@ -487,7 +467,7 @@ class RegistrationViewController: UIViewController {
     }
     
     // MARK: - Present Edit View for Profile
-    /// Presents the edit view for a given pet profile ID.
+    
     private func presentEditView(for profileId: String) {
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<PetProfile>(
@@ -498,8 +478,8 @@ class RegistrationViewController: UIViewController {
         .subscribe(onSuccess: { [weak self] profiles in
             guard let self = self else { return }
             guard let profile = profiles.first else {
-                    return
-                }
+                return
+            }
             let registrationVC = RegistrationViewController()
             registrationVC.configure(for: .edit(profile))
             
@@ -565,7 +545,7 @@ class RegistrationViewController: UIViewController {
             registNeuteredFalse,
         ].forEach { registNeuteredStackView.addArrangedSubview($0) }
         
-        registImage.addSubviews([registImageStamp, registedProfileImage, imagePlusButton])
+        registImage.addSubviews([registImageStamp, registedProfileImage])
         
         contentView.addSubviews([
             registImageShadow,
@@ -613,7 +593,6 @@ class RegistrationViewController: UIViewController {
         
         topUnderLine.backgroundColor = .gray200
         
-        //        scrollView.isScrollEnabled = false
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.alwaysBounceVertical = true
         
@@ -632,11 +611,7 @@ class RegistrationViewController: UIViewController {
         registedProfileImage.contentMode = .scaleAspectFill
         registedProfileImage.layer.cornerRadius = 4
         registedProfileImage.clipsToBounds = true
-        registedProfileImage.transform = CGAffineTransform(rotationAngle: transToFigma * -8.01)
-        
-        imagePlusButton.image = .petProfileImagePlus
-        imagePlusButton.contentMode = .scaleAspectFit
-        imagePlusButton.alpha = 0.6
+        registedProfileImage.transform = CGAffineTransform(rotationAngle: transToFigma * -6)
         
         //MARK: 이름 --
         registNameLabel.text = "이름"
@@ -790,7 +765,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registImage.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(16)
+            $0.top.equalToSuperview().inset(8)
             $0.leading.equalToSuperview()
             $0.height.equalTo(200)
             $0.width.equalTo(160)
@@ -799,17 +774,12 @@ class RegistrationViewController: UIViewController {
         registedProfileImage.snp.makeConstraints {
             $0.height.equalTo(112)
             $0.width.equalTo(104)
-            $0.centerX.equalToSuperview().offset(1) // 이게
-            $0.centerY.equalToSuperview().offset(2) // 최선입니다.
+            $0.centerX.equalToSuperview().offset(0) // 이게
+            $0.centerY.equalToSuperview().offset(1) // 최선입니다.
         }
-        
-        imagePlusButton.snp.makeConstraints {
-            $0.centerX.equalToSuperview().offset(1)
-            $0.centerY.equalToSuperview().offset(3)
-        }
-        
+
         registImageShadow.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(16)
+            $0.top.equalToSuperview().inset(8)
             $0.leading.equalToSuperview().offset(-16)
         }
         
@@ -820,7 +790,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(30)
+            $0.top.equalToSuperview().inset(16)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.height.equalTo(22)
         }
@@ -836,7 +806,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registNameCountLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(30)
+            $0.top.equalToSuperview().inset(16)
             $0.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(24)
         }
@@ -849,7 +819,7 @@ class RegistrationViewController: UIViewController {
         }
         
         registBreedLabel.snp.makeConstraints {
-            $0.top.equalTo(registName.snp.bottom).offset(32)
+            $0.top.equalTo(registName.snp.bottom).offset(24)
             $0.leading.equalTo(registImage.snp.trailing)
             $0.height.equalTo(22)
         }
@@ -861,13 +831,13 @@ class RegistrationViewController: UIViewController {
         }
         
         underLine.snp.makeConstraints {
-            $0.top.equalTo(registBreed.snp.bottom).offset(12)
+            $0.top.equalTo(registBreed.snp.bottom).offset(40)
             $0.leading.trailing.equalToSuperview().inset(16)
             $0.height.equalTo(1)
         }
         
         registSizeLabel.snp.makeConstraints {
-            $0.top.equalTo(underLine.snp.bottom).offset(8)
+            $0.top.equalTo(underLine.snp.bottom).offset(16)
             $0.leading.equalToSuperview().inset(16)
             $0.height.equalTo(22)
         }

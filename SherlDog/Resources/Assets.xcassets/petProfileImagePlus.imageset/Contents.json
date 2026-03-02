@@ -1,17 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "petProfileImagePlus.png",
+      "filename" : "plus btn.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
-      "filename" : "petProfileImagePlus@2x.png",
+      "filename" : "plus btn@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
-      "filename" : "petProfileImagePlus@3x.png",
+      "filename" : "plus btn@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

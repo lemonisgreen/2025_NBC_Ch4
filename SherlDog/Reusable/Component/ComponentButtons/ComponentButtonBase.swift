@@ -26,7 +26,7 @@ class ComponentButtonBase: UIButton, ButtonComponent {
         setTitle(title, for: .normal)
         
         titleLabel?.font = UIFont.highlight4
-        layer.cornerRadius = 6
+        layer.cornerRadius = 12
         clipsToBounds = true
         
         self.snp.makeConstraints {

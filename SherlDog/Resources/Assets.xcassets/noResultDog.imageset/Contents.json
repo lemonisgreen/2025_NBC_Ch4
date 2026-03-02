@@ -1,15 +1,17 @@
 {
   "images" : [
     {
-      "filename" : "noResultDog.png",
+      "filename" : "grapic.png",
       "idiom" : "universal",
       "scale" : "1x"
     },
     {
+      "filename" : "grapic@2x.png",
       "idiom" : "universal",
       "scale" : "2x"
     },
     {
+      "filename" : "grapic@3x.png",
       "idiom" : "universal",
       "scale" : "3x"
     }

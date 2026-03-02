@@ -20,6 +20,7 @@ class LoginViewController: UIViewController {
     private let viewModel = LoginViewModel()
     
     // MARK: - UI Components
+    private let headerLabel = UILabel()
     private let logo = UIImageView()
     private let helloLabel = UILabel()
     private let helloLabel2 = UILabel()
@@ -43,16 +44,20 @@ class LoginViewController: UIViewController {
     private func configureUI() {
         view.backgroundColor = .keycolorTertiaryBG
         
+        headerLabel.text = SDLiteral.LoginView.headerLabel
+        headerLabel.font = .body1
+        headerLabel.textColor = .textPrimary
+        
         logo.image = UIImage(named: "bigLogo")
         logo.contentMode = .scaleAspectFit
         
         helloLabel.text = SDLiteral.LoginView.helloLabelLarge
-        helloLabel.font = UIFont(name: "EF_jejudoldam", size: 24)
+        helloLabel.font = .loginScreen
         helloLabel.textAlignment = .center
         helloLabel.textColor = .textPrimary
         
         helloLabel2.text = SDLiteral.LoginView.helloLabelSmall
-        helloLabel2.font = UIFont(name: "EF_jejudoldam", size: 18)
+        helloLabel2.font = .cardTitle2
         helloLabel2.textAlignment = .center
         helloLabel2.textColor = .textPrimary
         
@@ -65,54 +70,66 @@ class LoginViewController: UIViewController {
     }
     
     private func setupUI() {
-        [logo, helloLabel, helloLabel2, joinImage,
+        [headerLabel, logo, helloLabel, helloLabel2, joinImage,
          kakaoButton,  googleButton, appleButton, loadingIndicator]
             .forEach { view.addSubview($0) }
     }
     
     private func setupConstraints() {
+        headerLabel.snp.makeConstraints {
+            $0.top.equalToSuperview().inset(78)
+            $0.centerX.equalToSuperview()
+        }
+        
         logo.snp.makeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(24)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(140)
+            $0.top.equalTo(headerLabel.snp.bottom).offset(49)
+            $0.leading.equalToSuperview().inset(112)
+            $0.trailing.equalToSuperview().inset(127)
+            $0.height.equalTo(logo.snp.width).multipliedBy(160.0/136.0)
         }
-        
+
         helloLabel.snp.makeConstraints {
-            $0.top.equalTo(logo.snp.bottom).offset(12)
+            $0.top.equalTo(logo.snp.bottom).offset(28)
             $0.centerX.equalToSuperview()
         }
-        
+
         helloLabel2.snp.makeConstraints {
-            $0.top.equalTo(helloLabel.snp.bottom).offset(6)
+            $0.top.equalTo(helloLabel.snp.bottom).offset(10)
             $0.centerX.equalToSuperview()
         }
         
         joinImage.snp.makeConstraints {
-            $0.top.equalTo(helloLabel2.snp.bottom).offset(12)
+            $0.bottom.equalTo(appleButton.snp.top).offset(-16)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(80)
             $0.width.equalToSuperview().multipliedBy(0.75)
+            $0.top.greaterThanOrEqualTo(helloLabel2.snp.bottom).offset(24)
         }
         
         appleButton.snp.makeConstraints {
-            $0.top.equalTo(joinImage.snp.bottom).offset(16)
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.85)
-        }
-        kakaoButton.snp.makeConstraints {
-            $0.top.equalTo(appleButton.snp.bottom).offset(12)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(54)
-            $0.width.equalToSuperview().multipliedBy(0.85)
-        }
-        googleButton.snp.makeConstraints {
-            $0.top.equalTo(kakaoButton.snp.bottom).offset(12)
-            $0.centerX.equalToSuperview()
-            $0.height.equalTo(54)
-            $0.width.equalToSuperview().multipliedBy(0.85)
+            $0.bottom.equalTo(kakaoButton.snp.top).offset(-12)
+            $0.width.lessThanOrEqualTo(360)
         }
         
+        kakaoButton.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(54)
+            $0.width.equalToSuperview().multipliedBy(0.85)
+            $0.bottom.equalTo(googleButton.snp.top).offset(-12)
+            $0.width.lessThanOrEqualTo(360)
+        }
+
+        googleButton.snp.makeConstraints {
+            $0.centerX.equalToSuperview()
+            $0.height.equalTo(54)
+            $0.width.equalToSuperview().multipliedBy(0.85)
+            $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(32)
+            $0.width.lessThanOrEqualTo(360)
+        }
+
         loadingIndicator.snp.makeConstraints {
             $0.edges.equalToSuperview()
         }
