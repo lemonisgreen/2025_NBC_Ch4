@@ -98,20 +98,21 @@ final class WalkSession {
     }
 
     func stop() {
+        var s = state.value
+        
+        guard s.coordinates.count > 2 else {
+            fullSideOfCourse.accept(NMGLatLngBounds())
+            return
+        }
+        
         pedometer.stopUpdates()
         timerDisposable?.dispose()
         timerDisposable = nil
 
-        var s = state.value
         s.isActive = false
         s.endDate = Date()
         state.accept(s)
-
-        if s.coordinates.count < 2 {
-            fullSideOfCourse.accept(NMGLatLngBounds())
-        } else {
-            fullSideOfCourse.accept(fetchFullSide(from: s.coordinates))
-        }
+        fullSideOfCourse.accept(fetchFullSide(from: s.coordinates))
     }
 
     private func setupLocation() {
