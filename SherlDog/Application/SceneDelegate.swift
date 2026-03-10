@@ -109,6 +109,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     // MARK: - 초기 화면 결정
     private func determineInitialViewController() -> UIViewController {
         
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "onboardingCompleted")
+        
+        if !hasCompletedOnboarding {
+            return createOnboardingVC()
+        }
+        
         let isLoggedIn = AuthSession.currentProvider != .none
         let hasAppUserId = AuthSession.currentAppUserId != nil
         
@@ -120,6 +126,10 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     // MARK: - Factory
+    private func createOnboardingVC() -> UIViewController {
+        return OnboardingViewController()
+    }
+    
     private func createLoginVC() -> UIViewController {
         return UINavigationController(rootViewController: LoginViewController())
     }
