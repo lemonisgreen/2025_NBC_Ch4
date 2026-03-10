@@ -9,7 +9,6 @@ import RxSwift
 import RxCocoa
 import RxDataSources
 import Differentiator
-import FirebaseAuth
 import FirebaseFirestore
 
 enum CommentEvent {
@@ -121,13 +120,13 @@ final class PostDetailViewModel {
     }
     
     func isWriter(_ writerUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         
         return writerUserId == currentUserId
     }
     
     func isPosterOrCommenter(commentUserId: String) -> Bool {
-        guard let currentUserId = Auth.auth().currentUser?.uid else { return false }
+        guard let currentUserId = AuthSession.currentAppUserId else { return false }
         
         return self.originalPost.userId == currentUserId || commentUserId == currentUserId
     }
@@ -213,7 +212,7 @@ extension PostDetailViewModel {
         return input
             .flatMap { [weak self] state -> Observable<CommentEvent> in
                 guard let self,
-                      let myUserId = Auth.auth().currentUser?.uid else { return .empty() }
+                      let myUserId = AuthSession.currentAppUserId else { return .empty() }
                 
                 switch state {
                 case .refresh:

@@ -8,7 +8,6 @@
 import Foundation
 import RxSwift
 import RxRelay
-import FirebaseAuth
 import FirebaseFirestore
 
 final class ReportViewModel {
@@ -55,7 +54,7 @@ final class ReportViewModel {
                 
                 isLoadingRelay.accept(true)
                 
-                let reporterId = Auth.auth().currentUser?.uid ?? "anonymous"
+                let reporterId = AuthSession.currentAppUserId ?? "anonymous"
                 let now = Date()
                 
                 let targetInfo: (collection: FirestoreCollection,

@@ -315,19 +315,20 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             }
             .compactMap { $0 }
             .subscribe(onNext: { [weak self] item in
+                guard let self else { return }
+                
                 switch item {
                 case .profile(let profile):
-                    self?.presentRegistrationViewController(with: profile)
-                        .subscribe(onNext: { _ in
-                        })
-                        .disposed(by: self?.disposeBag ?? DisposeBag())
+                    self.presentRegistrationViewController(with: profile)
+                        .subscribe(onNext: { _ in })
+                        .disposed(by: self.disposeBag)
                 case .addProfile:
-                    self?.presentRegistrationView()
+                    self.presentRegistrationView()
                 }
                 
                 // 선택 해제
-                if let selectedIndexPath = self?.collectionView.indexPathsForSelectedItems?.first {
-                    self?.collectionView.deselectItem(at: selectedIndexPath, animated: true)
+                if let selectedIndexPath = self.collectionView.indexPathsForSelectedItems?.first {
+                    self.collectionView.deselectItem(at: selectedIndexPath, animated: true)
                 }
             })
             .disposed(by: disposeBag)
