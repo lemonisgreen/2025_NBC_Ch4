@@ -77,7 +77,7 @@ class LoginViewController: UIViewController {
     
     private func setupConstraints() {
         headerLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(78)
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
             $0.centerX.equalToSuperview()
         }
         
@@ -90,41 +90,43 @@ class LoginViewController: UIViewController {
 
         helloLabel.snp.makeConstraints {
             $0.top.equalTo(logo.snp.bottom).offset(28)
+            $0.horizontalEdges.equalToSuperview().inset(12)
             $0.centerX.equalToSuperview()
         }
 
         helloLabel2.snp.makeConstraints {
-            $0.top.equalTo(helloLabel.snp.bottom).offset(10)
+            $0.top.equalTo(helloLabel.snp.bottom).offset(4)
+            $0.horizontalEdges.equalToSuperview().inset(12)
             $0.centerX.equalToSuperview()
         }
         
         joinImage.snp.makeConstraints {
-            $0.bottom.equalTo(appleButton.snp.top).offset(-16)
+            $0.bottom.equalTo(appleButton.snp.top).offset(-12)
             $0.centerX.equalToSuperview()
-            $0.height.equalTo(80)
+            $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.75)
-            $0.top.greaterThanOrEqualTo(helloLabel2.snp.bottom).offset(24)
+            $0.top.greaterThanOrEqualTo(helloLabel2.snp.bottom)
         }
         
         appleButton.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.height.equalTo(54)
+            $0.height.equalTo(52)
             $0.width.equalToSuperview().multipliedBy(0.85)
-            $0.bottom.equalTo(kakaoButton.snp.top).offset(-12)
+            $0.bottom.equalTo(kakaoButton.snp.top).offset(-8)
             $0.width.lessThanOrEqualTo(360)
         }
         
         kakaoButton.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.height.equalTo(54)
+            $0.height.equalTo(52)
             $0.width.equalToSuperview().multipliedBy(0.85)
-            $0.bottom.equalTo(googleButton.snp.top).offset(-12)
+            $0.bottom.equalTo(googleButton.snp.top).offset(-8)
             $0.width.lessThanOrEqualTo(360)
         }
 
         googleButton.snp.makeConstraints {
             $0.centerX.equalToSuperview()
-            $0.height.equalTo(54)
+            $0.height.equalTo(52)
             $0.width.equalToSuperview().multipliedBy(0.85)
             $0.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).inset(32)
             $0.width.lessThanOrEqualTo(360)
