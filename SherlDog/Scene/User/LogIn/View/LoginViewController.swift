@@ -77,7 +77,7 @@ class LoginViewController: UIViewController {
     
     private func setupConstraints() {
         headerLabel.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(16)
+            $0.top.equalTo(view.safeAreaLayoutGuide.snp.top)
             $0.centerX.equalToSuperview()
         }
         
@@ -105,7 +105,7 @@ class LoginViewController: UIViewController {
             $0.centerX.equalToSuperview()
             $0.height.equalTo(54)
             $0.width.equalToSuperview().multipliedBy(0.75)
-            $0.top.greaterThanOrEqualTo(helloLabel2.snp.bottom).offset(24)
+            $0.top.greaterThanOrEqualTo(helloLabel2.snp.bottom)
         }
         
         appleButton.snp.makeConstraints {
