@@ -17,27 +17,53 @@ struct WeatherState {
 
 final class WeatherSession {
     
-    static let shared = WeatherSession()
+    private let locationManager: CLLocationManager
     
-    private init() { }
+    private let disposeBag = DisposeBag()
     
-    func fetchWeather(for location: CLLocation) -> Single<WeatherState?> {
-        return Single.create { single in
-            Task {
+    init(locationManager: CLLocationManager) {
+        self.locationManager = locationManager
+    }
+    
+    func makeWeatherState() -> Observable<WeatherState> {
+        return self.locationManager.rx.didUpdateLocations
+            .throttle(.seconds(2), latest: true, scheduler: MainScheduler())
+            .compactMap { $0.locations.last }
+            .flatMapLatest { [weak self] location -> Observable<WeatherState> in
+                guard let self else { return .empty() }
+                
+                return self.fetchWeather(for: location)
+            }
+    }
+    
+    private func fetchWeather(for location: CLLocation) -> Observable<WeatherState> {
+        return Observable.create { observer in
+            let task = Task {
                 do {
                     let weather = try await WeatherService.shared.weather(for: location)
                     
-                    single(.success(WeatherState(
+                    observer.onNext(WeatherState(
                         temperature: weather.currentWeather.temperature.value,
                         currentWeather: weather.currentWeather.condition,
                         hourlyWeather: Array(weather.hourlyForecast.prefix(2))
-                    )))
+                    ))
                 } catch {
-                    single(.failure(error))
+                    observer.onError(error)
                 }
             }
             
-            return Disposables.create()
+            return Disposables.create {
+                task.cancel()
+            }
         }
     }
+}
+
+
+extension WeatherState {
+    static let initial = WeatherState(
+        temperature: 0,
+        currentWeather: .clear,
+        hourlyWeather: []
+    )
 }

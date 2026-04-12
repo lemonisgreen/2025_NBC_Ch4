@@ -24,6 +24,7 @@ final class MainViewModel {
         let fullSideOfCourse: PublishRelay<NMGLatLngBounds>
         let clues: BehaviorRelay<[ClueModel]>
         let sessionState: BehaviorRelay<WalkSession.State>
+        let weatherState: BehaviorRelay<WeatherState>
     }
     
     let input: Input
@@ -40,15 +41,18 @@ final class MainViewModel {
     private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
     private let clues = BehaviorRelay<[ClueModel]>(value: [])
     private let sessionState = BehaviorRelay<WalkSession.State>(value: .initial)
+    private let weatherState = BehaviorRelay<WeatherState>(value: .initial)
     
     // MARK: - Dependencies
     
+    private let weatherSession: WeatherSession
     private let walkSession: WalkSession
     private let disposeBag = DisposeBag()
     
     // MARK: - Init
     
     init(locationManager: CLLocationManager) {
+        self.weatherSession = WeatherSession(locationManager: locationManager)
         self.walkSession = WalkSession(locationManager: locationManager)
         
         self.input = Input(
@@ -60,7 +64,8 @@ final class MainViewModel {
         self.output = Output(
             fullSideOfCourse: fullSideOfCourse,
             clues: clues,
-            sessionState: sessionState
+            sessionState: sessionState,
+            weatherState: weatherState
         )
         
         bindInputs()
@@ -91,6 +96,11 @@ final class MainViewModel {
         
         walkSession.fullSideOfCourse
             .bind(to: fullSideOfCourse)
+            .disposed(by: disposeBag)
+        
+        weatherSession.makeWeatherState()
+            .do { print("\($0.currentWeather) \n\($0.temperature) \n\($0.hourlyWeather.first)") }
+            .bind(to: weatherState)
             .disposed(by: disposeBag)
     }
     
