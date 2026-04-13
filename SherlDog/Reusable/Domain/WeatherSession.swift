@@ -10,7 +10,7 @@ import WeatherKit
 import CoreLocation
 
 struct WeatherState {
-    let temperature: Double
+    let temperature: Int
     let currentWeather: WeatherCondition
     let hourlyWeather: [HourWeather]
 }
@@ -43,7 +43,7 @@ final class WeatherSession {
                     let weather = try await WeatherService.shared.weather(for: location)
                     
                     observer.onNext(WeatherState(
-                        temperature: weather.currentWeather.temperature.value,
+                        temperature: Int(weather.currentWeather.temperature.converted(to: .celsius).value),
                         currentWeather: weather.currentWeather.condition,
                         hourlyWeather: Array(weather.hourlyForecast.prefix(2))
                     ))

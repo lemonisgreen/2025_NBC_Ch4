@@ -99,7 +99,6 @@ final class MainViewModel {
             .disposed(by: disposeBag)
         
         weatherSession.makeWeatherState()
-            .do { print("\($0.currentWeather) \n\($0.temperature) \n\($0.hourlyWeather.first)") }
             .bind(to: weatherState)
             .disposed(by: disposeBag)
     }
