@@ -99,6 +99,26 @@ final class MainViewModel {
             .disposed(by: disposeBag)
         
         weatherSession.makeWeatherState()
+            .do(onNext: { [weak self] state in
+                Task {
+                    let granted = await NotificationManager.shared.requestAuthorization()
+                    guard granted,
+                          let self,
+                          self.sessionState.value.isActive else { return }
+                }
+                
+                let isRain = state.hourlyWeather.filter {
+                    $0.condition == .rain ||
+                    $0.condition == .heavyRain ||
+                    $0.condition == .freezingRain
+                }
+                NotificationManager.shared.scheduleNotification(rainAfter: 30) // 테스트용
+                if isRain.count > 0,
+                   let date = isRain.first?.date {
+                    let diff = Date().timeIntervalSince1970 - date.timeIntervalSince1970
+                    NotificationManager.shared.scheduleNotification(rainAfter: (diff / 60))
+                }
+            })
             .bind(to: weatherState)
             .disposed(by: disposeBag)
     }
