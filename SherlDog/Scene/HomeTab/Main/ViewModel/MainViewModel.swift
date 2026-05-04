@@ -85,6 +85,7 @@ final class MainViewModel {
         input.stopTracking
             .subscribe(onNext: { [weak self] in
                 self?.walkSession.stop()
+                self?.weatherSession.resumeWeatherUpdates()
             })
             .disposed(by: disposeBag)
     }
@@ -99,24 +100,24 @@ final class MainViewModel {
             .disposed(by: disposeBag)
         
         weatherSession.makeWeatherState()
-            .do(onNext: { [weak self] state in
-                Task {
-                    let granted = await NotificationManager.shared.requestAuthorization()
-                    guard granted,
-                          let self,
-                          self.sessionState.value.isActive else { return }
-                }
+            .filter { [weak self] state in
+                guard let self else { return false }
                 
-                let isRain = state.hourlyWeather.filter {
-                    $0.condition == .rain ||
-                    $0.condition == .heavyRain ||
-                    $0.condition == .freezingRain
-                }
-                NotificationManager.shared.scheduleNotification(rainAfter: 30) // 테스트용
-                if isRain.count > 0,
-                   let date = isRain.first?.date {
-                    let diff = Date().timeIntervalSince1970 - date.timeIntervalSince1970
-                    NotificationManager.shared.scheduleNotification(rainAfter: (diff / 60))
+                return state.hourlyWeather.contains { $0.condition.isRainRelated } &&
+                self.sessionState.value.isActive
+            }
+            .do(onNext: { [weak self] state in
+                Task { [weak self] in
+                    guard let self else { return }
+                    
+                    let granted = await NotificationManager.shared.requestAuthorization()
+                    guard granted else { return }
+                    
+                    guard let rainWeather = state.hourlyWeather.first(where: \.condition.isRainRelated) else { return }
+                    
+                    let diff = rainWeather.date.timeIntervalSince(Date()) / 60
+                    NotificationManager.shared.scheduleNotification(rainAfter: (diff))
+                    self.weatherSession.pauseWeatherUpdates()
                 }
             })
             .bind(to: weatherState)

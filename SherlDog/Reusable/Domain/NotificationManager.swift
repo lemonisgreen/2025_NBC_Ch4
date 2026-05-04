@@ -23,7 +23,9 @@ final class NotificationManager {
     func scheduleNotification(rainAfter: Double) {
         let content = UNMutableNotificationContent()
         content.title = SDLiteral.Notification.rainNoticeTitle
-        content.body = String(format: SDLiteral.Notification.rainNoticeBody, Int(rainAfter))
+        content.body = rainAfter >= 0
+        ? String(format: SDLiteral.Notification.rainNoticeBody, Int(rainAfter))
+        : SDLiteral.Notification.nowRainingNoticeBody
         content.sound = .default
         content.badge = 1
         

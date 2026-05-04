@@ -139,6 +139,7 @@ enum SDLiteral {
     enum Notification {
         static let rainNoticeTitle: String = "날씨 정보"
         static let rainNoticeBody: String = "%d분 후 비 소식이 있어요!"
+        static let nowRainingNoticeBody: String = "현재 비가 내리고 있어요!"
         static let rainIdentifier: String = "rainReminder"
     }
 }

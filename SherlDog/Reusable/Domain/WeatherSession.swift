@@ -17,7 +17,15 @@ struct WeatherState {
 
 final class WeatherSession {
     
+    struct Config {
+        let refreshInterval: Int = (60 * 5) // 5분
+        let refreshDistance: Double = 500 // 500미터
+    }
+    
+    private let config = Config()
     private let locationManager: CLLocationManager
+    private var lastWeatherLocation: CLLocation?
+    private var shouldFetchWeather = true
     
     private let disposeBag = DisposeBag()
     
@@ -27,13 +35,38 @@ final class WeatherSession {
     
     func makeWeatherState() -> Observable<WeatherState> {
         return self.locationManager.rx.didUpdateLocations
-            .throttle(.seconds(2), latest: true, scheduler: MainScheduler())
+            .throttle(.seconds(self.config.refreshInterval), latest: true, scheduler: MainScheduler())
             .compactMap { $0.locations.last }
+            .filter { [weak self] location in
+                guard let self,
+                        self.shouldFetchWeather else { return false }
+                guard let lastLocation = self.lastWeatherLocation else {
+                    self.lastWeatherLocation = location
+                    return true
+                }
+                
+                let distance = location.distance(from: lastLocation)
+                
+                guard distance >= self.config.refreshDistance else { return false }
+                
+                self.lastWeatherLocation = location
+                return true
+                
+            }
             .flatMapLatest { [weak self] location -> Observable<WeatherState> in
                 guard let self else { return .empty() }
                 
                 return self.fetchWeather(for: location)
             }
+    }
+    
+    func pauseWeatherUpdates() {
+        self.shouldFetchWeather = false
+    }
+    
+    func resumeWeatherUpdates() {
+        self.shouldFetchWeather = true
+        self.lastWeatherLocation = nil
     }
     
     private func fetchWeather(for location: CLLocation) -> Observable<WeatherState> {
@@ -42,10 +75,12 @@ final class WeatherSession {
                 do {
                     let weather = try await WeatherService.shared.weather(for: location)
                     
+                    let hourly = Array(weather.hourlyForecast.filter({ $0.date > Date() }).prefix(2))
+                    
                     observer.onNext(WeatherState(
                         temperature: Int(weather.currentWeather.temperature.converted(to: .celsius).value),
                         currentWeather: weather.currentWeather.condition,
-                        hourlyWeather: Array(weather.hourlyForecast.prefix(2))
+                        hourlyWeather: hourly
                     ))
                 } catch {
                     observer.onError(error)
