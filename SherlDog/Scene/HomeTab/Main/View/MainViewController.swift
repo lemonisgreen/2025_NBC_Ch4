@@ -165,8 +165,20 @@ private extension MainViewController {
         requestViewModel.output.petIndex
             .subscribe(onNext: { [weak self] _ in
                 guard let self else { return }
-                self.input.startTracking.accept(())
-                self.setInvestigation(active: true)
+                // TODO: 회의 후 결정
+                // 알럿을 넣을지?
+//                let isRaining = self.output.weatherState.value.currentWeather.isRainRelated
+//                let willRainSoon = self.output.weatherState.value.hourlyWeather.contains(where: \.condition.isRainRelated)
+//
+//                if isRaining || willRainSoon {
+//                    self.isRainingAlert(now: isRaining, confirmAction: {
+//                        self.input.startTracking.accept(())
+//                        self.setInvestigation(active: true)
+//                    })
+//                } else {
+                    self.input.startTracking.accept(())
+                    self.setInvestigation(active: true)
+//                }
             })
             .disposed(by: disposeBag)
         
@@ -619,6 +631,24 @@ private extension MainViewController {
         )
         present(confirmAlert, animated: true)
     }
+    
+    // TODO: 회의 후 결정
+    // 알럿을 넣을지?
+//    func isRainingAlert(now: Bool, confirmAction: @escaping () -> ()) {
+//        let confirmAlert = CustomAlertViewController(
+//            message: (
+//                now
+//                ? "현재 비가 내리고 있어요!"
+//                : "1시간 이내 비 소식이 있어요!"
+//            ),
+//            subMessage: "정말 산책을 시작할까요?",
+//            buttons: [
+//                .init(title: "확인", action: confirmAction),
+//                .init(title: "취소", action: nil)
+//            ]
+//        )
+//        present(confirmAlert, animated: true)
+//    }
     
     func openAppSettings() {
         guard let url = URL(string: UIApplication.openSettingsURLString),

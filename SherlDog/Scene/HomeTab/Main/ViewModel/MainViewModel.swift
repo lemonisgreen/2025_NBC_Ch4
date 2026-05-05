@@ -78,7 +78,17 @@ final class MainViewModel {
     private func bindInputs() {
         input.startTracking
             .subscribe(onNext: { [weak self] in
-                self?.walkSession.start()
+                guard let self else { return }
+                // TODO: 회의 후 결정
+                // 시작 전 알럿을 준다면 푸시알림은 필요 없을 것이라고 생각합니다
+//                let isRaining = self.weatherState.value.currentWeather.isRainRelated
+//                let willRainSoon = self.weatherState.value.hourlyWeather.contains(where: \.condition.isRainRelated)
+//
+//                if isRaining || willRainSoon {
+//                    self.weatherSession.pauseWeatherUpdates()
+//                }
+                
+                self.walkSession.start()
             })
             .disposed(by: disposeBag)
         
@@ -100,15 +110,13 @@ final class MainViewModel {
             .disposed(by: disposeBag)
         
         weatherSession.makeWeatherState()
-            .filter { [weak self] state in
-                guard let self else { return false }
-                
-                return state.hourlyWeather.contains { $0.condition.isRainRelated } &&
-                self.sessionState.value.isActive
-            }
             .do(onNext: { [weak self] state in
                 Task { [weak self] in
                     guard let self else { return }
+                    let willRainSoon = state.hourlyWeather.contains(where: \.condition.isRainRelated)
+                    let isWalkSessionActive = self.sessionState.value.isActive
+                    
+                    guard willRainSoon && isWalkSessionActive else { return }
                     
                     let granted = await NotificationManager.shared.requestAuthorization()
                     guard granted else { return }
