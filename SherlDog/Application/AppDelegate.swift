@@ -30,6 +30,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // IQ 키보드 작동 코드
         IQKeyboardManager.shared.isEnabled = true
         
+        // NotificationDelegate
+        UNUserNotificationCenter.current().delegate = self
+        
         return true
     }
     
@@ -80,5 +83,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didDiscardSceneSessions sceneSessions: Set<UISceneSession>) {
         // 필요 시 정리
+    }
+}
+
+extension AppDelegate: UNUserNotificationCenterDelegate {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        return [.badge, .banner, .sound]
     }
 }

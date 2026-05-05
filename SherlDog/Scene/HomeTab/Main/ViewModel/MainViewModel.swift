@@ -24,6 +24,7 @@ final class MainViewModel {
         let fullSideOfCourse: PublishRelay<NMGLatLngBounds>
         let clues: BehaviorRelay<[ClueModel]>
         let sessionState: BehaviorRelay<WalkSession.State>
+        let weatherState: BehaviorRelay<WeatherState>
     }
     
     let input: Input
@@ -40,15 +41,18 @@ final class MainViewModel {
     private let fullSideOfCourse = PublishRelay<NMGLatLngBounds>()
     private let clues = BehaviorRelay<[ClueModel]>(value: [])
     private let sessionState = BehaviorRelay<WalkSession.State>(value: .initial)
+    private let weatherState = BehaviorRelay<WeatherState>(value: .initial)
     
     // MARK: - Dependencies
     
+    private let weatherSession: WeatherSession
     private let walkSession: WalkSession
     private let disposeBag = DisposeBag()
     
     // MARK: - Init
     
     init(locationManager: CLLocationManager) {
+        self.weatherSession = WeatherSession(locationManager: locationManager)
         self.walkSession = WalkSession(locationManager: locationManager)
         
         self.input = Input(
@@ -60,7 +64,8 @@ final class MainViewModel {
         self.output = Output(
             fullSideOfCourse: fullSideOfCourse,
             clues: clues,
-            sessionState: sessionState
+            sessionState: sessionState,
+            weatherState: weatherState
         )
         
         bindInputs()
@@ -73,13 +78,24 @@ final class MainViewModel {
     private func bindInputs() {
         input.startTracking
             .subscribe(onNext: { [weak self] in
-                self?.walkSession.start()
+                guard let self else { return }
+                // TODO: 회의 후 결정
+                // 시작 전 알럿을 준다면 푸시알림은 필요 없을 것이라고 생각합니다
+//                let isRaining = self.weatherState.value.currentWeather.isRainRelated
+//                let willRainSoon = self.weatherState.value.hourlyWeather.contains(where: \.condition.isRainRelated)
+//
+//                if isRaining || willRainSoon {
+//                    self.weatherSession.pauseWeatherUpdates()
+//                }
+                
+                self.walkSession.start()
             })
             .disposed(by: disposeBag)
         
         input.stopTracking
             .subscribe(onNext: { [weak self] in
                 self?.walkSession.stop()
+                self?.weatherSession.resumeWeatherUpdates()
             })
             .disposed(by: disposeBag)
     }
@@ -91,6 +107,28 @@ final class MainViewModel {
         
         walkSession.fullSideOfCourse
             .bind(to: fullSideOfCourse)
+            .disposed(by: disposeBag)
+        
+        weatherSession.makeWeatherState()
+            .do(onNext: { [weak self] state in
+                Task { [weak self] in
+                    guard let self else { return }
+                    let willRainSoon = state.hourlyWeather.contains(where: \.condition.isRainRelated)
+                    let isWalkSessionActive = self.sessionState.value.isActive
+                    
+                    guard willRainSoon && isWalkSessionActive else { return }
+                    
+                    let granted = await NotificationManager.shared.requestAuthorization()
+                    guard granted else { return }
+                    
+                    guard let rainWeather = state.hourlyWeather.first(where: \.condition.isRainRelated) else { return }
+                    
+                    let diff = rainWeather.date.timeIntervalSince(Date()) / 60
+                    NotificationManager.shared.scheduleNotification(rainAfter: (diff))
+                    self.weatherSession.pauseWeatherUpdates()
+                }
+            })
+            .bind(to: weatherState)
             .disposed(by: disposeBag)
     }
     
