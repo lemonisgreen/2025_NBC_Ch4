@@ -17,7 +17,6 @@ final class MainViewModel {
     struct Input {
         let startTracking: PublishRelay<Void>
         let stopTracking: PublishRelay<Void>
-        let reloadClues: PublishRelay<Void>
         let mapBounds: BehaviorRelay<NMGLatLngBounds>
     }
     
@@ -34,7 +33,6 @@ final class MainViewModel {
     
     let startTracking = PublishRelay<Void>()
     let stopTracking = PublishRelay<Void>()
-    let reloadClues = PublishRelay<Void>()
     let mapBounds = BehaviorRelay<NMGLatLngBounds>(value: .init())
     
     // MARK: - Outputs
@@ -58,7 +56,6 @@ final class MainViewModel {
         self.input = Input(
             startTracking: startTracking,
             stopTracking: stopTracking,
-            reloadClues: reloadClues,
             mapBounds: mapBounds
         )
         
@@ -100,27 +97,25 @@ final class MainViewModel {
     }
     
     private func bindClues() {
-        input.reloadClues
-            .subscribe(onNext: { [weak self] in
-                self?.fetchClues()
+        input.mapBounds
+            .subscribe(onNext: { [weak self] bounds in
+                self?.fetchClues(bounds: bounds)
             })
             .disposed(by: disposeBag)
     }
     // MARK: - Clues
     
-    private func fetchClues() {
+    private func fetchClues(bounds: NMGLatLngBounds) {
         guard let userId = AuthSession.currentAppUserId,
                  !userId.isEmpty else {
                self.clues.accept([])
                return
            }
         
-        let bounds = self.mapBounds.value
-        
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
                 collection: .clues,
-                type: .clue(before: 7,
+                type: .clue(before: 365, // 몇일 전까지의 데이터를 불러올 것인지
                             bounds: (
                                 s: bounds.southWestLat,
                                 w: bounds.southWestLng,
@@ -137,20 +132,6 @@ final class MainViewModel {
             onFailure: { error in }
         )
         .disposed(by: disposeBag)
-        
-//        FirestoreManager.shared.fetchQuery(
-//            FirestoreQuery<ClueModel>(
-//                collection: .clues,
-//                type: .whereField(field: "userID", value: userId)
-//            )
-//        )
-//        .subscribe(
-//            onSuccess: { [weak self] clues in
-//                self?.clues.accept(clues)
-//            },
-//            onFailure: { error in }
-//        )
-//        .disposed(by: disposeBag)
     }
 }
 

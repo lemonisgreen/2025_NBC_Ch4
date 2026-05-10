@@ -6,7 +6,6 @@
 //
 
 import NMapsMap
-import FirebaseAuth
 
 final class ClueMarkerRenderer {
 
@@ -21,7 +20,7 @@ final class ClueMarkerRenderer {
 
     func render(clues: [ClueModel]) {
         guard let mapView else { return }
-        let id = FirebaseAuth.Auth.auth().currentUser?.uid ?? "unknown"
+        let id = FirestoreManager.shared.userId
 
         clear()
 
@@ -30,12 +29,12 @@ final class ClueMarkerRenderer {
             marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
             marker.userInfo = ["clue": clue]
             marker.iconImage = clue.userID == id
-            ? NMFOverlayImage(name: "clueMark")
-            : NMFOverlayImage(name: "communityGreen") // TODO: **반드시 변경할 것!!!!**
+            ? NMFOverlayImage(name: "communityGreen") // TODO: **반드시 변경할 것!!!!**
+            : NMFOverlayImage(name: "clueMark")
             marker.width = 60
             marker.height = 60
             marker.mapView = mapView
-
+            
             marker.touchHandler = { [weak self] overlay in
                 guard
                     let marker = overlay as? NMFMarker,

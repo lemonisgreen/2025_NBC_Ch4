@@ -77,8 +77,6 @@ class MainViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationController?.setNavigationBarHidden(true, animated: false)
-        
-        input.reloadClues.accept(())
     }
 }
 // MARK: - Setup & Permissions
