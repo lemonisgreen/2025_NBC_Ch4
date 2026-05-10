@@ -112,6 +112,7 @@ private extension MainViewController {
         guard !didSetup else { return }
         didSetup = true
         
+        mapView.addCameraDelegate(delegate: self)
         pathRenderer = PathRenderer(mapView: mapView)
         
         clueMarkerRenderer = ClueMarkerRenderer(mapView: mapView)
@@ -681,5 +682,11 @@ private extension MainViewController {
         return renderer.image { _ in
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
         }
+    }
+}
+
+extension MainViewController: NMFMapViewCameraDelegate {
+    func mapViewCameraIdle(_ mapView: NMFMapView) {
+        self.viewModel.input.mapBounds.accept(mapView.contentBounds)
     }
 }

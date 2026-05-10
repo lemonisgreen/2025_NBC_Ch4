@@ -37,7 +37,7 @@ enum FirestoreQueryType {
     case document(id: String)
     case whereField(field: String, value: Any?)
     case collection(sortField: String?, descending: Bool, blockedIds: [String])
-    case dateRange(field: String, value: Any?, orderBy: String, day: Date)
+    case clue(before: Int, bounds: (s: Double, w: Double, n: Double, e: Double))
 }
 
 final class FirestoreManager {
@@ -127,23 +127,18 @@ final class FirestoreManager {
                 return Disposables.create()
             }
             
-        case let .dateRange(field, value, orderBy, day):
-            let actualValue: Any
-            if value == nil && field == "userId" {
-                actualValue = userId
-            } else {
-                guard let castedValue: Any = getActualValue(field: field, value: value) else {
-                    return Single.error(FirestoreError.noData)
-                }
-                actualValue = castedValue
-            }
+        case let .clue(before, bounds):
+            let (start, end) = Self.timestampOfDay(day: Date(), before: before)
+            let field = ClueModel.CodingKeys.self
             
-            let (start, end) = Self.timestampOfDay(day: day)
             return Single.create { [weak self] single in
                 self?.db.collection(query.collection.rawValue)
-                    .whereField(field, isEqualTo: actualValue)
-                    .whereField(orderBy, isGreaterThanOrEqualTo: start)
-                    .whereField(orderBy, isLessThan: end)
+                    .whereField(field.date.rawValue, isGreaterThanOrEqualTo: start)
+                    .whereField(field.date.rawValue, isLessThan: end)
+                    .whereField(field.latitude.rawValue, isGreaterThan: bounds.s)
+                    .whereField(field.longitude.rawValue, isGreaterThan: bounds.w)
+                    .whereField(field.latitude.rawValue, isLessThan: bounds.n)
+                    .whereField(field.longitude.rawValue, isLessThan: bounds.e)
                     .getDocuments { snapshot, error in
                         if let error = error { single(.failure(error)) }
                         else if let snapshot = snapshot {
@@ -282,9 +277,12 @@ final class FirestoreManager {
     }
     
     //내부: 날짜 day -> Timestamp (시작/끝)
-    static func timestampOfDay(day: Date) -> (start: Timestamp, end: Timestamp) {
+    static func timestampOfDay(day: Date, before: Int) -> (start: Timestamp, end: Timestamp) {
+        let day = day.addingTimeInterval(TimeInterval(-1 * before * 24 * 60 * 60))
+        
         let startOfDay = Calendar.current.startOfDay(for: day)
-        guard let endOfday = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay) else {
+        let today = Calendar.current.startOfDay(for: Date())
+        guard let endOfday = Calendar.current.date(byAdding: .day, value: 1, to: today) else {
             return (Timestamp(), Timestamp())
         }
         return (Timestamp(date: startOfDay), Timestamp(date: endOfday))

@@ -18,6 +18,7 @@ final class MainViewModel {
         let startTracking: PublishRelay<Void>
         let stopTracking: PublishRelay<Void>
         let reloadClues: PublishRelay<Void>
+        let mapBounds: BehaviorRelay<NMGLatLngBounds>
     }
     
     struct Output {
@@ -34,6 +35,7 @@ final class MainViewModel {
     let startTracking = PublishRelay<Void>()
     let stopTracking = PublishRelay<Void>()
     let reloadClues = PublishRelay<Void>()
+    let mapBounds = BehaviorRelay<NMGLatLngBounds>(value: .init())
     
     // MARK: - Outputs
     
@@ -43,18 +45,21 @@ final class MainViewModel {
     
     // MARK: - Dependencies
     
+    private let locationManager: CLLocationManager
     private let walkSession: WalkSession
     private let disposeBag = DisposeBag()
     
     // MARK: - Init
     
     init(locationManager: CLLocationManager) {
+        self.locationManager = locationManager
         self.walkSession = WalkSession(locationManager: locationManager)
         
         self.input = Input(
             startTracking: startTracking,
             stopTracking: stopTracking,
-            reloadClues: reloadClues
+            reloadClues: reloadClues,
+            mapBounds: mapBounds
         )
         
         self.output = Output(
@@ -110,10 +115,19 @@ final class MainViewModel {
                return
            }
         
+        let bounds = self.mapBounds.value
+        
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
                 collection: .clues,
-                type: .whereField(field: "userID", value: userId)
+                type: .clue(before: 7,
+                            bounds: (
+                                s: bounds.southWestLat,
+                                w: bounds.southWestLng,
+                                n: bounds.northEastLat,
+                                e: bounds.northEastLng
+                            )
+                           )
             )
         )
         .subscribe(
@@ -123,6 +137,20 @@ final class MainViewModel {
             onFailure: { error in }
         )
         .disposed(by: disposeBag)
+        
+//        FirestoreManager.shared.fetchQuery(
+//            FirestoreQuery<ClueModel>(
+//                collection: .clues,
+//                type: .whereField(field: "userID", value: userId)
+//            )
+//        )
+//        .subscribe(
+//            onSuccess: { [weak self] clues in
+//                self?.clues.accept(clues)
+//            },
+//            onFailure: { error in }
+//        )
+//        .disposed(by: disposeBag)
     }
 }
 

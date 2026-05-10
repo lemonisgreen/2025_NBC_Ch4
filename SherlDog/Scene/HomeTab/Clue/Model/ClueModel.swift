@@ -15,4 +15,13 @@ struct ClueModel: Codable {
     let content: String
     let image: String
     let date: Timestamp
+    
+    enum CodingKeys: String, CodingKey {
+        case userID
+        case latitude
+        case longitude
+        case content
+        case image
+        case date
+    }
 }
