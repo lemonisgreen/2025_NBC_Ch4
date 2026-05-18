@@ -111,12 +111,21 @@ private extension MainViewController {
         didSetup = true
         
         mapView.addCameraDelegate(delegate: self)
+        mapView.addLoadDelegate(delegate: self)
         pathRenderer = PathRenderer(mapView: mapView)
         
         clueMarkerRenderer = ClueMarkerRenderer(mapView: mapView)
         clueMarkerRenderer.onTapMarker = { [weak self] clue in
             guard let self else { return }
             let vm = ClueDetailViewModel(clue: clue)
+            let detailVC = ClueDetailViewController(viewModel: vm)
+            detailVC.modalPresentationStyle = .pageSheet
+            detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
+            self.present(detailVC, animated: true)
+        }
+        clueMarkerRenderer.onTapCluster = { [weak self] clues in
+            guard let self else { return }
+            let vm = ClueDetailViewModel(clues: clues)
             let detailVC = ClueDetailViewController(viewModel: vm)
             detailVC.modalPresentationStyle = .pageSheet
             detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
@@ -154,10 +163,7 @@ private extension MainViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] clues in
                 guard let self else { return }
-                self.clueMarkerRenderer.clear()
-                if !clues.isEmpty {
-                    self.clueMarkerRenderer.render(clues: clues)
-                }
+                self.clueMarkerRenderer.updateClusters(items: clues)
             })
             .disposed(by: disposeBag)
         
@@ -221,19 +227,6 @@ private extension MainViewController {
                     }
                     
                     guard let currentLocation = self.locationManager.location else { return }
-                    
-                    self.clueMarkerRenderer.addTemporaryMarker(
-                        latitude: currentLocation.coordinate.latitude,
-                        longitude: currentLocation.coordinate.longitude
-                    ) { [weak self] in
-                        guard let self else { return }
-                        let viewModel = ClueDetailViewModel(coordinate: currentLocation.coordinate)
-                        let detailVC = ClueDetailViewController(viewModel: viewModel)
-                        let nav = UINavigationController(rootViewController: detailVC)
-                        nav.modalPresentationStyle = .pageSheet
-                        nav.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
-                        self.present(nav, animated: true)
-                    }
                     
                     let cameraViewModel = CameraViewModel()
                     cameraViewModel.input.accept(.sender(.clueLeave))
@@ -681,10 +674,22 @@ private extension MainViewController {
             window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
         }
     }
+    
+    func reloadClues() {
+        self.viewModel.input.mapBounds.accept(mapView.contentBounds)
+    }
 }
 
+// MARK: - MapViewCameraDelegate
 extension MainViewController: NMFMapViewCameraDelegate {
     func mapViewCameraIdle(_ mapView: NMFMapView) {
-        self.viewModel.input.mapBounds.accept(mapView.contentBounds)
+        self.reloadClues()
+    }
+}
+
+// MARK: - MapViewLoadDelegate
+extension MainViewController: NMFMapViewLoadDelegate {
+    func mapViewDidFinishLoadingMap(_ mapView: NMFMapView) {
+        self.reloadClues()
     }
 }

@@ -176,9 +176,7 @@ class ClueInputViewController: UIViewController {
     
     private func bind() {
         cameraViewModel.output.capturedImage
-            .subscribe(onNext: { [weak self] image in
-                self?.imageView.image = image
-            })
+            .bind(to: self.imageView.rx.image)
             .disposed(by: disposeBag)
         
         self.isLoading

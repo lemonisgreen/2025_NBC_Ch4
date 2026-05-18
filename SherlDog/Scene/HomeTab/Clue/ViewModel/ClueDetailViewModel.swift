@@ -52,6 +52,11 @@ final class ClueDetailViewModel {
         updateUI(with: clue)
     }
     
+    init(clues: [ClueModel]) {
+        self.output.isLoading.accept(true)
+        self.updateCluster(with: clues)
+    }
+    
     // 새로운 초기화 메서드 추가
     init(coordinate: CLLocationCoordinate2D) {
         // 좌표만으로 새 단서를 만드는 경우
@@ -69,12 +74,16 @@ final class ClueDetailViewModel {
         self.output.isLoading.accept(false)
     }
     
+    private func updateCluster(with clues: [ClueModel]) {
+        self.data = clues.map {
+            ClueCellData(imageURL: $0.image, content: $0.content)
+        }
+        self.clueCount.accept(clues.count)
+        self.output.isLoading.accept(false)
+    }
+    
     private func fetchCluesData(day: Date) {
         let userId = AuthSession.currentAppUserId
-        
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: day)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(

@@ -6,73 +6,80 @@
 //
 
 import NMapsMap
+import FirebaseFirestore
 
 final class ClueMarkerRenderer {
-
+    
     private weak var mapView: NMFMapView?
-    private var markers: [NMFMarker] = []
-
+    private var clusterer: NMCClusterer<ClueClusterKey>?
+    
     var onTapMarker: ((ClueModel) -> Void)?
-
+    var onTapCluster: (([ClueModel]) -> ())?
+    
     init(mapView: NMFMapView) {
         self.mapView = mapView
+        
+        self.setupClusterer()
     }
-
-    func render(clues: [ClueModel]) {
-        guard let mapView else { return }
-        let id = FirestoreManager.shared.userId
-
-        clear()
-
-        for clue in clues {
-            let marker = NMFMarker()
-            marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
-            marker.userInfo = ["clue": clue]
-            marker.iconImage = clue.userID == id
-            ? NMFOverlayImage(name: "communityGreen") // TODO: **반드시 변경할 것!!!!**
-            : NMFOverlayImage(name: "clueMark")
-            marker.width = 60
-            marker.height = 60
-            marker.mapView = mapView
+    
+    // MARK: - Clusterer
+    func setupClusterer() {
+        let builder = NMCComplexBuilder<ClueClusterKey>()
+        
+        builder.tagMergeStrategy = ClueTagMergeStrategy()
+        
+        // 개별 마커 updater
+        let leafUpdater = ClueLeafMarkerUpdater()
+        leafUpdater.onTap = { [weak self] clue in
+            self?.onTapMarker?(clue)
+        }
+        
+        // 클러스터 마커 updater
+        let clusterUpdater = ClueClusterMarkerUpdater()
+        clusterUpdater.onTap = { [weak self] clues in
+            self?.onTapCluster?(clues)
+        }
+        
+        builder.leafMarkerUpdater = leafUpdater
+        builder.clusterMarkerUpdater = clusterUpdater
+        
+        let clusterer = builder.build()
+        clusterer.mapView = mapView
+        
+        self.clusterer = clusterer
+    }
+    
+    func updateClusters(items: [ClueModel]) {
+        guard let clusterer else { return }
+        
+        let items = items.map {
+            guard let id = $0.documentId else { return ClueMapItem(id: UUID().uuidString, model: $0) }
             
-            marker.touchHandler = { [weak self] overlay in
-                guard
-                    let marker = overlay as? NMFMarker,
-                    let clue = marker.userInfo["clue"] as? ClueModel
-                else { return false }
-
-                self?.onTapMarker?(clue)
-                return true
+            return ClueMapItem(
+                id: id,
+                model: $0
+            )
+        }
+        
+        clusterer.clear()
+        
+        let keyTagMap: [AnyHashable: NSObject] = Dictionary(
+            uniqueKeysWithValues: items.map { item in
+                let key = ClueClusterKey(
+                    identifier: item.id,
+                    position: NMGLatLng(
+                        lat: item.model.latitude,
+                        lng: item.model.longitude
+                    )
+                )
+                
+                let tag = ClueLeafTag(clue: item.model)
+                
+                return (AnyHashable(key), tag)
             }
-
-            markers.append(marker)
-        }
-    }
-
-    func clear() {
-        markers.forEach { $0.mapView = nil }
-        markers.removeAll()
-    }
-
-    func addTemporaryMarker(
-        latitude: Double,
-        longitude: Double,
-        onTap: @escaping () -> Void
-    ) {
-        guard let mapView else { return }
-
-        let marker = NMFMarker()
-        marker.position = NMGLatLng(lat: latitude, lng: longitude)
-        marker.iconImage = NMFOverlayImage(name: "communityGreen")
-        marker.width = 60
-        marker.height = 60
-        marker.mapView = mapView
-
-        marker.touchHandler = { _ in
-            onTap()
-            return true
-        }
-
-        markers.append(marker)
+        )
+        
+        clusterer.addAll(keyTagMap)
     }
 }
+

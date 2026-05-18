@@ -9,6 +9,8 @@ import Foundation
 import FirebaseFirestore
 
 struct ClueModel: Codable {
+    @DocumentID var documentId: String?
+    
     let userID: String
     let latitude: Double
     let longitude: Double
