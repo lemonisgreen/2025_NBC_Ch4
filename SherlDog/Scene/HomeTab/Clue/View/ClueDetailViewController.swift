@@ -15,6 +15,9 @@ final class ClueDetailViewController: UIViewController {
     
     private let viewModel: ClueDetailViewModel
     private let disposeBag = DisposeBag()
+    private let menuEvent = PublishRelay<PostMenuEvent>()
+    private let menuViewModel = PostMenuViewModel()
+    var onCluesChanged: (() -> Void)?
     
     private lazy var dataSource = self.setDataSource()
     
@@ -93,6 +96,18 @@ final class ClueDetailViewController: UIViewController {
     }
     
     private func bindViewModel() {
+        menuViewModel.handleMenuEvent(menuEvent.asObservable(), collection: .just(.clues))
+            .emit(onNext: { [weak self] event in
+                guard let self else { return }
+                if case .error = event {
+                    self.showError("요청을 처리하지 못했습니다. 다시 시도해주세요.")
+                    return
+                }
+                self.viewModel.applyMenuResult(event)
+                self.onCluesChanged?()
+            })
+            .disposed(by: disposeBag)
+
         // 로딩 상태 바인딩
         viewModel.output.isLoading
             .asDriver(onErrorJustReturn: false)
@@ -116,6 +131,7 @@ final class ClueDetailViewController: UIViewController {
                 self.collectionView.isHidden = isEmpty
                 self.pageControl.isHidden = isEmpty
                 self.pageControl.numberOfPages = count
+                self.pageControl.currentPage = min(self.pageControl.currentPage, max(0, count - 1))
             })
             .disposed(by: disposeBag)
         
@@ -138,29 +154,63 @@ final class ClueDetailViewController: UIViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] message in
                 self?.loadingIndicator.isHidden = true
+                self?.showError(message)
             })
             .disposed(by: disposeBag)
     }
     
     private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<ClueDetailViewModel.ClueDataSource> {
         return RxCollectionViewSectionedReloadDataSource<ClueDetailViewModel.ClueDataSource>(
-            configureCell: { dataSource, collectionView, indexPath, item  in
+            configureCell: { [weak self] dataSource, collectionView, indexPath, item  in
                 guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ClueDetailCell.identifier, for: indexPath) as? ClueDetailCell else { return .init() }
                 
                 cell.settingCell(imageURL: item.imageURL, content: item.content)
+                cell.settingHeaderView(data: item.header)
+                if let self {
+                    cell.settingMenu(menu: PostMenuManager.shared.makeMenu(
+                        clue: item.clue, viewController: self,
+                        onEdit: { [weak self] in self?.editClue(item.clue) },
+                        onEvent: { [weak self] event in
+                            guard let self else { return }
+                            // 신고 화면에서 저장을 완료한 이벤트는 중복 저장하지 않는다.
+                            if case .report = event {
+                                self.viewModel.applyMenuResult(event)
+                            } else {
+                                self.menuEvent.accept(event)
+                            }
+                        }
+                    ))
+                }
                 
                 return cell
             }
         )
     }
     
+    private func editClue(_ clue: ClueModel) {
+        let editor = ClueInputViewController(data: clue)
+        editor.onClueUpdated = { [weak self] updated in
+            self?.viewModel.updateClue(updated)
+            self?.onCluesChanged?()
+        }
+        editor.modalPresentationStyle = .pageSheet
+        editor.sheetPresentationController?.detents = [.large()]
+        present(editor, animated: true)
+    }
+
+    private func showError(_ message: String) {
+        let alert = UIAlertController(title: "알림", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "확인", style: .default))
+        present(alert, animated: true)
+    }
+
     private func collectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { _, _ in
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                heightDimension: .fractionalHeight(1)))
+                                                                heightDimension: .estimated(400)))
             
             let group = NSCollectionLayoutGroup.horizontal(layoutSize: .init(widthDimension: .fractionalWidth(1),
-                                                                             heightDimension: .estimated(600)),
+                                                                             heightDimension: .estimated(400)),
                                                            subitems: [item])
             
             let section = NSCollectionLayoutSection(group: group)

@@ -12,8 +12,38 @@ import RxCocoa
 import CoreLocation
 import FirebaseAuth
 import FirebaseFirestore
+import Kingfisher
 
 class ClueInputViewController: UIViewController {
+
+    enum EditMode {
+        case new
+        case fix
+
+        var title: String {
+            switch self {
+            case .new: "단서 남기기"
+            case .fix: "단서 수정하기"
+            }
+        }
+
+        var buttonTitle: String {
+            switch self {
+            case .new: "단서 등록하기"
+            case .fix: "수정 완료하기"
+            }
+        }
+
+        var alertMessage: String {
+            switch self {
+            case .new: "단서가 등록되었습니다!"
+            case .fix: "수정이 완료되었습니다!"
+            }
+        }
+    }
+
+    private let editMode: EditMode
+
     private let clueLabel = UILabel()
     private let cancelButton = UIButton()
     private let imageView = UIImageView()
@@ -25,14 +55,28 @@ class ClueInputViewController: UIViewController {
     
     private let isLoading = BehaviorRelay<Bool>(value: false)
     
-    private let cameraViewModel: CameraViewModel
+    private let cameraViewModel: CameraViewModel?
     private let disposeBag = DisposeBag()
     
-    private let markerLocation: CLLocationCoordinate2D
+    private let markerLocation: CLLocationCoordinate2D?
+
+    private let currentClue: ClueModel?
+    var onClueUpdated: ((ClueModel) -> Void)?
     
     init(viewModel: CameraViewModel, location: CLLocationCoordinate2D) {
+        self.editMode = .new
         self.cameraViewModel = viewModel
         self.markerLocation = location  // 마커 위치 저장
+        self.currentClue = nil
+
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    init(data: ClueModel) {
+        self.editMode = .fix
+        self.cameraViewModel = nil
+        self.markerLocation = nil
+        self.currentClue = data
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -48,6 +92,10 @@ class ClueInputViewController: UIViewController {
         setupUI()
         setupConstraints()
         bindRegisterAction()
+        if let currentClue {
+            textView.text = currentClue.content
+            imageView.kf.setImage(with: URL(string: currentClue.image), placeholder: UIImage.emptyClueDog)
+        }
         bindTextView()
         bind()
     }
@@ -55,7 +103,7 @@ class ClueInputViewController: UIViewController {
     private func setupUI() {
         view.backgroundColor = .keycolorTertiaryBG
         
-        clueLabel.text = "단서 남기기"
+        clueLabel.text = self.editMode.title
         clueLabel.font = .highlight3
         clueLabel.textColor = .textPrimary
         
@@ -89,7 +137,9 @@ class ClueInputViewController: UIViewController {
         textView.delegate = self
         textView.returnKeyType = .done
         
-        registerButton.setTitle("단서 등록하기", for: .normal)
+        let registerButtonTitle = self.editMode.buttonTitle
+
+        registerButton.setTitle(registerButtonTitle, for: .normal)
         registerButton.setTitleColor(.textInverse, for: .normal)
         registerButton.titleLabel?.font = .highlight4
         registerButton.backgroundColor = .keycolorPrimary3
@@ -152,7 +202,8 @@ class ClueInputViewController: UIViewController {
         cancelButton.rx.tap
             .bind(onNext: { [weak self] in
                 self?.dismiss(animated: true) {
-                    self?.cameraViewModel.input.accept(.dismiss)
+                    guard let cameraViewModel = self?.cameraViewModel else { return }
+                    cameraViewModel.input.accept(.dismiss)
                 }
             })
             .disposed(by: disposeBag)
@@ -175,31 +226,98 @@ class ClueInputViewController: UIViewController {
     }
     
     private func bind() {
-        cameraViewModel.output.capturedImage
-            .bind(to: self.imageView.rx.image)
-            .disposed(by: disposeBag)
-        
         self.isLoading
             .asDriver(onErrorJustReturn: false)
             .map { !$0 }
             .drive(self.loadingIndicator.rx.isHidden)
             .disposed(by: disposeBag)
+
+        guard let cameraViewModel else { return }
+
+        cameraViewModel.output.capturedImage
+            .bind(to: self.imageView.rx.image)
+            .disposed(by: disposeBag)
     }
     
     // 단서저장
     private func saveClue() {
-        guard let image = imageView.image,
-              let text = textView.text, !text.isEmpty,
+        guard let text = textView.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty,
               let userId = AuthSession.currentAppUserId else {
             showSimpleAlert("이미지와 텍스트를 확인해주세요.")
             return
         }
         
+        if editMode == .new && imageView.image == nil {
+            showSimpleAlert("이미지를 확인해주세요.")
+            return
+        }
+        if editMode == .fix {
+            guard let currentClue, currentClue.userID == userId,
+                  let id = currentClue.documentId, !id.isEmpty else {
+                showSimpleAlert("수정할 단서 정보를 확인해주세요.")
+                return
+            }
+        }
         self.isLoading.accept(true)
-        
+        isModalInPresentation = true
+        cancelButton.isEnabled = false
         registerButton.isEnabled = false
         registerButton.setTitle("저장 중...", for: .normal)
         
+        switch editMode {
+        case .new:
+            guard let image = imageView.image else { return }
+            self.saveToFirebase(
+                userId: userId,
+                image: image,
+                text: text
+            )
+
+        case .fix:
+            self.editClue(updatedText: text)
+        }
+    }
+
+    private func editClue(updatedText: String) {
+        guard let currentClue,
+              let documentId = currentClue.documentId else { return }
+
+        var updatedClue = ClueModel(
+            userID: currentClue.userID,
+            latitude: currentClue.latitude,
+            longitude: currentClue.longitude,
+            content: updatedText,
+            image: currentClue.image,
+            date: currentClue.date
+        )
+
+        updatedClue.documentId = documentId
+        let savedClue = updatedClue
+
+        FirestoreManager.shared.updateDocument(
+            collection: .clues,
+            documentId: documentId,
+            data: updatedClue
+        )
+        .subscribe(
+            onCompleted: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.onClueUpdated?(savedClue)
+                    self?.showSuccessAndClose()
+                }
+            },
+            onError: { [weak self] error in
+                DispatchQueue.main.async {
+                    self?.isLoading.accept(false)
+                    self?.showSimpleAlert("저장 실패: \(error.localizedDescription)")
+                    self?.resetButton()
+                }
+            }
+        )
+        .disposed(by: disposeBag)
+    }
+
+    private func saveToFirebase(userId: String, image: UIImage, text: String) {
         FirebaseImageManager.shared.uploadImage(image, type: .clue) { [weak self] result in
             switch result {
             case .success(let imageUrl):
@@ -213,6 +331,8 @@ class ClueInputViewController: UIViewController {
     }
     
     private func saveToFirestore(userId: String, text: String, imageUrl: String) {
+        guard let markerLocation else { return }
+
         let clue = ClueModel(
             userID: userId,
             latitude: markerLocation.latitude,
@@ -241,17 +361,27 @@ class ClueInputViewController: UIViewController {
     }
     
     private func resetButton() {
+        let registerButtonTitle = self.editMode.buttonTitle
+
+        isModalInPresentation = false
+        cancelButton.isEnabled = true
         registerButton.isEnabled = true
-        registerButton.setTitle("단서 등록하기", for: .normal)
+        registerButton.setTitle(registerButtonTitle, for: .normal)
     }
     
     private func showSuccessAndClose() {
         self.isLoading.accept(false)
         
-        let alert = UIAlertController(title: "성공", message: "단서가 등록되었습니다!", preferredStyle: .alert)
+        let alertMessage = self.editMode.alertMessage
+
+        let alert = UIAlertController(title: "성공", message: alertMessage, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "확인", style: .default) { [weak self] _ in
-            guard let self = self,
-                  let mainView = self.view.window?.rootViewController else { return }
+            guard let self else { return }
+            if self.editMode == .fix {
+                self.dismiss(animated: true)
+                return
+            }
+            guard let mainView = self.view.window?.rootViewController else { return }
             mainView.dismiss(animated: true)
         })
         present(alert, animated: true)

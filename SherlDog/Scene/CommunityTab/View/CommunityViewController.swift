@@ -10,16 +10,6 @@ import RxSwift
 import RxCocoa
 import SnapKit
 import RxDataSources
-import FirebaseAuth
-
-// 셀 메뉴 버튼 타입
-enum PostMenuEvent {
-    case fix
-    case delete(String)
-    case report(String)
-    case block(String)
-    case error
-}
 
 // MARK: - CommunityViewController
 final class CommunityViewController: UIViewController {
@@ -117,134 +107,8 @@ extension CommunityViewController {
     }
 }
 
-// MARK: - Cell Menu Button Setting
+// MARK: - Menu Completion Alert
 extension CommunityViewController {
-    private func isWriter(_ postUserId: String) -> Bool {
-        guard let currentUserId = AuthSession.currentAppUserId else { return false }
-        return postUserId == currentUserId
-    }
-    
-    private func myPostMenu(post: CommunityModel) -> UIMenu {
-        let fixAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                               SDLiteral.CommunityView.fix)) { [weak self] action in
-            let category: CommunitySectionType = {
-                self?.segmentedControl.selectedSegmentIndex == 0 ? .invLogBoard : .detectiveMateBoard
-            }()
-            
-            let editView = AddNewContentViewController(category: category, post: post)
-            editView.hidesBottomBarWhenPushed = true
-            self?.navigationController?.pushViewController(editView, animated: true)
-        }
-        
-        let deleteAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                  SDLiteral.CommunityView.delete)) { [weak self] _ in
-            self?.showMenuAlert(type: .delete(post.documentId))
-        }
-        
-        return UIMenu(children: [fixAction, deleteAction])
-    }
-    
-    private func otherPostMenu(post: CommunityModel) -> UIMenu {
-        let blockAction = UIAction(title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                                                 SDLiteral.CommunityView.block)) { [weak self] _ in
-            self?.showMenuAlert(type: .block(post.userId))
-        }
-        
-        let reportAction = UIAction(
-            title: String(format: SDLiteral.CommunityView.menuButtonTitle,
-                          SDLiteral.CommunityView.report)
-        ) { [weak self] _ in
-            guard let self else { return }
-            
-            self.showMenuAlert(type: .report(post.documentId)) { [weak self] in
-                self?.presentReportForPost(post)
-            }
-        }
-        
-        return UIMenu(children: [blockAction, reportAction])
-    }
-    
-    func presentReportForPost(_ post: CommunityModel) {
-        let category: CommunitySectionType = .invLogBoard
-        let reportVC = ReportViewController(
-            target: .post(collection: category.toFirestoreCollection,
-                          documentId: post.documentId,
-                          postUserId: post.userId)
-        )
-        
-        reportVC.onReportCompleted = { [weak self] in
-                self?.blockMessageAfterReport(userId: post.userId)
-            }
-        reportVC.modalPresentationStyle = .pageSheet
-        reportVC.isModalInPresentation = true
-        
-        if let sheet = reportVC.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.prefersGrabberVisible = false
-            sheet.preferredCornerRadius = 20
-        }
-        present(reportVC, animated: true)
-    }
-    
-    private func showMenuAlert(type: PostMenuEvent, completion: (() -> ())? = nil) {
-        switch type {
-        case .fix, .error:
-            return
-        default:
-            break
-        }
-        
-        var title: String {
-            switch type {
-            case .fix: return    SDLiteral.CommunityView.fix
-            case .delete: return SDLiteral.CommunityView.delete
-            case .report: return SDLiteral.CommunityView.report
-            case .block: return  SDLiteral.CommunityView.block
-            case .error: return  SDLiteral.CommunityView.error
-            }
-        }
-        
-        let alert = CustomAlertViewController(
-            message: String(format: SDLiteral.CommunityView.menuAlertMessage, title),
-            buttons: [
-                CustomAlertViewController.AlertButton(
-                    title: SDLiteral.AlertMessage.cancel,
-                    action: nil
-                ),
-                CustomAlertViewController.AlertButton(
-                    title: title,
-                    action: { [weak self] in
-                        self?.menuEvent.accept(type)
-                        completion?()
-                    }
-                )
-            ]
-        )
-        
-        self.present(alert, animated: true)
-    }
-    
-    private func blockMessageAfterReport(userId: String) {
-        let alert = CustomAlertViewController(
-            message: String(format: SDLiteral.CommunityView.completeAlert,
-                            SDLiteral.CommunityView.report),
-            subMessage: SDLiteral.CommunityView.blockMessageAfterReport,
-            buttons: [
-                CustomAlertViewController.AlertButton(
-                    title: SDLiteral.AlertMessage.cancel,
-                    action: nil),
-                CustomAlertViewController.AlertButton(
-                    title: SDLiteral.CommunityView.block,
-                    action: { [weak self] in
-                        self?.menuEvent.accept(.block(userId))
-                    }
-                )
-            ]
-        )
-        
-        self.present(alert, animated: true)
-    }
-    
     private func completeAlert(type: PostMenuEvent) {
         switch type {
         case .fix, .error:
@@ -326,10 +190,23 @@ extension CommunityViewController {
                     ) as? PostHeaderView else { return .init() }
                     
                     header.settingCell(data: sectionModel)
+
+                    let category: CommunitySectionType = {
+                        let index = self.segmentedControl.selectedSegmentIndex
+
+                        return CommunitySectionType.allCases.indices.contains(index)
+                        ? CommunitySectionType.allCases[index]
+                        : .invLogBoard
+                    }()
+
                     header.settingMenu(
-                        menu: self.isWriter(sectionModel.userId)
-                        ? self.myPostMenu(post: sectionModel)
-                        : self.otherPostMenu(post: sectionModel)
+                        menu: PostMenuManager.shared.makeMenu(
+                            post: sectionModel,
+                            category: category,
+                            viewController: self
+                        ) { [weak self] event in
+                            self?.menuEvent.accept(event)
+                        }
                     )
                     
                     header.rx.profileTap

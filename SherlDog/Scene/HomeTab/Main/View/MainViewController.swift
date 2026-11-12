@@ -119,6 +119,10 @@ private extension MainViewController {
             guard let self else { return }
             let vm = ClueDetailViewModel(clue: clue)
             let detailVC = ClueDetailViewController(viewModel: vm)
+            detailVC.onCluesChanged = { [weak self] in
+                guard let self else { return }
+                self.viewModel.input.mapBounds.accept(self.mapView.contentBounds)
+            }
             detailVC.modalPresentationStyle = .pageSheet
             detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
             self.present(detailVC, animated: true)
@@ -127,6 +131,10 @@ private extension MainViewController {
             guard let self else { return }
             let vm = ClueDetailViewModel(clues: clues)
             let detailVC = ClueDetailViewController(viewModel: vm)
+            detailVC.onCluesChanged = { [weak self] in
+                guard let self else { return }
+                self.viewModel.input.mapBounds.accept(self.mapView.contentBounds)
+            }
             detailVC.modalPresentationStyle = .pageSheet
             detailVC.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
             self.present(detailVC, animated: true)

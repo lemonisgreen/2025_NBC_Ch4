@@ -59,6 +59,7 @@ final class CommunityViewModel {
     typealias CommunitySection = SectionModel<CommunityModel, String>
     
     private let disposeBag = DisposeBag()
+    private let postMenuViewModel = PostMenuViewModel()
     
     // MARK: - Transform
     func transform(_ input: Input) -> Output {
@@ -66,7 +67,7 @@ final class CommunityViewModel {
         let selectedCategory = makeSelectedCategory(from: input.segmentIndexChanged)
         
         // Menu event
-        let menu = menuButtonEvent(input.menuEvent, category: selectedCategory)
+        let menu = postMenuViewModel.handleMenuEvent(input.menuEvent, category: selectedCategory)
         
         // 새로고침을 하는 상황
         let refreshTrigger = makeRefreshTrigger(trigger: [
@@ -218,53 +219,6 @@ private extension CommunityViewModel {
                 }
             }
             .asDriver(onErrorJustReturn: [:])
-    }
-}
-
-// MARK: - Menu Button Event
-private extension CommunityViewModel {
-    func menuButtonEvent(_ input: Observable<PostMenuEvent>,
-                         category: Observable<CommunitySectionType>) -> Signal<PostMenuEvent> {
-        input
-            .withLatestFrom(category) { ($0, $1) }
-            .flatMapLatest { (menu, category) -> Observable<PostMenuEvent> in
-                let collection = category.toFirestoreCollection
-                
-                switch menu {
-                case .fix:
-                    return .just(.fix)
-                    
-                case .delete(let documentId):
-                    return FirestoreManager.shared.deleteDocument(
-                        collection: collection,
-                        documentId: documentId
-                    )
-                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .andThen(.just(.delete(documentId)))
-                    .catchAndReturn(.error)
-                    
-                case .report(let documentId):
-                    let reportData = BlockModel(collection: category.toFirestoreCollection.rawValue,
-                                                 documentId: documentId)
-                    
-                    return FirestoreManager.shared.createDocument(collection: .blockLog,
-                                                                  data: reportData,
-                                                                  documentId: documentId)
-                    .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                    .andThen(.just(.report(documentId)))
-                    .catchAndReturn(.error)
-                    
-                case .block(let postUserId):
-                    return BlockManager.shared.blockUser(postUserId)
-                        .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
-                        .andThen(.just(.block(postUserId)))
-                        .catchAndReturn(.error)
-                    
-                case .error:
-                    return .just(.error)
-                }
-            }
-            .asSignal(onErrorJustReturn: .error)
     }
 }
 

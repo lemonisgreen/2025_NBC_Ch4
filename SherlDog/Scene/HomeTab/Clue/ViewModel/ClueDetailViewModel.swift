@@ -21,8 +21,15 @@ final class ClueDetailViewModel {
     let clueCount = BehaviorRelay<Int>(value: 0)
     
     struct ClueCellData {
-        let imageURL: String
-        let content: String
+        var clue: ClueModel
+        let profile: HumanProfileModel?
+        var imageURL: String { clue.image }
+        var content: String { clue.content }
+        var header: PostHeaderModel {
+            PostHeaderModel(profileImage: profile?.image ?? "",
+                            name: profile?.nickname ?? SDLiteral.CommunityView.unknownUser,
+                            petProfile: [], postDate: clue.date)
+        }
     }
     
     // MARK: - Inputs
@@ -40,6 +47,7 @@ final class ClueDetailViewModel {
     typealias ClueDataSource = SectionModel<String, ClueCellData>
     private var data = [ClueCellData]() {
         didSet {
+            self.clueCount.accept(data.count)
             self.output.cellData.accept([ClueDataSource(model: "", items: self.data)])
         }
     }
@@ -69,19 +77,53 @@ final class ClueDetailViewModel {
         fetchCluesData(day: day)
     }
     
-    private func updateUI(with clue: ClueModel) {
-        data.append(ClueCellData(imageURL: clue.image, content: clue.content))
-        self.output.isLoading.accept(false)
-    }
-    
-    private func updateCluster(with clues: [ClueModel]) {
-        self.data = clues.map {
-            ClueCellData(imageURL: $0.image, content: $0.content)
+    func applyMenuResult(_ event: PostMenuEvent) {
+        switch event {
+        case .delete(let id), .report(let id):
+            data.removeAll { $0.clue.documentId == id }
+        case .block(let userId):
+            data.removeAll { $0.clue.userID == userId }
+        case .fix, .error:
+            break
         }
-        self.clueCount.accept(clues.count)
-        self.output.isLoading.accept(false)
     }
-    
+
+    func updateClue(_ clue: ClueModel) {
+        guard let id = clue.documentId,
+              let index = data.firstIndex(where: { $0.clue.documentId == id }) else { return }
+        data[index].clue = clue
+    }
+
+    private func updateUI(with clue: ClueModel) {
+        updateCluster(with: [clue])
+    }
+
+    private func updateCluster(with clues: [ClueModel]) {
+        guard !clues.isEmpty else {
+            data = []
+            output.isLoading.accept(false)
+            return
+        }
+        let profiles = Set(clues.map(\.userID)).map { userId in
+            FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
+                collection: .humanProfile, type: .document(id: userId)
+            ))
+            .map { (userId, $0.first) }
+            .catchAndReturn((userId, nil))
+        }
+        Single.zip(profiles)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] profiles in
+                let byId = Dictionary(uniqueKeysWithValues: profiles)
+                self?.data = clues.map { ClueCellData(clue: $0, profile: byId[$0.userID] ?? nil) }
+                self?.output.isLoading.accept(false)
+            }, onFailure: { [weak self] error in
+                self?.output.isLoading.accept(false)
+                self?.output.errorMessage.accept(error.localizedDescription)
+            })
+            .disposed(by: disposeBag)
+    }
+
     private func fetchCluesData(day: Date) {
         let userId = AuthSession.currentAppUserId
         
@@ -102,18 +144,12 @@ final class ClueDetailViewModel {
             }
         }
         .subscribe(on: ConcurrentDispatchQueueScheduler(qos: .background))
+        .observe(on: MainScheduler.instance)
         .subscribe(
             onSuccess: { [weak self] clues in
                 guard let self else { return }
                 
-                self.data = clues.map {
-                    ClueCellData(
-                        imageURL: $0.image,
-                        content: $0.content
-                    )
-                }
-                self.clueCount.accept(clues.count)
-                self.output.isLoading.accept(false)
+                self.updateCluster(with: clues)
             },
             onFailure: { [weak self] error in
                 self?.output.isLoading.accept(false)

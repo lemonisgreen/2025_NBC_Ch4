@@ -115,7 +115,7 @@ final class MainViewModel {
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
                 collection: .clues,
-                type: .clue(before: 365, // 몇일 전까지의 데이터를 불러올 것인지
+                type: .clue(before: 365, // TODO: **몇일 전까지의 데이터를 불러올 것인지**
                             bounds: (
                                 s: bounds.southWestLat,
                                 w: bounds.southWestLng,
@@ -125,6 +125,11 @@ final class MainViewModel {
                            )
             )
         )
+        .flatMap { clues in
+            BlockManager.shared.fetchBlockedUserIds()
+                .map { blocked in clues.filter { !blocked.contains($0.userID) } }
+        }
+        .observe(on: MainScheduler.instance)
         .subscribe(
             onSuccess: { [weak self] clues in
                 self?.clues.accept(clues)

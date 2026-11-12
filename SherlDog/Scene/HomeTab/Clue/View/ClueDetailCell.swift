@@ -15,6 +15,7 @@ class ClueDetailCell: UICollectionViewCell {
     private let clueImageView = UIImageView()
     private let registImageStamp = UIImageView()
     private let clipNoteBackgroundImageView = UIImageView()
+    private let headerContentView = PostHeaderContentView()
     private let clueTextView = UITextView()
     
     override init(frame: CGRect) {
@@ -28,6 +29,15 @@ class ClueDetailCell: UICollectionViewCell {
         fatalError("init(coder:) has not been implemented")
     }
     
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        clueImageView.kf.cancelDownloadTask()
+        clueImageView.image = nil
+        headerContentView.prepareForReuse()
+        headerContentView.configButton.menu = nil
+        clueTextView.text = nil
+    }
+
     func settingCell(imageURL: String, content: String) {
         if let url = URL(string: imageURL) {
             let processor = DownsamplingImageProcessor(size: self.clueImageView.bounds.size) // 크기 지정 다운 샘플링
@@ -46,6 +56,14 @@ class ClueDetailCell: UICollectionViewCell {
         clueTextView.text = content
     }
     
+    func settingHeaderView(data: PostHeaderModel) {
+        headerContentView.configure(data: data)
+    }
+
+    func settingMenu(menu: UIMenu) {
+        headerContentView.settingMenu(menu: menu)
+    }
+
     private func setupUI() {
         contentView.backgroundColor = .white
         
@@ -57,7 +75,8 @@ class ClueDetailCell: UICollectionViewCell {
         contentView.addSubviews([
             polaroidBackgroundImageView,
             clipNoteBackgroundImageView,
-            clueTextView
+            clueTextView,
+            headerContentView
         ])
         
         polaroidBackgroundImageView.image = UIImage(named: "bigPolaroidSet")
@@ -71,7 +90,7 @@ class ClueDetailCell: UICollectionViewCell {
         clueImageView.layer.cornerRadius = 4
 
         clipNoteBackgroundImageView.image = UIImage(named: "clipSet")
-        clipNoteBackgroundImageView.contentMode = .scaleAspectFill
+        clipNoteBackgroundImageView.contentMode = .scaleToFill
 
         clueTextView.textColor = .black
         clueTextView.backgroundColor = .clear
@@ -90,7 +109,7 @@ class ClueDetailCell: UICollectionViewCell {
 
     private func configureUI() {
         polaroidBackgroundImageView.snp.makeConstraints {
-            $0.top.equalToSuperview().inset(28)
+            $0.top.equalToSuperview().inset(24)
             $0.leading.trailing.equalToSuperview().inset(36)
         }
         
@@ -100,22 +119,28 @@ class ClueDetailCell: UICollectionViewCell {
             $0.height.equalTo(clueImageView.snp.width).multipliedBy(1.1).priority(.required)
         }
         
-        clipNoteBackgroundImageView.snp.makeConstraints {
-            $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(36)
-            $0.leading.trailing.equalToSuperview().inset(14)
-            $0.bottom.equalToSuperview().inset(24)
-        }
-        
-        clueTextView.snp.makeConstraints {
-            $0.leading.trailing.equalToSuperview().inset(38)
-            $0.top.equalTo(clipNoteBackgroundImageView).inset(16)
-            $0.bottom.equalTo(clipNoteBackgroundImageView).inset(16)
-        }
-        
         registImageStamp.snp.makeConstraints {
             $0.width.height.equalTo(48)
             $0.trailing.equalTo(clueImageView.snp.trailing).offset(12)
             $0.bottom.equalTo(clueImageView.snp.bottom).offset(12)
         }
+
+        headerContentView.snp.makeConstraints {
+            $0.top.equalTo(polaroidBackgroundImageView.snp.bottom).offset(4)
+            $0.leading.trailing.equalToSuperview().inset(24)
+        }
+
+        clipNoteBackgroundImageView.snp.makeConstraints {
+            $0.top.equalTo(headerContentView.snp.bottom).offset(-16)
+            $0.leading.trailing.equalToSuperview().inset(14)
+            $0.bottom.equalToSuperview().inset(8)
+        }
+        
+        clueTextView.snp.makeConstraints {
+            $0.leading.trailing.equalToSuperview().inset(38)
+            $0.top.equalTo(clipNoteBackgroundImageView).inset(32)
+            $0.bottom.equalTo(clipNoteBackgroundImageView).inset(32)
+        }
+        
     }
 }

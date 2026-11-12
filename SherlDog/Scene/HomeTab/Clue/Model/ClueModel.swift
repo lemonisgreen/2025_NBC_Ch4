@@ -19,6 +19,7 @@ struct ClueModel: Codable {
     let date: Timestamp
     
     enum CodingKeys: String, CodingKey {
+        case documentId
         case userID
         case latitude
         case longitude
