@@ -104,6 +104,11 @@ final class ClueDetailViewModel {
             output.isLoading.accept(false)
             return
         }
+        
+        let clues = clues.sorted {
+            $0.date.dateValue() > $1.date.dateValue()
+        }
+        
         let profiles = Set(clues.map(\.userID)).map { userId in
             FirestoreManager.shared.fetchQuery(FirestoreQuery<HumanProfileModel>(
                 collection: .humanProfile, type: .document(id: userId)

@@ -13,6 +13,9 @@ import FirebaseAuth
 
 final class MainViewModel {
     
+    // MARK: - Set Data
+    private let clueDateRange: Int = 365 // 며칠 전 단서까지 불러올지
+    
     // MARK: - Input / Output
     struct Input {
         let startTracking: PublishRelay<Void>
@@ -115,7 +118,7 @@ final class MainViewModel {
         FirestoreManager.shared.fetchQuery(
             FirestoreQuery<ClueModel>(
                 collection: .clues,
-                type: .clue(before: 365, // TODO: **몇일 전까지의 데이터를 불러올 것인지**
+                type: .clue(before: clueDateRange,
                             bounds: (
                                 s: bounds.southWestLat,
                                 w: bounds.southWestLng,
