@@ -1,5 +1,5 @@
 //
-//  InvLogListCell.swift
+//  ArchiveCell.swift
 //  SherlDog
 //
 //  Created by 최규현 on 6/25/25.
@@ -10,8 +10,8 @@ import RxSwift
 import RxCocoa
 import Kingfisher
 
-class InvLogListCell: UICollectionViewCell {
-    static let identifier: String = "InvLogListCell"
+class ArchiveCell: UICollectionViewCell {
+    static let identifier: String = "ArchiveCell"
     
     var disposeBag = DisposeBag()
     private let tap = UITapGestureRecognizer()
@@ -74,17 +74,28 @@ class InvLogListCell: UICollectionViewCell {
     }
 }
 
-extension InvLogListCell {
+extension ArchiveCell {
     
     func settingCell(data: WalkResultToList) {
         self.dateLabel.text = data.date
-        self.caseNumberLabel.text = String(format: SDLiteral.InvLogListView.caseNumber, data.caseNumber)
-        self.infoLabel.text = String(format: SDLiteral.InvLogListView.infoLabel,
+        self.caseNumberLabel.text = String(format: SDLiteral.ArchiveView.InvLog.caseNumber, data.caseNumber)
+        self.infoLabel.text = String(format: SDLiteral.ArchiveView.InvLog.infoLabel,
                                      data.distance,
                                      data.duration,
                                      data.steps)
         
-        data.petProfile.forEach { profile in
+        showPetProfiles(data.petProfile)
+    }
+
+    func settingCell(data: ClueToList) {
+        dateLabel.text = data.date
+        caseNumberLabel.text = String(format: SDLiteral.ArchiveView.Clue.caseNumber, data.caseNumber)
+        infoLabel.text = data.clue.content
+        showPetProfiles(data.petProfile)
+    }
+
+    private func showPetProfiles(_ profiles: [PetProfile]) {
+        profiles.forEach { profile in
             let imageView = UIImageView()
             imageView.layer.cornerRadius = 18
             imageView.clipsToBounds = true
@@ -202,7 +213,7 @@ extension InvLogListCell {
     
 }
 
-extension InvLogListCell {
+extension ArchiveCell {
     fileprivate var cellTap: ControlEvent<Void> {
         ControlEvent(
             events: self.tap.rx.event
@@ -212,7 +223,7 @@ extension InvLogListCell {
     }
 }
 
-extension Reactive where Base: InvLogListCell {
+extension Reactive where Base: ArchiveCell {
     var cellTap: ControlEvent<Void> {
         base.cellTap
     }

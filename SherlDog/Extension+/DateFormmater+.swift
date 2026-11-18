@@ -32,6 +32,18 @@ extension DateFormatter {
         return formatter
     }()
     
+    static let mddDotyyyy: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M월 dd, yyyy"
+        return formatter
+    }()
+    
+    static let hm: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "H시간 m분"
+        return formatter
+    }()
+    
     static func todayStyle(_ date: Date) -> DateFormatter {
         let formatter = self.checkToday(date)
         ? self.setTodayStyle(date)

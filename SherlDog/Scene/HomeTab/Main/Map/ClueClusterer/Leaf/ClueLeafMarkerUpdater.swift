@@ -21,7 +21,7 @@ final class ClueLeafMarkerUpdater: NMCDefaultLeafMarkerUpdater {
         marker.position = NMGLatLng(lat: clue.latitude, lng: clue.longitude)
         marker.userInfo = ["clue": clue]
         marker.iconImage = clue.userID == id
-        ? .init(image: .communityGreen) // TODO: **반드시 변경할 것!!!!**
+        ? .init(image: .myClueMark)
         : .init(image: .clueMark)
         marker.width = 60
         marker.height = 60

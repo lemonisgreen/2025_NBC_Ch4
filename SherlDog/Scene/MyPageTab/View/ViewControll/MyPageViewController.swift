@@ -26,6 +26,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
     let assistantLabel = UILabel()
     let assistantButton = UIButton()
     let archiveButton = UIButton()
+    let clueArchiveButton = UIButton()
 //    let findMateButton = UIButton()
     let buttonStack = UIStackView()
     
@@ -72,6 +73,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             collectionView,
             pageControl,
             archiveButton,
+            clueArchiveButton,
 //            findMateButton,
             buttonStack,
             mypageSettingButton
@@ -125,6 +127,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.distribution = .fillEqually
         buttonStack.spacing = 0
         buttonStack.addArrangedSubview(archiveButton)
+        buttonStack.addArrangedSubview(clueArchiveButton)
 //        buttonStack.addArrangedSubview(findMateButton)
         
         archiveButton.setTitle(SDLiteral.MyPageViewController.archiveButtonTitle, for: .normal)
@@ -136,9 +139,22 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         archiveButton.contentHorizontalAlignment = .left
         archiveButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
         archiveButton.layer.cornerRadius = 12
-//        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
+        archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
         archiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
+        
+        clueArchiveButton.setTitle(SDLiteral.MyPageViewController.clueArchiveButtonTitle, for: .normal)
+        clueArchiveButton.titleLabel?.font = .body3
+        clueArchiveButton.setTitleColor(.textPrimary, for: .normal)
+        clueArchiveButton.setTitleColor(.textPrimary, for: .highlighted)
+        clueArchiveButton.backgroundColor = .gray100
+        clueArchiveButton.setImage(UIImage(named: SDLiteral.MyPageViewController.clueArchiveButtonImage), for: .normal)
+        clueArchiveButton.contentHorizontalAlignment = .left
+        clueArchiveButton.setContentInsets(.init(top: 16, leading: 16, bottom: 16, trailing: 16))
+        clueArchiveButton.layer.cornerRadius = 12
+        clueArchiveButton.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
+        clueArchiveButton.clipsToBounds = true
+        clueArchiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
         
 //        findMateButton.setTitle(SDLiteral.MyPageViewController.findMateButtonTitle, for: .normal)
 //        findMateButton.titleLabel?.font = .body3
@@ -197,7 +213,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         buttonStack.snp.makeConstraints {
             $0.top.equalTo(pageControl.snp.bottom).offset(20)
             $0.leading.trailing.equalToSuperview().inset(16)
-            $0.height.equalTo/*(120)*/(60)
+            $0.height.equalTo(120)
         }
     }
     
@@ -206,7 +222,17 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
             .bind(onNext: { [weak self] in
                 guard let self else { return }
                 
-                let archiveView = InvLogListViewController()
+                let archiveView = ArchiveViewController(archiveType: .invLog)
+                archiveView.hidesBottomBarWhenPushed = true
+                self.navigationController?.pushViewController(archiveView, animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        clueArchiveButton.rx.tap
+            .bind(onNext: { [weak self] in
+                guard let self else { return }
+                
+                let archiveView = ArchiveViewController(archiveType: .clue)
                 archiveView.hidesBottomBarWhenPushed = true
                 self.navigationController?.pushViewController(archiveView, animated: true)
             })

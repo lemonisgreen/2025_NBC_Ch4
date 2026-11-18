@@ -23,25 +23,15 @@ extension WalkResultToList {
         
         // MARK: result.date transform -
         formatter.dateFormat = "yyyy-MM-dd"
-        let date: String
         
-        if let sampleDate = formatter.date(from: result.date) {
-            formatter.dateFormat = "M월 dd, yyyy"
-            date = formatter.string(from: sampleDate)
-        } else {
-            date = ""
-        }
+        let sampleDate = formatter.date(from: result.date) ?? Date()
+        let date = DateFormatter.mddDotyyyy.string(from: sampleDate)
         
         // MARK: result.duration transform -
         formatter.dateFormat = "HH:mm:ss"
-        let duration: String
         
-        if let sampleDuration = formatter.date(from: result.duration) {
-            formatter.dateFormat = "H시간 m분"
-            duration = formatter.string(from: sampleDuration)
-        } else {
-            duration = ""
-        }
+        let sampleDuration = formatter.date(from: result.duration) ?? Date()
+        let duration = DateFormatter.hm.string(from: sampleDuration)
         
         // MARK: tranform -
         self.date = date

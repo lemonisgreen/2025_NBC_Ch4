@@ -1,5 +1,5 @@
 //
-//  InvLogListViewController.swift
+//  ArchiveViewController.swift
 //  SherlDog
 //
 //  Created by 최규현 on 6/25/25.
@@ -10,10 +10,10 @@ import RxSwift
 import RxCocoa
 import RxDataSources
 
-// MARK: - InvLogListViewController
-class InvLogListViewController: UIViewController {
+// MARK: - ArchiveViewController
+class ArchiveViewController: UIViewController {
     
-    private let viewModel = InvLogListViewModel()
+    private let viewModel: ArchiveViewModel
     private let disposeBag = DisposeBag()
     
     private lazy var dataSource = self.setDataSource()
@@ -26,10 +26,21 @@ class InvLogListViewController: UIViewController {
     private let navigationRightButtonStackView = UIStackView()
     private let separatorView = UIView()
     private lazy var collectionView = UICollectionView(frame: .zero, collectionViewLayout: configureCollectionViewLayout())
-    private let emptyView = EmptyInvLogView()
+    private let emptyView: EmptyInvLogView
     private let onboardingView = UIView()
     
     // MARK: - Lifecycle
+    init(archiveType: ArchiveType) {
+        self.viewModel = ArchiveViewModel(type: archiveType)
+        self.emptyView = EmptyInvLogView(frame: .init(), type: archiveType)
+        
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -48,7 +59,7 @@ class InvLogListViewController: UIViewController {
 }
 
 // MARK: - Method
-extension InvLogListViewController {
+extension ArchiveViewController {
     
     private func bind() {
         self.viewModel.output.cellData
@@ -70,6 +81,11 @@ extension InvLogListViewController {
         self.viewModel.output.isSelectMode
             .bind { [weak self] isSelectMode in
                 guard let self else { return }
+                if !isSelectMode {
+                    self.collectionView.indexPathsForSelectedItems?.forEach {
+                        self.collectionView.deselectItem(at: $0, animated: false)
+                    }
+                }
                 self.collectionView.allowsSelection = isSelectMode
                 self.collectionView.allowsMultipleSelection = isSelectMode
                 
@@ -107,7 +123,7 @@ extension InvLogListViewController {
         self.viewModel.output.deleteCompleted
             .bind(onNext: { [weak self] in
                 let alert = CustomAlertViewController(
-                    message: SDLiteral.InvLogListView.deleteComplete,
+                    message: SDLiteral.ArchiveView.deleteComplete,
                     buttons: [
                         CustomAlertViewController.AlertButton(
                             title: SDLiteral.AlertMessage.confirm,
@@ -122,6 +138,30 @@ extension InvLogListViewController {
             })
             .disposed(by: disposeBag)
         
+        viewModel.output.isDeleting
+            .bind { [weak self] isDeleting in
+                guard let self else { return }
+                self.collectionView.isUserInteractionEnabled = !isDeleting
+                self.cancelButton.isEnabled = !isDeleting
+                self.deleteButton.isEnabled = !isDeleting
+                if isDeleting {
+                    self.collectionView.indexPathsForSelectedItems?.forEach {
+                        self.collectionView.deselectItem(at: $0, animated: false)
+                    }
+                }
+            }
+            .disposed(by: disposeBag)
+
+        viewModel.output.deleteFailed
+            .bind { [weak self] message in
+                let alert = CustomAlertViewController(
+                    message: message,
+                    buttons: [.init(title: SDLiteral.AlertMessage.confirm, action: nil)]
+                )
+                self?.present(alert, animated: true)
+            }
+            .disposed(by: disposeBag)
+
         self.viewModel.output.needOnboarding
             .asDriver(onErrorJustReturn: false)
             .filter { $0 }
@@ -176,9 +216,32 @@ extension InvLogListViewController {
                 return indexPaths
             }
             .bind { [weak self] indexPaths in
+                guard let self else { return }
+                let deleteInput: ArchiveViewModel.Input
+                let message: String
+                let hasSelection: Bool
+                switch self.viewModel.type {
+                case .invLog:
+                    deleteInput = .deleteInvLogs(indexPaths)
+                    hasSelection = !indexPaths.isEmpty
+                    message = indexPaths.isEmpty
+                        ? SDLiteral.ArchiveView.requestDeleteWithoutList
+                        : SDLiteral.ArchiveView.requestDelete
+                case .clue:
+                    let clues = indexPaths.compactMap { indexPath -> ClueModel? in
+                        guard let item: ArchiveViewModel.CellData = try? self.collectionView.rx.model(at: indexPath),
+                              case .clue(let row) = item else { return nil }
+                        return row.clue
+                    }
+                    deleteInput = .deleteClues(clues)
+                    hasSelection = !clues.isEmpty && clues.count == indexPaths.count
+                    message = !hasSelection
+                        ? SDLiteral.ArchiveView.Clue.requestDeleteWithoutList
+                        : SDLiteral.ArchiveView.Clue.requestDelete
+                }
                 let buttons: [CustomAlertViewController.AlertButton]
-                
-                if indexPaths.count > 0 {
+
+                if hasSelection {
                     buttons = [
                         CustomAlertViewController.AlertButton(
                             title: SDLiteral.AlertMessage.cancel,
@@ -187,7 +250,7 @@ extension InvLogListViewController {
                         CustomAlertViewController.AlertButton(
                             title: SDLiteral.AlertMessage.confirm,
                             action: { [weak self] in
-                                self?.viewModel.input.accept(.delete(indexPaths))
+                                self?.viewModel.input.accept(deleteInput)
                             }
                         )
                     ]
@@ -201,13 +264,11 @@ extension InvLogListViewController {
                 }
                 
                 let alert = CustomAlertViewController(
-                    message: indexPaths.count > 0
-                    ? SDLiteral.InvLogListView.requestDelete
-                    : SDLiteral.InvLogListView.requestDeleteWithoutList,
+                    message: message,
                     buttons: buttons
                 )
                 
-                self?.present(alert, animated: true)
+                self.present(alert, animated: true)
             }
             .disposed(by: disposeBag)
     }
@@ -215,7 +276,7 @@ extension InvLogListViewController {
     private func showOnboardingView() {
         let onboardingImageView = UIImageView()
         
-        onboardingImageView.image = .invLogListOnboarding
+        onboardingImageView.image = .archiveOnboarding
         onboardingImageView.contentMode = .scaleAspectFit
         
         onboardingView.addSubview(onboardingImageView)
@@ -241,7 +302,7 @@ extension InvLogListViewController {
         navigationBackButton.setImage(UIImage(systemName: "chevron.backward"), for: .normal)
         navigationBackButton.imageView?.tintColor = .textPrimary
         
-        navigationTitleLabel.text = SDLiteral.InvLogListView.title
+        navigationTitleLabel.text = self.viewModel.type.title
         navigationTitleLabel.textAlignment = .left
         navigationTitleLabel.font = .highlight3
         navigationTitleLabel.textColor = .textPrimary
@@ -277,10 +338,10 @@ extension InvLogListViewController {
         separatorView.backgroundColor = .gray100
         
         collectionView.backgroundColor = .clear
-        collectionView.register(InvLogListCell.self, forCellWithReuseIdentifier: InvLogListCell.identifier)
+        collectionView.register(ArchiveCell.self, forCellWithReuseIdentifier: ArchiveCell.identifier)
         collectionView.allowsMultipleSelection = true
         
-        modeConvertButton.setTitle(SDLiteral.InvLogListView.deleteButton, for: .normal)
+        modeConvertButton.setTitle(SDLiteral.ArchiveView.deleteButton, for: .normal)
         modeConvertButton.setTitleColor(.textAlert, for: .normal)
         modeConvertButton.titleLabel?.font = .title3
         
@@ -315,30 +376,41 @@ extension InvLogListViewController {
         }
     }
     
-    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<InvLogListViewModel.InvLogListDataSource> {
-        return RxCollectionViewSectionedReloadDataSource<InvLogListViewModel.InvLogListDataSource>(
-            configureCell:{ dataSource, collectionView, indexPath, items in
-                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: InvLogListCell.identifier, for: indexPath) as? InvLogListCell else { return .init() }
+    private func setDataSource() -> RxCollectionViewSectionedReloadDataSource<ArchiveViewModel.ArchiveSection> {
+        return RxCollectionViewSectionedReloadDataSource<ArchiveViewModel.ArchiveSection>(
+            configureCell: { [weak self] _, collectionView, indexPath, item in
+                guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: ArchiveCell.identifier, for: indexPath) as? ArchiveCell else { return .init() }
                 
-                cell.settingCell(data: items)
+                guard let self else { return cell }
+                switch item {
+                case .invLog(let data):
+                    cell.settingCell(data: data)
+                case .clue(let data):
+                    cell.settingCell(data: data)
+                }
                 cell.bind(isSelectMode: self.viewModel.output.isSelectMode.asDriver(onErrorJustReturn: false))
                 
                 cell.rx.cellTap
                     .subscribe(onNext: { [weak self] in
                         guard let self else { return }
                         
-                        let (walkResult, petProfiles) = self.viewModel.originalData[indexPath.row]
-                        
-                        let vm = WalkResultViewModel()
-                        let walkEndVC = WalkEndModalViewController(
-                            result: walkResult,
-                            selectedProfiles: petProfiles,
-                            viewModel: vm
-                        )
-                        
-                        let nav = UINavigationController(rootViewController: walkEndVC)
-                        nav.modalPresentationStyle = .overFullScreen
-                        self.present(nav, animated: true)
+                        switch item {
+                        case .invLog:
+                            let (walkResult, petProfiles) = self.viewModel.originalData[indexPath.row]
+
+                            let vm = WalkResultViewModel()
+                            let walkEndVC = WalkEndModalViewController(
+                                result: walkResult,
+                                selectedProfiles: petProfiles,
+                                viewModel: vm
+                            )
+
+                            let nav = UINavigationController(rootViewController: walkEndVC)
+                            nav.modalPresentationStyle = .overFullScreen
+                            self.present(nav, animated: true)
+                        case .clue(let data):
+                            self.showClueDetail(data.clue)
+                        }
                     })
                     .disposed(by: cell.disposeBag)
                 
@@ -346,6 +418,16 @@ extension InvLogListViewController {
             })
     }
     
+    private func showClueDetail(_ clue: ClueModel) {
+        let detail = ClueDetailViewController(viewModel: ClueDetailViewModel(clue: clue))
+        detail.onCluesChanged = { [weak self] in
+            self?.viewModel.input.accept(.viewWillAppear)
+        }
+        detail.modalPresentationStyle = .pageSheet
+        detail.sheetPresentationController?.setModalSize(type: .clue, grabber: true)
+        present(detail, animated: true)
+    }
+
     private func configureCollectionViewLayout() -> UICollectionViewCompositionalLayout {
         return UICollectionViewCompositionalLayout { index, environment in
             let item = NSCollectionLayoutItem(layoutSize: .init(widthDimension: .fractionalWidth(1),

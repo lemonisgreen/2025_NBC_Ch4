@@ -69,15 +69,35 @@ enum SDLiteral {
         static let postCollectionButtonImage: String = "note"
     }
     
-    enum InvLogListView {
-        static let title: String = "수사일지"
+    enum ArchiveView {
         static let deleteButton: String = "삭제"
         static let deleteComplete: String = "삭제되었습니다."
         static let requestDelete: String = "수사일지를 삭제하시겠습니까?"
         static let requestDeleteWithoutList: String = "선택된 수사일지가 없습니다."
-        static let caseNumber: String = "CASE # %@"
-        static let infoLabel: String = "%@  ·  %@  ·  %@"
-        static let onboardingUserDefaults: String = "needOnboardingInvLogArchive"
+        
+        enum InvLog {
+            static let title: String = "수사일지"
+            static let deleteFailed = "일부 수사일지 또는 경로 이미지를 삭제하지 못했습니다. 목록을 확인해 주세요."
+            static let emptyImage: String = "emptyInvLogDog"
+            static let emptyLabel: String = "아직 수사일지가 없어요"
+            static let emptyTip: String = "첫 번째 수사를 시작해 기록을 쌓아보세요"
+            static let caseNumber: String = "CASE # %@"
+            static let infoLabel: String = "%@  ·  %@  ·  %@"
+            static let onboardingUserDefaults: String = "needOnboardingInvLogArchive"
+        }
+        
+        enum Clue {
+            static let title: String = "내가 남긴 단서"
+            static let requestDelete = "선택한 단서를 삭제하시겠습니까?"
+            static let requestDeleteWithoutList = "선택된 단서가 없습니다."
+            static let deleteFailed = "일부 또는 모든 단서를 삭제하지 못했습니다. 목록을 확인해 주세요."
+            static let emptyImage: String = "emptyClueDog"
+            static let emptyLabel: String = "아직 남긴 단서가 없어요"
+            static let emptyTip: String = "Tip 산책 중에 특별한 순간을 발견했을 때\n사진을 찍고 메모를 남겨보세요"
+            static let caseNumber: String = "CLUE # %@"
+            static let infoLabel = "%d건"
+            static let onboardingUserDefaults: String = "needOnboardingClueArchive"
+        }
     }
     
     enum BlockedUserViewController {
@@ -105,6 +125,8 @@ enum SDLiteral {
         static let assistantButtonTitle: String = "편집"
         static let archiveButtonTitle: String = "수사일지 아카이브"
         static let archiveButtonImage: String = "note"
+        static let clueArchiveButtonTitle: String = "단서 모아보기"
+        static let clueArchiveButtonImage: String = "clueArchive"
         static let findMateButtonTitle: String = "탐정메이트 찾기"
         static let findMateButtonImage: String = "search"
     }

@@ -8,15 +8,44 @@
 import UIKit
 import SnapKit
 
+extension ArchiveType {
+    var emptyLabel: String {
+        switch self {
+        case .invLog:
+            SDLiteral.ArchiveView.InvLog.emptyLabel
+        case .clue:
+            SDLiteral.ArchiveView.Clue.emptyLabel
+        }
+    }
+    var emptyImage: String {
+        switch self {
+        case .invLog:
+            SDLiteral.ArchiveView.InvLog.emptyImage
+        case .clue:
+            SDLiteral.ArchiveView.Clue.emptyImage
+        }
+    }
+    var emptyTip: String {
+        switch self {
+        case .invLog:
+            SDLiteral.ArchiveView.InvLog.emptyTip
+        case .clue:
+            SDLiteral.ArchiveView.Clue.emptyTip
+        }
+    }
+}
+
 final class EmptyInvLogView: UIView {
     
     private let emptyInvLogImageView = UIImageView()
     private let emptyInvLogLabel = UILabel()
     private let emptyInvLogTipLabel = UILabel()
+    private let type: ArchiveType
     
-    
-    override init(frame: CGRect) {
+    init(frame: CGRect, type: ArchiveType) {
+        self.type = type
         super.init(frame: frame)
+        
         setupUI()
         configureUI()
     }
@@ -33,13 +62,15 @@ final class EmptyInvLogView: UIView {
             emptyInvLogTipLabel
         ])
         
-        emptyInvLogImageView.image = UIImage(named: "emptyInvLogDog")
+        emptyInvLogImageView.image = UIImage(named: self.type.emptyImage)
         
-        emptyInvLogLabel.text = "아직 수사일지가 없어요"
+        emptyInvLogLabel.text = self.type.emptyLabel
         emptyInvLogLabel.textColor = .textDisabled
         emptyInvLogLabel.font = .body2
         
-        emptyInvLogTipLabel.text = "첫 번째 수사를 시작해 기록을 쌓아보세요"
+        emptyInvLogTipLabel.numberOfLines = 0
+        emptyInvLogTipLabel.textAlignment = .center
+        emptyInvLogTipLabel.text = self.type.emptyTip
         emptyInvLogTipLabel.textColor = .textDisabled
         emptyInvLogTipLabel.font = .alert2
     }
