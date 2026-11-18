@@ -142,6 +142,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         archiveButton.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
         archiveButton.clipsToBounds = true
         archiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
+        archiveButton.configuration?.imagePadding = 8
         
         clueArchiveButton.setTitle(SDLiteral.MyPageViewController.clueArchiveButtonTitle, for: .normal)
         clueArchiveButton.titleLabel?.font = .body3
@@ -155,6 +156,7 @@ class MyPageViewController : UIViewController, UICollectionViewDelegate, UIScrol
         clueArchiveButton.layer.maskedCorners = [.layerMinXMaxYCorner, .layerMaxXMaxYCorner]
         clueArchiveButton.clipsToBounds = true
         clueArchiveButton.setTitleInsets(.init(top: 0, left: 8, bottom: 0, right: -8))
+        clueArchiveButton.configuration?.imagePadding = 8
         
 //        findMateButton.setTitle(SDLiteral.MyPageViewController.findMateButtonTitle, for: .normal)
 //        findMateButton.titleLabel?.font = .body3
